@@ -32,6 +32,7 @@
 
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/detail/obj_input.h>
+#include <geode/mesh/detail/obj_output.h>
 
 int main()
 {
@@ -43,7 +44,8 @@ int main()
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
-        load_polygonal_surface( *surface, test_path + "mesh/data/TopHat.obj" );
+        load_polygonal_surface(
+            *surface, test_path + "mesh/data/TopHat." + OBJInput::extension() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 1480,
             "Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
@@ -53,7 +55,7 @@ int main()
         std::string output_file_native{ "TopHat."
                                         + surface->native_extension() };
         save_polygonal_surface( *surface, output_file_native );
-        std::string output_file_stl{ "TopHat.obj" };
+        std::string output_file_stl{ "TopHat." + OBJOutput::extension() };
         save_polygonal_surface( *surface, output_file_stl );
 
         // Reload file
