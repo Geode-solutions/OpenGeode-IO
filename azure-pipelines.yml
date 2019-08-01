@@ -24,6 +24,9 @@ jobs:
       parameters:
         type: "Debug"
         cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
+    - template: coverage.yml@templates
+      parameters:
+        directory: "$(Build.SourcesDirectory)/build/opengeodeio/bin"
 
 - job: Test_Windows
   dependsOn: Format
@@ -123,3 +126,9 @@ jobs:
     - template: windows-release.yml@templates
       parameters:
         version: $(Version)
+
+- template: documentation.yml@templates
+  parameters:
+    dependencies: 
+      - Semantic_release
+    repo: "OpenGeode-IO"
