@@ -31,6 +31,8 @@
 #include <geode/mesh/io/polygonal_surface_output.h>
 
 #include <geode/mesh/detail/common.h>
+#include <geode/mesh/detail/ply_input.h>
+#include <geode/mesh/detail/ply_output.h>
 
 int main()
 {
@@ -42,8 +44,8 @@ int main()
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
-        load_polygonal_surface(
-            *surface, test_path + "mesh/data/Armadillo.ply" );
+        load_polygonal_surface( *surface,
+            test_path + "mesh/data/Armadillo." + PLYInput::extension() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
             "Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
@@ -53,7 +55,7 @@ int main()
         std::string output_file_native{ "armadillo."
                                         + surface->native_extension() };
         save_polygonal_surface( *surface, output_file_native );
-        std::string output_file_stl{ "armadillo.ply" };
+        std::string output_file_stl{ "armadillo." + PLYOutput::extension() };
         save_polygonal_surface( *surface, output_file_stl );
 
         // Reload file
