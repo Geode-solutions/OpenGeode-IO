@@ -1,0 +1,30 @@
+
+set(sources
+    "${lib_source_dir}/common.cpp"
+    "${lib_source_dir}/detail/assimp_input.cpp"
+    "${lib_source_dir}/obj_input.cpp"
+    "${lib_source_dir}/ply_input.cpp"
+    "${lib_source_dir}/stl_input.cpp"
+    "${lib_source_dir}/obj_output.cpp"
+    "${lib_source_dir}/ply_output.cpp"
+    "${lib_source_dir}/stl_output.cpp"
+)
+set(public_headers
+    "${lib_include_dir}/detail/common.h"
+)
+set(private_headers
+    "${lib_include_dir}/detail/assimp_input.h"
+    "${lib_include_dir}/detail/assimp_output.h"
+    "${lib_include_dir}/detail/obj_input.h"
+    "${lib_include_dir}/detail/ply_input.h"
+    "${lib_include_dir}/detail/stl_input.h"
+    "${lib_include_dir}/detail/obj_output.h"
+    "${lib_include_dir}/detail/ply_output.h"
+    "${lib_include_dir}/detail/stl_output.h"
+)
+target_link_libraries(${target_name}
+    PRIVATE
+        OpenGeode::basic
+        OpenGeode::mesh
+        assimp::assimp
+)
