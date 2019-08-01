@@ -1,17 +1,17 @@
-<h1 align="center">OpenGeodeIO<sup><i>by Geode-solutions</i></sup></h1>
+<h1 align="center">OpenGeode-IO<sup><i>by Geode-solutions</i></sup></h1>
 <h3 align="center">Input/Output formats for OpenGeode</h3>
 
 <p align="center">
-  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeodeIO?branchName=master" alt="Build Status">
-  <img src="https://img.shields.io/azure-devops/tests/GeodeSolutions/Geode/2/master.svg?compact_message" alt="Test Status">
-  <img src="https://img.shields.io/azure-devops/coverage/GeodeSolutions/Geode/2/master.svg" alt="Coverage Status">
-  <img src="https://img.shields.io/github/release/Geode-solutions/OpenGeode.svg" alt="Version">
+  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeode-IO?branchName=master" alt="Build Status">
+  <img src="https://img.shields.io/azure-devops/tests/GeodeSolutions/Geode/8/master.svg?compact_message" alt="Test Status">
+  <img src="https://img.shields.io/azure-devops/coverage/GeodeSolutions/Geode/8/master.svg" alt="Coverage Status">
+  <img src="https://img.shields.io/github/release/Geode-solutions/OpenGeode-IO.svg" alt="Version">
 </p>
 
 <p align="center">
-  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeodeIO?branchName=master&jobName=Test_Windows&label=Windows" alt="Windows Build Status">
-  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeodeIO?branchName=master&jobName=Test_Ubuntu&label=Linux" alt="Linux Build Status">
-  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeodeIO?branchName=master&jobName=Test_Mac&label=macOS" alt="Apple Build Status">
+  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeode-IO?branchName=master&jobName=Test_Windows&label=Windows" alt="Windows Build Status">
+  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeode-IO?branchName=master&jobName=Test_Ubuntu&label=Linux" alt="Linux Build Status">
+  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeode-IO?branchName=master&jobName=Test_Mac&label=macOS" alt="Apple Build Status">
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 
 ## Introduction
 
-OpenGeodeIO provides input and output formats for [OpenGeode] models and meshes.
+OpenGeode-IO provides input and output formats for [OpenGeode] models and meshes.
 
 [OpenGeode]: https://github.com/Geode-solutions/OpenGeode
 
@@ -41,7 +41,7 @@ For questions and support please use the official [slack](https://slackin-openge
 
 ## Changelog
 
-Detailed changes for each release are documented in the [release notes](https://github.com/Geode-solutions/OpenGeodeIO/releases).
+Detailed changes for each release are documented in the [release notes](https://github.com/Geode-solutions/OpenGeode-IO/releases).
 
 
 ## License
