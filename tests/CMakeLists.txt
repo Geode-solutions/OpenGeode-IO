@@ -18,6 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+cmake_minimum_required(VERSION 3.5)
+    
+if(NOT TARGET OpenGeode::basic)
+    project(OpenGeode CXX)
+    find_package(OpenGeode REQUIRED CONFIG)
+    enable_testing()
+endif()
+
 set(TEST_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 set(CTEST_OUTPUT_ON_FAILURE ON)
 
