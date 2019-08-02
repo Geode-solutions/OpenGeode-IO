@@ -18,12 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set(TEST_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
-set(CTEST_OUTPUT_ON_FAILURE ON)
 
-set(test_config_file_in ${TEST_DIRECTORY}/tests_config.h.in)
-set(test_config_file ${PROJECT_BINARY_DIR}/geode/tests_config.h)
-configure_file(${test_config_file_in} ${test_config_file})
-
-add_subdirectory(mesh)
-add_subdirectory(georepresentation)
+add_geode_test(test-msh.cpp 
+    ${PROJECT_NAME}::georepresentation
+    OpenGeode::basic
+    OpenGeode::mesh
+    OpenGeode::georepresentation
+)

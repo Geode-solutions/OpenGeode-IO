@@ -226,7 +226,7 @@ namespace
                                ->create_edge( first_v_id, first_v_id + 1 );
 
             const auto& line = brep.line( line_uuid );
-            for( auto v_id : geode::Range{ element_vertices_id().size() } )
+            for( auto v_id : geode::Range( element_vertices_id().size() ) )
             {
                 builder.unique_vertices().set_unique_vertex(
                     { line.component_id(),
@@ -275,7 +275,7 @@ namespace
                                   ->create_polygon( v_ids );
 
             const auto& surface = brep.surface( surface_uuid );
-            for( auto v_id : geode::Range{ element_vertices_id().size() } )
+            for( auto v_id : geode::Range( element_vertices_id().size() ) )
             {
                 builder.unique_vertices().set_unique_vertex(
                     { surface.component_id(),
@@ -366,8 +366,8 @@ namespace
             }
             for( const auto& l : brep_.lines() )
             {
-                // todo remove dupplication
-                for( auto v : geode::Range{ l.mesh().nb_vertices() } )
+                filter_dupplicated_line_vertices( l, brep_ );
+                for( auto v : geode::Range( l.mesh().nb_vertices() ) )
                 {
                     builder.line_mesh_builder( l.id() )->set_point(
                         v, nodes_[unique_vertices.unique_vertex(
@@ -376,8 +376,8 @@ namespace
             }
             for( const auto& s : brep_.surfaces() )
             {
-                // todo remove dupplication
-                for( auto v : geode::Range{ s.mesh().nb_vertices() } )
+                // filter_dupplicated_vertices( s, brep_ );
+                for( auto v : geode::Range( s.mesh().nb_vertices() ) )
                 {
                     builder.surface_mesh_builder( s.id() )->set_point(
                         v, nodes_[unique_vertices.unique_vertex(
@@ -448,7 +448,7 @@ namespace
             std::getline( file_, line );
             auto nb_nodes = std::stoi( line );
             nodes_.reserve( nb_nodes );
-            for( auto n_id : geode::Range{ nb_nodes } )
+            for( auto n_id : geode::Range( nb_nodes ) )
             {
                 std::getline( file_, line );
                 nodes_.push_back( read_node( n_id + OFFSET_START, line ) );
@@ -467,7 +467,7 @@ namespace
             OPENGEODE_EXCEPTION( node_id == std::stoi( line_info ),
                 "Node indices should be continuous." );
             geode::Point3D node;
-            for( auto c : geode::Range{ 3 } )
+            for( auto c : geode::Range( 3 ) )
             {
                 iss >> line_info;
                 node.set_value( c, std::stod( line_info ) );
@@ -481,7 +481,7 @@ namespace
             std::string line;
             std::getline( file_, line );
             auto nb_elements = std::stoi( line );
-            for( auto e_id : geode::Range{ nb_elements } )
+            for( auto e_id : geode::Range( nb_elements ) )
             {
                 std::getline( file_, line );
                 read_element( e_id + OFFSET_START, line );
@@ -512,7 +512,7 @@ namespace
             auto physical_entity = std::stoi( line_info ); //  collection
             iss >> line_info;
             auto elementary_entity = std::stoi( line_info ); // item
-            for( auto t : geode::Range{ 2, nb_tags } )
+            for( auto t : geode::Range( 2, nb_tags ) )
             {
                 iss >> line_info;
             }
@@ -521,7 +521,7 @@ namespace
             // Element vertices
             std::vector< geode::index_t > node_refs(
                 mesh_element_type.nb_vertices );
-            for( auto n : geode::Range{ mesh_element_type.nb_vertices } )
+            for( auto n : geode::Range( mesh_element_type.nb_vertices ) )
             {
                 iss >> line_info;
                 node_refs[n] = std::stoi( line_info );
@@ -530,6 +530,39 @@ namespace
             auto element = GMSHElementFactory::create( mesh_element_type_id,
                 physical_entity, elementary_entity, node_refs );
             element->add_element( brep_, gmsh_id2uuids_ );
+        }
+
+        void filter_dupplicated_line_vertices(
+            const geode::Line3D& line, geode::BRep& brep )
+        {
+            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
+                unique2line;
+            for( auto v : geode::Range( line.mesh().nb_vertices() ) )
+            {
+                unique2line[brep.unique_vertices().unique_vertex(
+                                { line.component_id(), v } )]
+                    .emplace_back( v );
+            }
+            DEBUG( unique2line.size() );
+            for( auto uv : unique2line )
+            {
+                DEBUG( uv.first );
+                DEBUG( uv.second.size() );
+            }
+            geode::BRepBuilder builder{ brep };
+            auto mesh_builder = builder.line_mesh_builder( line.id() );
+            std::vector< bool > delete_dupplicated(
+                line.mesh().nb_vertices(), false );
+            for( auto uv : unique2line )
+            {
+                for( auto i : geode::Range(1, uv.second.size() )) {
+                    OPENGEODE_ASSERT(line.mesh().edges_around_vertex(uv.second[i]).size() == 1 , "Pb");
+                    mesh_builder->set_edge_vertex( line.mesh().edges_around_vertex(uv.second[i])[0], uv.second[0] );
+                    delete_dupplicated[uv.second[i]] = true;
+                    // mesh_builder->
+                }
+            }
+            mesh_builder->delete_vertices( delete_dupplicated );
         }
 
     private:
