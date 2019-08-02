@@ -33,10 +33,10 @@ mark_as_advanced(USE_SUPERBUILD)
 #-------------------------------------------------------------------------------
 # When CMake is called, a main project (super build project) is generated.
 # This main project is responsible to create third party cmake projects including
-# the one of OpenGeodeIO. This is done during compilation, i.e., OpenGeodeIO.cmake is
+# the one of OpenGeode-IO. This is done during compilation, i.e., OpenGeode-IO.cmake is
 # called (USE_SUPERBUILD = OFF) when the super build project is compiled.
 if(USE_SUPERBUILD)
     include(cmake/SuperBuild.cmake)
 else()
-    include(cmake/OpenGeodeIO.cmake)
+    include(cmake/OpenGeode-IO.cmake)
 endif()

@@ -43,7 +43,7 @@ project(SuperBuild NONE)
 include(ExternalProject)
 
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeodeIO.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
 
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)

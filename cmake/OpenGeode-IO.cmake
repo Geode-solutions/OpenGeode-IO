@@ -31,11 +31,11 @@ else()
     add_compile_options(/DNOMINMAX)
 endif()
 
-# Get OpenGeodeIO dependencies
+# Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 
-# Install OpenGeodeIO third-parties
+# Install OpenGeode-IO third-parties
 install(
     DIRECTORY
         ${ASSIMP_INSTALL_PREFIX}/
@@ -44,7 +44,7 @@ install(
 )
 
 #------------------------------------------------------------------------------------------------
-# Configure the OpenGeodeIO libraries
+# Configure the OpenGeode-IO libraries
 add_geode_library(geode/mesh)
 
 #------------------------------------------------------------------------------------------------
@@ -52,9 +52,22 @@ add_geode_library(geode/mesh)
 if(OPENGEODEIO_WITH_TESTS)
     # Enable testing with CTest
     enable_testing()
-    message(STATUS "Configuring OpenGeodeIO with tests")
+    message(STATUS "Configuring OpenGeode-IO with tests")
     add_subdirectory(tests)
 endif()
+
+#------------------------------------------------------------------------------------------------
+# Export and install OpenGeode-IO configuration
+set(OUTPUT_CONFIG_FILE ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake)
+configure_package_config_file(
+    cmake/${PROJECT_NAME}Config.cmake.in 
+    ${OUTPUT_CONFIG_FILE}
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+install(
+    FILES ${OUTPUT_CONFIG_FILE}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
 
 #------------------------------------------------------------------------------------------------
 # Configure CPack
