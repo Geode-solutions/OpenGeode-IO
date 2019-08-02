@@ -61,7 +61,7 @@ namespace
             geode::STLOutput >( geode::STLOutput::extension() );
     }
 
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeode-IO_mesh )
+    OPENGEODE_LIBRARY_INITIALIZE( OpenGeode - IO_mesh )
     {
         register_polygonal_surface_input();
         register_triangulated_surface_input();
