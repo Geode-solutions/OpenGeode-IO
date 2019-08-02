@@ -57,19 +57,6 @@ if(OPENGEODEIO_WITH_TESTS)
 endif()
 
 #------------------------------------------------------------------------------------------------
-# Export and install OpenGeode-IO configuration
-set(OUTPUT_CONFIG_FILE ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake)
-configure_package_config_file(
-    cmake/${PROJECT_NAME}Config.cmake.in 
-    ${OUTPUT_CONFIG_FILE}
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-install(
-    FILES ${OUTPUT_CONFIG_FILE}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-
-#------------------------------------------------------------------------------------------------
 # Configure CPack
 if(WIN32)
     set(CPACK_GENERATOR "ZIP")
