@@ -48,7 +48,7 @@ jobs:
     - template: windows-testing.yml@templates
       parameters:
         type: "Debug"
-        cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
+        path: "opengeodeio"
 
 - job: Test_Mac
   dependsOn: Format
