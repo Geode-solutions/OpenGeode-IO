@@ -30,7 +30,7 @@ jobs:
         cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH);$(Build.SourcesDirectory)/build/opengeodeio/install"
     - template: coverage.yml@templates
       parameters:
-        directory: "$(Build.SourcesDirectory)/test/bin"
+        directory: "$(Build.SourcesDirectory)/build/opengeodeio/bin"
 
 - job: Test_Windows
   dependsOn: Format
