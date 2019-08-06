@@ -63,8 +63,6 @@ void test_brep( const geode::BRep& brep )
     }
     for( const auto& l : brep.lines() )
     {
-        DEBUG( l.mesh().nb_vertices() );
-        DEBUG( l.mesh().nb_edges() );
         OPENGEODE_EXCEPTION(
             l.mesh().nb_vertices() == 5, "Number of vertices in lines should be 5" );
         OPENGEODE_EXCEPTION(
@@ -72,12 +70,10 @@ void test_brep( const geode::BRep& brep )
     }
     for( const auto& s : brep.surfaces() )
     {
-        DEBUG( s.mesh().nb_vertices() );
-        DEBUG( s.mesh().nb_polygons() );
-        OPENGEODE_EXCEPTION( s.mesh().nb_vertices() == 0,
-            "Number of vertices in surfaces should be XX" );
-        OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 16,
-            "Number of polygons in surfaces should be 16" );
+        OPENGEODE_EXCEPTION( s.mesh().nb_vertices() == 29,
+            "Number of vertices in surfaces should be 29" );
+        OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 40,
+            "Number of polygons in surfaces should be 40" );
     }
 }
 

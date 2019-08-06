@@ -366,7 +366,9 @@ namespace
             }
             for( const auto& l : brep_.lines() )
             {
+                DEBUG(l.mesh().nb_vertices());
                 filter_dupplicated_line_vertices( l, brep_ );
+                DEBUG(l.mesh().nb_vertices());
                 for( auto v : geode::Range( l.mesh().nb_vertices() ) )
                 {
                     builder.line_mesh_builder( l.id() )->set_point(
@@ -376,13 +378,25 @@ namespace
             }
             for( const auto& s : brep_.surfaces() )
             {
-                // filter_dupplicated_vertices( s, brep_ );
+                filter_dupplicated_surface_vertices( s, brep_ );
                 for( auto v : geode::Range( s.mesh().nb_vertices() ) )
                 {
                     builder.surface_mesh_builder( s.id() )->set_point(
                         v, nodes_[unique_vertices.unique_vertex(
                                { s.component_id(), v } )] );
                 }
+            }
+                        DEBUG( "AFTER" );
+            for( auto uv :
+                geode::Range( unique_vertices.nb_unique_vertices() ) )
+            {
+                DEBUG( "======== ");
+                DEBUG( uv);
+                for( const auto& mcv : unique_vertices.mesh_component_vertices( uv ) ) {
+                DEBUG( mcv.component_id );
+                DEBUG( mcv.vertex );
+                }
+
             }
         }
 
@@ -544,25 +558,89 @@ namespace
                     .emplace_back( v );
             }
             DEBUG( unique2line.size() );
-            for( auto uv : unique2line )
-            {
-                DEBUG( uv.first );
-                DEBUG( uv.second.size() );
-            }
+            // for( auto uv : unique2line )
+            // {
+            //     DEBUG( uv.first );
+            //     DEBUG( uv.second.size() );
+            // }
             geode::BRepBuilder builder{ brep };
             auto mesh_builder = builder.line_mesh_builder( line.id() );
             std::vector< bool > delete_dupplicated(
                 line.mesh().nb_vertices(), false );
             for( auto uv : unique2line )
             {
-                for( auto i : geode::Range(1, uv.second.size() )) {
-                    OPENGEODE_ASSERT(line.mesh().edges_around_vertex(uv.second[i]).size() == 1 , "Pb");
-                    mesh_builder->set_edge_vertex( line.mesh().edges_around_vertex(uv.second[i])[0], uv.second[0] );
+                for( auto i : geode::Range( 1, uv.second.size() ) )
+                {
+                    OPENGEODE_ASSERT(
+                        line.mesh().edges_around_vertex( uv.second[i] ).size()
+                            == 1,
+                        "By construction, there should be one and only one "
+                        "edge pointing to each vertex at this point." );
+                    mesh_builder->set_edge_vertex(
+                        line.mesh().edges_around_vertex( uv.second[i] )[0],
+                        uv.second[0] );
+                    delete_dupplicated[uv.second[i]] = true;
+                }
+            }
+            mesh_builder->delete_vertices( delete_dupplicated );
+
+            for( auto i : geode::Range( line.mesh().nb_vertices() ) ){
+                // DEBUG( i );
+                auto ui = brep_.unique_vertices().unique_vertex({line.component_id(), i } );
+                // DEBUG(  ui );
+                // DEBUG( brep_.unique_vertices().mesh_component_vertices( ui ).size()  );
+            }
+
+            DEBUG( "here" );
+            builder.unique_vertices().remove_component< geode::Line3D >( line );
+            DEBUG( "there" );
+            builder.unique_vertices().register_component< geode::Line3D >( line );
+            DEBUG( "after" );
+        }
+
+        void filter_dupplicated_surface_vertices(
+            const geode::Surface3D& surface, geode::BRep& brep )
+        {
+            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
+                unique2surface;
+            for( auto v : geode::Range( surface.mesh().nb_vertices() ) )
+            {
+                unique2surface[brep.unique_vertices().unique_vertex(
+                                   { surface.component_id(), v } )]
+                    .emplace_back( v );
+            }
+            DEBUG( unique2surface.size() );
+            for( auto uv : unique2surface )
+            {
+                DEBUG( uv.first );
+                DEBUG( uv.second.size() );
+            }
+            geode::BRepBuilder builder{ brep };
+            auto mesh_builder = builder.surface_mesh_builder( surface.id() );
+            std::vector< bool > delete_dupplicated(
+                surface.mesh().nb_vertices(), false );
+            for( auto uv : unique2surface )
+            {
+                for( auto i : geode::Range( 1, uv.second.size() ) )
+                {
+                    OPENGEODE_ASSERT(
+                        surface.mesh()
+                                .polygons_around_vertex( uv.second[i] )
+                                .size()
+                            == 1,
+                        "Pb" );
+                    mesh_builder->set_polygon_vertex(
+                        surface.mesh().polygons_around_vertex(
+                            uv.second[i] )[0],
+                        uv.second[0] );
                     delete_dupplicated[uv.second[i]] = true;
                     // mesh_builder->
                 }
             }
             mesh_builder->delete_vertices( delete_dupplicated );
+
+            builder.unique_vertices().remove_component< geode::Surface3D >( surface );
+            builder.unique_vertices().register_component< geode::Surface3D >( surface );
         }
 
     private:
