@@ -27,16 +27,16 @@
 #include <geode/basic/logger.h>
 #include <geode/basic/range.h>
 
+#include <geode/georepresentation/core/block.h>
 #include <geode/georepresentation/core/boundary_representation.h>
 #include <geode/georepresentation/core/corner.h>
 #include <geode/georepresentation/core/line.h>
 #include <geode/georepresentation/core/surface.h>
-#include <geode/georepresentation/core/block.h>
 #include <geode/georepresentation/io/boundary_representation_input.h>
 #include <geode/georepresentation/io/boundary_representation_output.h>
 
-#include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 
@@ -58,13 +58,13 @@ void test_brep( const geode::BRep& brep )
     // Number of vertices and elements in components
     for( const auto& c : brep.corners() )
     {
-        OPENGEODE_EXCEPTION(
-            c.mesh().nb_vertices() == 1, "Number of vertices in corners should be 1" );
+        OPENGEODE_EXCEPTION( c.mesh().nb_vertices() == 1,
+            "Number of vertices in corners should be 1" );
     }
     for( const auto& l : brep.lines() )
     {
-        OPENGEODE_EXCEPTION(
-            l.mesh().nb_vertices() == 5, "Number of vertices in lines should be 5" );
+        OPENGEODE_EXCEPTION( l.mesh().nb_vertices() == 5,
+            "Number of vertices in lines should be 5" );
         OPENGEODE_EXCEPTION(
             l.mesh().nb_edges() == 4, "Number of edges in lines should be 4" );
     }
@@ -74,6 +74,30 @@ void test_brep( const geode::BRep& brep )
             "Number of vertices in surfaces should be 29" );
         OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 40,
             "Number of polygons in surfaces should be 40" );
+    }
+
+    // Number of component boundaries and incidences
+    for( const auto& c : brep.corners() )
+    {
+        DEBUG(brep.relationships().nb_incidences( c.id() ));
+        OPENGEODE_EXCEPTION( brep.relationships().nb_boundaries( c.id() ) == 0,
+            "Number of corner boundary should be 0" );
+        OPENGEODE_EXCEPTION( brep.relationships().nb_incidences( c.id() ) == 3,
+            "Number of corner incidences should be 3" );
+    }
+    for( const auto& l : brep.lines() )
+    {
+        OPENGEODE_EXCEPTION( brep.relationships().nb_boundaries( l.id() ) == 2,
+            "Number of line boundary should be 2" );
+        OPENGEODE_EXCEPTION( brep.relationships().nb_incidences( l.id() ) == 2,
+            "Number of line incidences should be 2" );
+    }
+    for( const auto& s : brep.surfaces() )
+    {
+        OPENGEODE_EXCEPTION( brep.relationships().nb_boundaries( s.id() ) == 4,
+            "Number of surface boundary should be 4" );
+        OPENGEODE_EXCEPTION( brep.relationships().nb_incidences( s.id() ) == 0,
+            "Number of surface incidences should be 0" );
     }
 }
 
@@ -91,7 +115,7 @@ int main()
         test_brep( brep );
 
         // Save and reload
-        save_brep( brep, test_path + "georepresentation/output/cube_v22."
+        save_brep( brep, "georepresentation/output/cube_v22."
                              + brep.native_extension() );
         // save_brep( brep, test_path +
         // "georepresentation/output/cube_v22.msh"); BRep reloaded_brep;

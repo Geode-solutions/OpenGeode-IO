@@ -333,6 +333,7 @@ namespace
         {
             return { geode::Corner3D::component_type_static(), 1 };
         }
+        return { geode::ComponentType{ "undefined " }, geode::NO_ID };
     }
 
     class MSHInputImpl
@@ -366,9 +367,9 @@ namespace
             }
             for( const auto& l : brep_.lines() )
             {
-                DEBUG(l.mesh().nb_vertices());
+                DEBUG( l.mesh().nb_vertices() );
                 filter_dupplicated_line_vertices( l, brep_ );
-                DEBUG(l.mesh().nb_vertices());
+                DEBUG( l.mesh().nb_vertices() );
                 for( auto v : geode::Range( l.mesh().nb_vertices() ) )
                 {
                     builder.line_mesh_builder( l.id() )->set_point(
@@ -386,23 +387,38 @@ namespace
                                { s.component_id(), v } )] );
                 }
             }
-                        DEBUG( "AFTER" );
+            DEBUG( "AFTER" );
             for( auto uv :
                 geode::Range( unique_vertices.nb_unique_vertices() ) )
             {
-                DEBUG( "======== ");
-                DEBUG( uv);
-                for( const auto& mcv : unique_vertices.mesh_component_vertices( uv ) ) {
-                DEBUG( mcv.component_id );
-                DEBUG( mcv.vertex );
+                DEBUG( "======== " );
+                DEBUG( uv );
+                for( const auto& mcv :
+                    unique_vertices.mesh_component_vertices( uv ) )
+                {
+                    DEBUG( mcv.component_id );
+                    DEBUG( mcv.vertex );
                 }
-
             }
         }
 
         void build_topology()
         {
             DEBUG( "build topo todo" );
+            geode::BRepBuilder builder( brep_ );
+            for( const auto& c : brep_.corners() )
+            {
+                auto unique_v = brep_.unique_vertices().unique_vertex(
+                    { c.component_id(), 0 } );
+                const auto& line_vertices =
+                    brep_.unique_vertices().mesh_component_vertices(
+                        unique_v, geode::Line3D::component_type_static() );
+                for( const auto& lv : line_vertices )
+                {
+                    builder.add_boundary_relation(
+                        c, brep_.line( lv.component_id.id() ) );
+                }
+            }
         }
 
     private:
@@ -478,7 +494,9 @@ namespace
             std::istringstream iss{ line };
             std::string line_info;
             iss >> line_info;
-            OPENGEODE_EXCEPTION( node_id == std::stoi( line_info ),
+            OPENGEODE_EXCEPTION(
+                node_id
+                    == static_cast< geode::index_t >( std::stoi( line_info ) ),
                 "Node indices should be continuous." );
             geode::Point3D node;
             for( auto c : geode::Range( 3 ) )
@@ -508,7 +526,9 @@ namespace
             std::istringstream iss{ line };
             std::string line_info;
             iss >> line_info;
-            OPENGEODE_EXCEPTION( element_id == std::stoi( line_info ),
+            OPENGEODE_EXCEPTION(
+                element_id
+                    == static_cast< geode::index_t >( std::stoi( line_info ) ),
                 "Element indices should be continuous." );
             iss >> line_info;
 
@@ -528,6 +548,7 @@ namespace
             auto elementary_entity = std::stoi( line_info ); // item
             for( auto t : geode::Range( 2, nb_tags ) )
             {
+                geode_unused( t );
                 iss >> line_info;
             }
             // TODO: create if necessary the component, and its parent
@@ -558,11 +579,6 @@ namespace
                     .emplace_back( v );
             }
             DEBUG( unique2line.size() );
-            // for( auto uv : unique2line )
-            // {
-            //     DEBUG( uv.first );
-            //     DEBUG( uv.second.size() );
-            // }
             geode::BRepBuilder builder{ brep };
             auto mesh_builder = builder.line_mesh_builder( line.id() );
             std::vector< bool > delete_dupplicated(
@@ -582,20 +598,36 @@ namespace
                     delete_dupplicated[uv.second[i]] = true;
                 }
             }
-            mesh_builder->delete_vertices( delete_dupplicated );
 
-            for( auto i : geode::Range( line.mesh().nb_vertices() ) ){
-                // DEBUG( i );
-                auto ui = brep_.unique_vertices().unique_vertex({line.component_id(), i } );
-                // DEBUG(  ui );
-                // DEBUG( brep_.unique_vertices().mesh_component_vertices( ui ).size()  );
+            std::vector< geode::index_t > updated_unique2line;
+            DEBUG( updated_unique2line.capacity() );
+            updated_unique2line.reserve( std::count(
+                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
+            DEBUG( updated_unique2line.capacity() );
+            for( auto i : geode::Range( line.mesh().nb_vertices() ) )
+            {
+                if( delete_dupplicated[i] )
+                {
+                    continue;
+                }
+                auto ui = brep_.unique_vertices().unique_vertex(
+                    { line.component_id(), i } );
+                updated_unique2line.push_back( ui );
             }
 
+            mesh_builder->delete_vertices( delete_dupplicated );
+
             DEBUG( "here" );
-            builder.unique_vertices().remove_component< geode::Line3D >( line );
+            builder.unique_vertices().remove_component( line );
             DEBUG( "there" );
-            builder.unique_vertices().register_component< geode::Line3D >( line );
+            builder.unique_vertices().register_component( line );
             DEBUG( "after" );
+            for( auto i : geode::Range( line.mesh().nb_vertices() ) )
+            {
+                DEBUG( updated_unique2line[i] );
+                builder.unique_vertices().set_unique_vertex(
+                    { line.component_id(), i }, updated_unique2line[i] );
+            }
         }
 
         void filter_dupplicated_surface_vertices(
@@ -628,19 +660,45 @@ namespace
                                 .polygons_around_vertex( uv.second[i] )
                                 .size()
                             == 1,
-                        "Pb" );
+                        "By construction, there should be one and only one "
+                        "polygon pointing to each vertex at this point." );
                     mesh_builder->set_polygon_vertex(
                         surface.mesh().polygons_around_vertex(
                             uv.second[i] )[0],
                         uv.second[0] );
                     delete_dupplicated[uv.second[i]] = true;
-                    // mesh_builder->
                 }
             }
+
+            std::vector< geode::index_t > updated_unique2surface;
+            DEBUG( updated_unique2surface.capacity() );
+            updated_unique2surface.reserve( std::count(
+                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
+            DEBUG( updated_unique2surface.capacity() );
+            for( auto i : geode::Range( surface.mesh().nb_vertices() ) )
+            {
+                if( delete_dupplicated[i] )
+                {
+                    continue;
+                }
+                auto ui = brep_.unique_vertices().unique_vertex(
+                    { surface.component_id(), i } );
+                updated_unique2surface.push_back( ui );
+            }
+
             mesh_builder->delete_vertices( delete_dupplicated );
 
-            builder.unique_vertices().remove_component< geode::Surface3D >( surface );
-            builder.unique_vertices().register_component< geode::Surface3D >( surface );
+            DEBUG( "here" );
+            builder.unique_vertices().remove_component( surface );
+            DEBUG( "there" );
+            builder.unique_vertices().register_component( surface );
+            DEBUG( "after" );
+            for( auto i : geode::Range( surface.mesh().nb_vertices() ) )
+            {
+                DEBUG( updated_unique2surface[i] );
+                builder.unique_vertices().set_unique_vertex(
+                    { surface.component_id(), i }, updated_unique2surface[i] );
+            }
         }
 
     private:
