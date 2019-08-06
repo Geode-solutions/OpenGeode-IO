@@ -35,6 +35,8 @@ endif()
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 
+copy_windows_binaries(OpenGeode::mesh)
+
 # Install OpenGeode-IO third-parties
 install(
     DIRECTORY
