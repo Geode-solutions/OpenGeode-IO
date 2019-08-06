@@ -366,9 +366,9 @@ namespace
             }
             for( const auto& l : brep_.lines() )
             {
-                DEBUG(l.mesh().nb_cmake vertices());
+                DEBUG( l.mesh().nb_cmake vertices() );
                 filter_dupplicated_line_vertices( l, brep_ );
-                DEBUG(l.mesh().nb_vertices());
+                DEBUG( l.mesh().nb_vertices() );
                 for( auto v : geode::Range( l.mesh().nb_vertices() ) )
                 {
                     builder.line_mesh_builder( l.id() )->set_point(
@@ -386,17 +386,18 @@ namespace
                                { s.component_id(), v } )] );
                 }
             }
-                        DEBUG( "AFTER" );
+            DEBUG( "AFTER" );
             for( auto uv :
                 geode::Range( unique_vertices.nb_unique_vertices() ) )
             {
-                DEBUG( "======== ");
-                DEBUG( uv);
-                for( const auto& mcv : unique_vertices.mesh_component_vertices( uv ) ) {
-                DEBUG( mcv.component_id );
-                DEBUG( mcv.vertex );
+                DEBUG( "======== " );
+                DEBUG( uv );
+                for( const auto& mcv :
+                    unique_vertices.mesh_component_vertices( uv ) )
+                {
+                    DEBUG( mcv.component_id );
+                    DEBUG( mcv.vertex );
                 }
-
             }
         }
 
@@ -584,17 +585,21 @@ namespace
             }
             mesh_builder->delete_vertices( delete_dupplicated );
 
-            for( auto i : geode::Range( line.mesh().nb_vertices() ) ){
+            for( auto i : geode::Range( line.mesh().nb_vertices() ) )
+            {
                 // DEBUG( i );
-                auto ui = brep_.unique_vertices().unique_vertex({line.component_id(), i } );
+                auto ui = brep_.unique_vertices().unique_vertex(
+                    { line.component_id(), i } );
                 // DEBUG(  ui );
-                // DEBUG( brep_.unique_vertices().mesh_component_vertices( ui ).size()  );
+                // DEBUG( brep_.unique_vertices().mesh_component_vertices( ui
+                // ).size()  );
             }
 
             DEBUG( "here" );
             builder.unique_vertices().remove_component< geode::Line3D >( line );
             DEBUG( "there" );
-            builder.unique_vertices().register_component< geode::Line3D >( line );
+            builder.unique_vertices().register_component< geode::Line3D >(
+                line );
             DEBUG( "after" );
         }
 
@@ -639,8 +644,10 @@ namespace
             }
             mesh_builder->delete_vertices( delete_dupplicated );
 
-            builder.unique_vertices().remove_component< geode::Surface3D >( surface );
-            builder.unique_vertices().register_component< geode::Surface3D >( surface );
+            builder.unique_vertices().remove_component< geode::Surface3D >(
+                surface );
+            builder.unique_vertices().register_component< geode::Surface3D >(
+                surface );
         }
 
     private:
