@@ -79,7 +79,6 @@ void test_brep( const geode::BRep& brep )
     // Number of component boundaries and incidences
     for( const auto& c : brep.corners() )
     {
-        DEBUG(brep.relationships().nb_incidences( c.id() ));
         OPENGEODE_EXCEPTION( brep.relationships().nb_boundaries( c.id() ) == 0,
             "Number of corner boundary should be 0" );
         OPENGEODE_EXCEPTION( brep.relationships().nb_incidences( c.id() ) == 3,
@@ -115,12 +114,12 @@ int main()
         test_brep( brep );
 
         // Save and reload
-        save_brep( brep, "georepresentation/output/cube_v22."
-                             + brep.native_extension() );
-        // save_brep( brep, test_path +
-        // "georepresentation/output/cube_v22.msh"); BRep reloaded_brep;
-        // load_brep( reloaded_brep,test_path +
-        // "georepresentation/output/cube_v22.msh"); test_brep( reloaded_brep );
+        std::string filename{ "georepresentation/output/cube_v22." + brep.native_extension() };
+        save_brep( brep,
+             filename);
+        BRep reloaded_brep;
+        load_brep( reloaded_brep, filename );
+        test_brep( reloaded_brep );
 
         Logger::info( "TEST SUCCESS" );
         return 0;
