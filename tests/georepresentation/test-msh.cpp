@@ -114,9 +114,9 @@ int main()
         test_brep( brep );
 
         // Save and reload
-        std::string filename{ "georepresentation/output/cube_v22." + brep.native_extension() };
-        save_brep( brep,
-             filename);
+        std::string filename{ "georepresentation/output/cube_v22."
+                              + brep.native_extension() };
+        save_brep( brep, filename );
         BRep reloaded_brep;
         load_brep( reloaded_brep, filename );
         test_brep( reloaded_brep );

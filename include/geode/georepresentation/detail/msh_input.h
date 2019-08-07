@@ -30,8 +30,7 @@
 
 namespace geode
 {
-    class opengeodeio_georepresentation_api MSHInput final
-        : public BRepInput
+    class opengeodeio_georepresentation_api MSHInput final : public BRepInput
     {
     public:
         MSHInput( BRep& brep, std::string filename )

@@ -25,13 +25,12 @@
 
 #include <geode/georepresentation/detail/msh_input.h>
 
-
 namespace
 {
     void register_brep_input()
     {
-        geode::BRepInputFactory::register_creator<
-            geode::MSHInput >( geode::MSHInput::extension() );
+        geode::BRepInputFactory::register_creator< geode::MSHInput >(
+            geode::MSHInput::extension() );
     }
 
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_georepresentation )
