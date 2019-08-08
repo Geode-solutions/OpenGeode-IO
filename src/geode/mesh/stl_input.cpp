@@ -105,6 +105,7 @@ namespace
                 }
                 builder->create_polygon( triangle_vertices );
             }
+            builder->compute_polygon_adjacencies();
         }
 
     private:

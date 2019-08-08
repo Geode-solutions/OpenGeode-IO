@@ -42,40 +42,97 @@ namespace
         {
         }
 
-        void build_mesh() final
+        void build_mesh()
         {
-            build_vertices();
-            build_triangles();
+            auto vertex_mapping = build_vertices();
+            build_polygons( vertex_mapping );
         }
 
     private:
-        void build_vertices()
+        geode::NNSearch3D::ColocatedInfo build_vertices()
         {
-            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            builder->create_vertices( assimp_mesh()->mNumVertices );
-            for( auto v : geode::Range{ assimp_mesh()->mNumVertices } )
-            {
-                geode::Point3D point{ { assimp_mesh()->mVertices[v].x,
-                    assimp_mesh()->mVertices[v].y,
-                    assimp_mesh()->mVertices[v].z } };
-                builder->set_point( v, point );
-            }
+            auto dupplicated_vertices =
+                load_dupplicated_vertices( assimp_mesh() );
+            return build_unique_vertices( dupplicated_vertices );
         }
 
-        void build_triangles()
+        std::vector< geode::Point3D > load_dupplicated_vertices(
+            const aiMesh* paiMesh )
+        {
+            std::vector< geode::Point3D > dupplicated_vertices;
+            dupplicated_vertices.resize( paiMesh->mNumVertices );
+            for( auto v : geode::Range{ paiMesh->mNumVertices } )
+            {
+                dupplicated_vertices[v].set_value( 0, paiMesh->mVertices[v].x );
+                dupplicated_vertices[v].set_value( 1, paiMesh->mVertices[v].y );
+                dupplicated_vertices[v].set_value( 2, paiMesh->mVertices[v].z );
+            }
+            return dupplicated_vertices;
+        }
+
+        geode::NNSearch3D::ColocatedInfo build_unique_vertices(
+            const std::vector< geode::Point3D >& dupplicated_vertices )
+        {
+            geode::NNSearch3D colocater{ dupplicated_vertices };
+            const auto& vertex_mapping =
+                colocater.colocated_index_mapping( geode::global_epsilon );
+
+            auto builder =
+                geode::PolygonalSurfaceBuilder3D::create( surface_ );
+            builder->create_vertices( vertex_mapping.nb_unique_points() );
+            for( auto v : geode::Range{ vertex_mapping.nb_unique_points() } )
+            {
+                builder->set_point( v, vertex_mapping.unique_points[v] );
+            }
+
+            return vertex_mapping;
+        }
+
+        void build_polygons(const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             for( auto p : geode::Range{ assimp_mesh()->mNumFaces } )
             {
                 const auto& face = assimp_mesh()->mFaces[p];
-                std::vector< geode::index_t > polygon_vertices(
-                    face.mNumIndices );
-                for( auto i : geode::Range{ face.mNumIndices } )
+                std::vector< geode::index_t > polygon_vertices( face.mNumIndices );
+                for( auto i : geode::Range{ polygon_vertices.size() } )
                 {
-                    polygon_vertices[i] = face.mIndices[i];
+                    polygon_vertices[i] =
+                        vertex_mapping.colocated_mapping[face.mIndices[i]];
                 }
                 builder->create_polygon( polygon_vertices );
             }
+            builder->compute_polygon_adjacencies();
+
+
+
+            // geode::index_t before = 0;
+            // for( auto p : geode::Range{ surface_.nb_polygons() } )
+            // {
+            //     for( auto e :
+            //         geode::Range{ surface_.nb_polygon_edges( p ) } )
+            //     {
+            //         if( surface_.is_edge_on_border( { p, e } ) )
+            //         {
+            //             before++;
+            //         }
+            //     }
+            // }
+            // DEBUG(before);
+            // builder->compute_polygon_adjacencies();
+            geode::index_t after = 0;
+            for( auto p : geode::Range{ surface_.nb_polygons() } )
+            {
+                for( auto e :
+                    geode::Range{ surface_.nb_polygon_edges( p ) } )
+                {
+                    if( surface_.is_edge_on_border( { p, e } ) )
+                    {
+                        after++;
+                    }
+                }
+            }
+            DEBUG(after);
         }
 
     private:

@@ -45,7 +45,7 @@ namespace
         void build_mesh() final
         {
             build_vertices();
-            build_triangles();
+            build_polygons();
         }
 
     private:
@@ -62,7 +62,7 @@ namespace
             }
         }
 
-        void build_triangles()
+        void build_polygons()
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             for( auto p : geode::Range{ assimp_mesh()->mNumFaces } )
@@ -76,6 +76,7 @@ namespace
                 }
                 builder->create_polygon( polygon_vertices );
             }
+            builder->compute_polygon_adjacencies();
         }
 
     private:
