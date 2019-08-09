@@ -77,8 +77,7 @@ namespace
             const auto& vertex_mapping =
                 colocater.colocated_index_mapping( geode::global_epsilon );
 
-            auto builder =
-                geode::PolygonalSurfaceBuilder3D::create( surface_ );
+            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             builder->create_vertices( vertex_mapping.nb_unique_points() );
             for( auto v : geode::Range{ vertex_mapping.nb_unique_points() } )
             {
@@ -88,13 +87,15 @@ namespace
             return vertex_mapping;
         }
 
-        void build_polygons(const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
+        void build_polygons(
+            const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             for( auto p : geode::Range{ assimp_mesh()->mNumFaces } )
             {
                 const auto& face = assimp_mesh()->mFaces[p];
-                std::vector< geode::index_t > polygon_vertices( face.mNumIndices );
+                std::vector< geode::index_t > polygon_vertices(
+                    face.mNumIndices );
                 for( auto i : geode::Range{ polygon_vertices.size() } )
                 {
                     polygon_vertices[i] =
@@ -103,8 +104,6 @@ namespace
                 builder->create_polygon( polygon_vertices );
             }
             builder->compute_polygon_adjacencies();
-
-
 
             // geode::index_t before = 0;
             // for( auto p : geode::Range{ surface_.nb_polygons() } )
@@ -123,8 +122,7 @@ namespace
             geode::index_t after = 0;
             for( auto p : geode::Range{ surface_.nb_polygons() } )
             {
-                for( auto e :
-                    geode::Range{ surface_.nb_polygon_edges( p ) } )
+                for( auto e : geode::Range{ surface_.nb_polygon_edges( p ) } )
                 {
                     if( surface_.is_edge_on_border( { p, e } ) )
                     {
@@ -132,7 +130,7 @@ namespace
                     }
                 }
             }
-            DEBUG(after);
+            DEBUG( after );
         }
 
     private:
