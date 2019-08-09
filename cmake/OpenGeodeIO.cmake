@@ -26,7 +26,7 @@ option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
 #------------------------------------------------------------------------------------------------
 # Platform dependent settings
 if(UNIX)
-    add_compile_options(-Wall -Wextra -Wno-attributes)
+    add_compile_options(-Wall -Wextra -Wno-attributes -fvisibility=hidden)
 else()
     add_compile_options(/DNOMINMAX)
 endif()
