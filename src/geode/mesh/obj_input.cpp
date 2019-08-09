@@ -103,36 +103,6 @@ namespace
                 builder->create_polygon( polygon_vertices );
             }
             builder->compute_polygon_adjacencies();
-
-
-
-            // geode::index_t before = 0;
-            // for( auto p : geode::Range{ surface_.nb_polygons() } )
-            // {
-            //     for( auto e :
-            //         geode::Range{ surface_.nb_polygon_edges( p ) } )
-            //     {
-            //         if( surface_.is_edge_on_border( { p, e } ) )
-            //         {
-            //             before++;
-            //         }
-            //     }
-            // }
-            // DEBUG(before);
-            // builder->compute_polygon_adjacencies();
-            geode::index_t after = 0;
-            for( auto p : geode::Range{ surface_.nb_polygons() } )
-            {
-                for( auto e :
-                    geode::Range{ surface_.nb_polygon_edges( p ) } )
-                {
-                    if( surface_.is_edge_on_border( { p, e } ) )
-                    {
-                        after++;
-                    }
-                }
-            }
-            DEBUG(after);
         }
 
     private:
