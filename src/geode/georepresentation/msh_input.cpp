@@ -24,6 +24,7 @@
 #include <geode/georepresentation/detail/msh_input.h>
 
 #include <fstream>
+#include <numeric>
 #include <unordered_map>
 
 #include <geode/basic/algorithm.h>
