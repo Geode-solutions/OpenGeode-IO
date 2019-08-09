@@ -44,7 +44,6 @@ int main()
 
         // Load file
         load_polygonal_surface( *surface, test_path + "mesh/data/TopHat.obj" );
-        DEBUG( surface->nb_vertices() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
