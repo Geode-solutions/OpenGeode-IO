@@ -112,10 +112,10 @@ namespace
     public:
         GMSHElement( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
-            std::vector< geode::index_t > element_vertices_id )
+            std::istringstream& iss_vertices_ids )
             : physical_entity_id_( std::move( physical_entity_id ) ),
               elementary_entity_id_( std::move( elementary_entity_id ) ),
-              element_vertices_id_( std::move( element_vertices_id ) )
+              iss_vertices_ids_( iss_vertices_ids )
         {
         }
 
@@ -133,38 +133,64 @@ namespace
             return elementary_entity_id_;
         }
 
-        const std::vector< geode::index_t >& element_vertices_id()
+    protected:
+        geode::index_t& nb_vertices()
         {
-            return element_vertices_id_;
+            return nb_vertices_;
+        }
+
+        std::vector< geode::index_t >& vertex_ids()
+        {
+            return vertex_ids_;
+        }
+
+        void read_vertex_ids()
+        {
+            std::string id_info;
+            vertex_ids().resize( nb_vertices() );
+            for( auto n : geode::Range{ nb_vertices() } )
+            {
+                iss_vertices_ids_ >> id_info;
+                vertex_ids()[n] = std::stoi( id_info );
+            }
         }
 
     private:
         geode::index_t physical_entity_id_;
         geode::index_t elementary_entity_id_;
-        std::vector< geode::index_t > element_vertices_id_;
+        std::istringstream& iss_vertices_ids_;
+        geode::index_t nb_vertices_{ 0 };
+        std::vector< geode::index_t > vertex_ids_;
     };
 
     using GMSHElementFactory = geode::Factory< geode::index_t,
         GMSHElement,
         geode::index_t,
         geode::index_t,
-        std::vector< geode::index_t > >;
+        std::istringstream& >;
 
     class GMSHPoint : public GMSHElement
     {
     public:
         GMSHPoint( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
-            std::vector< geode::index_t > element_vertices_id )
-            : GMSHElement( physical_entity_id,
-                  elementary_entity_id,
-                  element_vertices_id )
+            std::istringstream& iss_vertices_ids )
+            : GMSHElement(
+                  physical_entity_id, elementary_entity_id, iss_vertices_ids )
         {
+            nb_vertices() = 1;
             OPENGEODE_EXCEPTION( elementary_entity_id > 0,
                 "GMSH tag for elementary entity "
                 "(second tag) should not be null" );
-            OPENGEODE_EXCEPTION( element_vertices_id.size() == 1,
-                "GMSH element for point (type=15) should have one vertex" );
+            try
+            {
+                read_vertex_ids();
+            }
+            catch( ... )
+            {
+                geode::Logger::error(
+                    "GMSH element for point (type=15) should have one vertex" );
+            }
         }
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
         {
@@ -182,7 +208,7 @@ namespace
             id_map.elementary_ids.insert( { cur_gmsh_id, new_corner_uuid } );
             builder.unique_vertices().set_unique_vertex(
                 { brep.corner( new_corner_uuid ).component_id(), v_id },
-                element_vertices_id()[0] - OFFSET_START );
+                vertex_ids()[0] - OFFSET_START );
         }
     };
 
@@ -191,16 +217,23 @@ namespace
     public:
         GMSHEdge( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
-            std::vector< geode::index_t > element_vertices_id )
-            : GMSHElement( physical_entity_id,
-                  elementary_entity_id,
-                  element_vertices_id )
+            std::istringstream& iss_vertices_id )
+            : GMSHElement(
+                  physical_entity_id, elementary_entity_id, iss_vertices_id )
         {
+            nb_vertices() = 2;
             OPENGEODE_EXCEPTION( elementary_entity_id > 0,
                 "GMSH tag for elementary entity "
                 "(second tag) should not be null" );
-            OPENGEODE_EXCEPTION( element_vertices_id.size() == 2,
-                "GMSH element for edge (type=1) should have two vertices" );
+            try
+            {
+                read_vertex_ids();
+            }
+            catch( ... )
+            {
+                geode::Logger::error(
+                    "GMSH element for edge (type=1) should have two vertices" );
+            }
         }
 
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
@@ -220,19 +253,18 @@ namespace
                 line_uuid = builder.add_line();
                 id_map.elementary_ids.insert( { cur_gmsh_id, line_uuid } );
             }
-            auto first_v_id =
-                builder.line_mesh_builder( line_uuid )
-                    ->create_vertices( element_vertices_id().size() );
+            auto first_v_id = builder.line_mesh_builder( line_uuid )
+                                  ->create_vertices( vertex_ids().size() );
             auto edge_id = builder.line_mesh_builder( line_uuid )
                                ->create_edge( first_v_id, first_v_id + 1 );
 
             const auto& line = brep.line( line_uuid );
-            for( auto v_id : geode::Range( element_vertices_id().size() ) )
+            for( auto v_id : geode::Range{ vertex_ids().size() } )
             {
                 builder.unique_vertices().set_unique_vertex(
                     { line.component_id(),
                         line.mesh().edge_vertex( { edge_id, v_id } ) },
-                    element_vertices_id()[v_id] - OFFSET_START );
+                    vertex_ids()[v_id] - OFFSET_START );
             }
         }
     };
@@ -242,11 +274,23 @@ namespace
     public:
         GMSHTriangle( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
-            std::vector< geode::index_t > element_vertices_id )
-            : GMSHElement( physical_entity_id,
-                  elementary_entity_id,
-                  element_vertices_id )
+            std::istringstream& iss_vertices_id )
+            : GMSHElement(
+                  physical_entity_id, elementary_entity_id, iss_vertices_id )
         {
+            nb_vertices() = 3;
+            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
+                "GMSH tag for elementary entity "
+                "(second tag) should not be null" );
+            try
+            {
+                read_vertex_ids();
+            }
+            catch( ... )
+            {
+                geode::Logger::error( "GMSH element for triangle (type=2) "
+                                      "should have 3 vertices" );
+            }
         }
 
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
@@ -267,21 +311,20 @@ namespace
                 surface_uuid = builder.add_surface();
                 id_map.elementary_ids.insert( { cur_gmsh_id, surface_uuid } );
             }
-            auto first_v_id =
-                builder.surface_mesh_builder( surface_uuid )
-                    ->create_vertices( element_vertices_id().size() );
-            std::vector< geode::index_t > v_ids( element_vertices_id().size() );
+            auto first_v_id = builder.surface_mesh_builder( surface_uuid )
+                                  ->create_vertices( vertex_ids().size() );
+            std::vector< geode::index_t > v_ids( vertex_ids().size() );
             std::iota( v_ids.begin(), v_ids.end(), first_v_id );
             auto polygon_id = builder.surface_mesh_builder( surface_uuid )
                                   ->create_polygon( v_ids );
 
             const auto& surface = brep.surface( surface_uuid );
-            for( auto v_id : geode::Range( element_vertices_id().size() ) )
+            for( auto v_id : geode::Range{ vertex_ids().size() } )
             {
                 builder.unique_vertices().set_unique_vertex(
                     { surface.component_id(),
                         surface.mesh().polygon_vertex( { polygon_id, v_id } ) },
-                    element_vertices_id()[v_id] - OFFSET_START );
+                    vertex_ids()[v_id] - OFFSET_START );
             }
         }
     };
@@ -291,50 +334,6 @@ namespace
         GMSHElementFactory::register_creator< GMSHPoint >( 15 );
         GMSHElementFactory::register_creator< GMSHEdge >( 1 );
         GMSHElementFactory::register_creator< GMSHTriangle >( 2 );
-    }
-
-    struct MeshElementType
-    {
-        geode::ComponentType component_type;
-        geode::index_t nb_vertices;
-    };
-
-    MeshElementType get_mesh_element_type( int element_type_id )
-    {
-        // Use a better structure
-        if( element_type_id == 1 )
-        {
-            return { geode::Line3D::component_type_static(), 2 };
-        }
-        if( element_type_id == 2 )
-        {
-            return { geode::Surface3D::component_type_static(), 3 };
-        }
-        if( element_type_id == 3 )
-        {
-            return { geode::Surface3D::component_type_static(), 4 };
-        }
-        if( element_type_id == 4 )
-        {
-            return { geode::Block3D::component_type_static(), 4 };
-        }
-        if( element_type_id == 5 )
-        {
-            return { geode::Block3D::component_type_static(), 8 };
-        }
-        if( element_type_id == 6 )
-        {
-            return { geode::Block3D::component_type_static(), 6 };
-        }
-        if( element_type_id == 7 )
-        {
-            return { geode::Block3D::component_type_static(), 5 };
-        }
-        if( element_type_id == 15 )
-        {
-            return { geode::Corner3D::component_type_static(), 1 };
-        }
-        return { geode::ComponentType{ "undefined " }, geode::NO_ID };
     }
 
     class MSHInputImpl
@@ -357,34 +356,9 @@ namespace
 
         void build_geometry()
         {
-            geode::BRepBuilder builder( brep_ );
-            const auto& unique_vertices = brep_.unique_vertices();
-            for( const auto& c : brep_.corners() )
-            {
-                builder.corner_mesh_builder( c.id() )->set_point(
-                    0, nodes_[unique_vertices.unique_vertex(
-                           { c.component_id(), 0 } )] );
-            }
-            for( const auto& l : brep_.lines() )
-            {
-                filter_dupplicated_line_vertices( l, brep_ );
-                for( auto v : geode::Range( l.mesh().nb_vertices() ) )
-                {
-                    builder.line_mesh_builder( l.id() )->set_point(
-                        v, nodes_[unique_vertices.unique_vertex(
-                               { l.component_id(), v } )] );
-                }
-            }
-            for( const auto& s : brep_.surfaces() )
-            {
-                filter_dupplicated_surface_vertices( s, brep_ );
-                for( auto v : geode::Range( s.mesh().nb_vertices() ) )
-                {
-                    builder.surface_mesh_builder( s.id() )->set_point(
-                        v, nodes_[unique_vertices.unique_vertex(
-                               { s.component_id(), v } )] );
-                }
-            }
+            build_corners();
+            build_lines();
+            build_surfaces();
         }
 
         using boundary_incidences_relations = std::unordered_map< geode::uuid,
@@ -527,7 +501,7 @@ namespace
             std::getline( file_, line );
             auto nb_nodes = std::stoi( line );
             nodes_.reserve( nb_nodes );
-            for( auto n_id : geode::Range( nb_nodes ) )
+            for( auto n_id : geode::Range{ nb_nodes } )
             {
                 std::getline( file_, line );
                 nodes_.push_back( read_node( n_id + OFFSET_START, line ) );
@@ -548,7 +522,7 @@ namespace
                     == static_cast< geode::index_t >( std::stoi( line_info ) ),
                 "Node indices should be continuous." );
             geode::Point3D node;
-            for( auto c : geode::Range( 3 ) )
+            for( auto c : geode::Range{ 3 } )
             {
                 iss >> line_info;
                 node.set_value( c, std::stod( line_info ) );
@@ -562,7 +536,7 @@ namespace
             std::string line;
             std::getline( file_, line );
             auto nb_elements = std::stoi( line );
-            for( auto e_id : geode::Range( nb_elements ) )
+            for( auto e_id : geode::Range{ nb_elements } )
             {
                 std::getline( file_, line );
                 read_element( e_id + OFFSET_START, line );
@@ -583,8 +557,6 @@ namespace
 
             // Element type
             auto mesh_element_type_id = std::stoi( line_info );
-            auto mesh_element_type =
-                get_mesh_element_type( mesh_element_type_id );
 
             // Tags
             iss >> line_info;
@@ -595,140 +567,157 @@ namespace
             auto physical_entity = std::stoi( line_info ); //  collection
             iss >> line_info;
             auto elementary_entity = std::stoi( line_info ); // item
-            for( auto t : geode::Range( 2, nb_tags ) )
+            for( auto t : geode::Range{ 2, nb_tags } )
             {
                 geode_unused( t );
                 iss >> line_info;
             }
-            // TODO: create if necessary the component, and its parent
+            // TODO: create relation to the parent
 
-            // Element vertices
-            std::vector< geode::index_t > node_refs(
-                mesh_element_type.nb_vertices );
-            for( auto n : geode::Range( mesh_element_type.nb_vertices ) )
+            auto element = GMSHElementFactory::create(
+                mesh_element_type_id, physical_entity, elementary_entity, iss );
+            element->add_element( brep_, gmsh_id2uuids_ );
+        }
+
+        void build_corners()
+        {
+            geode::BRepBuilder builder( brep_ );
+            for( const auto& c : brep_.corners() )
             {
-                iss >> line_info;
-                node_refs[n] = std::stoi( line_info );
+                builder.corner_mesh_builder( c.id() )->set_point(
+                    0, nodes_[brep_.unique_vertices().unique_vertex(
+                           { c.component_id(), 0 } )] );
+            }
+        }
+
+        void build_lines()
+        {
+            geode::BRepBuilder builder( brep_ );
+            for( const auto& l : brep_.lines() )
+            {
+                filter_dupplicated_line_vertices( l, brep_ );
+                for( auto v : geode::Range{ l.mesh().nb_vertices() } )
+                {
+                    builder.line_mesh_builder( l.id() )->set_point(
+                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                               { l.component_id(), v } )] );
+                }
+            }
+        }
+
+        void build_surfaces()
+        {
+            geode::BRepBuilder builder( brep_ );
+            for( const auto& s : brep_.surfaces() )
+            {
+                filter_dupplicated_surface_vertices( s, brep_ );
+                for( auto v : geode::Range{ s.mesh().nb_vertices() } )
+                {
+                    builder.surface_mesh_builder( s.id() )->set_point(
+                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                               { s.component_id(), v } )] );
+                }
+            }
+        }
+
+        void update_component_vertex( const geode::Line3D& line,
+            geode::EdgedCurveBuilder3D& mesh_builder,
+            geode::index_t old_line_vertex_id,
+            geode::index_t new_line_vertex_id )
+        {
+            OPENGEODE_ASSERT(
+                line.mesh().edges_around_vertex( old_line_vertex_id ).size()
+                    == 1,
+                "By construction, there should be one and only one "
+                "edge pointing to each vertex at this point." );
+            mesh_builder.set_edge_vertex(
+                line.mesh().edges_around_vertex( old_line_vertex_id )[0],
+                new_line_vertex_id );
+        }
+
+        void update_component_vertex( const geode::Surface3D& surface,
+            geode::PolygonalSurfaceBuilder3D& mesh_builder,
+            geode::index_t old_surface_vertex_id,
+            geode::index_t new_surface_vertex_id )
+        {
+            OPENGEODE_ASSERT(
+                surface.mesh()
+                        .polygons_around_vertex( old_surface_vertex_id )
+                        .size()
+                    == 1,
+                "By construction, there should be one and only one "
+                "polygon pointing to each vertex at this point." );
+            mesh_builder.set_polygon_vertex(
+                surface.mesh().polygons_around_vertex(
+                    old_surface_vertex_id )[0],
+                new_surface_vertex_id );
+        }
+
+        template < typename Component, typename ComponentMeshBuilder >
+        void filter_dupplicated_vertices( const Component& component,
+            geode::BRep& brep,
+            const ComponentMeshBuilder& mesh_builder )
+        {
+            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
+                unique2component;
+            for( auto v : geode::Range{ component.mesh().nb_vertices() } )
+            {
+                unique2component[brep.unique_vertices().unique_vertex(
+                                     { component.component_id(), v } )]
+                    .emplace_back( v );
+            }
+            geode::BRepBuilder builder{ brep };
+            std::vector< bool > delete_dupplicated(
+                component.mesh().nb_vertices(), false );
+            for( auto uv : unique2component )
+            {
+                for( auto i : geode::Range{ 1, uv.second.size() } )
+                {
+                    update_component_vertex(
+                        component, *mesh_builder, uv.second[i], uv.second[0] );
+                    delete_dupplicated[uv.second[i]] = true;
+                }
             }
 
-            auto element = GMSHElementFactory::create( mesh_element_type_id,
-                physical_entity, elementary_entity, node_refs );
-            element->add_element( brep_, gmsh_id2uuids_ );
+            std::vector< geode::index_t > updated_unique2component;
+            updated_unique2component.reserve( std::count(
+                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
+            for( auto i : geode::Range{ component.mesh().nb_vertices() } )
+            {
+                if( delete_dupplicated[i] )
+                {
+                    continue;
+                }
+                auto ui = brep_.unique_vertices().unique_vertex(
+                    { component.component_id(), i } );
+                updated_unique2component.push_back( ui );
+            }
+
+            mesh_builder->delete_vertices( delete_dupplicated );
+
+            builder.unique_vertices().remove_component( component );
+            builder.unique_vertices().register_component( component );
+            for( auto i : geode::Range{ component.mesh().nb_vertices() } )
+            {
+                builder.unique_vertices().set_unique_vertex(
+                    { component.component_id(), i },
+                    updated_unique2component[i] );
+            }
         }
 
         void filter_dupplicated_line_vertices(
             const geode::Line3D& line, geode::BRep& brep )
         {
-            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
-                unique2line;
-            for( auto v : geode::Range( line.mesh().nb_vertices() ) )
-            {
-                unique2line[brep.unique_vertices().unique_vertex(
-                                { line.component_id(), v } )]
-                    .emplace_back( v );
-            }
-            geode::BRepBuilder builder{ brep };
-            auto mesh_builder = builder.line_mesh_builder( line.id() );
-            std::vector< bool > delete_dupplicated(
-                line.mesh().nb_vertices(), false );
-            for( auto uv : unique2line )
-            {
-                for( auto i : geode::Range( 1, uv.second.size() ) )
-                {
-                    OPENGEODE_ASSERT(
-                        line.mesh().edges_around_vertex( uv.second[i] ).size()
-                            == 1,
-                        "By construction, there should be one and only one "
-                        "edge pointing to each vertex at this point." );
-                    mesh_builder->set_edge_vertex(
-                        line.mesh().edges_around_vertex( uv.second[i] )[0],
-                        uv.second[0] );
-                    delete_dupplicated[uv.second[i]] = true;
-                }
-            }
-
-            std::vector< geode::index_t > updated_unique2line;
-            updated_unique2line.reserve( std::count(
-                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
-            for( auto i : geode::Range( line.mesh().nb_vertices() ) )
-            {
-                if( delete_dupplicated[i] )
-                {
-                    continue;
-                }
-                auto ui = brep_.unique_vertices().unique_vertex(
-                    { line.component_id(), i } );
-                updated_unique2line.push_back( ui );
-            }
-
-            mesh_builder->delete_vertices( delete_dupplicated );
-
-            builder.unique_vertices().remove_component( line );
-            builder.unique_vertices().register_component( line );
-            for( auto i : geode::Range( line.mesh().nb_vertices() ) )
-            {
-                builder.unique_vertices().set_unique_vertex(
-                    { line.component_id(), i }, updated_unique2line[i] );
-            }
+            filter_dupplicated_vertices( line, brep,
+                geode::BRepBuilder{ brep }.line_mesh_builder( line.id() ) );
         }
 
         void filter_dupplicated_surface_vertices(
             const geode::Surface3D& surface, geode::BRep& brep )
         {
-            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
-                unique2surface;
-            for( auto v : geode::Range( surface.mesh().nb_vertices() ) )
-            {
-                unique2surface[brep.unique_vertices().unique_vertex(
-                                   { surface.component_id(), v } )]
-                    .emplace_back( v );
-            }
-            geode::BRepBuilder builder{ brep };
-            auto mesh_builder = builder.surface_mesh_builder( surface.id() );
-            std::vector< bool > delete_dupplicated(
-                surface.mesh().nb_vertices(), false );
-            for( auto uv : unique2surface )
-            {
-                for( auto i : geode::Range( 1, uv.second.size() ) )
-                {
-                    OPENGEODE_ASSERT(
-                        surface.mesh()
-                                .polygons_around_vertex( uv.second[i] )
-                                .size()
-                            == 1,
-                        "By construction, there should be one and only one "
-                        "polygon pointing to each vertex at this point." );
-                    mesh_builder->set_polygon_vertex(
-                        surface.mesh().polygons_around_vertex(
-                            uv.second[i] )[0],
-                        uv.second[0] );
-                    delete_dupplicated[uv.second[i]] = true;
-                }
-            }
-
-            std::vector< geode::index_t > updated_unique2surface;
-            updated_unique2surface.reserve( std::count(
-                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
-            for( auto i : geode::Range( surface.mesh().nb_vertices() ) )
-            {
-                if( delete_dupplicated[i] )
-                {
-                    continue;
-                }
-                auto ui = brep_.unique_vertices().unique_vertex(
-                    { surface.component_id(), i } );
-                updated_unique2surface.push_back( ui );
-            }
-
-            mesh_builder->delete_vertices( delete_dupplicated );
-
-            builder.unique_vertices().remove_component( surface );
-            builder.unique_vertices().register_component( surface );
-            for( auto i : geode::Range( surface.mesh().nb_vertices() ) )
-            {
-                builder.unique_vertices().set_unique_vertex(
-                    { surface.component_id(), i }, updated_unique2surface[i] );
-            }
+            filter_dupplicated_vertices( surface, brep,
+                geode::BRepBuilder{ brep }.surface_mesh_builder(
+                    surface.id() ) );
         }
 
         void add_potential_relationships(
@@ -742,12 +731,6 @@ namespace
             {
                 for( auto& incidence_vertex : incidence_type_vertices )
                 {
-                    // if( geode::contain(
-                    //         b2i_relations[boundary_vertex.component_id.id()],
-                    //         incidence_vertex.component_id.id() ) )
-                    // {
-                    //     continue;
-                    // }
                     b2i_relations[boundary_vertex.component_id.id()].emplace(
                         incidence_vertex.component_id.id() );
                 }
