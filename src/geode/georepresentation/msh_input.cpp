@@ -164,7 +164,7 @@ namespace
             for( auto n : geode::Range{ nb_vertices() } )
             {
                 iss_vertices_ids_ >> vertex_id;
-                vertex_ids()[n] = vertex_id ;
+                vertex_ids()[n] = vertex_id;
             }
         }
 
