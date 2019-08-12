@@ -78,12 +78,10 @@ void test_brep( const geode::BRep& brep )
 
     for( const auto& b : brep.blocks() )
     {
-        DEBUG( b.mesh().nb_vertices() );
-        DEBUG( b.mesh().nb_polyhedra() );
-        OPENGEODE_EXCEPTION( b.mesh().nb_vertices() == 133,
-            "Number of vertices in blocks should be 133" );
-        OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() == 400,
-            "Number of polyhedra in blocks should be 400" );
+        OPENGEODE_EXCEPTION( b.mesh().nb_vertices() == 131,
+            "Number of vertices in blocks should be 131" );
+        OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() == 364,
+            "Number of polyhedra in blocks should be 364" );
     }
 
     // Number of component boundaries and incidences

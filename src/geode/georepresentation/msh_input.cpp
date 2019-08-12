@@ -25,7 +25,6 @@
 
 #include <fstream>
 #include <mutex>
-#include <numeric>
 #include <unordered_map>
 
 #include <geode/basic/algorithm.h>
@@ -160,12 +159,12 @@ namespace
 
         void read_vertex_ids()
         {
-            std::string id_info;
+            geode::index_t vertex_id;
             vertex_ids().resize( nb_vertices() );
             for( auto n : geode::Range{ nb_vertices() } )
             {
-                iss_vertices_ids_ >> id_info;
-                vertex_ids()[n] = std::stoi( id_info );
+                iss_vertices_ids_ >> vertex_id;
+                vertex_ids()[n] = vertex_id ;
             }
         }
 
@@ -356,7 +355,7 @@ namespace
             }
             else
             {
-                block_uuid = builder.add_surface();
+                block_uuid = builder.add_block();
                 id_map.elementary_ids.insert( { cur_gmsh_id, block_uuid } );
             }
 
