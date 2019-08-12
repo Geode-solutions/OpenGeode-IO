@@ -24,6 +24,7 @@
 #include <geode/georepresentation/detail/msh_input.h>
 
 #include <fstream>
+#include <mutex>
 #include <numeric>
 #include <unordered_map>
 
@@ -80,7 +81,7 @@ namespace std
         std::size_t operator()( const GmshElementID& gmsh_id ) const
         {
             return std::hash< std::string >()( gmsh_id.type.get() )
-                   ^ std::hash< std::string >()( std::to_string( gmsh_id.id ) );
+                   ^ std::hash< geode::index_t >()( gmsh_id.id );
         }
     };
 } // namespace std
@@ -88,21 +89,20 @@ namespace std
 namespace
 {
     static constexpr geode::index_t OFFSET_START{ 1 };
+    static std::once_flag once_flag;
 
     struct GmshId2Uuids
     {
         GmshId2Uuids() = default;
 
-        bool contains(
-            const std::unordered_map< GmshElementID, geode::uuid > map,
-            const GmshElementID& key ) const
+        bool contains_elementary_id( const GmshElementID& elementary_id ) const
         {
-            if( map.find( key ) == map.end() )
-            {
-                return false;
-            }
+            return elementary_ids.find( elementary_id ) != elementary_ids.end();
+        }
 
-            return true;
+        bool contains_physical_id( const GmshElementID& physical_id ) const
+        {
+            return physical_ids.find( physical_id ) != physical_ids.end();
         }
         std::unordered_map< GmshElementID, geode::uuid > elementary_ids;
         std::unordered_map< GmshElementID, geode::uuid > physical_ids;
@@ -113,11 +113,24 @@ namespace
     public:
         GMSHElement( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
+            geode::index_t nb_vertices,
             std::istringstream& iss_vertices_ids )
             : physical_entity_id_( std::move( physical_entity_id ) ),
               elementary_entity_id_( std::move( elementary_entity_id ) ),
+              nb_vertices_( nb_vertices ),
               iss_vertices_ids_( iss_vertices_ids )
         {
+            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
+                "GMSH tag for elementary entity "
+                "(second tag) should not be null" );
+            try
+            {
+                read_vertex_ids();
+            }
+            catch( ... )
+            {
+                geode::Logger::error( "Wrong GMSH element number of vertices" );
+            }
         }
 
         virtual ~GMSHElement() = default;
@@ -159,8 +172,8 @@ namespace
     private:
         geode::index_t physical_entity_id_;
         geode::index_t elementary_entity_id_;
+        geode::index_t nb_vertices_;
         std::istringstream& iss_vertices_ids_;
-        geode::index_t nb_vertices_{ 0 };
         std::vector< geode::index_t > vertex_ids_;
     };
 
@@ -176,33 +189,19 @@ namespace
         GMSHPoint( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
             std::istringstream& iss_vertices_ids )
-            : GMSHElement(
-                  physical_entity_id, elementary_entity_id, iss_vertices_ids )
+            : GMSHElement{ physical_entity_id, elementary_entity_id, 1,
+                  iss_vertices_ids }
         {
-            nb_vertices() = 1;
-            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
-                "GMSH tag for elementary entity "
-                "(second tag) should not be null" );
-            try
-            {
-                read_vertex_ids();
-            }
-            catch( ... )
-            {
-                geode::Logger::error(
-                    "GMSH element for point (type=15) should have one vertex" );
-            }
         }
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
         {
-            GmshElementID cur_gmsh_id( geode::Corner3D::component_type_static(),
-                elementary_entity_id() );
-            auto existing_id =
-                id_map.contains( id_map.elementary_ids, cur_gmsh_id );
+            GmshElementID cur_gmsh_id{ geode::Corner3D::component_type_static(),
+                elementary_entity_id() };
+            auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
             OPENGEODE_EXCEPTION( !existing_id,
                 "At least two points (type=15) has the same tag "
                 "for elementary entity. This is not supported." );
-            geode::BRepBuilder builder( brep );
+            geode::BRepBuilder builder{ brep };
             auto new_corner_uuid = builder.add_corner();
             auto v_id =
                 builder.corner_mesh_builder( new_corner_uuid )->create_vertex();
@@ -219,30 +218,16 @@ namespace
         GMSHEdge( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
             std::istringstream& iss_vertices_id )
-            : GMSHElement(
-                  physical_entity_id, elementary_entity_id, iss_vertices_id )
+            : GMSHElement{ physical_entity_id, elementary_entity_id, 2,
+                  iss_vertices_id }
         {
-            nb_vertices() = 2;
-            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
-                "GMSH tag for elementary entity "
-                "(second tag) should not be null" );
-            try
-            {
-                read_vertex_ids();
-            }
-            catch( ... )
-            {
-                geode::Logger::error(
-                    "GMSH element for edge (type=1) should have two vertices" );
-            }
         }
 
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
         {
             GmshElementID cur_gmsh_id( geode::Line3D::component_type_static(),
                 elementary_entity_id() );
-            auto existing_id =
-                id_map.contains( id_map.elementary_ids, cur_gmsh_id );
+            auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
             geode::BRepBuilder builder( brep );
             geode::uuid line_uuid;
             if( existing_id )
@@ -276,22 +261,9 @@ namespace
         GMSHTriangle( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
             std::istringstream& iss_vertices_id )
-            : GMSHElement(
-                  physical_entity_id, elementary_entity_id, iss_vertices_id )
+            : GMSHElement{ physical_entity_id, elementary_entity_id, 3,
+                  iss_vertices_id }
         {
-            nb_vertices() = 3;
-            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
-                "GMSH tag for elementary entity "
-                "(second tag) should not be null" );
-            try
-            {
-                read_vertex_ids();
-            }
-            catch( ... )
-            {
-                geode::Logger::error( "GMSH element for triangle (type=2) "
-                                      "should have 3 vertices" );
-            }
         }
 
         void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
@@ -299,8 +271,7 @@ namespace
             GmshElementID cur_gmsh_id(
                 geode::Surface3D::component_type_static(),
                 elementary_entity_id() );
-            auto existing_id =
-                id_map.contains( id_map.elementary_ids, cur_gmsh_id );
+            auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
             geode::BRepBuilder builder( brep );
             geode::uuid surface_uuid;
             if( existing_id )
@@ -341,7 +312,7 @@ namespace
     {
     public:
         MSHInputImpl( std::string filename, geode::BRep& brep )
-            : file_( filename ), brep_( brep )
+            : file_( std::move( filename ) ), brep_( brep ), builder_{ brep }
         {
             OPENGEODE_EXCEPTION(
                 file_.good(), "Error while opening file: " + filename );
@@ -349,7 +320,7 @@ namespace
 
         void read_file()
         {
-            initialiaze_gmsh_factory();
+            std::call_once(once_flag, initialiaze_gmsh_factory);
             read_header();
             read_node_section();
             read_element_section();
@@ -418,12 +389,11 @@ namespace
                     blocks_vertices, surface_block_relations );
             }
 
-            geode::BRepBuilder builder( brep_ );
             for( const auto& c2l : corner_line_relations )
             {
                 for( const auto& line_id : c2l.second )
                 {
-                    builder.add_boundary_relation(
+                    builder_.add_boundary_relation(
                         brep_.corner( c2l.first ), brep_.line( line_id ) );
                 }
             }
@@ -431,7 +401,7 @@ namespace
             {
                 for( const auto& surface_id : l2s.second )
                 {
-                    builder.add_boundary_relation(
+                    builder_.add_boundary_relation(
                         brep_.line( l2s.first ), brep_.surface( surface_id ) );
                 }
             }
@@ -439,7 +409,7 @@ namespace
             {
                 for( const auto& block_id : s2b.second )
                 {
-                    builder.add_boundary_relation(
+                    builder_.add_boundary_relation(
                         brep_.surface( s2b.first ), brep_.block( block_id ) );
                 }
             }
@@ -471,13 +441,12 @@ namespace
         void check_msh_version( const std::string& line )
         {
             std::istringstream iss{ line };
-            std::string info;
-            iss >> info;
-            auto nb_version = std::stod( info );
+            double nb_version;
+            iss >> nb_version;
             OPENGEODE_EXCEPTION( std::floor( nb_version ) == 2,
                 "Only MSH file format version 2 is supported for now." );
-            iss >> info;
-            auto binary = std::stoi( info );
+            geode::index_t binary;
+            iss >> binary;
             if( binary != 0 )
             {
                 binary_ = false;
@@ -508,25 +477,23 @@ namespace
                 nodes_.push_back( read_node( n_id + OFFSET_START, line ) );
             }
             check_keyword( "$EndNodes" );
-            geode::BRepBuilder builder( brep_ );
-            builder.unique_vertices().create_unique_vertices( nb_nodes );
+            builder_.unique_vertices().create_unique_vertices( nb_nodes );
         }
 
         geode::Point3D read_node(
-            geode::index_t node_id, const std::string& line )
+            geode::index_t expected_node_id, const std::string& line )
         {
             std::istringstream iss{ line };
-            std::string line_info;
-            iss >> line_info;
-            OPENGEODE_EXCEPTION(
-                node_id
-                    == static_cast< geode::index_t >( std::stoi( line_info ) ),
+            geode::index_t file_node_id;
+            iss >> file_node_id;
+            OPENGEODE_EXCEPTION( expected_node_id == file_node_id,
                 "Node indices should be continuous." );
             geode::Point3D node;
             for( auto c : geode::Range{ 3 } )
             {
-                iss >> line_info;
-                node.set_value( c, std::stod( line_info ) );
+                double coord;
+                iss >> coord;
+                node.set_value( c, coord );
             }
             return node;
         }
@@ -545,33 +512,33 @@ namespace
             check_keyword( "$EndElements" );
         }
 
-        void read_element( geode::index_t element_id, const std::string& line )
+        void read_element(
+            geode::index_t expected_element_id, const std::string& line )
         {
             std::istringstream iss{ line };
-            std::string line_info;
-            iss >> line_info;
-            OPENGEODE_EXCEPTION(
-                element_id
-                    == static_cast< geode::index_t >( std::stoi( line_info ) ),
+            geode::index_t line_element_id;
+            iss >> line_element_id;
+            OPENGEODE_EXCEPTION( expected_element_id == line_element_id,
                 "Element indices should be continuous." );
-            iss >> line_info;
 
             // Element type
-            auto mesh_element_type_id = std::stoi( line_info );
+            geode::index_t mesh_element_type_id;
+            iss >> mesh_element_type_id;
 
             // Tags
-            iss >> line_info;
-            auto nb_tags = std::stoi( line_info );
+            geode::index_t nb_tags;
+            iss >> nb_tags;
             OPENGEODE_EXCEPTION( nb_tags >= 2,
                 "Number of tags for an element should be at least 2." );
-            iss >> line_info;
-            auto physical_entity = std::stoi( line_info ); //  collection
-            iss >> line_info;
-            auto elementary_entity = std::stoi( line_info ); // item
+            geode::index_t physical_entity;
+            iss >> physical_entity; //  collection
+            geode::index_t elementary_entity;
+            iss >> elementary_entity; // item
             for( auto t : geode::Range{ 2, nb_tags } )
             {
                 geode_unused( t );
-                iss >> line_info;
+                geode::index_t skipped_tag;
+                iss >> skipped_tag;
             }
             // TODO: create relation to the parent
 
@@ -582,10 +549,9 @@ namespace
 
         void build_corners()
         {
-            geode::BRepBuilder builder( brep_ );
             for( const auto& c : brep_.corners() )
             {
-                builder.corner_mesh_builder( c.id() )->set_point(
+                builder_.corner_mesh_builder( c.id() )->set_point(
                     0, nodes_[brep_.unique_vertices().unique_vertex(
                            { c.component_id(), 0 } )] );
             }
@@ -593,13 +559,12 @@ namespace
 
         void build_lines()
         {
-            geode::BRepBuilder builder( brep_ );
             for( const auto& l : brep_.lines() )
             {
-                filter_dupplicated_line_vertices( l, brep_ );
+                filter_duplicated_line_vertices( l, brep_ );
                 for( auto v : geode::Range{ l.mesh().nb_vertices() } )
                 {
-                    builder.line_mesh_builder( l.id() )->set_point(
+                    builder_.line_mesh_builder( l.id() )->set_point(
                         v, nodes_[brep_.unique_vertices().unique_vertex(
                                { l.component_id(), v } )] );
                 }
@@ -608,13 +573,12 @@ namespace
 
         void build_surfaces()
         {
-            geode::BRepBuilder builder( brep_ );
             for( const auto& s : brep_.surfaces() )
             {
-                filter_dupplicated_surface_vertices( s, brep_ );
+                filter_duplicated_surface_vertices( s, brep_ );
                 for( auto v : geode::Range{ s.mesh().nb_vertices() } )
                 {
-                    builder.surface_mesh_builder( s.id() )->set_point(
+                    builder_.surface_mesh_builder( s.id() )->set_point(
                         v, nodes_[brep_.unique_vertices().unique_vertex(
                                { s.component_id(), v } )] );
                 }
@@ -655,7 +619,7 @@ namespace
         }
 
         template < typename Component, typename ComponentMeshBuilder >
-        void filter_dupplicated_vertices( const Component& component,
+        void filter_duplicated_vertices( const Component& component,
             geode::BRep& brep,
             const ComponentMeshBuilder& mesh_builder )
         {
@@ -667,8 +631,7 @@ namespace
                                      { component.component_id(), v } )]
                     .emplace_back( v );
             }
-            geode::BRepBuilder builder{ brep };
-            std::vector< bool > delete_dupplicated(
+            std::vector< bool > delete_duplicated(
                 component.mesh().nb_vertices(), false );
             for( auto uv : unique2component )
             {
@@ -676,16 +639,16 @@ namespace
                 {
                     update_component_vertex(
                         component, *mesh_builder, uv.second[i], uv.second[0] );
-                    delete_dupplicated[uv.second[i]] = true;
+                    delete_duplicated[uv.second[i]] = true;
                 }
             }
 
             std::vector< geode::index_t > updated_unique2component;
             updated_unique2component.reserve( std::count(
-                delete_dupplicated.begin(), delete_dupplicated.end(), false ) );
+                delete_duplicated.begin(), delete_duplicated.end(), false ) );
             for( auto i : geode::Range{ component.mesh().nb_vertices() } )
             {
-                if( delete_dupplicated[i] )
+                if( delete_duplicated[i] )
                 {
                     continue;
                 }
@@ -694,29 +657,29 @@ namespace
                 updated_unique2component.push_back( ui );
             }
 
-            mesh_builder->delete_vertices( delete_dupplicated );
+            mesh_builder->delete_vertices( delete_duplicated );
 
-            builder.unique_vertices().remove_component( component );
-            builder.unique_vertices().register_component( component );
+            builder_.unique_vertices().remove_component( component );
+            builder_.unique_vertices().register_component( component );
             for( auto i : geode::Range{ component.mesh().nb_vertices() } )
             {
-                builder.unique_vertices().set_unique_vertex(
+                builder_.unique_vertices().set_unique_vertex(
                     { component.component_id(), i },
                     updated_unique2component[i] );
             }
         }
 
-        void filter_dupplicated_line_vertices(
+        void filter_duplicated_line_vertices(
             const geode::Line3D& line, geode::BRep& brep )
         {
-            filter_dupplicated_vertices( line, brep,
+            filter_duplicated_vertices( line, brep,
                 geode::BRepBuilder{ brep }.line_mesh_builder( line.id() ) );
         }
 
-        void filter_dupplicated_surface_vertices(
+        void filter_duplicated_surface_vertices(
             const geode::Surface3D& surface, geode::BRep& brep )
         {
-            filter_dupplicated_vertices( surface, brep,
+            filter_duplicated_vertices( surface, brep,
                 geode::BRepBuilder{ brep }.surface_mesh_builder(
                     surface.id() ) );
         }
@@ -778,6 +741,7 @@ namespace
     private:
         std::ifstream file_;
         geode::BRep& brep_;
+        geode::BRepBuilder builder_;
         bool binary_{ true };
         std::vector< geode::Point3D > nodes_;
         GmshId2Uuids gmsh_id2uuids_;

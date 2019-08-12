@@ -24,6 +24,10 @@ jobs:
       parameters:
         type: "Debug"
         cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
+    - template: unix-testing.yml@templates
+      parameters:
+        type: "Debug"
+        cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH);$(Build.SourcesDirectory)/build/opengeodeio/install"
     - template: coverage.yml@templates
       parameters:
         directory: "$(Build.SourcesDirectory)/build/opengeodeio/bin"
@@ -44,7 +48,7 @@ jobs:
     - template: windows-testing.yml@templates
       parameters:
         type: "Debug"
-        path: "opengeode"
+        path: "opengeodeio"
         cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
 
 - job: Test_Mac
@@ -60,6 +64,10 @@ jobs:
       parameters:
         type: "Debug"
         cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
+    - template: unix-testing.yml@templates
+      parameters:
+        type: "Debug"
+        cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH);$(Build.SourcesDirectory)/build/opengeodeio/install"
 
 - template: semantic-release.yml@templates
   parameters:

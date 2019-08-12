@@ -51,29 +51,29 @@ namespace
     private:
         geode::NNSearch3D::ColocatedInfo build_vertices()
         {
-            auto dupplicated_vertices =
-                load_dupplicated_vertices( assimp_mesh() );
-            return build_unique_vertices( dupplicated_vertices );
+            auto duplicated_vertices =
+                load_duplicated_vertices( assimp_mesh() );
+            return build_unique_vertices( duplicated_vertices );
         }
 
-        std::vector< geode::Point3D > load_dupplicated_vertices(
+        std::vector< geode::Point3D > load_duplicated_vertices(
             const aiMesh* paiMesh )
         {
-            std::vector< geode::Point3D > dupplicated_vertices;
-            dupplicated_vertices.resize( paiMesh->mNumVertices );
+            std::vector< geode::Point3D > duplicated_vertices;
+            duplicated_vertices.resize( paiMesh->mNumVertices );
             for( auto v : geode::Range{ paiMesh->mNumVertices } )
             {
-                dupplicated_vertices[v].set_value( 0, paiMesh->mVertices[v].x );
-                dupplicated_vertices[v].set_value( 1, paiMesh->mVertices[v].y );
-                dupplicated_vertices[v].set_value( 2, paiMesh->mVertices[v].z );
+                duplicated_vertices[v].set_value( 0, paiMesh->mVertices[v].x );
+                duplicated_vertices[v].set_value( 1, paiMesh->mVertices[v].y );
+                duplicated_vertices[v].set_value( 2, paiMesh->mVertices[v].z );
             }
-            return dupplicated_vertices;
+            return duplicated_vertices;
         }
 
         geode::NNSearch3D::ColocatedInfo build_unique_vertices(
-            const std::vector< geode::Point3D >& dupplicated_vertices )
+            const std::vector< geode::Point3D >& duplicated_vertices )
         {
-            geode::NNSearch3D colocater{ dupplicated_vertices };
+            geode::NNSearch3D colocater{ duplicated_vertices };
             const auto& vertex_mapping =
                 colocater.colocated_index_mapping( geode::global_epsilon );
 
