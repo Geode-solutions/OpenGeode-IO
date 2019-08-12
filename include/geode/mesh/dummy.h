@@ -27,18 +27,16 @@
 
 #include <geode/basic/logger.h>
 
-
 namespace geode
 {
-	class opengeodeio_mesh_api DummyClass
-	{
-	public:
-		DummyClass() = default;
+    class opengeodeio_mesh_api DummyClass
+    {
+    public:
+        DummyClass() = default;
 
+        void dummy_function( double in );
 
-		void dummy_function( double in );
-
-	private:
-		index_t value{42};
-	};
+    private:
+        index_t value{ 42 };
+    };
 } // namespace geode
