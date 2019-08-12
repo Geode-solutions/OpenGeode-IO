@@ -320,7 +320,7 @@ namespace
 
         void read_file()
         {
-            std::call_once(once_flag, initialiaze_gmsh_factory);
+            std::call_once( once_flag, initialiaze_gmsh_factory );
             read_header();
             read_node_section();
             read_element_section();
