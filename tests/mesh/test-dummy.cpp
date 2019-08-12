@@ -34,9 +34,8 @@ int main()
 
     try
     {
-
         DummyClass toto;
-		toto.dummy_function( 12.3 );
+        toto.dummy_function( 12.3 );
         Logger::info( "TEST SUCCESS" );
         return 0;
     }

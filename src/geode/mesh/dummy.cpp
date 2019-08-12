@@ -23,14 +23,13 @@
 
 #include <geode/mesh/dummy.h>
 
-
 namespace geode
 {
-    void DummyClass::dummy_function( double in)
+    void DummyClass::dummy_function( double in )
     {
-		{
-			Logger::info( value );
-			Logger::info( in );
-		}
+        {
+            Logger::info( value );
+            Logger::info( in );
+        }
     }
 } // namespace geode
