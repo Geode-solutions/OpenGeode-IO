@@ -228,7 +228,7 @@ namespace
             GmshElementID cur_gmsh_id( geode::Line3D::component_type_static(),
                 elementary_entity_id() );
             auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
-            geode::BRepBuilder builder( brep );
+            geode::BRepBuilder builder{ brep };
             geode::uuid line_uuid;
             if( existing_id )
             {
@@ -255,14 +255,15 @@ namespace
         }
     };
 
-    class GMSHTriangle : public GMSHElement
+    class GMSHSurfacePolygon : public GMSHElement
     {
     public:
-        GMSHTriangle( geode::index_t physical_entity_id,
+        GMSHSurfacePolygon( geode::index_t physical_entity_id,
             geode::index_t elementary_entity_id,
+            geode::index_t nb_vertices,
             std::istringstream& iss_vertices_id )
-            : GMSHElement{ physical_entity_id, elementary_entity_id, 3,
-                  iss_vertices_id }
+            : GMSHElement{ physical_entity_id, elementary_entity_id,
+                  nb_vertices, iss_vertices_id }
         {
         }
 
@@ -272,7 +273,7 @@ namespace
                 geode::Surface3D::component_type_static(),
                 elementary_entity_id() );
             auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
-            geode::BRepBuilder builder( brep );
+            geode::BRepBuilder builder{ brep };
             geode::uuid surface_uuid;
             if( existing_id )
             {
@@ -301,11 +302,205 @@ namespace
         }
     };
 
+    class GMSHTriangle : public GMSHSurfacePolygon
+    {
+    public:
+        GMSHTriangle( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id, 3,
+                  iss_vertices_id }
+        {
+        }
+    };
+
+    class GMSHQuadrangle : public GMSHSurfacePolygon
+    {
+    public:
+        GMSHQuadrangle( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id, 4,
+                  iss_vertices_id }
+        {
+        }
+    };
+
+    class GMSHSolidPolyhedron : public GMSHElement
+    {
+    public:
+        GMSHSolidPolyhedron( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            geode::index_t nb_vertices,
+            std::istringstream& iss_vertices_id )
+            : GMSHElement{ physical_entity_id, elementary_entity_id,
+                  nb_vertices, iss_vertices_id }
+        {
+        }
+
+        virtual geode::index_t create_gmsh_polyhedron(
+            geode::BRepBuilder& builder,
+            const geode::uuid& block_uuid,
+            const std::vector< geode::index_t >& v_ids ) = 0;
+
+        void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
+        {
+            GmshElementID cur_gmsh_id( geode::Block3D::component_type_static(),
+                elementary_entity_id() );
+            auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
+            geode::BRepBuilder builder{ brep };
+            geode::uuid block_uuid;
+            if( existing_id )
+            {
+                block_uuid = id_map.elementary_ids.at( cur_gmsh_id );
+            }
+            else
+            {
+                block_uuid = builder.add_surface();
+                id_map.elementary_ids.insert( { cur_gmsh_id, block_uuid } );
+            }
+
+            auto first_v_id = builder.block_mesh_builder( block_uuid )
+                                  ->create_vertices( vertex_ids().size() );
+            std::vector< geode::index_t > v_ids( vertex_ids().size() );
+            std::iota( v_ids.begin(), v_ids.end(), first_v_id );
+            auto polyhedron_id =
+                create_gmsh_polyhedron( builder, block_uuid, v_ids );
+
+            const auto& block = brep.block( block_uuid );
+            for( auto v_id : geode::Range{ vertex_ids().size() } )
+            {
+                builder.unique_vertices().set_unique_vertex(
+                    { block.component_id(), block.mesh().polyhedron_vertex(
+                                                { polyhedron_id, v_id } ) },
+                    vertex_ids()[v_id] - OFFSET_START );
+            }
+        }
+    };
+
+    class GMSHTetrahedron : public GMSHSolidPolyhedron
+    {
+    public:
+        GMSHTetrahedron( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 4,
+                  iss_vertices_id }
+        {
+        }
+
+        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
+            const geode::uuid& block_uuid,
+            const std::vector< geode::index_t >& v_ids ) override final
+        {
+            std::vector< std::vector< geode::index_t > > gmsh_tetrahedron_faces(
+                4 );
+            gmsh_tetrahedron_faces[0] = { v_ids[0], v_ids[1], v_ids[2] };
+            gmsh_tetrahedron_faces[1] = { v_ids[0], v_ids[2], v_ids[3] };
+            gmsh_tetrahedron_faces[2] = { v_ids[1], v_ids[3], v_ids[2] };
+            gmsh_tetrahedron_faces[3] = { v_ids[0], v_ids[3], v_ids[1] };
+            return builder.block_mesh_builder( block_uuid )
+                ->create_polyhedron( v_ids, gmsh_tetrahedron_faces );
+        }
+    };
+
+    class GMSHHexahedron : public GMSHSolidPolyhedron
+    {
+    public:
+        GMSHHexahedron( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 8,
+                  iss_vertices_id }
+        {
+        }
+
+        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
+            const geode::uuid& block_uuid,
+            const std::vector< geode::index_t >& v_ids ) override final
+        {
+            std::vector< std::vector< geode::index_t > > gmsh_hexahedron_faces(
+                6 );
+            gmsh_hexahedron_faces[0] = { v_ids[0], v_ids[1], v_ids[2],
+                v_ids[3] };
+            gmsh_hexahedron_faces[1] = { v_ids[7], v_ids[6], v_ids[5],
+                v_ids[4] };
+            gmsh_hexahedron_faces[2] = { v_ids[0], v_ids[3], v_ids[7],
+                v_ids[4] };
+            gmsh_hexahedron_faces[3] = { v_ids[1], v_ids[5], v_ids[6],
+                v_ids[2] };
+            gmsh_hexahedron_faces[4] = { v_ids[2], v_ids[6], v_ids[7],
+                v_ids[3] };
+            gmsh_hexahedron_faces[5] = { v_ids[0], v_ids[4], v_ids[5],
+                v_ids[1] };
+            return builder.block_mesh_builder( block_uuid )
+                ->create_polyhedron( v_ids, gmsh_hexahedron_faces );
+        }
+    };
+
+    class GMSHPrism : public GMSHSolidPolyhedron
+    {
+    public:
+        GMSHPrism( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 6,
+                  iss_vertices_id }
+        {
+        }
+
+        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
+            const geode::uuid& block_uuid,
+            const std::vector< geode::index_t >& v_ids ) override final
+        {
+            std::vector< std::vector< geode::index_t > > gmsh_prism_faces( 5 );
+            gmsh_prism_faces[0] = { v_ids[0], v_ids[1], v_ids[2] };
+            gmsh_prism_faces[1] = { v_ids[5], v_ids[4], v_ids[3] };
+            gmsh_prism_faces[2] = { v_ids[0], v_ids[2], v_ids[5], v_ids[3] };
+            gmsh_prism_faces[3] = { v_ids[0], v_ids[3], v_ids[4], v_ids[1] };
+            gmsh_prism_faces[4] = { v_ids[1], v_ids[4], v_ids[5], v_ids[2] };
+            return builder.block_mesh_builder( block_uuid )
+                ->create_polyhedron( v_ids, gmsh_prism_faces );
+        }
+    };
+
+    class GMSHPyramid : public GMSHSolidPolyhedron
+    {
+    public:
+        GMSHPyramid( geode::index_t physical_entity_id,
+            geode::index_t elementary_entity_id,
+            std::istringstream& iss_vertices_id )
+            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 5,
+                  iss_vertices_id }
+        {
+        }
+
+        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
+            const geode::uuid& block_uuid,
+            const std::vector< geode::index_t >& v_ids ) override final
+        {
+            std::vector< std::vector< geode::index_t > > gmsh_pyramid_faces(
+                5 );
+            gmsh_pyramid_faces[0] = { v_ids[0], v_ids[3], v_ids[4] };
+            gmsh_pyramid_faces[1] = { v_ids[0], v_ids[4], v_ids[1] };
+            gmsh_pyramid_faces[2] = { v_ids[4], v_ids[3], v_ids[2] };
+            gmsh_pyramid_faces[3] = { v_ids[1], v_ids[4], v_ids[2] };
+            gmsh_pyramid_faces[4] = { v_ids[0], v_ids[1], v_ids[2], v_ids[3] };
+            return builder.block_mesh_builder( block_uuid )
+                ->create_polyhedron( v_ids, gmsh_pyramid_faces );
+        }
+    };
+
     void initialiaze_gmsh_factory()
     {
         GMSHElementFactory::register_creator< GMSHPoint >( 15 );
         GMSHElementFactory::register_creator< GMSHEdge >( 1 );
         GMSHElementFactory::register_creator< GMSHTriangle >( 2 );
+        GMSHElementFactory::register_creator< GMSHQuadrangle >( 3 );
+        GMSHElementFactory::register_creator< GMSHTetrahedron >( 4 );
+        GMSHElementFactory::register_creator< GMSHHexahedron >( 5 );
+        GMSHElementFactory::register_creator< GMSHPrism >( 6 );
+        GMSHElementFactory::register_creator< GMSHPyramid >( 7 );
     }
 
     class MSHInputImpl
@@ -320,7 +515,7 @@ namespace
 
         void read_file()
         {
-            std::call_once(once_flag, initialiaze_gmsh_factory);
+            std::call_once( once_flag, initialiaze_gmsh_factory );
             read_header();
             read_node_section();
             read_element_section();
@@ -331,6 +526,7 @@ namespace
             build_corners();
             build_lines();
             build_surfaces();
+            build_blocks();
         }
 
         using boundary_incidences_relations = std::unordered_map< geode::uuid,
@@ -585,19 +781,30 @@ namespace
             }
         }
 
+        void build_blocks()
+        {
+            for( const auto& b : brep_.blocks() )
+            {
+                filter_duplicated_block_vertices( b, brep_ );
+                for( auto v : geode::Range{ b.mesh().nb_vertices() } )
+                {
+                    builder_.block_mesh_builder( b.id() )->set_point(
+                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                               { b.component_id(), v } )] );
+                }
+            }
+        }
+
         void update_component_vertex( const geode::Line3D& line,
             geode::EdgedCurveBuilder3D& mesh_builder,
             geode::index_t old_line_vertex_id,
             geode::index_t new_line_vertex_id )
         {
-            OPENGEODE_ASSERT(
-                line.mesh().edges_around_vertex( old_line_vertex_id ).size()
-                    == 1,
+            auto edges = line.mesh().edges_around_vertex( old_line_vertex_id );
+            OPENGEODE_ASSERT( edges.size() == 1,
                 "By construction, there should be one and only one "
                 "edge pointing to each vertex at this point." );
-            mesh_builder.set_edge_vertex(
-                line.mesh().edges_around_vertex( old_line_vertex_id )[0],
-                new_line_vertex_id );
+            mesh_builder.set_edge_vertex( edges[0], new_line_vertex_id );
         }
 
         void update_component_vertex( const geode::Surface3D& surface,
@@ -605,17 +812,27 @@ namespace
             geode::index_t old_surface_vertex_id,
             geode::index_t new_surface_vertex_id )
         {
-            OPENGEODE_ASSERT(
-                surface.mesh()
-                        .polygons_around_vertex( old_surface_vertex_id )
-                        .size()
-                    == 1,
+            auto polygons =
+                surface.mesh().polygons_around_vertex( old_surface_vertex_id );
+            OPENGEODE_ASSERT( polygons.size() == 1,
                 "By construction, there should be one and only one "
                 "polygon pointing to each vertex at this point." );
             mesh_builder.set_polygon_vertex(
-                surface.mesh().polygons_around_vertex(
-                    old_surface_vertex_id )[0],
-                new_surface_vertex_id );
+                polygons[0], new_surface_vertex_id );
+        }
+
+        void update_component_vertex( const geode::Block3D& block,
+            geode::PolyhedralSolidBuilder3D& mesh_builder,
+            geode::index_t old_block_vertex_id,
+            geode::index_t new_block_vertex_id )
+        {
+            auto polyhedra =
+                block.mesh().polyhedra_around_vertex( old_block_vertex_id );
+            OPENGEODE_ASSERT( polyhedra.size() == 1,
+                "By construction, there should be one and only one "
+                "polyhedra pointing to each vertex at this point." );
+            mesh_builder.set_polyhedron_vertex(
+                polyhedra[0], new_block_vertex_id );
         }
 
         template < typename Component, typename ComponentMeshBuilder >
@@ -682,6 +899,13 @@ namespace
             filter_duplicated_vertices( surface, brep,
                 geode::BRepBuilder{ brep }.surface_mesh_builder(
                     surface.id() ) );
+        }
+
+        void filter_duplicated_block_vertices(
+            const geode::Block3D& block, geode::BRep& brep )
+        {
+            filter_duplicated_vertices( block, brep,
+                geode::BRepBuilder{ brep }.block_mesh_builder( block.id() ) );
         }
 
         void add_potential_relationships(
