@@ -36,3 +36,9 @@ add_geode_test(test-stl.cpp
     OpenGeode::mesh
     assimp::assimp
 )
+
+add_geode_test(test-dummy.cpp 
+    ${PROJECT_NAME}::mesh
+    OpenGeode::basic
+    OpenGeode::mesh
+)
