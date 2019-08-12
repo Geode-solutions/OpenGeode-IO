@@ -2,6 +2,7 @@
 set(sources
     "${lib_source_dir}/common.cpp"
     "${lib_source_dir}/detail/assimp_input.cpp"
+    "${lib_source_dir}/dummy.cpp"
     "${lib_source_dir}/obj_input.cpp"
     "${lib_source_dir}/ply_input.cpp"
     "${lib_source_dir}/stl_input.cpp"
@@ -11,6 +12,7 @@ set(sources
 )
 set(public_headers
     "${lib_include_dir}/detail/common.h"
+    "${lib_include_dir}/dummy.h"
 )
 set(private_headers
     "${lib_include_dir}/detail/assimp_input.h"
