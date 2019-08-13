@@ -26,3 +26,4 @@ find_dependency(OpenGeode)
 
 # Load information for each target
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_mesh_target.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_georepresentation_target.cmake)

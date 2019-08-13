@@ -21,11 +21,25 @@
  *
  */
 
-#pragma once
+#include <geode/georepresentation/detail/common.h>
 
-#include <geode/mesh/opengeodeio_mesh_export.h>
+#include <geode/georepresentation/detail/msh_input.h>
+
+namespace
+{
+    void register_brep_input()
+    {
+        geode::BRepInputFactory::register_creator< geode::MSHInput >(
+            geode::MSHInput::extension() );
+    }
+
+    OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_georepresentation )
+    {
+        register_brep_input();
+    }
+} // namespace
 
 namespace geode
 {
-    void opengeodeio_mesh_api initialize_mesh_io();
+    void initialize_georepresentation_io() {}
 } // namespace geode

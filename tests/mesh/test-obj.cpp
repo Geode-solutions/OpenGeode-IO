@@ -40,13 +40,14 @@ int main()
 
     try
     {
-        initialize_io();
+        initialize_mesh_io();
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
+
         load_polygonal_surface(
             *surface, test_path + "mesh/data/TopHat." + OBJInput::extension() );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 1480,
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
             "Number of polygons in the loaded Surface is not correct" );
