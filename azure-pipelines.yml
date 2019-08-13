@@ -49,7 +49,6 @@ jobs:
       parameters:
         type: "Debug"
         path: "opengeodeio"
-        cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
 
 - job: Test_Mac
   dependsOn: Format
@@ -95,6 +94,7 @@ jobs:
     - template: unix-release.yml@templates
       parameters:
         version: $(Version)
+        path: "opengeodeio"
 
 - job: Release_Mac
   dependsOn: Semantic_release
@@ -115,6 +115,7 @@ jobs:
     - template: unix-release.yml@templates
       parameters:
         version: $(Version)
+        path: "opengeodeio"
 
 - job: Release_Windows
   dependsOn: Semantic_release
@@ -135,6 +136,7 @@ jobs:
     - template: windows-release.yml@templates
       parameters:
         version: $(Version)
+        path: "opengeodeio"
 
 - template: documentation.yml@templates
   parameters:
