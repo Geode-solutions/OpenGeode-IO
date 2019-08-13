@@ -106,7 +106,7 @@ void test_brep( const geode::BRep& brep )
         OPENGEODE_EXCEPTION( brep.relationships().nb_incidences( s.id() ) == 1,
             "Number of surface incidences should be 1" );
     }
-        for( const auto& b : brep.blocks() )
+    for( const auto& b : brep.blocks() )
     {
         OPENGEODE_EXCEPTION( brep.relationships().nb_boundaries( b.id() ) == 6,
             "Number of block boundary should be 6" );
