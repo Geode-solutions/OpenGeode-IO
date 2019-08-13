@@ -23,9 +23,9 @@ set(ASSIMP_INSTALL_PREFIX ${ASSIMP_PATH}/install)
 string(REPLACE "/MDd" "/MD" NEW_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
 ExternalProject_Add(assimp
     PREFIX ${ASSIMP_PATH}
-    GIT_REPOSITORY https://github.com/Geode-solutions/assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp
     GIT_PROGRESS ON
-    GIT_TAG 23be8a2e49e2837ab3dc5f3f9f7e4fb5e6d08cc0
+    GIT_TAG 172422460c25fbd68df3e76312d9be3b912b5648
     CMAKE_GENERATOR ${CMAKE_GENERATOR}
     CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
     CMAKE_ARGS
