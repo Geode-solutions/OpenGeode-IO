@@ -31,6 +31,8 @@
 #include <geode/mesh/io/triangulated_surface_output.h>
 
 #include <geode/mesh/detail/common.h>
+#include <geode/mesh/detail/stl_input.h>
+#include <geode/mesh/detail/stl_output.h>
 
 int main()
 {
@@ -42,8 +44,8 @@ int main()
         auto surface = TriangulatedSurface< 3 >::create();
 
         // Load file
-        load_triangulated_surface(
-            *surface, test_path + "mesh/data/thumbwheel.stl" );
+        load_triangulated_surface( *surface,
+            test_path + "mesh/data/thumbwheel." + STLInput::extension() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
@@ -53,7 +55,7 @@ int main()
         std::string output_file_native{ "thumbwheel."
                                         + surface->native_extension() };
         save_triangulated_surface( *surface, output_file_native );
-        std::string output_file_stl{ "thumbwheel.stl" };
+        std::string output_file_stl{ "thumbwheel." + STLOutput::extension() };
         save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file

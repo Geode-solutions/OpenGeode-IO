@@ -18,12 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set(TEST_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+cmake_minimum_required(VERSION 3.5)
+    
+if(NOT TARGET OpenGeodeIO::mesh)
+    project(OpenGeodeIO CXX)
+    find_package(OpenGeode REQUIRED CONFIG)
+    find_package(assimp REQUIRED CONFIG)
+    find_package(OpenGeodeIO REQUIRED CONFIG)
+    enable_testing()
+endif()
+
 set(CTEST_OUTPUT_ON_FAILURE ON)
 
-set(test_config_file_in ${TEST_DIRECTORY}/tests_config.h.in)
+set(TEST_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+set(test_config_file_in ${CMAKE_CURRENT_LIST_DIR}/tests_config.h.in)
 set(test_config_file ${PROJECT_BINARY_DIR}/geode/tests_config.h)
 configure_file(${test_config_file_in} ${test_config_file})
+include_directories(${PROJECT_BINARY_DIR})
 
 add_subdirectory(mesh)
 add_subdirectory(georepresentation)

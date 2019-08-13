@@ -32,7 +32,7 @@ OpenGeode-IO provides input and output formats for [OpenGeode] models and meshes
 
 ## Documentation
 
-To check out our live documentation, visit [docs.geode-solutions.com/opengeodeio](https://docs.geode-solutions.com/opengeode-io).
+To check out our live documentation, visit https://docs.geode-solutions.com/opengeode-io.
 
 
 ## Questions

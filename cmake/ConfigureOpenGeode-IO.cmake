@@ -18,21 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(test-obj.cpp 
-    ${PROJECT_NAME}::mesh
-    OpenGeode::basic
-    OpenGeode::mesh
-    assimp::assimp
-)
-add_geode_test(test-ply.cpp 
-    ${PROJECT_NAME}::mesh
-    OpenGeode::basic
-    OpenGeode::mesh
-    assimp::assimp
-)
-add_geode_test(test-stl.cpp 
-    ${PROJECT_NAME}::mesh
-    OpenGeode::basic
-    OpenGeode::mesh
-    assimp::assimp
+set(OpenGeode-IO_PATH_BIN ${PROJECT_BINARY_DIR}/opengeodeio)
+ExternalProject_Add(opengeodeio
+    PREFIX ${OpenGeode-IO_PATH_BIN}
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}
+    CMAKE_GENERATOR ${CMAKE_GENERATOR}
+    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+    CMAKE_ARGS
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+        -DCMAKE_INSTALL_MESSAGE=LAZY
+    CMAKE_CACHE_ARGS
+        ${OPENGEODEIO_EXTRA_ARGS}
+        -DUSE_SUPERBUILD:BOOL=OFF
+        -DASSIMP_INSTALL_PREFIX:PATH=${ASSIMP_INSTALL_PREFIX}
+        -DCMAKE_INSTALL_PREFIX:PATH=${OpenGeode-IO_PATH_BIN}/install
+    BINARY_DIR ${OpenGeode-IO_PATH_BIN}
+    DEPENDS 
+        assimp
 )

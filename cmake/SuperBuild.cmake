@@ -24,7 +24,7 @@ endif()
 
 set(OPENGEODEIO_EXTRA_ARGS
     -DCPACK_PACKAGE_VERSION:STRING=${CPACK_PACKAGE_VERSION}
-    -DOPENGEODEIO_WITH_TESTS:BOOL=${OPENGEODIOE_WITH_TESTS}
+    -DOPENGEODEIO_WITH_TESTS:BOOL=${OPENGEODEIO_WITH_TESTS}
 )
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -43,7 +43,7 @@ project(SuperBuild NONE)
 include(ExternalProject)
 
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeodeIO.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
 
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)

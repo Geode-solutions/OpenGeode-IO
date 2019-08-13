@@ -23,19 +23,14 @@ project(OpenGeodeIO CXX)
 
 option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
 
-#------------------------------------------------------------------------------------------------
-# Platform dependent settings
-if(UNIX)
-    add_compile_options(-Wall -Wextra -Wno-attributes -fvisibility=hidden)
-else()
-    add_compile_options(/DNOMINMAX)
-endif()
-
-# Get OpenGeodeIO dependencies
+# Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 
-# Install OpenGeodeIO third-parties
+copy_windows_binaries(OpenGeode::mesh)
+copy_windows_binaries(assimp::assimp)
+
+# Install OpenGeode-IO third-parties
 install(
     DIRECTORY
         ${ASSIMP_INSTALL_PREFIX}/
@@ -44,7 +39,7 @@ install(
 )
 
 #------------------------------------------------------------------------------------------------
-# Configure the OpenGeodeIO libraries
+# Configure the OpenGeode-IO libraries
 add_geode_library(geode/mesh)
 add_geode_library(geode/georepresentation)
 
@@ -53,7 +48,7 @@ add_geode_library(geode/georepresentation)
 if(OPENGEODEIO_WITH_TESTS)
     # Enable testing with CTest
     enable_testing()
-    message(STATUS "Configuring OpenGeodeIO with tests")
+    message(STATUS "Configuring OpenGeode-IO with tests")
     add_subdirectory(tests)
 endif()
 
