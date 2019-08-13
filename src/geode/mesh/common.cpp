@@ -73,5 +73,5 @@ namespace
 
 namespace geode
 {
-    void initialize_io() {}
+    void initialize_mesh_io() {}
 } // namespace geode

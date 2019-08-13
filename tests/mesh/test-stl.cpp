@@ -40,7 +40,7 @@ int main()
 
     try
     {
-        initialize_io();
+        initialize_mesh_io();
         auto surface = TriangulatedSurface< 3 >::create();
 
         // Load file

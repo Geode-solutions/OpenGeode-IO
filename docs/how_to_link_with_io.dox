@@ -29,11 +29,16 @@ This page explains how to be able to use OpenGeode file formats in your code.
 
 # What to do?
 
-You just have to add in your executable/code:
-\code initialize_io();
+You just have to add in your executable/code depending on your needs:
+\code initialize_mesh_io();
 \endcode
 
-This function is declare in the file `include/geode/mesh/detail/common.h`. Do not forget to include this file in your code.
+and/or 
+
+\code initialize_georepresentation_io();
+\endcode
+
+These functions are declared in the files `include/geode/mesh/detail/common.h` and `include/geode/georepresentation/detail/common.h`. Do not forget to include the right file in your code.
 
 You have examples in the OpenGeode-IO tests.
 
@@ -43,7 +48,7 @@ The reason is quite simple. Have a quick look at the file `OpenGeode-IO/src/geod
 
 In this file you can see that supported file formats for meshes are registered when the `OpenGeode-IO_mesh` library is loaded. But the I/O code is not directly called in executable (see tests for examples), and as a consequence the `OpenGeode-IO_mesh` library is not loaded. This is called the lazy loading of dependencies. 
 
-If you call the function `initialize_io()`, the library is loaded, the file formats are registered and you are able to use \link opengeodeio_supported_file_formats our supported file formats\endlink.
+If you call the function `initialize_mesh_io()`, the library is loaded, the file formats are registered and you are able to use \link opengeodeio_supported_file_formats our supported file formats\endlink.
 
 
 
