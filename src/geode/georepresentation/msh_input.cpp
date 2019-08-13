@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <mutex>
+#include <numeric>
 #include <unordered_map>
 
 #include <geode/basic/algorithm.h>
