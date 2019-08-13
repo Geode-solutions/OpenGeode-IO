@@ -23,14 +23,6 @@ project(OpenGeodeIO CXX)
 
 option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
 
-#------------------------------------------------------------------------------------------------
-# Platform dependent settings
-if(UNIX)
-    add_compile_options(-Wall -Wextra -Wno-attributes)
-else()
-    add_compile_options(/DNOMINMAX)
-endif()
-
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
