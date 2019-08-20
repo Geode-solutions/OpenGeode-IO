@@ -12,7 +12,7 @@ set(sources
 set(public_headers
     "${lib_include_dir}/detail/common.h"
 )
-set(private_headers
+set(advanced_headers
     "${lib_include_dir}/detail/assimp_input.h"
     "${lib_include_dir}/detail/assimp_output.h"
     "${lib_include_dir}/detail/obj_input.h"

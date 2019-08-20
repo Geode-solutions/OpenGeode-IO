@@ -6,7 +6,7 @@ set(sources
 set(public_headers
     "${lib_include_dir}/detail/common.h"
 )
-set(private_headers
+set(advanced_headers
     "${lib_include_dir}/detail/msh_input.h"
 )
 target_link_libraries(${target_name}
