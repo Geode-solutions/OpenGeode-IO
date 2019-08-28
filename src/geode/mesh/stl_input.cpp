@@ -121,7 +121,7 @@ namespace geode
     {
         STLInputImpl impl{ filename(), triangulated_surface() };
         auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success, "Invalid file \"" + filename() +"\"" );
+        OPENGEODE_EXCEPTION( success, "Invalid file \"" + filename() + "\"" );
         impl.build_mesh();
     }
 } // namespace geode
