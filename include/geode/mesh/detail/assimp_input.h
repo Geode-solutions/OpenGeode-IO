@@ -46,7 +46,7 @@ namespace geode
                     "Error while opening file: " + file_ );
             }
 
-            void read_file();
+            bool read_file();
 
             virtual void build_mesh() = 0;
 

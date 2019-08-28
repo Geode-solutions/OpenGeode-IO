@@ -25,16 +25,24 @@
 
 #include <geode/basic/common.h>
 
+#include <geode/basic/logger.h>
+
 namespace geode
 {
     namespace detail
     {
-        void AssimpMeshInput::read_file()
+        bool AssimpMeshInput::read_file()
         {
             const auto* pScene = importer_.ReadFile( file_.c_str(), 0 );
+            if( pScene == nullptr )
+            {
+                Logger::error( importer_.GetErrorString() );
+                return false;
+            }
             OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
                 "Several meshes in imported file " + file_ + "." );
             assimp_mesh_ = pScene->mMeshes[0];
+            return true;
         }
     } // namespace detail
 } // namespace geode
