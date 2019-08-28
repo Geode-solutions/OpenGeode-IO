@@ -116,7 +116,8 @@ namespace geode
     void OBJInput::do_read()
     {
         OBJInputImpl impl{ filename(), polygonal_surface() };
-        impl.read_file();
+        auto success = impl.read_file();
+        OPENGEODE_EXCEPTION( success, "Invalid file \"" + filename() +"\"" );
         impl.build_mesh();
     }
 } // namespace geode
