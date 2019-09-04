@@ -144,3 +144,9 @@ jobs:
       - Semantic_release
     repo: "OpenGeode-IO"
     path: "opengeodeio"
+    preCMake:
+    - template: get-release.yml
+      parameters:
+        repo: OpenGeode
+        pattern: "OpenGeode-*Linux*"
+    cmakeArgs: "-DCMAKE_PREFIX_PATH=$(OPENGEODEPATH)"
