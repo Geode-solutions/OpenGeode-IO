@@ -540,18 +540,14 @@ namespace
 
             for( auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Block3D::component_type_static() );
+                const auto corners_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Corner3D::component_type_static() );
+                const auto lines_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Line3D::component_type_static() );
+                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Surface3D::component_type_static() );
+                const auto blocks_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Block3D::component_type_static() );
 
                 add_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
@@ -562,18 +558,14 @@ namespace
             }
             for( auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices =
-                    brep_.mesh_component_vertices(
-                        uv, geode::Block3D::component_type_static() );
+                const auto corners_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Corner3D::component_type_static() );
+                const auto lines_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Line3D::component_type_static() );
+                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Surface3D::component_type_static() );
+                const auto blocks_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Block3D::component_type_static() );
 
                 filter_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
@@ -746,8 +738,7 @@ namespace
             for( const auto& c : brep_.corners() )
             {
                 builder_.corner_mesh_builder( c.id() )->set_point(
-                    0, nodes_[brep_.unique_vertex(
-                           { c.component_id(), 0 } )] );
+                    0, nodes_[brep_.unique_vertex( { c.component_id(), 0 } )] );
             }
         }
 
@@ -867,8 +858,8 @@ namespace
                 {
                     continue;
                 }
-                auto ui = brep_.unique_vertex(
-                    { component.component_id(), i } );
+                auto ui =
+                    brep_.unique_vertex( { component.component_id(), i } );
                 updated_unique2component.push_back( ui );
             }
 
@@ -878,8 +869,7 @@ namespace
             builder_.register_mesh_component( component );
             for( auto i : geode::Range{ component.mesh().nb_vertices() } )
             {
-                builder_.set_unique_vertex(
-                    { component.component_id(), i },
+                builder_.set_unique_vertex( { component.component_id(), i },
                     updated_unique2component[i] );
             }
         }
