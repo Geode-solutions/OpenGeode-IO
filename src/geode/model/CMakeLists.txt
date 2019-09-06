@@ -13,5 +13,5 @@ target_link_libraries(${target_name}
     PRIVATE
         OpenGeode::basic
         OpenGeode::mesh
-        OpenGeode::georepresentation
+        OpenGeode::model
 )
