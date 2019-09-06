@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <geode/model/representation/io/brep_input.h>
 #include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/representation/io/brep_input.h>
 
 #include <geode/basic/logger.h>
 
