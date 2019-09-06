@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/georepresentation/opengeodeio_georepresentation_export.h>
+#include <geode/model/opengeodeio_georepresentation_export.h>
 
 namespace geode
 {

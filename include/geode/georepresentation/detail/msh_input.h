@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <geode/georepresentation/io/boundary_representation_input.h>
-#include <geode/georepresentation/opengeodeio_georepresentation_export.h>
+#include <geode/model/representation/io/brep_input.h>
+#include <geode/model/opengeodeio_georepresentation_export.h>
 
 #include <geode/basic/logger.h>
 

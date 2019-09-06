@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/georepresentation/detail/msh_input.h>
+#include <geode/model/detail/msh_input.h>
 
 #include <fstream>
 #include <mutex>
@@ -34,11 +34,11 @@
 #include <geode/basic/logger.h>
 #include <geode/basic/point.h>
 #include <geode/basic/uuid.h>
-#include <geode/georepresentation/core/block.h>
-#include <geode/georepresentation/core/boundary_representation.h>
-#include <geode/georepresentation/core/corner.h>
-#include <geode/georepresentation/core/line.h>
-#include <geode/georepresentation/core/surface.h>
+#include <geode/model/mixin/core/block.h>
+#include <geode/model/representation/core/brep.h>
+#include <geode/model/mixin/core/corner.h>
+#include <geode/model/mixin/core/line.h>
+#include <geode/model/mixin/core/surface.h>
 
 #include <geode/mesh/builder/edged_curve_builder.h>
 #include <geode/mesh/builder/point_set_builder.h>
@@ -876,8 +876,8 @@ namespace
 
             mesh_builder->delete_vertices( delete_duplicated );
 
-            builder_.unique_vertices().remove_component( component );
-            builder_.unique_vertices().register_component( component );
+            builder_.unique_vertices().unregister_mesh_component( component );
+            builder_.unique_vertices().register_mesh_component( component );
             for( auto i : geode::Range{ component.mesh().nb_vertices() } )
             {
                 builder_.unique_vertices().set_unique_vertex(

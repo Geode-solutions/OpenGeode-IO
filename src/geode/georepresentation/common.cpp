@@ -21,9 +21,9 @@
  *
  */
 
-#include <geode/georepresentation/detail/common.h>
+#include <geode/model/detail/common.h>
 
-#include <geode/georepresentation/detail/msh_input.h>
+#include <geode/model/detail/msh_input.h>
 
 namespace
 {

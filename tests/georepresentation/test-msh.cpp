@@ -27,21 +27,21 @@
 #include <geode/basic/logger.h>
 #include <geode/basic/range.h>
 
-#include <geode/georepresentation/core/block.h>
-#include <geode/georepresentation/core/boundary_representation.h>
-#include <geode/georepresentation/core/corner.h>
-#include <geode/georepresentation/core/line.h>
-#include <geode/georepresentation/core/surface.h>
-#include <geode/georepresentation/io/boundary_representation_input.h>
-#include <geode/georepresentation/io/boundary_representation_output.h>
+#include <geode/model/mixin/core/block.h>
+#include <geode/model/representation/core/brep.h>
+#include <geode/model/mixin/core/corner.h>
+#include <geode/model/mixin/core/line.h>
+#include <geode/model/mixin/core/surface.h>
+#include <geode/model/representation/io/brep_input.h>
+#include <geode/model/representation/io/brep_output.h>
 
 #include <geode/mesh/core/edged_curve.h>
 #include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 
-#include <geode/georepresentation/detail/common.h>
-#include <geode/georepresentation/detail/msh_input.h>
+#include <geode/model/detail/common.h>
+#include <geode/model/detail/msh_input.h>
 
 void test_brep( const geode::BRep& brep )
 {
