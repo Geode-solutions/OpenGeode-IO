@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/georepresentation/detail/msh_input.h>
+#include <geode/model/detail/msh_input.h>
 
 #include <fstream>
 #include <mutex>
@@ -34,11 +34,11 @@
 #include <geode/basic/logger.h>
 #include <geode/basic/point.h>
 #include <geode/basic/uuid.h>
-#include <geode/georepresentation/core/block.h>
-#include <geode/georepresentation/core/boundary_representation.h>
-#include <geode/georepresentation/core/corner.h>
-#include <geode/georepresentation/core/line.h>
-#include <geode/georepresentation/core/surface.h>
+#include <geode/model/mixin/core/block.h>
+#include <geode/model/mixin/core/corner.h>
+#include <geode/model/mixin/core/line.h>
+#include <geode/model/mixin/core/surface.h>
+#include <geode/model/representation/core/brep.h>
 
 #include <geode/mesh/builder/edged_curve_builder.h>
 #include <geode/mesh/builder/point_set_builder.h>
@@ -206,7 +206,7 @@ namespace
             auto v_id =
                 builder.corner_mesh_builder( new_corner_uuid )->create_vertex();
             id_map.elementary_ids.insert( { cur_gmsh_id, new_corner_uuid } );
-            builder.unique_vertices().set_unique_vertex(
+            builder.set_unique_vertex(
                 { brep.corner( new_corner_uuid ).component_id(), v_id },
                 vertex_ids()[0] - OFFSET_START );
         }
@@ -247,7 +247,7 @@ namespace
             const auto& line = brep.line( line_uuid );
             for( auto v_id : geode::Range{ vertex_ids().size() } )
             {
-                builder.unique_vertices().set_unique_vertex(
+                builder.set_unique_vertex(
                     { line.component_id(),
                         line.mesh().edge_vertex( { edge_id, v_id } ) },
                     vertex_ids()[v_id] - OFFSET_START );
@@ -294,7 +294,7 @@ namespace
             const auto& surface = brep.surface( surface_uuid );
             for( auto v_id : geode::Range{ vertex_ids().size() } )
             {
-                builder.unique_vertices().set_unique_vertex(
+                builder.set_unique_vertex(
                     { surface.component_id(),
                         surface.mesh().polygon_vertex( { polygon_id, v_id } ) },
                     vertex_ids()[v_id] - OFFSET_START );
@@ -370,7 +370,7 @@ namespace
             const auto& block = brep.block( block_uuid );
             for( auto v_id : geode::Range{ vertex_ids().size() } )
             {
-                builder.unique_vertices().set_unique_vertex(
+                builder.set_unique_vertex(
                     { block.component_id(), block.mesh().polyhedron_vertex(
                                                 { polyhedron_id, v_id } ) },
                     vertex_ids()[v_id] - OFFSET_START );
@@ -534,26 +534,20 @@ namespace
 
         void build_topology()
         {
-            const auto& model_vertices = brep_.unique_vertices();
-
             boundary_incidences_relations corner_line_relations;
             boundary_incidences_relations line_surface_relations;
             boundary_incidences_relations surface_block_relations;
 
-            for( auto uv : geode::Range{ model_vertices.nb_unique_vertices() } )
+            for( auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Block3D::component_type_static() );
+                const auto corners_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Corner3D::component_type_static() );
+                const auto lines_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Line3D::component_type_static() );
+                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Surface3D::component_type_static() );
+                const auto blocks_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Block3D::component_type_static() );
 
                 add_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
@@ -562,20 +556,16 @@ namespace
                 add_potential_relationships( surfaces_vertices, blocks_vertices,
                     surface_block_relations );
             }
-            for( auto uv : geode::Range{ model_vertices.nb_unique_vertices() } )
+            for( auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices =
-                    model_vertices.mesh_component_vertices(
-                        uv, geode::Block3D::component_type_static() );
+                const auto corners_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Corner3D::component_type_static() );
+                const auto lines_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Line3D::component_type_static() );
+                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Surface3D::component_type_static() );
+                const auto blocks_vertices = brep_.mesh_component_vertices(
+                    uv, geode::Block3D::component_type_static() );
 
                 filter_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
@@ -589,7 +579,7 @@ namespace
             {
                 for( const auto& line_id : c2l.second )
                 {
-                    builder_.add_boundary_relation(
+                    builder_.add_corner_line_relationship(
                         brep_.corner( c2l.first ), brep_.line( line_id ) );
                 }
             }
@@ -597,7 +587,7 @@ namespace
             {
                 for( const auto& surface_id : l2s.second )
                 {
-                    builder_.add_boundary_relation(
+                    builder_.add_line_surface_relationship(
                         brep_.line( l2s.first ), brep_.surface( surface_id ) );
                 }
             }
@@ -605,7 +595,7 @@ namespace
             {
                 for( const auto& block_id : s2b.second )
                 {
-                    builder_.add_boundary_relation(
+                    builder_.add_surface_block_relationship(
                         brep_.surface( s2b.first ), brep_.block( block_id ) );
                 }
             }
@@ -673,7 +663,7 @@ namespace
                 nodes_.push_back( read_node( n_id + OFFSET_START, line ) );
             }
             check_keyword( "$EndNodes" );
-            builder_.unique_vertices().create_unique_vertices( nb_nodes );
+            builder_.create_unique_vertices( nb_nodes );
         }
 
         geode::Point3D read_node(
@@ -748,8 +738,7 @@ namespace
             for( const auto& c : brep_.corners() )
             {
                 builder_.corner_mesh_builder( c.id() )->set_point(
-                    0, nodes_[brep_.unique_vertices().unique_vertex(
-                           { c.component_id(), 0 } )] );
+                    0, nodes_[brep_.unique_vertex( { c.component_id(), 0 } )] );
             }
         }
 
@@ -761,7 +750,7 @@ namespace
                 for( auto v : geode::Range{ l.mesh().nb_vertices() } )
                 {
                     builder_.line_mesh_builder( l.id() )->set_point(
-                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                        v, nodes_[brep_.unique_vertex(
                                { l.component_id(), v } )] );
                 }
             }
@@ -775,7 +764,7 @@ namespace
                 for( auto v : geode::Range{ s.mesh().nb_vertices() } )
                 {
                     builder_.surface_mesh_builder( s.id() )->set_point(
-                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                        v, nodes_[brep_.unique_vertex(
                                { s.component_id(), v } )] );
                 }
             }
@@ -789,7 +778,7 @@ namespace
                 for( auto v : geode::Range{ b.mesh().nb_vertices() } )
                 {
                     builder_.block_mesh_builder( b.id() )->set_point(
-                        v, nodes_[brep_.unique_vertices().unique_vertex(
+                        v, nodes_[brep_.unique_vertex(
                                { b.component_id(), v } )] );
                 }
             }
@@ -844,7 +833,7 @@ namespace
                 unique2component;
             for( auto v : geode::Range{ component.mesh().nb_vertices() } )
             {
-                unique2component[brep.unique_vertices().unique_vertex(
+                unique2component[brep.unique_vertex(
                                      { component.component_id(), v } )]
                     .emplace_back( v );
             }
@@ -869,19 +858,18 @@ namespace
                 {
                     continue;
                 }
-                auto ui = brep_.unique_vertices().unique_vertex(
-                    { component.component_id(), i } );
+                auto ui =
+                    brep_.unique_vertex( { component.component_id(), i } );
                 updated_unique2component.push_back( ui );
             }
 
             mesh_builder->delete_vertices( delete_duplicated );
 
-            builder_.unique_vertices().remove_component( component );
-            builder_.unique_vertices().register_component( component );
+            builder_.unregister_mesh_component( component );
+            builder_.register_mesh_component( component );
             for( auto i : geode::Range{ component.mesh().nb_vertices() } )
             {
-                builder_.unique_vertices().set_unique_vertex(
-                    { component.component_id(), i },
+                builder_.set_unique_vertex( { component.component_id(), i },
                     updated_unique2component[i] );
             }
         }

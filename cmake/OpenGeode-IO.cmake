@@ -41,7 +41,7 @@ install(
 #------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_geode_library(geode/mesh)
-add_geode_library(geode/georepresentation)
+add_geode_library(geode/model)
 
 #------------------------------------------------------------------------------------------------
 # Optional modules configuration

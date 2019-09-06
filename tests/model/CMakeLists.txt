@@ -20,8 +20,8 @@
 
 
 add_geode_test(test-msh.cpp 
-    ${PROJECT_NAME}::georepresentation
+    ${PROJECT_NAME}::model
     OpenGeode::basic
     OpenGeode::mesh
-    OpenGeode::georepresentation
+    OpenGeode::model
 )

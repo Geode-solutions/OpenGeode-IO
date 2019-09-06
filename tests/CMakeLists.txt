@@ -37,4 +37,4 @@ configure_file(${test_config_file_in} ${test_config_file})
 include_directories(${PROJECT_BINARY_DIR})
 
 add_subdirectory(mesh)
-add_subdirectory(georepresentation)
+add_subdirectory(model)

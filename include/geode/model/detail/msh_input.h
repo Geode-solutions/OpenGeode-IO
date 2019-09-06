@@ -23,9 +23,26 @@
 
 #pragma once
 
-#include <geode/georepresentation/opengeodeio_georepresentation_export.h>
+#include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/representation/io/brep_input.h>
+
+#include <geode/basic/logger.h>
 
 namespace geode
 {
-    void opengeodeio_georepresentation_api initialize_georepresentation_io();
+    class opengeodeio_model_api MSHInput final : public BRepInput
+    {
+    public:
+        MSHInput( BRep& brep, std::string filename )
+            : BRepInput( brep, std::move( filename ) )
+        {
+        }
+
+        static std::string extension()
+        {
+            return "msh";
+        }
+
+        void read() final;
+    };
 } // namespace geode

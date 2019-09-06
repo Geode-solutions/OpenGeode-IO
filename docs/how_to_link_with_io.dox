@@ -35,10 +35,10 @@ You just have to add in your executable/code depending on your needs:
 
 and/or 
 
-\code initialize_georepresentation_io();
+\code initialize_model_io();
 \endcode
 
-These functions are declared in the files `include/geode/mesh/detail/common.h` and `include/geode/georepresentation/detail/common.h`. Do not forget to include the right file in your code.
+These functions are declared in the files `include/geode/mesh/detail/common.h` and `include/geode/model/representation/detail/common.h`. Do not forget to include the right file in your code.
 
 You have examples in the OpenGeode-IO tests.
 

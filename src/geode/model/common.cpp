@@ -21,9 +21,9 @@
  *
  */
 
-#include <geode/georepresentation/detail/common.h>
+#include <geode/model/detail/common.h>
 
-#include <geode/georepresentation/detail/msh_input.h>
+#include <geode/model/detail/msh_input.h>
 
 namespace
 {
@@ -33,7 +33,7 @@ namespace
             geode::MSHInput::extension() );
     }
 
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_georepresentation )
+    OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_model )
     {
         register_brep_input();
     }
@@ -41,5 +41,5 @@ namespace
 
 namespace geode
 {
-    void initialize_georepresentation_io() {}
+    void initialize_model_io() {}
 } // namespace geode
