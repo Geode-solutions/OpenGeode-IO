@@ -65,8 +65,8 @@ void test_brep( const geode::BRep& brep )
     {
         OPENGEODE_EXCEPTION( l.mesh().nb_vertices() == 5,
             "[Test] Number of vertices in lines should be 5" );
-        OPENGEODE_EXCEPTION(
-            l.mesh().nb_edges() == 4, "[Test] Number of edges in lines should be 4" );
+        OPENGEODE_EXCEPTION( l.mesh().nb_edges() == 4,
+            "[Test] Number of edges in lines should be 4" );
     }
     for( const auto& s : brep.surfaces() )
     {
