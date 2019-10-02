@@ -47,9 +47,9 @@ int main()
         load_triangulated_surface( *surface,
             test_path + "mesh/data/thumbwheel." + STLInput::extension() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
-            "Number of vertices in the loaded Surface is not correct" );
+            "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
-            "Number of polygons in the loaded Surface is not correct" );
+            "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         std::string output_file_native{ "thumbwheel."
@@ -62,7 +62,7 @@ int main()
         try
         {
             load_triangulated_surface( *surface, output_file_stl );
-            OPENGEODE_EXCEPTION( false, "Exception was not thrown" );
+            OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
         }
         catch( ... )
         {

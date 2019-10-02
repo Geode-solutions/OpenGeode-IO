@@ -47,71 +47,71 @@ void test_brep( const geode::BRep& brep )
 {
     // Number of components
     OPENGEODE_EXCEPTION(
-        brep.nb_corners() == 8, "Number of corners is not correct" );
+        brep.nb_corners() == 8, "[Test] Number of corners is not correct" );
     OPENGEODE_EXCEPTION(
-        brep.nb_lines() == 12, "Number of lines is not correct" );
+        brep.nb_lines() == 12, "[Test] Number of lines is not correct" );
     OPENGEODE_EXCEPTION(
-        brep.nb_surfaces() == 6, "Number of surfaces is not correct" );
+        brep.nb_surfaces() == 6, "[Test] Number of surfaces is not correct" );
     OPENGEODE_EXCEPTION(
-        brep.nb_blocks() == 1, "Number of blocks is not correct" );
+        brep.nb_blocks() == 1, "[Test] Number of blocks is not correct" );
 
     // Number of vertices and elements in components
     for( const auto& c : brep.corners() )
     {
         OPENGEODE_EXCEPTION( c.mesh().nb_vertices() == 1,
-            "Number of vertices in corners should be 1" );
+            "[Test] Number of vertices in corners should be 1" );
     }
     for( const auto& l : brep.lines() )
     {
         OPENGEODE_EXCEPTION( l.mesh().nb_vertices() == 5,
-            "Number of vertices in lines should be 5" );
+            "[Test] Number of vertices in lines should be 5" );
         OPENGEODE_EXCEPTION(
-            l.mesh().nb_edges() == 4, "Number of edges in lines should be 4" );
+            l.mesh().nb_edges() == 4, "[Test] Number of edges in lines should be 4" );
     }
     for( const auto& s : brep.surfaces() )
     {
         OPENGEODE_EXCEPTION( s.mesh().nb_vertices() == 29,
-            "Number of vertices in surfaces should be 29" );
+            "[Test] Number of vertices in surfaces should be 29" );
         OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 40,
-            "Number of polygons in surfaces should be 40" );
+            "[Test] Number of polygons in surfaces should be 40" );
     }
 
     for( const auto& b : brep.blocks() )
     {
         OPENGEODE_EXCEPTION( b.mesh().nb_vertices() == 131,
-            "Number of vertices in blocks should be 131" );
+            "[Test] Number of vertices in blocks should be 131" );
         OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() == 364,
-            "Number of polyhedra in blocks should be 364" );
+            "[Test] Number of polyhedra in blocks should be 364" );
     }
 
     // Number of component boundaries and incidences
     for( const auto& c : brep.corners() )
     {
         OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-            "Number of corner boundary should be 0" );
+            "[Test] Number of corner boundary should be 0" );
         OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 3,
-            "Number of corner incidences should be 3" );
+            "[Test] Number of corner incidences should be 3" );
     }
     for( const auto& l : brep.lines() )
     {
         OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-            "Number of line boundary should be 2" );
+            "[Test] Number of line boundary should be 2" );
         OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 2,
-            "Number of line incidences should be 2" );
+            "[Test] Number of line incidences should be 2" );
     }
     for( const auto& s : brep.surfaces() )
     {
         OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 4,
-            "Number of surface boundary should be 4" );
+            "[Test] Number of surface boundary should be 4" );
         OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1,
-            "Number of surface incidences should be 1" );
+            "[Test] Number of surface incidences should be 1" );
     }
     for( const auto& b : brep.blocks() )
     {
         OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 6,
-            "Number of block boundary should be 6" );
+            "[Test] Number of block boundary should be 6" );
         OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
-            "Number of block incidences should be 0" );
+            "[Test] Number of block incidences should be 0" );
     }
 }
 

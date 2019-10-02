@@ -48,9 +48,9 @@ int main()
         load_polygonal_surface(
             *surface, test_path + "mesh/data/TopHat." + OBJInput::extension() );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
-            "Number of vertices in the loaded Surface is not correct" );
+            "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
-            "Number of polygons in the loaded Surface is not correct" );
+            "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         std::string output_file_native{ "TopHat."
@@ -63,7 +63,7 @@ int main()
         try
         {
             load_polygonal_surface( *surface, output_file_stl );
-            OPENGEODE_EXCEPTION( false, "Exception was not thrown" );
+            OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
         }
         catch( ... )
         {

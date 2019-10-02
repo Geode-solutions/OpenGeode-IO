@@ -90,7 +90,7 @@ namespace geode
     {
         PLYInputImpl impl{ filename(), polygonal_surface() };
         auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success, "Invalid file \"" + filename() + "\"" );
+        OPENGEODE_EXCEPTION( success, "[PLYInput::do_read] Invalid file \"" + filename() + "\"" );
         impl.build_mesh();
     }
 } // namespace geode
