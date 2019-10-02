@@ -49,7 +49,7 @@ namespace geode
                   export_id_( std::move( assimp_export_id ) )
             {
                 OPENGEODE_EXCEPTION( std::ofstream( file_ ).good(),
-                    "Error while opening file: " + file_ );
+                    "[AssimpMeshOutput] Error while opening file: " + file_ );
             }
 
             void build_assimp_scene()
@@ -65,7 +65,8 @@ namespace geode
                 auto status =
                     exporter.Export( &assimp_scene_, export_id_, file_ );
                 OPENGEODE_EXCEPTION( status == AI_SUCCESS,
-                    "Export in file \"" + file_ + "\" has failed." );
+                    "[AssimpMeshOutput::write_file] Export in file \"" + file_
+                        + "\" has failed." );
             }
 
         private:

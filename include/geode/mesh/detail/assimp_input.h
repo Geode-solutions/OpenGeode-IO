@@ -43,7 +43,7 @@ namespace geode
                 : file_( std::move( filename ) )
             {
                 OPENGEODE_EXCEPTION( std::ifstream( file_ ).good(),
-                    "Error while opening file: " + file_ );
+                    "[AssimpMeshInput] Error while opening file: " + file_ );
             }
 
             bool read_file();

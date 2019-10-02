@@ -97,7 +97,8 @@ namespace
                 std::vector< geode::index_t > triangle_vertices( 3 );
                 const auto& face = assimp_mesh()->mFaces[t];
                 OPENGEODE_EXCEPTION( face.mNumIndices == 3,
-                    "At least one face is not a triangle." );
+                    "[STLInput::build_triangles] At least one face is not a "
+                    "triangle." );
                 for( auto i : geode::Range{ 3 } )
                 {
                     triangle_vertices[i] =
@@ -121,7 +122,8 @@ namespace geode
     {
         STLInputImpl impl{ filename(), triangulated_surface() };
         auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success, "Invalid file \"" + filename() + "\"" );
+        OPENGEODE_EXCEPTION( success,
+            "[STLInput::do_read] Invalid file \"" + filename() + "\"" );
         impl.build_mesh();
     }
 } // namespace geode
