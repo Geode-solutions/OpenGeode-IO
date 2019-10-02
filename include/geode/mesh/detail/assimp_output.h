@@ -64,9 +64,9 @@ namespace geode
                 Assimp::Exporter exporter;
                 auto status =
                     exporter.Export( &assimp_scene_, export_id_, file_ );
-                OPENGEODE_EXCEPTION(
-                    status == AI_SUCCESS, "[AssimpMeshOutput::write_file] Export in file \""
-                                              + file_ + "\" has failed." );
+                OPENGEODE_EXCEPTION( status == AI_SUCCESS,
+                    "[AssimpMeshOutput::write_file] Export in file \"" + file_
+                        + "\" has failed." );
             }
 
         private:
