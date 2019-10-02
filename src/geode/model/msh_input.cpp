@@ -199,7 +199,8 @@ namespace
                 elementary_entity_id() };
             auto existing_id = id_map.contains_elementary_id( cur_gmsh_id );
             OPENGEODE_EXCEPTION( !existing_id,
-                "[GMSHPoint::add_element] At least two points (type=15) has the same tag "
+                "[GMSHPoint::add_element] At least two points (type=15) has "
+                "the same tag "
                 "for elementary entity. This is not supported." );
             geode::BRepBuilder builder{ brep };
             auto new_corner_uuid = builder.add_corner();
@@ -509,8 +510,8 @@ namespace
         MSHInputImpl( std::string filename, geode::BRep& brep )
             : file_( std::move( filename ) ), brep_( brep ), builder_{ brep }
         {
-            OPENGEODE_EXCEPTION(
-                file_.good(), "[MSHInput] Error while opening file: " + filename );
+            OPENGEODE_EXCEPTION( file_.good(),
+                "[MSHInput] Error while opening file: " + filename );
         }
 
         void read_file()
@@ -607,7 +608,8 @@ namespace
             std::string line;
             std::getline( file_, line );
             OPENGEODE_EXCEPTION( string_starts_with( line, keyword ),
-                "[MSHInput::check_keyword] Line should starts with \"" + keyword + "\"" );
+                "[MSHInput::check_keyword] Line should starts with \"" + keyword
+                    + "\"" );
         }
 
         void go_to_section( const std::string& section_header )
@@ -621,7 +623,8 @@ namespace
                 }
             }
             throw geode::OpenGeodeException(
-                "[MSHInput::go_to_section] Cannot find the section " + section_header );
+                "[MSHInput::go_to_section] Cannot find the section "
+                + section_header );
         }
 
         void check_msh_version( const std::string& line )
@@ -630,14 +633,16 @@ namespace
             double nb_version;
             iss >> nb_version;
             OPENGEODE_EXCEPTION( std::floor( nb_version ) == 2,
-                "[MSHInput::check_msh_version] Only MSH file format version 2 is supported for now." );
+                "[MSHInput::check_msh_version] Only MSH file format version 2 "
+                "is supported for now." );
             geode::index_t binary;
             iss >> binary;
             if( binary != 0 )
             {
                 binary_ = false;
-                throw geode::OpenGeodeException(
-                    "[MSHInput::check_msh_version] Binary format is not supported for now." );
+                throw geode::OpenGeodeException( "[MSHInput::check_msh_version]"
+                                                 " Binary format is not "
+                                                 "supported for now." );
             }
         }
 
@@ -705,7 +710,8 @@ namespace
             geode::index_t line_element_id;
             iss >> line_element_id;
             OPENGEODE_EXCEPTION( expected_element_id == line_element_id,
-                "[MSHInput::read_element] Element indices should be continuous." );
+                "[MSHInput::read_element] Element indices should be "
+                "continuous." );
 
             // Element type
             geode::index_t mesh_element_type_id;
@@ -714,8 +720,9 @@ namespace
             // Tags
             geode::index_t nb_tags;
             iss >> nb_tags;
-            OPENGEODE_EXCEPTION( nb_tags >= 2,
-                "[MSHInput::read_element] Number of tags for an element should be at least 2." );
+            OPENGEODE_EXCEPTION( nb_tags >= 2, "[MSHInput::read_element] "
+                                               "Number of tags for an element "
+                                               "should be at least 2." );
             geode::index_t physical_entity;
             iss >> physical_entity; //  collection
             geode::index_t elementary_entity;
