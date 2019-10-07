@@ -37,7 +37,6 @@ This page lists the supported file formats, indicating for each the loaded/saved
 # Meshes
 
 | File format | OpenGeode object      | Input        | Output |
-| :---------- | :---------------      | :----:       | :----: |
 | .obj         | PolygonalSurface3D   | YES       | YES  |
 | .ply         | PolygonalSurface3D    | YES       | YES  |
 | .stl         | TriangulatedSurface3D | YES       | YES |
