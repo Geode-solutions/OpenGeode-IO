@@ -51,7 +51,7 @@ jobs:
       run: |
         mkdir -p test
         cd test
-        cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH:PATH=$GITHUB_WORKSPACE/build/opengeodeio/install;${{ steps.opengeode.outputs.path }} ../tests
+        cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeodeio/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
         cmake --build . -- -j2
         ctest --output-on-failure
       env:
