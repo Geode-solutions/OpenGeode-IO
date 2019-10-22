@@ -2,9 +2,9 @@
 <h3 align="center">Input/Output formats for OpenGeode</h3>
 
 <p align="center">
-  <img src="https://dev.azure.com/GeodeSolutions/Geode/_apis/build/status/Geode-solutions.OpenGeode-IO?branchName=master" alt="Build Status">
-  <img src="https://img.shields.io/azure-devops/tests/GeodeSolutions/Geode/8/master.svg?compact_message" alt="Test Status">
-  <img src="https://img.shields.io/azure-devops/coverage/GeodeSolutions/Geode/8/master.svg" alt="Coverage Status">
+  <img src="https://github.com/Geode-solutions/OpenGeode-IO/workflows/CI/badge.svg" alt="Build Status">
+  <img src="https://github.com/Geode-solutions/OpenGeode-IO/workflows/CD/badge.svg" alt="Deploy Status">
+  <img src="https://codecov.io/gh/Geode-solutions/OpenGeode-IO/branch/master/graph/badge.svg" alt="Coverage Status">
   <img src="https://img.shields.io/github/release/Geode-solutions/OpenGeode-IO.svg" alt="Version">
 </p>
 
