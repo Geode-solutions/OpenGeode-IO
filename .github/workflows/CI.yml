@@ -39,8 +39,6 @@ jobs:
         file: '-Linux.tar.gz'
     - name: Compile
       run: |
-        echo ${{ steps.opengeode.outputs.path }}
-        ls
         mkdir -p build
         cd build
         cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
