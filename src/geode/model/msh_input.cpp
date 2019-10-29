@@ -396,10 +396,11 @@ namespace
         {
             std::vector< std::vector< geode::index_t > > gmsh_tetrahedron_faces(
                 4 );
-            gmsh_tetrahedron_faces[0] = { v_ids[0], v_ids[1], v_ids[2] };
-            gmsh_tetrahedron_faces[1] = { v_ids[0], v_ids[2], v_ids[3] };
-            gmsh_tetrahedron_faces[2] = { v_ids[1], v_ids[3], v_ids[2] };
-            gmsh_tetrahedron_faces[3] = { v_ids[0], v_ids[3], v_ids[1] };
+
+            gmsh_tetrahedron_faces[0] = { 0, 1, 2 };
+            gmsh_tetrahedron_faces[1] = { 0, 2, 3 };
+            gmsh_tetrahedron_faces[2] = { 1, 3, 2 };
+            gmsh_tetrahedron_faces[3] = { 0, 3, 1 };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_tetrahedron_faces );
         }
@@ -422,18 +423,12 @@ namespace
         {
             std::vector< std::vector< geode::index_t > > gmsh_hexahedron_faces(
                 6 );
-            gmsh_hexahedron_faces[0] = { v_ids[0], v_ids[1], v_ids[2],
-                v_ids[3] };
-            gmsh_hexahedron_faces[1] = { v_ids[7], v_ids[6], v_ids[5],
-                v_ids[4] };
-            gmsh_hexahedron_faces[2] = { v_ids[0], v_ids[3], v_ids[7],
-                v_ids[4] };
-            gmsh_hexahedron_faces[3] = { v_ids[1], v_ids[5], v_ids[6],
-                v_ids[2] };
-            gmsh_hexahedron_faces[4] = { v_ids[2], v_ids[6], v_ids[7],
-                v_ids[3] };
-            gmsh_hexahedron_faces[5] = { v_ids[0], v_ids[4], v_ids[5],
-                v_ids[1] };
+            gmsh_hexahedron_faces[0] = { 0, 1, 2, 3 };
+            gmsh_hexahedron_faces[1] = { 7, 6, 5, 4 };
+            gmsh_hexahedron_faces[2] = { 0, 3, 7, 4 };
+            gmsh_hexahedron_faces[3] = { 1, 5, 6, 2 };
+            gmsh_hexahedron_faces[4] = { 2, 6, 7, 3 };
+            gmsh_hexahedron_faces[5] = { 0, 4, 5, 1 };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_hexahedron_faces );
         }
@@ -455,11 +450,11 @@ namespace
             const std::vector< geode::index_t >& v_ids ) override final
         {
             std::vector< std::vector< geode::index_t > > gmsh_prism_faces( 5 );
-            gmsh_prism_faces[0] = { v_ids[0], v_ids[1], v_ids[2] };
-            gmsh_prism_faces[1] = { v_ids[5], v_ids[4], v_ids[3] };
-            gmsh_prism_faces[2] = { v_ids[0], v_ids[2], v_ids[5], v_ids[3] };
-            gmsh_prism_faces[3] = { v_ids[0], v_ids[3], v_ids[4], v_ids[1] };
-            gmsh_prism_faces[4] = { v_ids[1], v_ids[4], v_ids[5], v_ids[2] };
+            gmsh_prism_faces[0] = { 0, 1, 2 };
+            gmsh_prism_faces[1] = { 5, 4, 3 };
+            gmsh_prism_faces[2] = { 0, 2, 5, 3 };
+            gmsh_prism_faces[3] = { 0, 3, 4, 1 };
+            gmsh_prism_faces[4] = { 1, 4, 5, 2 };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_prism_faces );
         }
@@ -482,11 +477,11 @@ namespace
         {
             std::vector< std::vector< geode::index_t > > gmsh_pyramid_faces(
                 5 );
-            gmsh_pyramid_faces[0] = { v_ids[0], v_ids[3], v_ids[4] };
-            gmsh_pyramid_faces[1] = { v_ids[0], v_ids[4], v_ids[1] };
-            gmsh_pyramid_faces[2] = { v_ids[4], v_ids[3], v_ids[2] };
-            gmsh_pyramid_faces[3] = { v_ids[1], v_ids[4], v_ids[2] };
-            gmsh_pyramid_faces[4] = { v_ids[0], v_ids[1], v_ids[2], v_ids[3] };
+            gmsh_pyramid_faces[0] = { 0, 3, 4 };
+            gmsh_pyramid_faces[1] = { 0, 4, 1 };
+            gmsh_pyramid_faces[2] = { 4, 3, 2 };
+            gmsh_pyramid_faces[3] = { 1, 4, 2 };
+            gmsh_pyramid_faces[4] = { 0, 1, 2, 3 };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_pyramid_faces );
         }
