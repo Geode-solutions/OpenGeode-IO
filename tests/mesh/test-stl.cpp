@@ -27,11 +27,11 @@
 #include <geode/basic/logger.h>
 
 #include <geode/mesh/core/triangulated_surface.h>
-#include <geode/mesh/io/triangulated_surface_input.h>
-#include <geode/mesh/io/triangulated_surface_output.h>
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/detail/stl_input.h>
 #include <geode/mesh/detail/stl_output.h>
+#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/mesh/io/triangulated_surface_output.h>
 
 int main()
 {
