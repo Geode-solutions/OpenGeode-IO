@@ -32,13 +32,9 @@
 #include <geode/basic/common.h>
 #include <geode/basic/factory.h>
 #include <geode/basic/logger.h>
-#include <geode/basic/point.h>
 #include <geode/basic/uuid.h>
-#include <geode/model/mixin/core/block.h>
-#include <geode/model/mixin/core/corner.h>
-#include <geode/model/mixin/core/line.h>
-#include <geode/model/mixin/core/surface.h>
-#include <geode/model/representation/core/brep.h>
+
+#include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/edged_curve_builder.h>
 #include <geode/mesh/builder/point_set_builder.h>
@@ -48,6 +44,12 @@
 #include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/core/polyhedral_solid.h>
+
+#include <geode/model/mixin/core/block.h>
+#include <geode/model/mixin/core/corner.h>
+#include <geode/model/mixin/core/line.h>
+#include <geode/model/mixin/core/surface.h>
+#include <geode/model/representation/core/brep.h>
 
 namespace
 {
@@ -575,7 +577,7 @@ namespace
             {
                 for( const auto& line_id : c2l.second )
                 {
-                    builder_.add_corner_line_relationship(
+                    builder_.add_corner_line_boundary_relationship(
                         brep_.corner( c2l.first ), brep_.line( line_id ) );
                 }
             }
@@ -583,7 +585,7 @@ namespace
             {
                 for( const auto& surface_id : l2s.second )
                 {
-                    builder_.add_line_surface_relationship(
+                    builder_.add_line_surface_boundary_relationship(
                         brep_.line( l2s.first ), brep_.surface( surface_id ) );
                 }
             }
@@ -591,7 +593,7 @@ namespace
             {
                 for( const auto& block_id : s2b.second )
                 {
-                    builder_.add_surface_block_relationship(
+                    builder_.add_surface_block_boundary_relationship(
                         brep_.surface( s2b.first ), brep_.block( block_id ) );
                 }
             }
