@@ -21,18 +21,21 @@
 add_geode_test(test-obj.cpp 
     ${PROJECT_NAME}::mesh
     OpenGeode::basic
+    OpenGeode::geometry
     OpenGeode::mesh
     assimp::assimp
 )
 add_geode_test(test-ply.cpp 
     ${PROJECT_NAME}::mesh
     OpenGeode::basic
+    OpenGeode::geometry
     OpenGeode::mesh
     assimp::assimp
 )
 add_geode_test(test-stl.cpp 
     ${PROJECT_NAME}::mesh
     OpenGeode::basic
+    OpenGeode::geometry
     OpenGeode::mesh
     assimp::assimp
 )
