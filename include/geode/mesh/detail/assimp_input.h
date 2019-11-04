@@ -25,12 +25,12 @@
 
 #include <fstream>
 
-#include <geode/mesh/opengeodeio_mesh_export.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 
 #include <geode/basic/logger.h>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
+#include <geode/mesh/opengeodeio_mesh_export.h>
 
 namespace geode
 {

@@ -26,7 +26,6 @@
 #include <geode/mesh/detail/obj_input.h>
 #include <geode/mesh/detail/ply_input.h>
 #include <geode/mesh/detail/stl_input.h>
-
 #include <geode/mesh/detail/obj_output.h>
 #include <geode/mesh/detail/ply_output.h>
 #include <geode/mesh/detail/stl_output.h>
