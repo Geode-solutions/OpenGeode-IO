@@ -23,8 +23,8 @@
 
 #include <geode/mesh/detail/stl_input.h>
 
-#include <geode/geometry/point.h>
 #include <geode/geometry/nn_search.h>
+#include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/triangulated_surface_builder.h>
 #include <geode/mesh/core/geode_triangulated_surface.h>
