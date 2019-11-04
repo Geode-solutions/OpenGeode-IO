@@ -28,7 +28,7 @@
 #include <geode/mesh/opengeodeio_mesh_export.h>
 
 #include <geode/basic/logger.h>
-#include <geode/basic/point.h>
+#include <geode/geometry/point.h>
 
 #include <assimp/Exporter.hpp>
 #include <assimp/scene.h>

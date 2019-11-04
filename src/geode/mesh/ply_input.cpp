@@ -23,8 +23,8 @@
 
 #include <geode/mesh/detail/ply_input.h>
 
-#include <geode/basic/nn_search.h>
-#include <geode/basic/point.h>
+#include <geode/geometry/nn_search.h>
+#include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/polygonal_surface_builder.h>
 #include <geode/mesh/core/geode_polygonal_surface.h>

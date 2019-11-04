@@ -12,6 +12,7 @@ set(advanced_headers
 target_link_libraries(${target_name}
     PRIVATE
         OpenGeode::basic
+        OpenGeode::geometry
         OpenGeode::mesh
         OpenGeode::model
 )
