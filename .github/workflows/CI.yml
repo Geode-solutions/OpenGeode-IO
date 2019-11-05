@@ -53,7 +53,6 @@ jobs:
         cd test
         cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeodeio/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
         cmake --build . -- -j2
-        ldd bin/test-obj
         ctest --output-on-failure
       env:
         CC: ${{ matrix.cc }}
