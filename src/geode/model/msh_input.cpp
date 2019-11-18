@@ -616,9 +616,10 @@ namespace
                     return;
                 }
             }
-            throw geode::OpenGeodeException(
+            throw geode::OpenGeodeException{
                 "[MSHInput::go_to_section] Cannot find the section "
-                + section_header );
+                + section_header
+            };
         }
 
         void check_msh_version( const std::string& line )
@@ -627,16 +628,17 @@ namespace
             double nb_version;
             iss >> nb_version;
             OPENGEODE_EXCEPTION( std::floor( nb_version ) == 2,
-                "[MSHInput::check_msh_version] Only MSH file format version 2 "
+                "[MSHInput::check_msh_version] Only MSH file format "
+                "version 2 "
                 "is supported for now." );
             geode::index_t binary;
             iss >> binary;
             if( binary != 0 )
             {
                 binary_ = false;
-                throw geode::OpenGeodeException( "[MSHInput::check_msh_version]"
+                throw geode::OpenGeodeException{ "[MSHInput::check_msh_version]"
                                                  " Binary format is not "
-                                                 "supported for now." );
+                                                 "supported for now." };
             }
         }
 
@@ -672,7 +674,8 @@ namespace
             geode::index_t file_node_id;
             iss >> file_node_id;
             OPENGEODE_EXCEPTION( expected_node_id == file_node_id,
-                "[MSHInput::read_node] Node indices should be continuous." );
+                "[MSHInput::read_node] Node indices should be "
+                "continuous." );
             geode::Point3D node;
             for( const auto c : geode::Range{ 3 } )
             {
