@@ -52,10 +52,10 @@ int main()
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        std::string output_file_native{ "TopHat."
-                                        + surface->native_extension() };
+        const std::string output_file_native{ "TopHat."
+                                              + surface->native_extension() };
         save_polygonal_surface( *surface, output_file_native );
-        std::string output_file_stl{ "TopHat." + OBJOutput::extension() };
+        const std::string output_file_stl{ "TopHat." + OBJOutput::extension() };
         save_polygonal_surface( *surface, output_file_stl );
 
         // Reload file

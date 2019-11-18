@@ -51,10 +51,11 @@ int main()
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        std::string output_file_native{ "thumbwheel."
-                                        + surface->native_extension() };
+        const std::string output_file_native{ "thumbwheel."
+                                              + surface->native_extension() };
         save_triangulated_surface( *surface, output_file_native );
-        std::string output_file_stl{ "thumbwheel." + STLOutput::extension() };
+        const std::string output_file_stl{ "thumbwheel."
+                                           + STLOutput::extension() };
         save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file
