@@ -53,7 +53,7 @@ namespace
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             builder->create_vertices( assimp_mesh()->mNumVertices );
-            for( auto v : geode::Range{ assimp_mesh()->mNumVertices } )
+            for( const auto v : geode::Range{ assimp_mesh()->mNumVertices } )
             {
                 geode::Point3D point{ { assimp_mesh()->mVertices[v].x,
                     assimp_mesh()->mVertices[v].y,
@@ -65,12 +65,12 @@ namespace
         void build_polygons()
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            for( auto p : geode::Range{ assimp_mesh()->mNumFaces } )
+            for( const auto p : geode::Range{ assimp_mesh()->mNumFaces } )
             {
                 const auto& face = assimp_mesh()->mFaces[p];
                 std::vector< geode::index_t > polygon_vertices(
                     face.mNumIndices );
-                for( auto i : geode::Range{ face.mNumIndices } )
+                for( const auto i : geode::Range{ face.mNumIndices } )
                 {
                     polygon_vertices[i] = face.mIndices[i];
                 }
@@ -89,7 +89,7 @@ namespace geode
     void PLYInput::do_read()
     {
         PLYInputImpl impl{ filename(), polygonal_surface() };
-        auto success = impl.read_file();
+        const auto success = impl.read_file();
         OPENGEODE_EXCEPTION( success,
             "[PLYInput::do_read] Invalid file \"" + filename() + "\"" );
         impl.build_mesh();

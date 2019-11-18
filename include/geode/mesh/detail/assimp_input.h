@@ -30,6 +30,11 @@
 
 #include <geode/basic/logger.h>
 
+#include <geode/geometry/nn_search.h>
+#include <geode/geometry/point.h>
+
+#include <geode/mesh/builder/polygonal_surface_builder.h>
+#include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/opengeodeio_mesh_export.h>
 
 namespace geode
@@ -54,6 +59,52 @@ namespace geode
             const aiMesh* assimp_mesh()
             {
                 return assimp_mesh_;
+            }
+
+            geode::NNSearch3D::ColocatedInfo build_dupplicated_vertices(
+                geode::PolygonalSurface3D& surface )
+            {
+                const auto duplicated_vertices =
+                    load_duplicated_vertices( assimp_mesh() );
+                return build_unique_vertices( duplicated_vertices, surface );
+            }
+
+        private:
+            std::vector< geode::Point3D > load_duplicated_vertices(
+                const aiMesh* paiMesh )
+            {
+                std::vector< geode::Point3D > duplicated_vertices;
+                duplicated_vertices.resize( paiMesh->mNumVertices );
+                for( const auto v : geode::Range{ paiMesh->mNumVertices } )
+                {
+                    duplicated_vertices[v].set_value(
+                        0, paiMesh->mVertices[v].x );
+                    duplicated_vertices[v].set_value(
+                        1, paiMesh->mVertices[v].y );
+                    duplicated_vertices[v].set_value(
+                        2, paiMesh->mVertices[v].z );
+                }
+                return duplicated_vertices;
+            }
+
+            geode::NNSearch3D::ColocatedInfo build_unique_vertices(
+                const std::vector< geode::Point3D >& duplicated_vertices,
+                geode::PolygonalSurface3D& surface )
+            {
+                geode::NNSearch3D colocater{ duplicated_vertices };
+                const auto& vertex_mapping =
+                    colocater.colocated_index_mapping( geode::global_epsilon );
+
+                auto builder =
+                    geode::PolygonalSurfaceBuilder3D::create( surface );
+                builder->create_vertices( vertex_mapping.nb_unique_points() );
+                for( const auto v :
+                    geode::Range{ vertex_mapping.nb_unique_points() } )
+                {
+                    builder->set_point( v, vertex_mapping.unique_points[v] );
+                }
+
+                return vertex_mapping;
             }
 
         private:

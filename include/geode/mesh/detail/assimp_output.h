@@ -63,7 +63,7 @@ namespace geode
             void write_file()
             {
                 Assimp::Exporter exporter;
-                auto status =
+                const auto status =
                     exporter.Export( &assimp_scene_, export_id_, file_ );
                 OPENGEODE_EXCEPTION( status == AI_SUCCESS,
                     "[AssimpMeshOutput::write_file] Export in file \"" + file_
@@ -95,7 +95,8 @@ namespace geode
                 pMesh->mVertices = new aiVector3D[surface_mesh_.nb_vertices()];
                 pMesh->mNumVertices = surface_mesh_.nb_vertices();
 
-                for( auto p : geode::Range{ surface_mesh_.nb_vertices() } )
+                for( const auto p :
+                    geode::Range{ surface_mesh_.nb_vertices() } )
                 {
                     pMesh->mVertices[p] =
                         aiVector3D{ surface_mesh_.point( p ).value( 0 ),
@@ -110,7 +111,8 @@ namespace geode
                 pMesh->mFaces = new aiFace[surface_mesh_.nb_polygons()];
                 pMesh->mNumFaces = surface_mesh_.nb_polygons();
 
-                for( auto t : geode::Range{ surface_mesh_.nb_polygons() } )
+                for( const auto t :
+                    geode::Range{ surface_mesh_.nb_polygons() } )
                 {
                     auto& face = pMesh->mFaces[t];
 

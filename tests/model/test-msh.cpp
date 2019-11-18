@@ -128,8 +128,8 @@ int main()
         test_brep( brep );
 
         // Save and reload
-        std::string filename{ "model/output/cube_v22."
-                              + brep.native_extension() };
+        const std::string filename{ "model/output/cube_v22."
+                                    + brep.native_extension() };
         save_brep( brep, filename );
         BRep reloaded_brep;
         load_brep( reloaded_brep, filename );
