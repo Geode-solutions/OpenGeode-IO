@@ -40,7 +40,7 @@ namespace
 
         void build_mesh()
         {
-            const auto vertex_mapping = build_dupplicated_vertices( surface_ );
+            const auto vertex_mapping = build_duplicated_vertices( surface_ );
             build_polygons( vertex_mapping );
         }
 

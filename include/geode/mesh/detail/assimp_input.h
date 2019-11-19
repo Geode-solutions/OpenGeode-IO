@@ -61,7 +61,7 @@ namespace geode
                 return assimp_mesh_;
             }
 
-            geode::NNSearch3D::ColocatedInfo build_dupplicated_vertices(
+            geode::NNSearch3D::ColocatedInfo build_duplicated_vertices(
                 geode::PolygonalSurface3D& surface )
             {
                 const auto duplicated_vertices =
@@ -91,7 +91,7 @@ namespace geode
                 const std::vector< geode::Point3D >& duplicated_vertices,
                 geode::PolygonalSurface3D& surface )
             {
-                geode::NNSearch3D colocater{ duplicated_vertices };
+                const geode::NNSearch3D colocater{ duplicated_vertices };
                 const auto& vertex_mapping =
                     colocater.colocated_index_mapping( geode::global_epsilon );
 
