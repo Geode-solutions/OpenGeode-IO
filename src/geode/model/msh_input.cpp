@@ -629,8 +629,7 @@ namespace
             iss >> nb_version;
             OPENGEODE_EXCEPTION( std::floor( nb_version ) == 2,
                 "[MSHInput::check_msh_version] Only MSH file format "
-                "version 2 "
-                "is supported for now." );
+                "version 2 is supported for now." );
             geode::index_t binary;
             iss >> binary;
             if( binary != 0 )
