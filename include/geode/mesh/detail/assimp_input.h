@@ -35,13 +35,13 @@
 
 #include <geode/mesh/builder/polygonal_surface_builder.h>
 #include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/opengeodeio_mesh_export.h>
+#include <geode/mesh/opengeode_io_mesh_export.h>
 
 namespace geode
 {
     namespace detail
     {
-        class opengeodeio_mesh_api AssimpMeshInput
+        class opengeode_io_mesh_api AssimpMeshInput
         {
         public:
             AssimpMeshInput( std::string filename )

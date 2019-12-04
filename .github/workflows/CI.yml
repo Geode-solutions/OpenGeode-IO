@@ -51,14 +51,14 @@ jobs:
       run: |
         mkdir -p test
         cd test
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeodeio/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeode-io/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
         cmake --build . -- -j2
         ctest --output-on-failure
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
     - name: Kcov
-      run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/kcov.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeodeio/bin
+      run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/kcov.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeode-io/bin
       if: matrix.cc == 'gcc' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') && matrix.config == 'Debug'
     - uses: codecov/codecov-action@v1.0.2
       if: matrix.cc == 'gcc' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') && matrix.config == 'Debug'
@@ -95,7 +95,7 @@ jobs:
         cd build
         cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build .
-        cd opengeodeio
+        cd opengeode-io
         ctest --output-on-failure
     - name: Notify slack
       if: failure() && github.ref == 'refs/heads/master'
@@ -127,7 +127,7 @@ jobs:
         cd build
         cmake -G "Xcode" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . --config ${{ matrix.config }}
-        cd opengeodeio
+        cd opengeode-io
         ctest -C ${{ matrix.config }} --output-on-failure
     - name: Notify slack
       if: failure() && github.ref == 'refs/heads/master'
@@ -159,7 +159,7 @@ jobs:
         cd build
         cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . --config ${{ matrix.config }}
-        cd opengeodeio
+        cd opengeode-io
         ctest -C ${{ matrix.config }} --output-on-failure
     - name: Notify slack
       if: failure() && github.ref == 'refs/heads/master'

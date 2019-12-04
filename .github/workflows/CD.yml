@@ -24,18 +24,18 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODEIO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
         cmake --build . -- -j2
-        cd opengeodeio
+        cd opengeode-io
         cmake --build . --target package
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeodeio/OpenGeodeIO-${{ steps.package.outputs.version }}-Linux.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-Linux.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Doc
-      run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/doc/doc.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeodeio
+      run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/doc/doc.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeode-io
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
     - name: Notify slack
@@ -65,14 +65,14 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODEIO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
         cmake --build . --config Release
-        cd opengeodeio
+        cd opengeode-io
         cmake --build . --target package --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeodeio/OpenGeodeIO-${{ steps.package.outputs.version }}-Darwin.tar.gz"
+        files: "build/opengeod-io/OpenGeode-IO-${{ steps.package.outputs.version }}-Darwin.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
@@ -102,15 +102,15 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODEIO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
         cmake --build . --config Release
-        cd opengeodeio
+        cd opengeode-io
         cmake --build . --target PACKAGE --config Release
       shell: bash
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeodeio/OpenGeodeIO-${{ steps.package.outputs.version }}-win64.zip"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-win64.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack

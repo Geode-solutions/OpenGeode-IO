@@ -25,12 +25,12 @@
 
 #include <geode/basic/logger.h>
 
-#include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/opengeode_io_model_export.h>
 #include <geode/model/representation/io/brep_input.h>
 
 namespace geode
 {
-    class opengeodeio_model_api MSHInput final : public BRepInput
+    class opengeode_io_model_api MSHInput final : public BRepInput
     {
     public:
         MSHInput( BRep& brep, std::string filename )
