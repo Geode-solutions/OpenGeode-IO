@@ -23,7 +23,7 @@
 
 /*!
 
-\page opengeodeio_supported_file_formats Supported file formats
+\page opengeode_io_supported_file_formats Supported file formats
 
 This page lists the supported file formats, indicating for each the loaded/saved OpenGeode object.
 

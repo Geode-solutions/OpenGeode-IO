@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/opengeode_io_model_export.h>
 
 namespace geode
 {
-    void opengeodeio_model_api initialize_model_io();
+    void opengeode_io_model_api initialize_model_io();
 } // namespace geode

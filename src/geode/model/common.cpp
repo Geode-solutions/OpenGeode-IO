@@ -40,7 +40,7 @@ namespace
             geode::SVGInput::extension() );
     }
 
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_model )
+    OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_model )
     {
         register_brep_input();
         register_section_input();
