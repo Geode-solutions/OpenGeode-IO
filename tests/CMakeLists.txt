@@ -20,11 +20,11 @@
 
 cmake_minimum_required(VERSION 3.7.2)
     
-if(NOT TARGET OpenGeodeIO::mesh)
-    project(OpenGeodeIO CXX)
+if(NOT TARGET OpenGeode-IO::mesh)
+    project(OpenGeode-IO CXX)
     find_package(OpenGeode REQUIRED CONFIG)
     find_package(assimp REQUIRED CONFIG)
-    find_package(OpenGeodeIO REQUIRED CONFIG)
+    find_package(OpenGeode-IO REQUIRED CONFIG)
     enable_testing()
 endif()
 

@@ -19,9 +19,9 @@
 # SOFTWARE.
 
 # Define the project
-project(OpenGeodeIO CXX)
+project(OpenGeode-IO CXX)
 
-option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
+option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
 
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
@@ -45,7 +45,7 @@ add_geode_library(geode/model)
 
 #------------------------------------------------------------------------------------------------
 # Optional modules configuration
-if(OPENGEODEIO_WITH_TESTS)
+if(OPENGEODE_IO_WITH_TESTS)
     # Enable testing with CTest
     enable_testing()
     message(STATUS "Configuring OpenGeode-IO with tests")

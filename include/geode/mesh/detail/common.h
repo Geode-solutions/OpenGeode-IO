@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include <geode/mesh/opengeodeio_mesh_export.h>
+#include <geode/mesh/opengeode_io_mesh_export.h>
 
 namespace geode
 {
-    void opengeodeio_mesh_api initialize_mesh_io();
+    void opengeode_io_mesh_api initialize_mesh_io();
 } // namespace geode

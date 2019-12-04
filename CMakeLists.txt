@@ -24,7 +24,7 @@ cmake_minimum_required(VERSION 3.7.2)
 # Project options
 
 # Optional components
-option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
+option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
 
 # Internal options
 option(USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
