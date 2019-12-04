@@ -1,6 +1,6 @@
 # Upgrade Guide
 
-## Upgrading from OpenGeode-IO v1.x.x to v2.0.0
+## Upgrading from OpenGeode-IO v2.x.x to v3.0.0
 
 ### Motivations
 
