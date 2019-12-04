@@ -37,4 +37,5 @@ ExternalProject_Add(opengeodeio
     BINARY_DIR ${OpenGeode-IO_PATH_BIN}
     DEPENDS 
         assimp
+        pugixml
 )

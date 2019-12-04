@@ -19,21 +19,24 @@
 # SOFTWARE.
 
 # Define the project
-project(OpenGeodeIO CXX)
+project(OpenGeode-IO CXX)
 
 option(OPENGEODEIO_WITH_TESTS "Compile test projects" ON)
 
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
+find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 
 copy_windows_binaries(OpenGeode::mesh)
 copy_windows_binaries(assimp::assimp)
+copy_windows_binaries(pugixml::pugixml)
 
 # Install OpenGeode-IO third-parties
 install(
     DIRECTORY
         ${ASSIMP_INSTALL_PREFIX}/
+        ${PUGIXML_INSTALL_PREFIX}/
     DESTINATION
         .
 )

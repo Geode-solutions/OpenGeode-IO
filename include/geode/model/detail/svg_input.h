@@ -21,33 +21,28 @@
  *
  */
 
-#include <geode/model/detail/common.h>
+#pragma once
 
-#include <geode/model/detail/msh_input.h>
-#include <geode/model/detail/svg_input.h>
+#include <geode/basic/logger.h>
 
-namespace
-{
-    void register_brep_input()
-    {
-        geode::BRepInputFactory::register_creator< geode::MSHInput >(
-            geode::MSHInput::extension() );
-    }
-
-    void register_section_input()
-    {
-        geode::SectionInputFactory::register_creator< geode::SVGInput >(
-            geode::SVGInput::extension() );
-    }
-
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeodeIO_model )
-    {
-        register_brep_input();
-        register_section_input();
-    }
-} // namespace
+#include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/representation/io/section_input.h>
 
 namespace geode
 {
-    void initialize_model_io() {}
+    class opengeodeio_model_api SVGInput final : public SectionInput
+    {
+    public:
+        SVGInput( Section& section, std::string filename )
+            : SectionInput( section, std::move( filename ) )
+        {
+        }
+
+        static std::string extension()
+        {
+            return "svg";
+        }
+
+        void read() final;
+    };
 } // namespace geode
