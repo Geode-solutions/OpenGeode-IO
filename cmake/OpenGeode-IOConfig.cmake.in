@@ -22,6 +22,7 @@
 
 include(CMakeFindDependencyMacro)
 find_dependency(Assimp)
+find_dependency(Pugixml)
 find_dependency(OpenGeode)
 
 # Load information for each target
