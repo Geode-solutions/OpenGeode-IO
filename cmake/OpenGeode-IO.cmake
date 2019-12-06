@@ -30,7 +30,7 @@ find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PRE
 
 copy_windows_binaries(OpenGeode::mesh)
 copy_windows_binaries(assimp::assimp)
-copy_windows_binaries(pugixml::pugixml)
+copy_windows_binaries(pugixml::shared)
 
 # Install OpenGeode-IO third-parties
 install(
