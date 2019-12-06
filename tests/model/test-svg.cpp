@@ -42,74 +42,36 @@
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
 
+geode::index_t nb_closed_lines( const geode::Section& section )
+{
+    geode::index_t nb{ 0 };
+    for( const auto& line : section.lines() )
+    {
+        if( section.is_closed( line ) )
+        {
+            nb++;
+        }
+    }
+    return nb;
+}
+
 void test_section( const geode::Section& section )
 {
-    // Number of components
     OPENGEODE_EXCEPTION(
-        section.nb_corners() == 0, "[Test] Number of corners is not correct" );
+        section.nb_corners() == 31, "[Test] Number of corners is not correct" );
     OPENGEODE_EXCEPTION(
-        section.nb_lines() == 1, "[Test] Number of lines is not correct" );
+        section.nb_lines() == 31, "[Test] Number of lines is not correct" );
+    OPENGEODE_EXCEPTION( nb_closed_lines( section ) == 27,
+        "[Test] Number of closed lines is not correct" );
     OPENGEODE_EXCEPTION( section.nb_surfaces() == 0,
         "[Test] Number of surfaces is not correct" );
-
-    // // Number of vertices and elements in components
-    // for( const auto& c : brep.corners() )
-    // {
-    //     OPENGEODE_EXCEPTION( c.mesh().nb_vertices() == 1,
-    //         "[Test] Number of vertices in corners should be 1" );
-    // }
-    // for( const auto& l : brep.lines() )
-    // {
-    //     OPENGEODE_EXCEPTION( l.mesh().nb_vertices() == 5,
-    //         "[Test] Number of vertices in lines should be 5" );
-    //     OPENGEODE_EXCEPTION( l.mesh().nb_edges() == 4,
-    //         "[Test] Number of edges in lines should be 4" );
-    // }
-    // for( const auto& s : brep.surfaces() )
-    // {
-    //     OPENGEODE_EXCEPTION( s.mesh().nb_vertices() == 29,
-    //         "[Test] Number of vertices in surfaces should be 29" );
-    //     OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 40,
-    //         "[Test] Number of polygons in surfaces should be 40" );
-    // }
-
-    // for( const auto& b : brep.blocks() )
-    // {
-    //     OPENGEODE_EXCEPTION( b.mesh().nb_vertices() == 131,
-    //         "[Test] Number of vertices in blocks should be 131" );
-    //     OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() == 364,
-    //         "[Test] Number of polyhedra in blocks should be 364" );
-    // }
-
-    // // Number of component boundaries and incidences
-    // for( const auto& c : brep.corners() )
-    // {
-    //     OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-    //         "[Test] Number of corner boundary should be 0" );
-    //     OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 3,
-    //         "[Test] Number of corner incidences should be 3" );
-    // }
-    // for( const auto& l : brep.lines() )
-    // {
-    //     OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-    //         "[Test] Number of line boundary should be 2" );
-    //     OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 2,
-    //         "[Test] Number of line incidences should be 2" );
-    // }
-    // for( const auto& s : brep.surfaces() )
-    // {
-    //     OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 4,
-    //         "[Test] Number of surface boundary should be 4" );
-    //     OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1,
-    //         "[Test] Number of surface incidences should be 1" );
-    // }
-    // for( const auto& b : brep.blocks() )
-    // {
-    //     OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 6,
-    //         "[Test] Number of block boundary should be 6" );
-    //     OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
-    //         "[Test] Number of block incidences should be 0" );
-    // }
+    for( const auto uv : geode::Range{ section.nb_unique_vertices() } )
+    {
+        const auto nb_mcv = section.mesh_component_vertices( uv ).size();
+        OPENGEODE_EXCEPTION(
+            nb_mcv == 1 || nb_mcv == 3, "[Test] Wrong number of mesh component "
+                                        "vertices for one unique vertex" );
+    }
 }
 
 int main()

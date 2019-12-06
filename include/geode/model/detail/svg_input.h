@@ -25,12 +25,12 @@
 
 #include <geode/basic/logger.h>
 
-#include <geode/model/opengeodeio_model_export.h>
+#include <geode/model/detail/common.h>
 #include <geode/model/representation/io/section_input.h>
 
 namespace geode
 {
-    class opengeodeio_model_api SVGInput final : public SectionInput
+    class opengeode_io_model_api SVGInput final : public SectionInput
     {
     public:
         SVGInput( Section& section, std::string filename )

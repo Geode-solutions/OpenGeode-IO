@@ -28,14 +28,14 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1680"
-     inkscape:window-height="1026"
+     inkscape:window-width="1859"
+     inkscape:window-height="1056"
      id="namedview10937"
      showgrid="false"
-     inkscape:zoom="1.6107402"
-     inkscape:cx="-1313.493"
-     inkscape:cy="-5680.9739"
-     inkscape:window-x="1920"
+     inkscape:zoom="51.543686"
+     inkscape:cx="-1373.0603"
+     inkscape:cy="-5743.6306"
+     inkscape:window-x="61"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
@@ -50,7 +50,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -85,9 +85,11 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:125%;font-family:Roboto;-inkscape-font-specification:Roboto;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <path
        inkscape:connector-curvature="0"
-       id="path8325"
-       d="M-1366.7398 6033.9755L-1378.0203 6033.9755L-1378.0203 6030.4851L-1366.7398 6030.4851L-1366.7398 6033.9755L-1366.7398 6033.9755"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:125%;font-family:Roboto;-inkscape-font-specification:Roboto;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+       id="hyphen"
+       d="m -1366.7398,6033.9755 -11.2805,0 m 0,0 0,-3.4904 m 0,0 11.2805,0 m 0,0 0,3.4904"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:125%;font-family:Roboto;-inkscape-font-specification:Roboto;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       sodipodi:nodetypes="cccccccccc"
+       inkscape:label="#path8325" />
     <path
        inkscape:connector-curvature="0"
        id="path8327"
@@ -126,7 +128,7 @@
     <path
        inkscape:connector-curvature="0"
        id="path8341"
-       d="M-1215.7021 6021.5162L-1215.5634 6024.6599L-1212.257825 6021.9554L-1208.0739 6021.0539L-1204.6007625 6021.61300625L-1202.11005 6023.290325L-1200.6017625 6026.08585625L-1200.0759 6029.9996L-1200.0759 6046.5273L-1204.3523 6046.5273L-1204.3523 6029.9765L-1204.67585 6027.6245L-1205.6005 6025.9775L-1207.143475 6025.006625L-1209.3684 6024.683L-1211.32165 6024.9604L-1213.0206 6025.7926L-1215.4709 6028.7052L-1215.4709 6046.5273L-1219.7473 6046.5273L-1219.7473 6021.5162L-1215.7021 6021.5162L-1215.7021 6021.5162"
+       d="M-1215.7021 6021.5162L-1215.5634 6024.6599L-1212.257825 6021.9554L-1208.0739 6021.0539L-1204.6007625 6021.61300625L-1202.11005 6023.290325L-1200.6017625 6026.08585625L-1200.0759 6029.9996L-1200.0759 6046.5273h-4.2764L-1204.3523 6029.9765L-1204.67585 6027.6245L-1205.6005 6025.9775L-1207.143475 6025.006625L-1209.3684 6024.683L-1211.32165 6024.9604L-1213.0206 6025.7926L-1215.4709 6028.7052V6046.5273L-1219.7473 6046.5273L-1219.7473 6021.5162L-1215.7021 6021.5162L-1215.7021 6021.5162"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:125%;font-family:Roboto;-inkscape-font-specification:Roboto;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <path
        inkscape:connector-curvature="0"
