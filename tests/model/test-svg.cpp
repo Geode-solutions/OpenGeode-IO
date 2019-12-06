@@ -68,9 +68,9 @@ void test_section( const geode::Section& section )
     for( const auto uv : geode::Range{ section.nb_unique_vertices() } )
     {
         const auto nb_mcv = section.mesh_component_vertices( uv ).size();
-        OPENGEODE_EXCEPTION(
-            nb_mcv == 1 || nb_mcv == 3, "[Test] Wrong number of mesh component "
-                                        "vertices for one unique vertex" );
+        OPENGEODE_EXCEPTION( nb_mcv == 1 || nb_mcv == 3,
+            "[Test] Wrong number of mesh component "
+            "vertices for one unique vertex" );
     }
 }
 
