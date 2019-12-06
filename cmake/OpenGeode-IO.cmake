@@ -36,7 +36,6 @@ copy_windows_binaries(pugixml::shared)
 install(
     DIRECTORY
         ${ASSIMP_INSTALL_PREFIX}/
-        ${PUGIXML_INSTALL_PREFIX}/
     DESTINATION
         .
 )

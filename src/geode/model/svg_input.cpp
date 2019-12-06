@@ -23,6 +23,7 @@
 
 #include <geode/model/detail/svg_input.h>
 
+#include <cctype>
 #include <fstream>
 #include <unordered_map>
 
@@ -99,47 +100,46 @@ namespace
                 absolute = std::isupper( token );
             }
 
-            void apply( geode::Point2D& cur_position,
+            geode::Point2D apply( const geode::Point2D& position,
                 const std::vector< double >& params ) const
             {
                 OPENGEODE_ASSERT( params.size() == get_nb_params(),
                     "[SVGInput::Command::apply] Wrong number of parameters" );
                 if( letter == 'm' || letter == 'l' )
                 {
+                    geode::Point2D step{ { params[0], params[1] } };
                     if( absolute )
                     {
-                        cur_position = { { 0, 0 } };
+                        return step;
                     }
-                    for( const auto c : geode::Range{ 2 } )
-                    {
-                        cur_position.set_value(
-                            c, cur_position.value( c ) + params[c] );
-                    }
+                    return position + step;
                 }
-                else if( letter == 'h' )
+                if( letter == 'h' )
                 {
                     if( absolute )
                     {
-                        cur_position = { { 0, cur_position.value( 1 ) } };
+                        return geode::Point2D{ { params[0],
+                            position.value( 1 ) } };
                     }
-                    cur_position.set_value(
-                        0, cur_position.value( 0 ) + params[0] );
+                    return geode::Point2D{ { position.value( 0 ) + params[0],
+                        position.value( 1 ) } };
                 }
                 else if( letter == 'v' )
                 {
                     if( absolute )
                     {
-                        cur_position = { { cur_position.value( 0 ), 0 } };
+                        return geode::Point2D{ {
+                            position.value( 0 ),
+                            params[0],
+                        } };
                     }
-                    cur_position.set_value(
-                        1, cur_position.value( 1 ) + params[0] );
+                    return geode::Point2D{ { position.value( 0 ),
+                        position.value( 1 ) + params[0] } };
                 }
-                else
-                {
-                    OPENGEODE_ASSERT_NOT_REACHED(
-                        "[SVGInput::Command::apply] Command not supported: "
-                        + letter );
-                }
+                throw geode::OpenGeodeException(
+                    "[SVGInput::Command::apply] Command not supported: "
+                    + letter );
+                return position;
             }
 
             geode::index_t get_nb_params() const
@@ -167,7 +167,7 @@ namespace
             }
         }
 
-        void format_path( std::string& path )
+        void format_path( std::string& path ) const
         {
             remove_commas( path );
             add_space_around_letters( path );
@@ -179,18 +179,13 @@ namespace
             return { std::istream_iterator< std::string >( iss ), {} };
         }
 
-        static inline bool is_not_alpha( char c )
+        bool string_isalpha( const std::string& str ) const
         {
-            return !std::isalpha( c );
+            return std::all_of( str.begin(), str.end(),
+                []( const char& c ) { return std::isalpha( c ); } );
         }
 
-        bool string_isalpha( const std::string& str )
-        {
-            return std::find_if( str.begin(), str.end(), is_not_alpha )
-                   == str.end();
-        }
-
-        void remove_commas( std::string& path )
+        void remove_commas( std::string& path ) const
         {
             std::replace( path.begin(), path.end(), ',', ' ' );
         }
@@ -214,7 +209,7 @@ namespace
             add_spaces( path, others... );
         }
 
-        void add_space_around_letters( std::string& path )
+        void add_space_around_letters( std::string& path ) const
         {
             add_spaces(
                 path, 'M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'Z', 'z' );
@@ -222,13 +217,13 @@ namespace
 
         std::vector< double > get_params(
             const std::vector< std::string >& tokens,
-            geode::index_t pos,
-            geode::index_t nb )
+            geode::index_t first,
+            geode::index_t nb ) const
         {
             std::vector< double > params( nb );
             for( const auto t : geode::Range{ nb } )
             {
-                const auto& token = tokens[pos + t];
+                const auto& token = tokens[first + t];
                 try
                 {
                     params[t] = std::stod( token );
@@ -247,13 +242,14 @@ namespace
 
         geode::index_t update_command( const std::vector< std::string >& tokens,
             geode::index_t t,
-            Command& command )
+            Command& command ) const
         {
             const auto& token = tokens[t];
             if( string_isalpha( token ) )
             {
                 OPENGEODE_EXCEPTION( token.size() == 1,
-                    "[todo] Command should be single letter" );
+                    "[SVGInputImpl::update_command] Command "
+                    "should be single letter" );
                 command.update( *token.c_str() );
                 return t + 1;
             }
@@ -285,7 +281,7 @@ namespace
                     vertices.clear();
                 }
             }
-            command.apply( cur_position, params );
+            cur_position = command.apply( cur_position, params );
             vertices.push_back( cur_position );
             return t + nb_params - 1;
         }
@@ -295,11 +291,13 @@ namespace
             std::vector< geode::Point2D > vertices;
             Command cur_command;
             geode::Point2D cur_position;
-            for( geode::index_t t = 0; t < tokens.size(); t++ )
+            geode::index_t t{ 0 };
+            while( t < tokens.size() )
             {
                 t = update_command( tokens, t, cur_command );
                 t = apply_command(
                     tokens, t, cur_command, cur_position, vertices );
+                t++;
             }
             create_line( vertices );
         }
@@ -316,7 +314,7 @@ namespace
         }
 
         bool boundary_relation_exist(
-            const geode::Corner2D& corner, const geode::Line2D& line )
+            const geode::Corner2D& corner, const geode::Line2D& line ) const
         {
             for( const auto& boundary : section_.boundaries( line ) )
             {
@@ -328,7 +326,7 @@ namespace
             return false;
         }
 
-        double compute_epsilon()
+        double compute_epsilon() const
         {
             const auto bbox = section_.bounding_box();
             return FRACTION
@@ -357,10 +355,10 @@ namespace
             corner_ids.reserve( colocated_info.nb_unique_points() );
             for( const auto& unique_point : colocated_info.unique_points )
             {
-                auto corner_id = builder_.add_corner();
+                const auto corner_id = builder_.add_corner();
                 builder_.corner_mesh_builder( corner_id )
                     ->create_point( unique_point );
-                auto uv = builder_.create_unique_vertex();
+                const auto uv = builder_.create_unique_vertex();
                 builder_.set_unique_vertex(
                     { section_.corner( corner_id ).component_id(), 0 }, uv );
                 corner_ids.push_back( corner_id );
