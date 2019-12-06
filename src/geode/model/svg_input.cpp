@@ -42,7 +42,7 @@
 
 namespace
 {
-    static constexpr double FRACTION = 1e-5;
+    constexpr double FRACTION = 1e-5;
 
     class SVGInputImpl
     {
