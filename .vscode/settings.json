@@ -4,7 +4,10 @@
         "${workspaceFolder}/include",
         "${workspaceFolder}/build/opengeode-io",
         "${workspaceFolder}/build/third_party/assimp/install/include",
-        "${workspaceFolder:OpenGeode}/build/opengeode/install/include"
+        "${workspaceFolder:OpenGeode}/include",
+        "${workspaceFolder:OpenGeode}/build/opengeode",
+        "${workspaceFolder:OpenGeode}/build/third_party/bitsery/install/include",
+        "${workspaceFolder:OpenGeode}/build/third_party/asyncplusplus/install/include"
     ],
     "files.watcherExclude": {
         "${workspaceFolder}/build/**": true
