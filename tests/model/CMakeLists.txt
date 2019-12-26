@@ -18,10 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 add_geode_test(test-msh.cpp 
-    ${PROJECT_NAME}::model
     OpenGeode::basic
     OpenGeode::mesh
     OpenGeode::model
+    ${PROJECT_NAME}::model
+)
+add_geode_test(test-svg.cpp 
+    OpenGeode::basic
+    OpenGeode::mesh
+    OpenGeode::model
+    ${PROJECT_NAME}::model
 )
