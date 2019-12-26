@@ -17,5 +17,5 @@ target_link_libraries(${target_name}
         OpenGeode::geometry
         OpenGeode::mesh
         OpenGeode::model
-        pugixml::shared
+        pugixml::static
 )
