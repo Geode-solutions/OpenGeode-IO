@@ -335,6 +335,10 @@ namespace
 
         void create_line( const std::vector< geode::Point2D >& vertices )
         {
+            if( vertices.size() < 2 )
+            {
+                return;
+            }
             const auto& line_id = builder_.add_line();
             const auto line_builder = builder_.line_mesh_builder( line_id );
             line_builder->create_point( vertices.front() );
