@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Geode-solutions
+ * Copyright (c) 2019 - 2020 Geode-solutions
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -84,15 +84,15 @@ int main()
         Section section;
 
         // Load file
-        load_section( section, test_path + "model/data/logo.svg" );
-        test_section( section );
+        load_section( section, "/tmp/fractures.svg" );
+        // test_section( section );
 
         // Save and reload
-        const std::string filename{ "logo." + section.native_extension() };
+        const std::string filename{ "fractures." + section.native_extension() };
         save_section( section, filename );
-        Section reloaded_section;
-        load_section( reloaded_section, filename );
-        test_section( reloaded_section );
+        // Section reloaded_section;
+        // load_section( reloaded_section, filename );
+        // test_section( reloaded_section );
 
         Logger::info( "TEST SUCCESS" );
         return 0;
