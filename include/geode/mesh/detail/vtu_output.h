@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include <geode/mesh/io/polyhedral_solid_output.h>
 
 namespace geode
@@ -33,6 +35,8 @@ namespace geode
         VTUOutput( const PolyhedralSolid< 3 >& solid, std::string filename )
             : PolyhedralSolidOutput< 3 >( solid, std::move( filename ) )
         {
+            exported_types_.emplace( typeid( index_t ).name() );
+            exported_types_.emplace( typeid( double ).name() );
         }
 
         static std::string extension()
@@ -41,5 +45,8 @@ namespace geode
         }
 
         void write() const final;
+
+    private:
+        std::unordered_set< std::string > exported_types_;
     };
 } // namespace geode

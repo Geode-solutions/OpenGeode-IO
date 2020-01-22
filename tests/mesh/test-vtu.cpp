@@ -26,10 +26,54 @@
 #include <geode/basic/assert.h>
 #include <geode/basic/logger.h>
 
-#include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/geometry/point.h>
+
+#include <geode/mesh/builder/polyhedral_solid_builder.h>
+#include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/detail/vtu_output.h>
-#include <geode/mesh/io/tetrahedral_solid_input.h>
+
+// auto attr = polyhedral_solid()
+//                 .polyhedron_attribute_manager()
+//                 .find_or_create_attribute< geode::VariableAttribute,
+//                     geode::index_t >( "num", 0 );
+// for( const auto p : geode::Range{ polyhedral_solid().nb_polyhedra() } )
+// {
+//     attr->set_value( p, 2 * p );
+// }
+// auto attr2 =
+//     polyhedral_solid()
+//         .vertex_attribute_manager()
+//         .find_or_create_attribute< geode::VariableAttribute, double >(
+//             "toto", 0 );
+// for( const auto v : geode::Range{ polyhedral_solid().nb_vertices() } )
+// {
+//     DEBUG( v );
+//     attr2->set_value( v, 60.0 - 2.0 * v );
+// }
+
+void initialize_solid( geode::PolyhedralSolidBuilder3D& builder )
+{
+    builder.create_point( { { 0., 0., 0. } } );
+    builder.create_point( { { 1., 0.5, 0. } } );
+    builder.create_point( { { 2., -1., 0. } } );
+    builder.create_point( { { 2., -2., 0. } } );
+    builder.create_point( { { 1., -2., 0. } } );
+    builder.create_point( { { 0., -1., 2. } } );
+    builder.create_point( { { 2., -4., 0. } } );
+    builder.create_point( { { 1., -4., 0. } } );
+    builder.create_point( { { 3., -3., 3. } } );
+    builder.create_polyhedron(
+        { 0, 1, 2, 3, 4, 5 }, { { 0, 1, 2, 3, 4 }, { 0, 1, 5 }, { 1, 2, 5 },
+                                  { 2, 3, 5 }, { 3, 4, 5 }, { 4, 0, 5 } } );
+    builder.create_polyhedron(
+        { 3, 4, 5, 6, 7 }, { { 0, 1, 4, 3 }, { 0, 1, 2 }, { 1, 4, 2 },
+                               { 4, 3, 2 }, { 3, 0, 2 } } );
+    builder.create_polyhedron( { 5, 6, 7, 8 },
+        { { 0, 1, 2 }, { 1, 2, 3 }, { 2, 3, 0 }, { 3, 0, 1 } } );
+}
+
+void initialize_solid_attributes( geode::PolyhedralSolid3D& solid ) {}
 
 int main()
 {
@@ -38,11 +82,10 @@ int main()
     try
     {
         initialize_mesh_io();
-        auto solid = TetrahedralSolid3D::create();
-
-        // Load file
-        load_tetrahedral_solid(
-            *solid, test_path + "mesh/data/solid.og_tso3d" );
+        auto solid = PolyhedralSolid3D::create();
+        auto builder = PolyhedralSolidBuilder3D::create( *solid );
+        initialize_solid( *builder );
+        initialize_solid_attributes( *solid );
 
         // Save file
         const std::string output_file{ "solid." + VTUOutput::extension() };
