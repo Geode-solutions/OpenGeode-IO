@@ -102,15 +102,10 @@ namespace
     std::string print_cell_faces( const geode::PolyhedralSolid3D& solid )
     {
         std::string result;
-        geode::index_t counter{ 0 };
-        result += "\n";
         for( const auto p : geode::Range{ solid.nb_polyhedra() } )
         {
-            counter += solid.nb_polyhedron_facets( p );
-        }
-        result += std::to_string( counter );
-        for( const auto p : geode::Range{ solid.nb_polyhedra() } )
-        {
+            result += "\n";
+            result += std::to_string( solid.nb_polyhedron_facets( p ) );
             for( const auto f :
                 geode::Range{ solid.nb_polyhedron_facets( p ) } )
             {
@@ -136,6 +131,7 @@ namespace
         result += "\n";
         for( const auto p : geode::Range{ solid.nb_polyhedra() } )
         {
+            counter++;
             for( const auto f :
                 geode::Range{ solid.nb_polyhedron_facets( p ) } )
             {
