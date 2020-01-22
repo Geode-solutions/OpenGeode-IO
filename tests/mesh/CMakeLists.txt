@@ -23,12 +23,20 @@ add_geode_test(test-obj.cpp
     OpenGeode::mesh
     ${PROJECT_NAME}::mesh
 )
+
 add_geode_test(test-ply.cpp 
     OpenGeode::basic
     OpenGeode::mesh
     ${PROJECT_NAME}::mesh
 )
+
 add_geode_test(test-stl.cpp 
+    OpenGeode::basic
+    OpenGeode::mesh
+    ${PROJECT_NAME}::mesh
+)
+
+add_geode_test(test-vtu.cpp 
     OpenGeode::basic
     OpenGeode::mesh
     ${PROJECT_NAME}::mesh

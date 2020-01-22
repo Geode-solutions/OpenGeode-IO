@@ -29,6 +29,7 @@
 #include <geode/mesh/detail/ply_output.h>
 #include <geode/mesh/detail/stl_input.h>
 #include <geode/mesh/detail/stl_output.h>
+#include <geode/mesh/detail/vtu_output.h>
 
 namespace
 {
@@ -60,6 +61,12 @@ namespace
             geode::STLOutput >( geode::STLOutput::extension() );
     }
 
+    void register_polyhedral_solid_output()
+    {
+        geode::PolyhedralSolidOutputFactory3D::register_creator<
+            geode::VTUOutput >( geode::VTUOutput::extension() );
+    }
+
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_mesh )
     {
         register_polygonal_surface_input();
@@ -67,6 +74,7 @@ namespace
 
         register_polygonal_surface_output();
         register_triangulated_surface_output();
+        register_polyhedral_solid_output();
     }
 } // namespace
 

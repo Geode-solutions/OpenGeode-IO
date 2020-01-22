@@ -8,6 +8,7 @@ set(sources
     "${lib_source_dir}/obj_output.cpp"
     "${lib_source_dir}/ply_output.cpp"
     "${lib_source_dir}/stl_output.cpp"
+    "${lib_source_dir}/vtu_output.cpp"
 )
 set(public_headers
     "${lib_include_dir}/detail/common.h"
@@ -21,6 +22,7 @@ set(advanced_headers
     "${lib_include_dir}/detail/obj_output.h"
     "${lib_include_dir}/detail/ply_output.h"
     "${lib_include_dir}/detail/stl_output.h"
+    "${lib_include_dir}/detail/vtu_output.h"
 )
 target_link_libraries(${target_name}
     PRIVATE
@@ -28,4 +30,5 @@ target_link_libraries(${target_name}
         OpenGeode::geometry
         OpenGeode::mesh
         assimp::assimp
+        pugixml::pugixml
 )
