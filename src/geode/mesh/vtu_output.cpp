@@ -23,9 +23,9 @@
 
 #include <geode/mesh/detail/vtu_output.h>
 
-// #include <fstream>
-
 #include <pugixml.hpp>
+
+#include <geode/basic/range.h>
 
 #include <geode/geometry/point.h>
 
@@ -33,26 +33,10 @@
 
 namespace
 {
-    // void write_header(
-    //     std::ofstream& writer, const geode::PolyhedralSolid3D& solid )
-    // {
-    //     writer << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" "
-    //               "byte_order=\"BigEndian\">\n";
-    //     writer << "<UnstructuredGrid>\n";
-    //     writer << "<Piece NumberOfPoints=\"" << solid.nb_vertices()
-    //            << "\" NumberOfCells=\"" << solid.nb_polyhedra() << "\">\n";
-    // }
-
     // void write_point_data() {}
     // void write_cell_data() {}
     // void write_points() {}
     // void write_cells() {}
-    // void write_footer()
-    // {
-    //     writer << "</Piece>\n";
-    //     writer << "</UnstructuredGrid>\n";
-    //     writer << "</VTKFile>\n";
-    // }
 
     std::string print_point_coords( const geode::PolyhedralSolid3D& solid )
     {
@@ -108,7 +92,58 @@ namespace
         result += "\n";
         for( const auto p : geode::Range{ solid.nb_polyhedra() } )
         {
-            result += "10 ";
+            geode_unused( p );
+            result += "42 ";
+        }
+        result += "\n";
+        return result;
+    }
+
+    std::string print_cell_faces( const geode::PolyhedralSolid3D& solid )
+    {
+        std::string result;
+        geode::index_t counter{ 0 };
+        result += "\n";
+        for( const auto p : geode::Range{ solid.nb_polyhedra() } )
+        {
+            counter += solid.nb_polyhedron_facets( p );
+        }
+        result += std::to_string( counter );
+        for( const auto p : geode::Range{ solid.nb_polyhedra() } )
+        {
+            for( const auto f :
+                geode::Range{ solid.nb_polyhedron_facets( p ) } )
+            {
+                result += "\n";
+                const auto vertices =
+                    solid.facet_vertices( solid.polyhedron_facet( { p, f } ) );
+                result += std::to_string( vertices.size() );
+                for( const auto v : vertices )
+                {
+                    result += " ";
+                    result += std::to_string( v );
+                }
+            }
+        }
+        result += "\n";
+        return result;
+    }
+
+    std::string print_cell_face_offsets( const geode::PolyhedralSolid3D& solid )
+    {
+        std::string result;
+        geode::index_t counter{ 0 };
+        result += "\n";
+        for( const auto p : geode::Range{ solid.nb_polyhedra() } )
+        {
+            for( const auto f :
+                geode::Range{ solid.nb_polyhedron_facets( p ) } )
+            {
+                counter++;
+                counter += solid.nb_polyhedron_facet_vertices( { p, f } );
+            }
+            result += std::to_string( counter );
+            result += " ";
         }
         result += "\n";
         return result;
@@ -141,7 +176,7 @@ namespace geode
         pt_data_array.append_attribute( "NumberOfComponents" ).set_value( "3" );
         pt_data_array.append_attribute( "Format" ).set_value( "ascii" );
         pt_data_array.text().set(
-            std::move( print_point_coords( polyhedral_solid() ) ).c_str() );
+            print_point_coords( polyhedral_solid() ).c_str() );
         // write_cells();
         auto cells = piece.append_child( "Cells" );
         auto connectivity = cells.append_child( "DataArray" );
@@ -149,21 +184,32 @@ namespace geode
         connectivity.append_attribute( "type" ).set_value( "Int32" );
         connectivity.append_attribute( "Format" ).set_value( "ascii" );
         connectivity.text().set(
-            std::move( print_cell_vertices( polyhedral_solid() ) ).c_str() );
+            print_cell_vertices( polyhedral_solid() ).c_str() );
 
         auto offset = cells.append_child( "DataArray" );
         offset.append_attribute( "Name" ).set_value( "offsets" );
         offset.append_attribute( "type" ).set_value( "Int32" );
         offset.append_attribute( "Format" ).set_value( "ascii" );
-        offset.text().set(
-            std::move( print_cell_offsets( polyhedral_solid() ) ).c_str() );
+        offset.text().set( print_cell_offsets( polyhedral_solid() ).c_str() );
 
         auto types = cells.append_child( "DataArray" );
         types.append_attribute( "Name" ).set_value( "types" );
         types.append_attribute( "type" ).set_value( "Int32" );
         types.append_attribute( "Format" ).set_value( "ascii" );
-        types.text().set(
-            std::move( print_cell_types( polyhedral_solid() ) ).c_str() );
+        types.text().set( print_cell_types( polyhedral_solid() ).c_str() );
+
+        auto faces = cells.append_child( "DataArray" );
+        faces.append_attribute( "Name" ).set_value( "faces" );
+        faces.append_attribute( "type" ).set_value( "Int32" );
+        faces.append_attribute( "Format" ).set_value( "ascii" );
+        faces.text().set( print_cell_faces( polyhedral_solid() ).c_str() );
+
+        auto face_offsets = cells.append_child( "DataArray" );
+        face_offsets.append_attribute( "Name" ).set_value( "faceoffsets" );
+        face_offsets.append_attribute( "type" ).set_value( "Int32" );
+        face_offsets.append_attribute( "Format" ).set_value( "ascii" );
+        face_offsets.text().set(
+            print_cell_face_offsets( polyhedral_solid() ).c_str() );
 
         // write_footer( writer );
         doc.save_file( filename().c_str(), "\t", pugi::format_default,
