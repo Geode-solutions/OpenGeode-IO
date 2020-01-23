@@ -24,6 +24,8 @@
 #include <geode/tests_config.h>
 
 #include <geode/basic/assert.h>
+#include <geode/basic/attribute.h>
+#include <geode/basic/attribute_manager.h>
 #include <geode/basic/logger.h>
 
 #include <geode/geometry/point.h>
@@ -32,25 +34,6 @@
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/detail/vtu_output.h>
-
-// auto attr = polyhedral_solid()
-//                 .polyhedron_attribute_manager()
-//                 .find_or_create_attribute< geode::VariableAttribute,
-//                     geode::index_t >( "num", 0 );
-// for( const auto p : geode::Range{ polyhedral_solid().nb_polyhedra() } )
-// {
-//     attr->set_value( p, 2 * p );
-// }
-// auto attr2 =
-//     polyhedral_solid()
-//         .vertex_attribute_manager()
-//         .find_or_create_attribute< geode::VariableAttribute, double >(
-//             "toto", 0 );
-// for( const auto v : geode::Range{ polyhedral_solid().nb_vertices() } )
-// {
-//     DEBUG( v );
-//     attr2->set_value( v, 60.0 - 2.0 * v );
-// }
 
 void initialize_solid( geode::PolyhedralSolidBuilder3D& builder )
 {
@@ -73,7 +56,24 @@ void initialize_solid( geode::PolyhedralSolidBuilder3D& builder )
         { { 0, 1, 2 }, { 1, 2, 3 }, { 2, 3, 0 }, { 3, 0, 1 } } );
 }
 
-void initialize_solid_attributes( geode::PolyhedralSolid3D& solid ) {}
+void initialize_solid_attributes( geode::PolyhedralSolid3D& solid )
+{
+    auto attr = solid.polyhedron_attribute_manager()
+                    .find_or_create_attribute< geode::VariableAttribute,
+                        geode::index_t >( "index_t", 0 );
+    for( const auto p : geode::Range{ solid.nb_polyhedra() } )
+    {
+        attr->set_value( p, 2 * p );
+    }
+    auto attr2 =
+        solid.vertex_attribute_manager()
+            .find_or_create_attribute< geode::VariableAttribute, double >(
+                "double", 0 );
+    for( const auto v : geode::Range{ solid.nb_vertices() } )
+    {
+        attr2->set_value( v, 5.0 - 2.0 * v );
+    }
+}
 
 int main()
 {
