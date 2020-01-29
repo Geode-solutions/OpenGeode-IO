@@ -28,10 +28,10 @@
 
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/detail/common.h>
-#include <geode/mesh/detail/ply_input.h>
-#include <geode/mesh/detail/ply_output.h>
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/private/ply_input.h>
+#include <geode/mesh/private/ply_output.h>
 
 int main()
 {
@@ -39,23 +39,23 @@ int main()
 
     try
     {
-        initialize_mesh_io();
+        detail::initialize_mesh_io();
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
-        load_polygonal_surface( *surface,
-            test_path + "mesh/data/Armadillo." + PLYInput::extension() );
+        load_polygonal_surface(
+            *surface, absl::StrCat( data_path, "/Armadillo.",
+                          detail::PLYInput::extension() ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        const std::string output_file_native{ "armadillo."
-                                              + surface->native_extension() };
-        save_polygonal_surface( *surface, output_file_native );
-        const std::string output_file_stl{ "armadillo."
-                                           + PLYOutput::extension() };
+        save_polygonal_surface( *surface,
+            absl::StrCat( "armadillo.", surface->native_extension() ) );
+        const auto output_file_stl =
+            absl::StrCat( "armadillo.", detail::PLYOutput::extension() );
         save_polygonal_surface( *surface, output_file_stl );
 
         // Reload file

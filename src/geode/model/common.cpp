@@ -23,21 +23,21 @@
 
 #include <geode/model/detail/common.h>
 
-#include <geode/model/detail/msh_input.h>
-#include <geode/model/detail/svg_input.h>
+#include <geode/model/private/msh_input.h>
+#include <geode/model/private/svg_input.h>
 
 namespace
 {
     void register_brep_input()
     {
-        geode::BRepInputFactory::register_creator< geode::MSHInput >(
-            geode::MSHInput::extension() );
+        geode::BRepInputFactory::register_creator< geode::detail::MSHInput >(
+            geode::detail::MSHInput::extension().data() );
     }
 
     void register_section_input()
     {
-        geode::SectionInputFactory::register_creator< geode::SVGInput >(
-            geode::SVGInput::extension() );
+        geode::SectionInputFactory::register_creator< geode::detail::SVGInput >(
+            geode::detail::SVGInput::extension().data() );
     }
 
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_model )
@@ -49,5 +49,8 @@ namespace
 
 namespace geode
 {
-    void initialize_model_io() {}
+    namespace detail
+    {
+        void initialize_model_io() {}
+    } // namespace detail
 } // namespace geode

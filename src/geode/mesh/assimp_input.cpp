@@ -21,26 +21,26 @@
  *
  */
 
-#pragma once
+#include <geode/mesh/private/assimp_input.h>
 
-#include <geode/mesh/io/triangulated_surface_output.h>
+#include <geode/basic/common.h>
+#include <geode/basic/logger.h>
 
 namespace geode
 {
-    class STLOutput final : public TriangulatedSurfaceOutput< 3 >
+    namespace detail
     {
-    public:
-        STLOutput(
-            const TriangulatedSurface< 3 > &surface, std::string filename )
-            : TriangulatedSurfaceOutput< 3 >( surface, std::move( filename ) )
+        bool AssimpMeshInput::read_file()
         {
+            const auto* pScene = importer_.ReadFile( file_.data(), 0 );
+            OPENGEODE_EXCEPTION(
+                pScene, "[AssimpMeshInput::read_file]"
+                            + std::string{ importer_.GetErrorString() } );
+            OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
+                "[AssimpMeshInput::read_file] Several meshes in imported file ",
+                file_ );
+            assimp_mesh_ = pScene->mMeshes[0];
+            return true;
         }
-
-        static std::string extension()
-        {
-            return "stl";
-        }
-
-        void write() const final;
-    };
+    } // namespace detail
 } // namespace geode

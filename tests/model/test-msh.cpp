@@ -33,11 +33,11 @@
 #include <geode/mesh/core/polyhedral_solid.h>
 
 #include <geode/model/detail/common.h>
-#include <geode/model/detail/msh_input.h>
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>
 #include <geode/model/mixin/core/surface.h>
+#include <geode/model/private/msh_input.h>
 #include <geode/model/representation/core/brep.h>
 #include <geode/model/representation/io/brep_input.h>
 #include <geode/model/representation/io/brep_output.h>
@@ -120,16 +120,16 @@ int main()
 
     try
     {
-        initialize_model_io();
+        detail::initialize_model_io();
         BRep brep;
 
         // Load file
-        load_brep( brep, test_path + "model/data/cube_v22.msh" );
+        load_brep( brep, absl::StrCat( data_path, "/cube_v22.msh" ) );
         test_brep( brep );
 
         // Save and reload
-        const std::string filename{ "model/output/cube_v22."
-                                    + brep.native_extension() };
+        const auto filename =
+            absl::StrCat( "model/output/cube_v22.", brep.native_extension() );
         save_brep( brep, filename );
         BRep reloaded_brep;
         load_brep( reloaded_brep, filename );

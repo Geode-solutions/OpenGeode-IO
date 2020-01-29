@@ -33,11 +33,11 @@
 #include <geode/mesh/core/polyhedral_solid.h>
 
 #include <geode/model/detail/common.h>
-#include <geode/model/detail/msh_input.h>
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>
 #include <geode/model/mixin/core/surface.h>
+#include <geode/model/private/msh_input.h>
 #include <geode/model/representation/core/section.h>
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
@@ -80,15 +80,16 @@ int main()
 
     try
     {
-        initialize_model_io();
+        detail::initialize_model_io();
         Section section;
 
         // Load file
-        load_section( section, test_path + "model/data/logo.svg" );
+        load_section( section, absl::StrCat( data_path, "/logo.svg" ) );
         test_section( section );
 
         // Save and reload
-        const std::string filename{ "logo." + section.native_extension() };
+        const auto filename =
+            absl::StrCat( "logo.", section.native_extension() );
         save_section( section, filename );
         Section reloaded_section;
         load_section( reloaded_section, filename );

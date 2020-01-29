@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/model/detail/svg_input.h>
+#include <geode/model/private/svg_input.h>
 
 #include <cctype>
 #include <fstream>
@@ -48,16 +48,14 @@ namespace
     class SVGInputImpl
     {
     public:
-        SVGInputImpl( std::string filename, geode::Section& section )
-            : file_( std::move( filename ) ),
-              section_( section ),
-              builder_{ section }
+        SVGInputImpl( absl::string_view filename, geode::Section& section )
+            : file_( filename.data() ), section_( section ), builder_{ section }
         {
             OPENGEODE_EXCEPTION( file_.good(),
-                "[SVGInput] Error while opening file: " + filename );
-            auto ok = document_.load_file( filename.c_str() );
+                "[SVGInput] Error while opening file: ", filename );
+            auto ok = document_.load_file( filename.data() );
             OPENGEODE_EXCEPTION(
-                ok, "[SVGInput] Error while parsing file: " + filename );
+                ok, "[SVGInput] Error while parsing file: ", filename );
         }
 
         void read_file()
@@ -423,11 +421,14 @@ namespace
 
 namespace geode
 {
-    void SVGInput::read()
+    namespace detail
     {
-        SVGInputImpl impl( filename(), section() );
-        impl.read_file();
-        impl.process_paths();
-        impl.build_topology();
-    }
+        void SVGInput::read()
+        {
+            SVGInputImpl impl( filename(), section() );
+            impl.read_file();
+            impl.process_paths();
+            impl.build_topology();
+        }
+    } // namespace detail
 } // namespace geode

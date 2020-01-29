@@ -27,19 +27,24 @@
 
 namespace geode
 {
-    class PLYOutput final : public PolygonalSurfaceOutput< 3 >
+    namespace detail
     {
-    public:
-        PLYOutput( const PolygonalSurface< 3 > &surface, std::string filename )
-            : PolygonalSurfaceOutput< 3 >( surface, std::move( filename ) )
+        class OBJOutput final : public PolygonalSurfaceOutput< 3 >
         {
-        }
+        public:
+            OBJOutput( const PolygonalSurface< 3 > &surface,
+                absl::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( surface, filename )
+            {
+            }
 
-        static std::string extension()
-        {
-            return "ply";
-        }
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "obj";
+                return ext;
+            }
 
-        void write() const final;
-    };
+            void write() const final;
+        };
+    } // namespace detail
 } // namespace geode

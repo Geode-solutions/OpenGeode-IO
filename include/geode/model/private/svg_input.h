@@ -23,23 +23,30 @@
 
 #pragma once
 
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/basic/logger.h>
+
+#include <geode/model/detail/common.h>
+#include <geode/model/representation/io/section_input.h>
 
 namespace geode
 {
-    class OBJOutput final : public PolygonalSurfaceOutput< 3 >
+    namespace detail
     {
-    public:
-        OBJOutput( const PolygonalSurface< 3 > &surface, std::string filename )
-            : PolygonalSurfaceOutput< 3 >( surface, std::move( filename ) )
+        class SVGInput final : public SectionInput
         {
-        }
+        public:
+            SVGInput( Section& section, absl::string_view filename )
+                : SectionInput( section, filename )
+            {
+            }
 
-        static std::string extension()
-        {
-            return "obj";
-        }
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "svg";
+                return ext;
+            }
 
-        void write() const final;
-    };
+            void read() final;
+        };
+    } // namespace detail
 } // namespace geode

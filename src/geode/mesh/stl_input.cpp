@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/mesh/detail/stl_input.h>
+#include <geode/mesh/private/stl_input.h>
 
 #include <geode/mesh/builder/triangulated_surface_builder.h>
 #include <geode/mesh/core/geode_triangulated_surface.h>
-#include <geode/mesh/detail/assimp_input.h>
+#include <geode/mesh/private/assimp_input.h>
 
 namespace
 {
     class STLInputImpl : public geode::detail::AssimpMeshInput
     {
     public:
-        STLInputImpl( std::string filename,
+        STLInputImpl( absl::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::AssimpMeshInput( std::move( filename ) ),
+            : geode::detail::AssimpMeshInput( filename ),
               surface_( triangulated_surface )
         {
         }
@@ -76,12 +76,15 @@ namespace
 
 namespace geode
 {
-    void STLInput::do_read()
+    namespace detail
     {
-        STLInputImpl impl{ filename(), triangulated_surface() };
-        auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success,
-            "[STLInput::do_read] Invalid file \"" + filename() + "\"" );
-        impl.build_mesh();
-    }
+        void STLInput::do_read()
+        {
+            STLInputImpl impl{ filename(), triangulated_surface() };
+            auto success = impl.read_file();
+            OPENGEODE_EXCEPTION( success, "[STLInput::do_read] Invalid file \"",
+                filename(), "\"" );
+            impl.build_mesh();
+        }
+    } // namespace detail
 } // namespace geode

@@ -23,23 +23,30 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/basic/logger.h>
+
+#include <geode/model/opengeode_io_model_export.h>
+#include <geode/model/representation/io/brep_input.h>
 
 namespace geode
 {
-    class STLInput final : public TriangulatedSurfaceInput< 3 >
+    namespace detail
     {
-    public:
-        STLInput( TriangulatedSurface< 3 > &surface, std::string filename )
-            : TriangulatedSurfaceInput< 3 >( surface, std::move( filename ) )
+        class MSHInput final : public BRepInput
         {
-        }
+        public:
+            MSHInput( BRep& brep, absl::string_view filename )
+                : BRepInput( brep, filename )
+            {
+            }
 
-        static std::string extension()
-        {
-            return "stl";
-        }
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "msh";
+                return ext;
+            }
 
-        void do_read() final;
-    };
+            void read() final;
+        };
+    } // namespace detail
 } // namespace geode

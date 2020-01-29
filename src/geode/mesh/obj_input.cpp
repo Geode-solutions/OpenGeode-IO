@@ -21,19 +21,19 @@
  *
  */
 
-#include <geode/mesh/detail/obj_input.h>
+#include <geode/mesh/private/obj_input.h>
 
 #include <geode/mesh/core/geode_polygonal_surface.h>
-#include <geode/mesh/detail/assimp_input.h>
+#include <geode/mesh/private/assimp_input.h>
 
 namespace
 {
     class OBJInputImpl : public geode::detail::AssimpMeshInput
     {
     public:
-        OBJInputImpl(
-            std::string filename, geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( std::move( filename ) ),
+        OBJInputImpl( absl::string_view filename,
+            geode::PolygonalSurface3D& polygonal_surface )
+            : geode::detail::AssimpMeshInput( filename ),
               surface_( polygonal_surface )
         {
         }
@@ -71,12 +71,15 @@ namespace
 
 namespace geode
 {
-    void OBJInput::do_read()
+    namespace detail
     {
-        OBJInputImpl impl{ filename(), polygonal_surface() };
-        const auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success,
-            "[OBJInput::do_read] Invalid file \"" + filename() + "\"" );
-        impl.build_mesh();
-    }
+        void OBJInput::do_read()
+        {
+            OBJInputImpl impl{ filename(), polygonal_surface() };
+            const auto success = impl.read_file();
+            OPENGEODE_EXCEPTION( success, "[OBJInput::do_read] Invalid file \"",
+                filename(), "\"" );
+            impl.build_mesh();
+        }
+    } // namespace detail
 } // namespace geode

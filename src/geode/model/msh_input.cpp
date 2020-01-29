@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/model/detail/msh_input.h>
+#include <geode/model/private/msh_input.h>
 
 #include <fstream>
 #include <mutex>
@@ -501,11 +501,11 @@ namespace
     class MSHInputImpl
     {
     public:
-        MSHInputImpl( std::string filename, geode::BRep& brep )
-            : file_( std::move( filename ) ), brep_( brep ), builder_{ brep }
+        MSHInputImpl( absl::string_view filename, geode::BRep& brep )
+            : file_( filename.data() ), brep_( brep ), builder_{ brep }
         {
             OPENGEODE_EXCEPTION( file_.good(),
-                "[MSHInput] Error while opening file: " + filename );
+                "[MSHInput] Error while opening file: ", filename );
         }
 
         void read_file()
@@ -965,11 +965,14 @@ namespace
 
 namespace geode
 {
-    void MSHInput::read()
+    namespace detail
     {
-        MSHInputImpl impl( filename(), brep() );
-        impl.read_file();
-        impl.build_geometry();
-        impl.build_topology();
-    }
+        void MSHInput::read()
+        {
+            MSHInputImpl impl( filename(), brep() );
+            impl.read_file();
+            impl.build_geometry();
+            impl.build_topology();
+        }
+    } // namespace detail
 } // namespace geode

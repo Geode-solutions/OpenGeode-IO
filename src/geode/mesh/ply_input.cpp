@@ -21,23 +21,23 @@
  *
  */
 
-#include <geode/mesh/detail/ply_input.h>
+#include <geode/mesh/private/ply_input.h>
 
 #include <geode/geometry/nn_search.h>
 #include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/polygonal_surface_builder.h>
 #include <geode/mesh/core/geode_polygonal_surface.h>
-#include <geode/mesh/detail/assimp_input.h>
+#include <geode/mesh/private/assimp_input.h>
 
 namespace
 {
     class PLYInputImpl : public geode::detail::AssimpMeshInput
     {
     public:
-        PLYInputImpl(
-            std::string filename, geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( std::move( filename ) ),
+        PLYInputImpl( absl::string_view filename,
+            geode::PolygonalSurface3D& polygonal_surface )
+            : geode::detail::AssimpMeshInput( filename ),
               surface_( polygonal_surface )
         {
         }
@@ -86,12 +86,15 @@ namespace
 
 namespace geode
 {
-    void PLYInput::do_read()
+    namespace detail
     {
-        PLYInputImpl impl{ filename(), polygonal_surface() };
-        const auto success = impl.read_file();
-        OPENGEODE_EXCEPTION( success,
-            "[PLYInput::do_read] Invalid file \"" + filename() + "\"" );
-        impl.build_mesh();
-    }
+        void PLYInput::do_read()
+        {
+            PLYInputImpl impl{ filename(), polygonal_surface() };
+            const auto success = impl.read_file();
+            OPENGEODE_EXCEPTION( success, "[PLYInput::do_read] Invalid file \"",
+                filename(), "\"" );
+            impl.build_mesh();
+        }
+    } // namespace detail
 } // namespace geode

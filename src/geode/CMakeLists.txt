@@ -18,45 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Define the project
-project(OpenGeode-IO CXX)
-
-option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
-
-# Get OpenGeode-IO dependencies
-find_package(OpenGeode REQUIRED)
-find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
-find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
-
-# Install OpenGeode-IO third-parties
-install(
-    DIRECTORY
-        ${ASSIMP_INSTALL_PREFIX}/
-        ${PUGIXML_INSTALL_PREFIX}/
-    DESTINATION
-        .
-)
-
 #------------------------------------------------------------------------------------------------
-# Configure the OpenGeode-IO libraries
-add_subdirectory(src/geode)
-
-#------------------------------------------------------------------------------------------------
-# Optional modules configuration
-if(OPENGEODE_IO_WITH_TESTS)
-    # Enable testing with CTest
-    enable_testing()
-    message(STATUS "Configuring OpenGeode-IO with tests")
-    add_subdirectory(tests)
-endif()
-
-#------------------------------------------------------------------------------------------------
-# Configure CPack
-if(WIN32)
-    set(CPACK_GENERATOR "ZIP")
-else()
-    set(CPACK_GENERATOR "TGZ")
-endif()
-
-# This must always be last!
-include(CPack)
+# Configure the OpenGeode libraries
+add_subdirectory(mesh)
+add_subdirectory(model)

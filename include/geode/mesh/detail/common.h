@@ -27,5 +27,8 @@
 
 namespace geode
 {
-    void opengeode_io_mesh_api initialize_mesh_io();
+    namespace detail
+    {
+        void opengeode_io_mesh_api initialize_mesh_io();
+    }
 } // namespace geode
