@@ -82,8 +82,8 @@ namespace std
     {
         std::size_t operator()( const GmshElementID& gmsh_id ) const
         {
-            return std::hash< std::string >()( gmsh_id.type.get() )
-                   ^ std::hash< geode::index_t >()( gmsh_id.id );
+            return absl::Hash< std::string >()( gmsh_id.type.get() )
+                   ^ absl::Hash< geode::index_t >()( gmsh_id.id );
         }
     };
 } // namespace std
@@ -602,8 +602,8 @@ namespace
             std::string line;
             std::getline( file_, line );
             OPENGEODE_EXCEPTION( string_starts_with( line, keyword ),
-                "[MSHInput::check_keyword] Line should starts with \"" + keyword
-                    + "\"" );
+                "[MSHInput::check_keyword] Line should starts with \"", keyword,
+                "\"" );
         }
 
         void go_to_section( const std::string& section_header )
