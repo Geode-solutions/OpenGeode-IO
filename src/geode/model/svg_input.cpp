@@ -194,7 +194,8 @@ namespace
             std::size_t found;
             while( ( found = path.find( letter, start ) ) != std::string::npos )
             {
-                path.replace( found, 1, " " + std::string( 1, letter ) + " " );
+                path.replace( found, 1,
+                    absl::StrCat( " ", std::string( 1, letter ), " " ) );
                 start = found + 3;
             }
         }

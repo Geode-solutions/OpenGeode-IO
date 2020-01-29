@@ -68,7 +68,6 @@ namespace
         }
 
     private:
-        std::string file_;
         geode::TriangulatedSurface3D& surface_;
         Assimp::Importer importer_;
     };
