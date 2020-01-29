@@ -21,26 +21,30 @@
  *
  */
 
-#include <geode/mesh/detail/assimp_input.h>
+#pragma once
 
-#include <geode/basic/common.h>
-#include <geode/basic/logger.h>
+#include <geode/mesh/io/triangulated_surface_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        bool AssimpMeshInput::read_file()
+        class OBJInput final : public PolygonalSurfaceInput< 3 >
         {
-            const auto* pScene = importer_.ReadFile( file_.c_str(), 0 );
-            OPENGEODE_EXCEPTION(
-                pScene, "[AssimpMeshInput::read_file]"
-                            + std::string{ importer_.GetErrorString() } );
-            OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
-                "[AssimpMeshInput::read_file] Several meshes in imported file "
-                    + file_ + "." );
-            assimp_mesh_ = pScene->mMeshes[0];
-            return true;
-        }
+        public:
+            OBJInput(
+                PolygonalSurface< 3 >& surface, absl::string_view filename )
+                : PolygonalSurfaceInput< 3 >( surface, filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "obj";
+                return ext;
+            }
+
+            void do_read() final;
+        };
     } // namespace detail
 } // namespace geode

@@ -28,10 +28,10 @@
 
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/detail/common.h>
-#include <geode/mesh/detail/obj_input.h>
-#include <geode/mesh/detail/obj_output.h>
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/private/obj_input.h>
+#include <geode/mesh/private/obj_output.h>
 
 int main()
 {
@@ -39,23 +39,23 @@ int main()
 
     try
     {
-        initialize_mesh_io();
+        detail::initialize_mesh_io();
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
 
-        load_polygonal_surface(
-            *surface, test_path + "mesh/data/TopHat." + OBJInput::extension() );
+        load_polygonal_surface( *surface, absl::StrCat( data_path, "/TopHat.",
+                                              detail::OBJInput::extension() ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        const std::string output_file_native{ "TopHat."
-                                              + surface->native_extension() };
-        save_polygonal_surface( *surface, output_file_native );
-        const std::string output_file_stl{ "TopHat." + OBJOutput::extension() };
+        save_polygonal_surface(
+            *surface, absl::StrCat( "TopHat.", surface->native_extension() ) );
+        const auto output_file_stl =
+            absl::StrCat( "TopHat.", detail::OBJOutput::extension() );
         save_polygonal_surface( *surface, output_file_stl );
 
         // Reload file

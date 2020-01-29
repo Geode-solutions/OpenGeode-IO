@@ -41,14 +41,13 @@ namespace geode
 {
     namespace detail
     {
-        class opengeode_io_mesh_api AssimpMeshInput
+        class AssimpMeshInput
         {
         public:
-            AssimpMeshInput( std::string filename )
-                : file_( std::move( filename ) )
+            AssimpMeshInput( absl::string_view filename ) : file_( filename )
             {
-                OPENGEODE_EXCEPTION( std::ifstream( file_ ).good(),
-                    "[AssimpMeshInput] Error while opening file: " + file_ );
+                OPENGEODE_EXCEPTION( std::ifstream( file_.data() ).good(),
+                    "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
             bool read_file();
@@ -108,7 +107,7 @@ namespace geode
             }
 
         private:
-            std::string file_;
+            absl::string_view file_;
             Assimp::Importer importer_;
             aiMesh* assimp_mesh_{ nullptr };
         };

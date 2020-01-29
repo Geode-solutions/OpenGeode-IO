@@ -42,15 +42,15 @@ namespace geode
         class AssimpMeshOutput
         {
         public:
-            AssimpMeshOutput( std::string filename,
+            AssimpMeshOutput( absl::string_view filename,
                 const SurfaceMesh& surface_mesh,
-                std::string assimp_export_id )
-                : file_( std::move( filename ) ),
+                absl::string_view assimp_export_id )
+                : file_( filename ),
                   surface_mesh_( surface_mesh ),
-                  export_id_( std::move( assimp_export_id ) )
+                  export_id_( assimp_export_id )
             {
-                OPENGEODE_EXCEPTION( std::ofstream( file_ ).good(),
-                    "[AssimpMeshOutput] Error while opening file: " + file_ );
+                OPENGEODE_EXCEPTION( std::ofstream( file_.data() ).good(),
+                    "[AssimpMeshOutput] Error while opening file: ", file_ );
             }
 
             void build_assimp_scene()
@@ -63,11 +63,11 @@ namespace geode
             void write_file()
             {
                 Assimp::Exporter exporter;
-                const auto status =
-                    exporter.Export( &assimp_scene_, export_id_, file_ );
+                const auto status = exporter.Export(
+                    &assimp_scene_, export_id_.data(), file_.data() );
                 OPENGEODE_EXCEPTION( status == AI_SUCCESS,
-                    "[AssimpMeshOutput::write_file] Export in file \"" + file_
-                        + "\" has failed." );
+                    "[AssimpMeshOutput::write_file] Export in file \"", file_,
+                    "\" has failed." );
             }
 
         private:
@@ -125,9 +125,9 @@ namespace geode
             }
 
         private:
-            std::string file_;
+            absl::string_view file_;
             const SurfaceMesh& surface_mesh_;
-            std::string export_id_;
+            absl::string_view export_id_;
             aiScene assimp_scene_;
         };
     } // namespace detail

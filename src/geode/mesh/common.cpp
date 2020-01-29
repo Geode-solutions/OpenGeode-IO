@@ -21,43 +21,49 @@
  *
  */
 
-#include <geode/mesh/detail/common.h>
+#include <geode/mesh/common.h>
 
-#include <geode/mesh/detail/obj_input.h>
-#include <geode/mesh/detail/obj_output.h>
-#include <geode/mesh/detail/ply_input.h>
-#include <geode/mesh/detail/ply_output.h>
-#include <geode/mesh/detail/stl_input.h>
-#include <geode/mesh/detail/stl_output.h>
+#include <geode/mesh/private/obj_input.h>
+#include <geode/mesh/private/obj_output.h>
+#include <geode/mesh/private/ply_input.h>
+#include <geode/mesh/private/ply_output.h>
+#include <geode/mesh/private/stl_input.h>
+#include <geode/mesh/private/stl_output.h>
 
 namespace
 {
     void register_polygonal_surface_input()
     {
         geode::PolygonalSurfaceInputFactory3D::register_creator<
-            geode::PLYInput >( geode::PLYInput::extension() );
+            geode::detail::PLYInput >(
+            geode::detail::PLYInput::extension().data() );
         geode::PolygonalSurfaceInputFactory3D::register_creator<
-            geode::OBJInput >( geode::OBJInput::extension() );
+            geode::detail::OBJInput >(
+            geode::detail::OBJInput::extension().data() );
     }
 
     void register_triangulated_surface_input()
     {
         geode::TriangulatedSurfaceInputFactory3D::register_creator<
-            geode::STLInput >( geode::STLInput::extension() );
+            geode::detail::STLInput >(
+            geode::detail::STLInput::extension().data() );
     }
 
     void register_polygonal_surface_output()
     {
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::PLYOutput >( geode::PLYOutput::extension() );
+            geode::detail::PLYOutput >(
+            geode::detail::PLYOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::OBJOutput >( geode::OBJOutput::extension() );
+            geode::detail::OBJOutput >(
+            geode::detail::OBJOutput::extension().data() );
     }
 
     void register_triangulated_surface_output()
     {
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
-            geode::STLOutput >( geode::STLOutput::extension() );
+            geode::detail::STLOutput >(
+            geode::detail::STLOutput::extension().data() );
     }
 
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_mesh )
@@ -72,5 +78,8 @@ namespace
 
 namespace geode
 {
-    void initialize_mesh_io() {}
+    namespace detail
+    {
+        void initialize_mesh_io() {}
+    } // namespace detail
 } // namespace geode

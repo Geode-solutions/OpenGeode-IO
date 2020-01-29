@@ -18,18 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(test-obj.cpp 
-    OpenGeode::basic
-    OpenGeode::mesh
-    ${PROJECT_NAME}::mesh
+add_geode_test(
+    SOURCE "test-obj.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
 )
-add_geode_test(test-ply.cpp 
-    OpenGeode::basic
-    OpenGeode::mesh
-    ${PROJECT_NAME}::mesh
+add_geode_test(
+    SOURCE "test-ply.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
 )
-add_geode_test(test-stl.cpp 
-    OpenGeode::basic
-    OpenGeode::mesh
-    ${PROJECT_NAME}::mesh
+add_geode_test(
+    SOURCE "test-stl.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
 )

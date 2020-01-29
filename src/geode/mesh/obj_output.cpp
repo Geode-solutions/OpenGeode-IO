@@ -21,18 +21,21 @@
  *
  */
 
-#include <geode/mesh/detail/obj_output.h>
+#include <geode/mesh/private/obj_output.h>
 
 #include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/detail/assimp_output.h>
+#include <geode/mesh/private/assimp_output.h>
 
 namespace geode
 {
-    void OBJOutput::write() const
+    namespace detail
     {
-        detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
-            polygonal_surface(), "obj" };
-        impl.build_assimp_scene();
-        impl.write_file();
-    }
+        void OBJOutput::write() const
+        {
+            detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
+                polygonal_surface(), "obj" };
+            impl.build_assimp_scene();
+            impl.write_file();
+        }
+    } // namespace detail
 } // namespace geode

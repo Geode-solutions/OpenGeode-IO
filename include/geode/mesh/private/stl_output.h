@@ -23,26 +23,28 @@
 
 #pragma once
 
-#include <geode/basic/logger.h>
-
-#include <geode/model/detail/common.h>
-#include <geode/model/representation/io/section_input.h>
+#include <geode/mesh/io/triangulated_surface_output.h>
 
 namespace geode
 {
-    class opengeode_io_model_api SVGInput final : public SectionInput
+    namespace detail
     {
-    public:
-        SVGInput( Section& section, std::string filename )
-            : SectionInput( section, std::move( filename ) )
+        class STLOutput final : public TriangulatedSurfaceOutput< 3 >
         {
-        }
+        public:
+            STLOutput( const TriangulatedSurface< 3 > &surface,
+                absl::string_view filename )
+                : TriangulatedSurfaceOutput< 3 >( surface, filename )
+            {
+            }
 
-        static std::string extension()
-        {
-            return "svg";
-        }
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "stl";
+                return ext;
+            }
 
-        void read() final;
-    };
+            void write() const final;
+        };
+    } // namespace detail
 } // namespace geode

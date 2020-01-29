@@ -23,23 +23,28 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/mesh/io/polygonal_surface_output.h>
 
 namespace geode
 {
-    class PLYInput final : public PolygonalSurfaceInput< 3 >
+    namespace detail
     {
-    public:
-        PLYInput( PolygonalSurface< 3 >& surface, std::string filename )
-            : PolygonalSurfaceInput< 3 >( surface, std::move( filename ) )
+        class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
-        }
+        public:
+            PLYOutput( const PolygonalSurface< 3 > &surface,
+                absl::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( surface, filename )
+            {
+            }
 
-        static std::string extension()
-        {
-            return "ply";
-        }
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "ply";
+                return ext;
+            }
 
-        void do_read() final;
-    };
+            void write() const final;
+        };
+    } // namespace detail
 } // namespace geode
