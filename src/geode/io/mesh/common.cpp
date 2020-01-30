@@ -80,8 +80,6 @@ namespace geode
 {
     namespace detail
     {
-        void initialize_mesh_io()
-        {
-        }
+        void initialize_mesh_io() {}
     } // namespace detail
 } // namespace geode
