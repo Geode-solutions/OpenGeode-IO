@@ -119,7 +119,7 @@ int main()
 
     try
     {
-        initialize_model_io();
+        detail::initialize_model_io();
         BRep brep;
 
         // Load file
