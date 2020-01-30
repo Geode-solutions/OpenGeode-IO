@@ -49,5 +49,11 @@ namespace
 
 namespace geode
 {
-    void initialize_model_io() {}
+    namespace detail
+    {
+        void initialize_model_io()
+        {
+            Logger::info( "Initializing OpenGeode-IO model library" );
+        }
+    } // namespace detail
 } // namespace geode
