@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/mesh/opengeode_io_mesh_export.h>
+#include <geode/io/mesh/opengeode_io_mesh_export.h>
 
 namespace geode
 {
