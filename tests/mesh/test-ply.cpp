@@ -37,7 +37,7 @@ int main()
 
     try
     {
-        initialize_mesh_io();
+        detail::initialize_mesh_io();
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file

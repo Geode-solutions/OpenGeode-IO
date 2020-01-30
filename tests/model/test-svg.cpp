@@ -79,7 +79,7 @@ int main()
 
     try
     {
-        initialize_model_io();
+        detail::initialize_model_io();
         Section section;
 
         // Load file
