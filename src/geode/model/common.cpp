@@ -49,8 +49,5 @@ namespace
 
 namespace geode
 {
-    namespace detail
-    {
-        void initialize_model_io() {}
-    } // namespace detail
+    void initialize_model_io() {}
 } // namespace geode

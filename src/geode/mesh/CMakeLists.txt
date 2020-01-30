@@ -22,13 +22,13 @@ add_geode_library(
     NAME mesh
     FOLDER "geode/mesh"
     SOURCES
-        "common.cpp"
         "assimp_input.cpp"
+        "common.cpp"
         "obj_input.cpp"
-        "ply_input.cpp"
-        "stl_input.cpp"
         "obj_output.cpp"
+        "ply_input.cpp"
         "ply_output.cpp"
+        "stl_input.cpp"
         "stl_output.cpp"
     ADVANCED_HEADERS
         "detail/common.h"
