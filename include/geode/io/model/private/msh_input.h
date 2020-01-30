@@ -25,7 +25,6 @@
 
 #include <geode/basic/logger.h>
 
-#include <geode/model/opengeode_io_model_export.h>
 #include <geode/model/representation/io/brep_input.h>
 
 namespace geode
