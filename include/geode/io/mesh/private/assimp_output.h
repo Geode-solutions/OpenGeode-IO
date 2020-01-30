@@ -32,8 +32,6 @@
 
 #include <geode/geometry/point.h>
 
-#include <geode/mesh/opengeode_io_mesh_export.h>
-
 namespace geode
 {
     namespace detail
