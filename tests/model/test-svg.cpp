@@ -32,7 +32,6 @@
 #include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 
-#include <geode/model/detail/common.h>
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>
@@ -40,6 +39,8 @@
 #include <geode/model/representation/core/section.h>
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
+
+#include <geode/io/model/detail/common.h>
 
 geode::index_t nb_closed_lines( const geode::Section& section )
 {
