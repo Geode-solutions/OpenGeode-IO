@@ -30,8 +30,6 @@
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
-#include <geode/mesh/private/ply_input.h>
-#include <geode/mesh/private/ply_output.h>
 
 int main()
 {
@@ -44,8 +42,7 @@ int main()
 
         // Load file
         load_polygonal_surface(
-            *surface, absl::StrCat( data_path, "/Armadillo.",
-                          detail::PLYInput::extension() ) );
+            *surface, absl::StrCat( data_path, "/Armadillo.ply" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
@@ -54,14 +51,13 @@ int main()
         // Save file
         save_polygonal_surface( *surface,
             absl::StrCat( "armadillo.", surface->native_extension() ) );
-        const auto output_file_stl =
-            absl::StrCat( "armadillo.", detail::PLYOutput::extension() );
-        save_polygonal_surface( *surface, output_file_stl );
+        const auto output_file_ply = absl::StrCat( "armadillo.ply" );
+        save_polygonal_surface( *surface, output_file_ply );
 
         // Reload file
         try
         {
-            load_polygonal_surface( *surface, output_file_stl );
+            load_polygonal_surface( *surface, output_file_ply );
             OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
         }
         catch( ... )

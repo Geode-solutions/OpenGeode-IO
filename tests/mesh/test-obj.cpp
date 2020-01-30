@@ -30,8 +30,6 @@
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
-#include <geode/mesh/private/obj_input.h>
-#include <geode/mesh/private/obj_output.h>
 
 int main()
 {
@@ -44,8 +42,8 @@ int main()
 
         // Load file
 
-        load_polygonal_surface( *surface, absl::StrCat( data_path, "/TopHat.",
-                                              detail::OBJInput::extension() ) );
+        load_polygonal_surface(
+            *surface, absl::StrCat( data_path, "/TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
@@ -54,14 +52,13 @@ int main()
         // Save file
         save_polygonal_surface(
             *surface, absl::StrCat( "TopHat.", surface->native_extension() ) );
-        const auto output_file_stl =
-            absl::StrCat( "TopHat.", detail::OBJOutput::extension() );
-        save_polygonal_surface( *surface, output_file_stl );
+        const auto output_file_obj = absl::StrCat( "TopHat.obj" );
+        save_polygonal_surface( *surface, output_file_obj );
 
         // Reload file
         try
         {
-            load_polygonal_surface( *surface, output_file_stl );
+            load_polygonal_surface( *surface, output_file_obj );
             OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
         }
         catch( ... )

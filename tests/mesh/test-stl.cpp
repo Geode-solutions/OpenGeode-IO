@@ -30,8 +30,6 @@
 #include <geode/mesh/detail/common.h>
 #include <geode/mesh/io/triangulated_surface_input.h>
 #include <geode/mesh/io/triangulated_surface_output.h>
-#include <geode/mesh/private/stl_input.h>
-#include <geode/mesh/private/stl_output.h>
 
 int main()
 {
@@ -44,8 +42,7 @@ int main()
 
         // Load file
         load_triangulated_surface(
-            *surface, absl::StrCat( data_path, "/thumbwheel.",
-                          detail::STLInput::extension() ) );
+            *surface, absl::StrCat( data_path, "/thumbwheel.stl" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
@@ -54,8 +51,7 @@ int main()
         // Save file
         save_triangulated_surface( *surface,
             absl::StrCat( "thumbwheel.", surface->native_extension() ) );
-        const auto output_file_stl =
-            absl::StrCat( "thumbwheel.", detail::STLOutput::extension() );
+        const auto output_file_stl = absl::StrCat( "thumbwheel.stl" );
         save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file
