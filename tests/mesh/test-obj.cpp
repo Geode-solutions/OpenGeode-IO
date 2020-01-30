@@ -27,9 +27,10 @@
 #include <geode/basic/logger.h>
 
 #include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/detail/common.h>
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
+
+#include <geode/io/mesh/detail/common.h>
 
 int main()
 {
