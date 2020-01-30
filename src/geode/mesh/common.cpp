@@ -78,5 +78,11 @@ namespace
 
 namespace geode
 {
-    void initialize_mesh_io() {}
+    namespace detail
+    {
+        void initialize_mesh_io()
+        {
+            Logger::info( "Initializing OpenGeode-IO mesh library" );
+        }
+    } // namespace detail
 } // namespace geode
