@@ -78,7 +78,7 @@ jobs:
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeod-io/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
