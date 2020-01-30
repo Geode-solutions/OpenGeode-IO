@@ -37,7 +37,6 @@
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>
 #include <geode/model/mixin/core/surface.h>
-#include <geode/model/private/msh_input.h>
 #include <geode/model/representation/core/brep.h>
 #include <geode/model/representation/io/brep_input.h>
 #include <geode/model/representation/io/brep_output.h>
