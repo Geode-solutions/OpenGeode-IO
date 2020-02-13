@@ -23,14 +23,23 @@ jobs:
     strategy:
       matrix:
         config:
-        - {container: "geodesolutions/ubuntu", cmake_args: "-DCMAKE_BUILD_TYPE=Debug", system: ubuntu}
-        - {container: "geodesolutions/ubuntu", cmake_args: "-DCMAKE_BUILD_TYPE=Release -DUSE_BENCHMARK=ON", system: ubuntu}
-        - {container: "geodesolutions/centos", cmake_args: "-DCMAKE_BUILD_TYPE=Debug", system: rhel}
-        - {container: "geodesolutions/centos", cmake_args: "-DCMAKE_BUILD_TYPE=Release", system: rhel}
-
+        - {container: "geodesolutions/ubuntu", build_type: "Debug", system: ubuntu}
+        - {container: "geodesolutions/ubuntu", build_type: "Release", system: ubuntu}
+        - {container: "geodesolutions/centos", build_type: "Debug", system: rhel}
+        - {container: "geodesolutions/centos", build_type: "Release", system: rhel}
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-${{ matrix.config.system }}-${{ matrix.config.build_type }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-${{ matrix.config.system }}-${{ matrix.config.build_type }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -41,7 +50,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake ${{ matrix.config.cmake_args }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . -- -j2
     - name: Test
       run: |
@@ -66,6 +75,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-coverage-Debug-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-coverage-Debug-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -102,6 +121,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-darwin-${{ matrix.config }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-darwin-${{ matrix.config }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -134,6 +163,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-win64-${{ matrix.config }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-win64-${{ matrix.config }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -142,7 +181,7 @@ jobs:
         token: ${{ secrets.TOKEN }}
     - name: Compile & Test
       run: |
-        mkdir -p build
+        if(!(test-path build)) { mkdir build }
         cd build
         cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . --config ${{ matrix.config }}
