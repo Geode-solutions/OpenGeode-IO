@@ -47,6 +47,10 @@ add_geode_library(geode/mesh)
 add_geode_library(geode/model)
 
 #------------------------------------------------------------------------------------------------
+# Configure the OpenGeode-IO binaries
+add_subdirectory(src/bin)
+
+#------------------------------------------------------------------------------------------------
 # Optional modules configuration
 if(OPENGEODE_IO_WITH_TESTS)
     # Enable testing with CTest
