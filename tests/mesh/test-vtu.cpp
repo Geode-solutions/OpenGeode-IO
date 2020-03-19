@@ -30,10 +30,10 @@
 
 #include <geode/geometry/point.h>
 
+#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/private/vtu_output.h>
 #include <geode/mesh/builder/polyhedral_solid_builder.h>
 #include <geode/mesh/core/polyhedral_solid.h>
-#include <geode/mesh/detail/common.h>
-#include <geode/mesh/detail/vtu_output.h>
 
 void initialize_solid( geode::PolyhedralSolidBuilder3D& builder )
 {
@@ -81,15 +81,15 @@ int main()
 
     try
     {
-        initialize_mesh_io();
+        detail::initialize_mesh_io();
         auto solid = PolyhedralSolid3D::create();
         auto builder = PolyhedralSolidBuilder3D::create( *solid );
         initialize_solid( *builder );
         initialize_solid_attributes( *solid );
 
         // Save file
-        const std::string output_file{ "solid." + VTUOutput::extension() };
-        save_polyhedral_solid( *solid, output_file );
+        save_polyhedral_solid(
+            *solid, absl::StrCat( "solid.", detail::VTUOutput::extension() ) );
 
         Logger::info( "TEST SUCCESS" );
         return 0;

@@ -28,10 +28,6 @@ find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 
-copy_windows_binaries(OpenGeode::mesh)
-copy_windows_binaries(assimp::assimp)
-copy_windows_binaries(pugixml::pugixml)
-
 # Install OpenGeode-IO third-parties
 install(
     DIRECTORY
@@ -43,8 +39,7 @@ install(
 
 #------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
-add_geode_library(geode/mesh)
-add_geode_library(geode/model)
+add_subdirectory(src/geode)
 
 #------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO binaries

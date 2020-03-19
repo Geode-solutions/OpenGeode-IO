@@ -1,3 +1,4 @@
+
 # Copyright (c) 2019 - 2020 Geode-solutions
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,19 +19,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(
-    SOURCE "test-msh.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        OpenGeode::model
-        ${PROJECT_NAME}::model
-)
-add_geode_test(
-    SOURCE "test-svg.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        OpenGeode::model
-        ${PROJECT_NAME}::model
-)
+add_subdirectory(io/mesh)
+add_subdirectory(io/model)

@@ -18,19 +18,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(
-    SOURCE "test-msh.cpp"
-    DEPENDENCIES
+add_geode_library(
+    NAME model
+    FOLDER "geode/io/model"
+    SOURCES
+        "common.cpp"
+        "msh_input.cpp"
+        "svg_input.cpp"
+    ADVANCED_HEADERS
+        "detail/common.h"
+    PRIVATE_HEADERS
+        "private/msh_input.h"
+        "private/svg_input.h"
+    PRIVATE_DEPENDENCIES
         OpenGeode::basic
+        OpenGeode::geometry
         OpenGeode::mesh
         OpenGeode::model
-        ${PROJECT_NAME}::model
-)
-add_geode_test(
-    SOURCE "test-svg.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        OpenGeode::model
-        ${PROJECT_NAME}::model
+        pugixml::pugixml
 )

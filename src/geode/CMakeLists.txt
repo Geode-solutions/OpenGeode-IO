@@ -18,31 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-if(NOT CPACK_PACKAGE_VERSION)
-    set(CPACK_PACKAGE_VERSION "master")
-endif()
-
-set(OPENGEODE_IO_EXTRA_ARGS
-    -DCPACK_SYSTEM_NAME:STRING=${CPACK_SYSTEM_NAME}
-    -DCPACK_PACKAGE_VERSION:STRING=${CPACK_PACKAGE_VERSION}
-    -DOPENGEODE_IO_WITH_TESTS:BOOL=${OPENGEODE_IO_WITH_TESTS}
-)
-
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    message(STATUS "Setting build type to 'Release' as none was specified.")
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING 
-        "Choose the type of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-        "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-endif()
-
-# Begin configuration of the superbuild project
-project(SuperBuild NONE)
-
-# Additional cmake modules
-include(ExternalProject)
-
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePugixml.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
+#------------------------------------------------------------------------------------------------
+# Configure the OpenGeode libraries
+add_subdirectory(io/mesh)
+add_subdirectory(io/model)

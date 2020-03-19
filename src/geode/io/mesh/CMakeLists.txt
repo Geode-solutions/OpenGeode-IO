@@ -18,19 +18,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(
-    SOURCE "test-msh.cpp"
-    DEPENDENCIES
+add_geode_library(
+    NAME mesh
+    FOLDER "geode/io/mesh"
+    SOURCES
+        "assimp_input.cpp"
+        "common.cpp"
+        "obj_input.cpp"
+        "obj_output.cpp"
+        "ply_input.cpp"
+        "ply_output.cpp"
+        "stl_input.cpp"
+        "stl_output.cpp"
+        "vtu_output.cpp"
+    ADVANCED_HEADERS
+        "detail/common.h"
+    PRIVATE_HEADERS
+        "private/assimp_input.h"
+        "private/assimp_output.h"
+        "private/obj_input.h"
+        "private/ply_input.h"
+        "private/stl_input.h"
+        "private/obj_output.h"
+        "private/ply_output.h"
+        "private/stl_output.h"
+        "private/vtu_output.h"
+    PRIVATE_DEPENDENCIES
         OpenGeode::basic
+        OpenGeode::geometry
         OpenGeode::mesh
-        OpenGeode::model
-        ${PROJECT_NAME}::model
-)
-add_geode_test(
-    SOURCE "test-svg.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        OpenGeode::model
-        ${PROJECT_NAME}::model
+        assimp::assimp
+        pugixml::pugixml
 )

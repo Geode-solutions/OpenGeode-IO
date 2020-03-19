@@ -1,2 +1,11 @@
+## Dependencies
+
 Assimp: BSD-3-Clause
+Copyright (c) 2006-2020, assimp team
+All rights reserved.
+
+OpenGeode: MIT
+Copyright (c) 2019 - 2020 Geode-solutions
+
 pugixml: MIT
+Copyright (c) 2006-2019 Arseny Kapoulkine

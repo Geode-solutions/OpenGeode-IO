@@ -5,36 +5,52 @@ on:
     tags: 'v*'
 
 jobs:      
-  release-ubuntu:
+  release-linux:
     runs-on: ubuntu-18.04
+    container: ${{ matrix.config.container }}
+    strategy:
+      matrix:
+        config:
+        - {container: "geodesolutions/ubuntu", system: "ubuntu", doc: true}
+        - {container: "geodesolutions/centos", system: "rhel", doc: false}
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-${{ matrix.config.system }}-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-${{ matrix.config.system }}-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-Linux.tar.gz'
+        file: '-${{ matrix.config.system }}.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Generate package
       id: package
       run: |
-        sudo apt install doxygen
         mkdir -p build
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=${{ matrix.config.system }} ..
         cmake --build . -- -j2
         cd opengeode-io
         cmake --build . --target package
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-Linux.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-${{ matrix.config.system }}.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Doc
+      if: matrix.config.doc
       run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/doc/doc.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeode-io
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
@@ -52,11 +68,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-darwin-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-darwin-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-Darwin.tar.gz'
+        file: '-darwin.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Generate package
       id: package
@@ -65,14 +91,14 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=darwin ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target package --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeod-io/OpenGeode-IO-${{ steps.package.outputs.version }}-Darwin.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
@@ -89,6 +115,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-win64-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-win64-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -98,11 +134,11 @@ jobs:
     - name: Generate package
       id: package
       run: |
-        mkdir -p build
+        if(!(test-path build)) { mkdir build }
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=win64 ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target PACKAGE --config Release

@@ -27,11 +27,10 @@
 #include <geode/basic/logger.h>
 
 #include <geode/mesh/core/triangulated_surface.h>
-#include <geode/mesh/detail/common.h>
-#include <geode/mesh/detail/stl_input.h>
-#include <geode/mesh/detail/stl_output.h>
 #include <geode/mesh/io/triangulated_surface_input.h>
 #include <geode/mesh/io/triangulated_surface_output.h>
+
+#include <geode/io/mesh/detail/common.h>
 
 int main()
 {
@@ -39,23 +38,21 @@ int main()
 
     try
     {
-        initialize_mesh_io();
+        detail::initialize_mesh_io();
         auto surface = TriangulatedSurface< 3 >::create();
 
         // Load file
-        load_triangulated_surface( *surface,
-            test_path + "mesh/data/thumbwheel." + STLInput::extension() );
+        load_triangulated_surface(
+            *surface, absl::StrCat( data_path, "/thumbwheel.stl" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        const std::string output_file_native{ "thumbwheel."
-                                              + surface->native_extension() };
-        save_triangulated_surface( *surface, output_file_native );
-        const std::string output_file_stl{ "thumbwheel."
-                                           + STLOutput::extension() };
+        save_triangulated_surface( *surface,
+            absl::StrCat( "thumbwheel.", surface->native_extension() ) );
+        const auto output_file_stl = absl::StrCat( "thumbwheel.stl" );
         save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file

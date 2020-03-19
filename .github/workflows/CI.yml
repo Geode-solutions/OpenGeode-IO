@@ -16,52 +16,90 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
       
-  build-ubuntu:
+  build-linux:
     runs-on: ubuntu-18.04
+    container: ${{ matrix.config.container }}
     needs: format
     strategy:
       matrix:
-        cc: [gcc, clang]
-        cxx: [g++, clang++]
-        config: [Debug, Release]
-        exclude:
-          - cc: gcc
-            cxx: clang++
-          - cc: clang
-            cxx: g++
+        config:
+        - {container: "geodesolutions/ubuntu", build_type: "Debug", system: ubuntu}
+        - {container: "geodesolutions/ubuntu", build_type: "Release", system: ubuntu}
+        - {container: "geodesolutions/centos", build_type: "Debug", system: rhel}
+        - {container: "geodesolutions/centos", build_type: "Release", system: rhel}
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-${{ matrix.config.system }}-${{ matrix.config.build_type }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-${{ matrix.config.system }}-${{ matrix.config.build_type }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-Linux.tar.gz'
+        file: '-${{ matrix.config.system }}.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Compile
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . -- -j2
-      env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
     - name: Test
       run: |
         mkdir -p test
         cd test
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeode-io/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
+        cmake ${{ matrix.config.cmake_args }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeode-io/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
         cmake --build . -- -j2
         ctest --output-on-failure
+    - name: Notify slack
+      if: failure() && github.ref == 'refs/heads/master'
+      uses: 8398a7/action-slack@v2
+      with:
+        status: failure
       env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}    
+
+  coverage:
+    runs-on: ubuntu-18.04
+    needs: format
+    if: (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-coverage-Debug-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-coverage-Debug-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
+    - uses: Geode-solutions/actions/get-release@master
+      id: opengeode
+      with:
+        repository: OpenGeode
+        file: '-ubuntu.tar.gz'
+        token: ${{ secrets.TOKEN }}
+    - name: Compile
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
+        cmake --build . -- -j2
     - name: Kcov
       run: curl -s https://raw.githubusercontent.com/Geode-solutions/actions/master/kcov.sh | bash -s -- ${GITHUB_WORKSPACE}/build/opengeode-io/bin
-      if: matrix.cc == 'gcc' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') && matrix.config == 'Debug'
     - uses: codecov/codecov-action@v1.0.2
-      if: matrix.cc == 'gcc' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') && matrix.config == 'Debug'
       with: 
         token: ${{ secrets.CODECOV_TOKEN }}
         file: kcov/kcov-merged/cobertura.xml
@@ -72,39 +110,7 @@ jobs:
         status: failure
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}      
-      
-  build-mac:
-    runs-on: macos-latest
-    needs: format
-    strategy:      
-      matrix:
-        config: [Debug, Release]
-
-    steps:
-    - uses: actions/checkout@v1
-    - uses: Geode-solutions/actions/get-release@master
-      id: opengeode
-      with:
-        repository: OpenGeode
-        file: '-Darwin.tar.gz'
-        token: ${{ secrets.TOKEN }}
-    - name: Compile & Test
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
-        cmake --build .
-        cd opengeode-io
-        ctest --output-on-failure
-    - name: Notify slack
-      if: failure() && github.ref == 'refs/heads/master'
-      uses: 8398a7/action-slack@v2
-      with:
-        status: failure
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}    
   
   build-mac-xcode:
     runs-on: macos-latest
@@ -115,11 +121,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-darwin-${{ matrix.config }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-darwin-${{ matrix.config }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-Darwin.tar.gz'
+        file: '-darwin.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Compile & Test
       run: |
@@ -147,6 +163,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Assimp
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/assimp
+        key: assimp-win64-${{ matrix.config }}-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
+    - name: Cache Pugixml
+      uses: actions/cache@v1.0.3
+      with:
+        path: build/third_party/pugixml
+        key: pugixml-win64-${{ matrix.config }}-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -155,7 +181,7 @@ jobs:
         token: ${{ secrets.TOKEN }}
     - name: Compile & Test
       run: |
-        mkdir -p build
+        if(!(test-path build)) { mkdir build }
         cd build
         cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} ..
         cmake --build . --config ${{ matrix.config }}
@@ -172,7 +198,7 @@ jobs:
         
   semantic-release:
     runs-on: ubuntu-18.04
-    needs: [build-ubuntu, build-mac, build-mac-xcode, build-windows]
+    needs: [build-linux, coverage, build-mac-xcode, build-windows]
     steps:
     - uses: actions/checkout@v1
     - run: npx semantic-release
