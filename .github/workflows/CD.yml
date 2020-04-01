@@ -142,7 +142,6 @@ jobs:
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target PACKAGE --config Release
-      shell: bash
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
