@@ -189,7 +189,7 @@ void test_brep_cone( const geode::BRep& brep )
     }
 }
 
-typedef void ( *test_function )( const geode::BRep& );
+using test_function = void ( * )( const geode::BRep& );
 
 void run_test( absl::string_view short_filename, test_function test )
 {
