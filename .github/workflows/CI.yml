@@ -52,7 +52,7 @@ jobs:
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-${{ matrix.config.system }}.tar.gz'
+        file: '${{ matrix.config.python }}-${{ matrix.config.system }}.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Compile
       run: |
@@ -148,7 +148,7 @@ jobs:
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-darwin.tar.gz'
+        file: '${{ matrix.python }}-darwin.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Compile & Test
       run: |
@@ -195,7 +195,7 @@ jobs:
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-win64.zip'
+        file: '${{ matrix.python }}-win64.zip'
         token: ${{ secrets.TOKEN }}
     - name: Compile & Test
       run: |
