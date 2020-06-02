@@ -42,7 +42,6 @@ int main()
         auto surface = PolygonalSurface< 3 >::create();
 
         // Load file
-
         load_polygonal_surface(
             *surface, absl::StrCat( data_path, "/TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,

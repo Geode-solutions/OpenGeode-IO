@@ -26,7 +26,8 @@
 #include <fstream>
 #include <mutex>
 #include <numeric>
-#include <unordered_map>
+
+#include <absl/container/flat_hash_set.h>
 
 #include <geode/basic/algorithm.h>
 #include <geode/basic/common.h>
@@ -106,8 +107,8 @@ namespace
         {
             return physical_ids.find( physical_id ) != physical_ids.end();
         }
-        std::unordered_map< GmshElementID, geode::uuid > elementary_ids;
-        std::unordered_map< GmshElementID, geode::uuid > physical_ids;
+        absl::flat_hash_map< GmshElementID, geode::uuid > elementary_ids;
+        absl::flat_hash_map< GmshElementID, geode::uuid > physical_ids;
     };
 
     class GMSHElement
@@ -202,17 +203,22 @@ namespace
             };
             const auto existing_id =
                 id_map.contains_elementary_id( cur_gmsh_id );
-            OPENGEODE_EXCEPTION( !existing_id,
-                "[GMSHPoint::add_element] At least two points (type=15) has "
-                "the same tag "
-                "for elementary entity. This is not supported." );
+            geode::uuid corner_uuid;
             geode::BRepBuilder builder{ brep };
-            const auto new_corner_uuid = builder.add_corner();
+            if( existing_id )
+            {
+                corner_uuid = id_map.elementary_ids.at( cur_gmsh_id );
+            }
+            else
+            {
+                corner_uuid = builder.add_corner();
+                id_map.elementary_ids.insert( { cur_gmsh_id, corner_uuid } );
+            }
+
             const auto v_id =
-                builder.corner_mesh_builder( new_corner_uuid )->create_vertex();
-            id_map.elementary_ids.insert( { cur_gmsh_id, new_corner_uuid } );
+                builder.corner_mesh_builder( corner_uuid )->create_vertex();
             builder.set_unique_vertex(
-                { brep.corner( new_corner_uuid ).component_id(), v_id },
+                { brep.corner( corner_uuid ).component_id(), v_id },
                 vertex_ids()[0] - OFFSET_START );
         }
     };
@@ -486,7 +492,7 @@ namespace
         }
     };
 
-    void initialiaze_gmsh_factory()
+    void initialize_gmsh_factory()
     {
         GMSHElementFactory::register_creator< GMSHPoint >( 15 );
         GMSHElementFactory::register_creator< GMSHEdge >( 1 );
@@ -506,14 +512,34 @@ namespace
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[MSHInput] Error while opening file: ", filename );
+            std::call_once( once_flag, initialize_gmsh_factory );
+            first_read( filename );
         }
 
         void read_file()
         {
-            std::call_once( once_flag, initialiaze_gmsh_factory );
-            read_header();
-            read_node_section();
-            read_element_section();
+            if( version() == 4
+                && ( absl::c_find( sections_, "$Entities" )
+                     != sections_.end() ) )
+            {
+                read_entity_section();
+            }
+            if( version() == 2 )
+            {
+                read_node_section_v2();
+                read_element_section_v2();
+            }
+            else if( version() == 4 )
+            {
+                read_node_section_v4();
+                read_element_section_v4();
+            }
+            else
+            {
+                OPENGEODE_ASSERT_NOT_REACHED(
+                    "[MSHInput::read_file] Only MSH file format "
+                    "versions 2 and 4 are supported for now." );
+            }
         }
 
         void build_geometry()
@@ -524,11 +550,17 @@ namespace
             build_blocks();
         }
 
-        using boundary_incidences_relations = std::unordered_map< geode::uuid,
-            std::unordered_set< geode::uuid > >;
+        using boundary_incidences_relations = absl::flat_hash_map< geode::uuid,
+            absl::flat_hash_set< geode::uuid > >;
 
         void build_topology()
         {
+            if( version() == 4
+                && ( absl::c_find( sections_, "$Entities" )
+                     != sections_.end() ) )
+            {
+                return;
+            }
             boundary_incidences_relations corner_line_relations;
             boundary_incidences_relations line_surface_relations;
             boundary_incidences_relations surface_block_relations;
@@ -597,10 +629,26 @@ namespace
         }
 
     private:
+        geode::index_t version() const
+        {
+            return static_cast< geode::index_t >( std::floor( version_ ) );
+        }
+
+        void first_read( absl::string_view filename )
+        {
+            std::ifstream reader{ filename.data() };
+            read_header( reader );
+        }
+
         void check_keyword( const std::string& keyword )
         {
+            check_keyword( file_, keyword );
+        }
+
+        void check_keyword( std::ifstream& reader, const std::string& keyword )
+        {
             std::string line;
-            std::getline( file_, line );
+            std::getline( reader, line );
             OPENGEODE_EXCEPTION( string_starts_with( line, keyword ),
                 "[MSHInput::check_keyword] Line should starts with \"", keyword,
                 "\"" );
@@ -622,35 +670,216 @@ namespace
             };
         }
 
-        void check_msh_version( const std::string& line )
+        void set_msh_version( const std::string& line )
         {
             std::istringstream iss{ line };
-            double nb_version;
-            iss >> nb_version;
-            OPENGEODE_EXCEPTION( std::floor( nb_version ) == 2,
-                "[MSHInput::check_msh_version] Only MSH file format "
-                "version 2 is supported for now." );
+            iss >> version_;
+            OPENGEODE_EXCEPTION( version() == 2 || version() == 4,
+                "[MSHInput::set_msh_version] Only MSH file format "
+                "versions 2 and 4 are supported for now." );
             geode::index_t binary;
             iss >> binary;
             if( binary != 0 )
             {
                 binary_ = false;
-                throw geode::OpenGeodeException{ "[MSHInput::check_msh_version]"
+                throw geode::OpenGeodeException{ "[MSHInput::set_msh_version]"
                                                  " Binary format is not "
                                                  "supported for now." };
             }
         }
 
-        void read_header()
+        void read_header( std::ifstream& reader )
         {
-            check_keyword( "$MeshFormat" );
+            check_keyword( reader, "$MeshFormat" );
             std::string line;
-            std::getline( file_, line );
-            check_msh_version( line );
-            check_keyword( "$EndMeshFormat" );
+            std::getline( reader, line );
+            set_msh_version( line );
+            check_keyword( reader, "$EndMeshFormat" );
+            read_section_names( reader );
         }
 
-        void read_node_section()
+        void read_section_names( std::ifstream& reader )
+        {
+            std::string line;
+            while( std::getline( reader, line ) )
+            {
+                if( string_starts_with( line, "$" )
+                    && !string_starts_with( line, "$End" ) )
+                {
+                    sections_.push_back( line );
+                }
+            }
+        }
+
+        using MshId2Uuid = absl::flat_hash_map< geode::index_t, geode::uuid >;
+
+        void read_entity_section()
+        {
+            go_to_section( "$Entities" );
+            std::string line;
+            std::getline( file_, line );
+            geode::index_t nb_corners, nb_lines, nb_surfaces, nb_blocks;
+            std::istringstream iss{ line };
+            iss >> nb_corners >> nb_lines >> nb_surfaces >> nb_blocks;
+            create_corners( nb_corners );
+            create_lines( nb_lines );
+            create_surfaces( nb_surfaces );
+            create_blocks( nb_blocks );
+            check_keyword( "$EndEntities" );
+        }
+
+        void create_corners( const geode::index_t nb_corners )
+        {
+            for( const auto unused : geode::Range{ nb_corners } )
+            {
+                geode_unused( unused );
+                std::string line;
+                std::getline( file_, line );
+                std::istringstream iss{ line };
+                geode::index_t corner_msh_id;
+                iss >> corner_msh_id;
+                const auto corner_uuid = builder_.add_corner();
+                gmsh_id2uuids_.elementary_ids[{
+                    geode::Corner3D::component_type_static(), corner_msh_id }] =
+                    corner_uuid;
+            }
+        }
+
+        void create_lines( const geode::index_t nb_lines )
+        {
+            for( const auto unused : geode::Range{ nb_lines } )
+            {
+                geode_unused( unused );
+                std::string line;
+                std::getline( file_, line );
+                std::istringstream iss{ line };
+                geode::index_t line_msh_id;
+                iss >> line_msh_id;
+                const auto line_uuid = builder_.add_line();
+                gmsh_id2uuids_.elementary_ids[{
+                    geode::Line3D::component_type_static(), line_msh_id }] =
+                    line_uuid;
+                double xmin, xmax, ymin, ymax, zmin, zmax;
+                iss >> xmin >> ymin >> zmin >> xmax >> ymax >> zmax;
+                geode::index_t nb_physical_tags;
+                iss >> nb_physical_tags;
+                for( const auto unused : geode::Range{ nb_physical_tags } )
+                {
+                    geode_unused( unused );
+                    geode::index_t physical_tag;
+                    iss >> physical_tag;
+                }
+                geode::index_t nb_boundaries;
+                iss >> nb_boundaries;
+                for( const auto unused : geode::Range{ nb_boundaries } )
+                {
+                    geode_unused( unused );
+                    geode::signed_index_t boundary_msh_id;
+                    iss >> boundary_msh_id;
+                    boundary_msh_id = std::abs( boundary_msh_id );
+                    builder_.add_corner_line_boundary_relationship(
+                        brep_.corner( gmsh_id2uuids_.elementary_ids.at(
+                            { geode::Corner3D::component_type_static(),
+                                static_cast< geode::index_t >(
+                                    boundary_msh_id ) } ) ),
+                        brep_.line( line_uuid ) );
+                }
+            }
+        }
+
+        void create_surfaces( const geode::index_t nb_surfaces )
+        {
+            for( const auto unused : geode::Range{ nb_surfaces } )
+            {
+                geode_unused( unused );
+                std::string line;
+                std::getline( file_, line );
+                std::istringstream iss{ line };
+                geode::index_t surface_msh_id;
+                iss >> surface_msh_id;
+                const auto surface_uuid = builder_.add_surface();
+                gmsh_id2uuids_
+                    .elementary_ids[{ geode::Surface3D::component_type_static(),
+                        surface_msh_id }] = surface_uuid;
+                double xmin, xmax, ymin, ymax, zmin, zmax;
+                iss >> xmin >> ymin >> zmin >> xmax >> ymax >> zmax;
+                geode::index_t nb_physical_tags;
+                iss >> nb_physical_tags;
+                for( const auto unused : geode::Range{ nb_physical_tags } )
+                {
+                    geode_unused( unused );
+                    geode::index_t physical_tag;
+                    iss >> physical_tag;
+                }
+                geode::index_t nb_boundaries;
+                iss >> nb_boundaries;
+                for( const auto unused : geode::Range{ nb_boundaries } )
+                {
+                    geode_unused( unused );
+                    geode::signed_index_t boundary_msh_id;
+                    iss >> boundary_msh_id;
+                    boundary_msh_id = std::abs( boundary_msh_id );
+                    builder_.add_line_surface_boundary_relationship(
+                        brep_.line( gmsh_id2uuids_.elementary_ids.at(
+                            { geode::Line3D::component_type_static(),
+                                static_cast< geode::index_t >(
+                                    boundary_msh_id ) } ) ),
+                        brep_.surface( surface_uuid ) );
+                }
+            }
+        }
+
+        void create_blocks( const geode::index_t nb_blocks )
+        {
+            for( const auto unused : geode::Range{ nb_blocks } )
+            {
+                geode_unused( unused );
+                std::string line;
+                std::getline( file_, line );
+                std::istringstream iss{ line };
+                geode::index_t block_msh_id;
+                iss >> block_msh_id;
+                const auto block_uuid = builder_.add_block();
+                gmsh_id2uuids_.elementary_ids[{
+                    geode::Block3D::component_type_static(), block_msh_id }] =
+                    block_uuid;
+                double xmin, xmax, ymin, ymax, zmin, zmax;
+                iss >> xmin >> ymin >> zmin >> xmax >> ymax >> zmax;
+                geode::index_t nb_physical_tags;
+                iss >> nb_physical_tags;
+                for( const auto unused : geode::Range{ nb_physical_tags } )
+                {
+                    geode_unused( unused );
+                    geode::index_t physical_tag;
+                    iss >> physical_tag;
+                }
+                geode::index_t nb_boundaries;
+                iss >> nb_boundaries;
+                for( const auto unused : geode::Range{ nb_boundaries } )
+                {
+                    geode_unused( unused );
+                    geode::signed_index_t boundary_msh_id;
+                    iss >> boundary_msh_id;
+                    boundary_msh_id = std::abs( boundary_msh_id );
+                    builder_.add_surface_block_boundary_relationship(
+                        brep_.surface( gmsh_id2uuids_.elementary_ids.at(
+                            { geode::Surface3D::component_type_static(),
+                                static_cast< geode::index_t >(
+                                    boundary_msh_id ) } ) ),
+                        brep_.block( block_uuid ) );
+                }
+            }
+        }
+
+        geode::Point3D read_node_coordinates( std::istringstream& iss )
+        {
+            double x, y, z;
+            iss >> x >> y >> z;
+            geode::Point3D node{ { x, y, z } };
+            return node;
+        }
+
+        void read_node_section_v2()
         {
             go_to_section( "$Nodes" );
             std::string line;
@@ -675,17 +904,56 @@ namespace
             OPENGEODE_EXCEPTION( expected_node_id == file_node_id,
                 "[MSHInput::read_node] Node indices should be "
                 "continuous." );
-            geode::Point3D node;
-            for( const auto c : geode::Range{ 3 } )
-            {
-                double coord;
-                iss >> coord;
-                node.set_value( c, coord );
-            }
-            return node;
+            return read_node_coordinates( iss );
         }
 
-        void read_element_section()
+        void read_node_section_v4()
+        {
+            go_to_section( "$Nodes" );
+            std::string line;
+            std::getline( file_, line );
+            geode::index_t nb_groups, nb_total_nodes, min_node_id, max_node_id;
+            std::istringstream iss{ line };
+            iss >> nb_groups >> nb_total_nodes >> min_node_id >> max_node_id;
+            OPENGEODE_EXCEPTION(
+                min_node_id == 1 && max_node_id == nb_total_nodes,
+                "[MSHInput::read_node_section_v4] Non continuous node indexing "
+                "is not supported for now" );
+            nodes_.reserve( nb_total_nodes );
+            for( const auto unused : geode::Range{ nb_groups } )
+            {
+                geode_unused( unused );
+                read_node_group();
+            }
+            check_keyword( "$EndNodes" );
+            builder_.create_unique_vertices( nb_total_nodes );
+        }
+
+        void read_node_group()
+        {
+            std::string line;
+            std::getline( file_, line );
+            std::istringstream iss{ line };
+            geode::index_t entity_dimension, entity_id, parametric, nb_nodes;
+            iss >> entity_dimension >> entity_id >> parametric >> nb_nodes;
+            OPENGEODE_EXCEPTION( parametric == 0,
+                "[MSHInput::read_node_group] Parametric node coordinates "
+                "is not supported for now" );
+            for( const auto unused : geode::Range{ nb_nodes } )
+            {
+                geode_unused( unused );
+                std::getline( file_, line );
+            }
+            for( const auto unused : geode::Range{ nb_nodes } )
+            {
+                geode_unused( unused );
+                std::getline( file_, line );
+                std::istringstream stream{ line };
+                nodes_.push_back( read_node_coordinates( stream ) );
+            }
+        }
+
+        void read_element_section_v2()
         {
             go_to_section( "$Elements" );
             std::string line;
@@ -734,6 +1002,51 @@ namespace
             const auto element = GMSHElementFactory::create(
                 mesh_element_type_id, physical_entity, elementary_entity, iss );
             element->add_element( brep_, gmsh_id2uuids_ );
+        }
+
+        void read_element_section_v4()
+        {
+            go_to_section( "$Elements" );
+            std::string line;
+            std::getline( file_, line );
+            geode::index_t nb_groups, nb_total_elements, min_element_id,
+                max_element_id;
+            std::istringstream iss{ line };
+            iss >> nb_groups >> nb_total_elements >> min_element_id
+                >> max_element_id;
+            OPENGEODE_EXCEPTION(
+                min_element_id == 1 && max_element_id == nb_total_elements,
+                "[MSHInput::read_element_section_v4] Non continuous element "
+                "indexing is not supported for now" );
+            for( const auto unused : geode::Range{ nb_groups } )
+            {
+                geode_unused( unused );
+                read_element_group();
+            }
+            check_keyword( "$EndElements" );
+        }
+
+        void read_element_group()
+        {
+            std::string line;
+            std::getline( file_, line );
+            std::istringstream iss{ line };
+            geode::index_t entity_dimension, entity_id, mesh_element_type_id,
+                nb_elements;
+            iss >> entity_dimension >> entity_id >> mesh_element_type_id
+                >> nb_elements;
+            for( const auto unused : geode::Range{ nb_elements } )
+            {
+                geode_unused( unused );
+                std::getline( file_, line );
+                std::istringstream stream{ line };
+                geode::index_t element_id;
+                stream >> element_id;
+                constexpr geode::index_t physical_entity{ 0 };
+                const auto element = GMSHElementFactory::create(
+                    mesh_element_type_id, physical_entity, entity_id, stream );
+                element->add_element( brep_, gmsh_id2uuids_ );
+            }
         }
 
         void build_corners()
@@ -958,6 +1271,8 @@ namespace
         geode::BRep& brep_;
         geode::BRepBuilder builder_;
         bool binary_{ true };
+        double version_{ 2 };
+        std::vector< std::string > sections_;
         std::vector< geode::Point3D > nodes_;
         GmshId2Uuids gmsh_id2uuids_;
     };
