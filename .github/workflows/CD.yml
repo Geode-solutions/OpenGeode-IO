@@ -11,11 +11,17 @@ jobs:
     strategy:
       matrix:
         config:
-        - {container: "geodesolutions/ubuntu", system: "ubuntu", doc: true}
-        - {container: "geodesolutions/centos", system: "rhel", doc: false}
+        - {container: "geodesolutions/ubuntu", system: "ubuntu", doc: true, python: 3.6}
+        - {container: "geodesolutions/ubuntu", system: "ubuntu", doc: false, python: 3.7}
+        - {container: "geodesolutions/ubuntu", system: "ubuntu", doc: false, python: 3.8}
+        - {container: "geodesolutions/centos", system: "rhel", doc: false, python: 2.7}
 
     steps:
     - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.config.python }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.config.python }}
     - name: Cache Assimp
       uses: actions/cache@v1.0.3
       with:
@@ -39,14 +45,14 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=${{ matrix.config.system }} ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DCPACK_PACKAGE_VERSION:STRING=$version-python${{ matrix.config.python }} -DCPACK_SYSTEM_NAME:STRING=${{ matrix.config.system }} ..
         cmake --build . -- -j2
         cd opengeode-io
         cmake --build . --target package
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-${{ matrix.config.system }}.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-python${{ matrix.config.python }}-${{ matrix.config.system }}.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Doc
@@ -65,9 +71,16 @@ jobs:
       
   release-mac:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        python: [3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
     - name: Cache Assimp
       uses: actions/cache@v1.0.3
       with:
@@ -91,14 +104,14 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/}"
         echo ::set-output name=version::$version
-        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=darwin ..
+        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version-python${{ matrix.python }} -DCPACK_SYSTEM_NAME:STRING=darwin ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target package --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-python${{ matrix.python }}-darwin.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
@@ -112,6 +125,9 @@ jobs:
       
   release-windows:
     runs-on: windows-2016
+    strategy:
+      matrix:
+        python: [3.6, 3.7]
 
     steps:
     - uses: actions/checkout@v1
@@ -138,14 +154,14 @@ jobs:
         cd build
         $version = ${env:GITHUB_REF} -replace 'refs\/tags\/', ''
         echo "::set-output name=version::$version"
-        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=win64 ..
+        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version-python${{ matrix.python }} -DCPACK_SYSTEM_NAME:STRING=win64 ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target PACKAGE --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-win64.zip"
+        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-python${{ matrix.python }}-win64.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
