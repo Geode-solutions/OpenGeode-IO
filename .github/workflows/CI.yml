@@ -64,7 +64,7 @@ jobs:
       run: |
         mkdir -p test
         cd test
-        cmake ${{ matrix.config.cmake_args }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeode-io/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH:PATH="$GITHUB_WORKSPACE/build/opengeode-io/install;$GITHUB_WORKSPACE/${{ steps.opengeode.outputs.path }}" ../tests
         cmake --build . -- -j2
         ctest --output-on-failure
     - name: Notify slack
