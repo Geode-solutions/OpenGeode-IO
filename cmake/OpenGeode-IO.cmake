@@ -50,6 +50,11 @@ if(OPENGEODE_IO_WITH_TESTS)
     add_subdirectory(tests)
 endif()
 
+if(OPENGEODE_IO_WITH_PYTHON)
+    message(STATUS "Configuring OpenGeode-IO with Python bindings")
+    add_subdirectory(bindings/python)
+endif()
+
 #------------------------------------------------------------------------------------------------
 # Configure CPack
 if(WIN32)
