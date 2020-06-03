@@ -58,7 +58,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} ..
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} ..
         cmake --build . -- -j2
     - name: Test
       run: |
@@ -154,7 +154,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake -G "Xcode" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} ..
+        cmake -G "Xcode" -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} ..
         cmake --build . --config ${{ matrix.config }}
         cd opengeode-io
         ctest -C ${{ matrix.config }} --output-on-failure
@@ -201,7 +201,7 @@ jobs:
       run: |
         if(!(test-path build)) { mkdir build }
         cd build
-        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} ..
+        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${env:GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.python }} ..
         cmake --build . --config ${{ matrix.config }}
         cd opengeode-io
         ctest -C ${{ matrix.config }} --output-on-failure
