@@ -34,9 +34,11 @@ ExternalProject_Add(opengeode-io
         -DUSE_SUPERBUILD:BOOL=OFF
         -DASSIMP_INSTALL_PREFIX:PATH=${ASSIMP_INSTALL_PREFIX}
         -DPUGIXML_INSTALL_PREFIX:PATH=${PUGIXML_INSTALL_PREFIX}
+        -DZLIB_PATH:PATH=${ZLIB_PATH}
         -DCMAKE_INSTALL_PREFIX:PATH=${OpenGeode-IO_PATH_BIN}/install
     BINARY_DIR ${OpenGeode-IO_PATH_BIN}
     DEPENDS 
         assimp
         pugixml
+        zlib
 )

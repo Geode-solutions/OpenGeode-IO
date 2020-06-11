@@ -43,7 +43,7 @@ int main()
 
         // Load file
         load_polygonal_surface(
-            *surface, absl::StrCat( data_path, "/Armadillo.ply" ) );
+            *surface, absl::StrCat( data_path, "Armadillo.ply" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,

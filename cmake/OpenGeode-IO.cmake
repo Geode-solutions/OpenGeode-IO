@@ -27,6 +27,8 @@ option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(ZLIB zlib REQUIRED IMPORTED_TARGET)
 
 # Install OpenGeode-IO third-parties
 install(
@@ -40,6 +42,8 @@ install(
 #------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)
+
+add_subdirectory(${ZLIB_PATH}/src/zlib)
 
 #------------------------------------------------------------------------------------------------
 # Optional modules configuration

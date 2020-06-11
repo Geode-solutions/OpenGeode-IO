@@ -21,25 +21,30 @@
  *
  */
 
-#include <geode/io/mesh/private/assimp_input.h>
+#pragma once
 
-#include <geode/basic/common.h>
-#include <geode/basic/logger.h>
+#include <geode/mesh/io/polygonal_surface_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        bool AssimpMeshInput::read_file()
+        class VTPInput final : public PolygonalSurfaceInput< 3 >
         {
-            const auto* pScene = importer_.ReadFile( file_.data(), 0 );
-            OPENGEODE_EXCEPTION( pScene, "[AssimpMeshInput::read_file] ",
-                importer_.GetErrorString() );
-            OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
-                "[AssimpMeshInput::read_file] Several meshes in imported file ",
-                file_ );
-            assimp_mesh_ = pScene->mMeshes[0];
-            return true;
-        }
+        public:
+            VTPInput(
+                PolygonalSurface< 3 > &surface, absl::string_view filename )
+                : PolygonalSurfaceInput< 3 >( surface, filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "vtp";
+                return ext;
+            }
+
+            void do_read() final;
+        };
     } // namespace detail
 } // namespace geode

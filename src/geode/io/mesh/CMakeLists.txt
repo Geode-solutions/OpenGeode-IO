@@ -30,20 +30,24 @@ add_geode_library(
         "ply_output.cpp"
         "stl_input.cpp"
         "stl_output.cpp"
+        "vtp_input.cpp"
     ADVANCED_HEADERS
         "detail/common.h"
     PRIVATE_HEADERS
         "private/assimp_input.h"
         "private/assimp_output.h"
         "private/obj_input.h"
-        "private/ply_input.h"
-        "private/stl_input.h"
         "private/obj_output.h"
+        "private/ply_input.h"
         "private/ply_output.h"
+        "private/stl_input.h"
         "private/stl_output.h"
+        "private/vtp_input.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
         OpenGeode::mesh
         assimp::assimp
+        pugixml::pugixml
+        zlib
 )

@@ -47,4 +47,5 @@ include(ExternalProject)
 
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePugixml.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/ConfigureZlib.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)

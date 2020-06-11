@@ -43,7 +43,7 @@ int main()
 
         // Load file
         load_triangulated_surface(
-            *surface, absl::StrCat( data_path, "/thumbwheel.stl" ) );
+            *surface, absl::StrCat( data_path, "thumbwheel.stl" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,

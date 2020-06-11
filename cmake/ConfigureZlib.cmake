@@ -18,31 +18,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_geode_test(
-    SOURCE "test-obj.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        ${PROJECT_NAME}::mesh
-)
-add_geode_test(
-    SOURCE "test-ply.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        ${PROJECT_NAME}::mesh
-)
-add_geode_test(
-    SOURCE "test-stl.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        ${PROJECT_NAME}::mesh
-)
-add_geode_test(
-    SOURCE "test-vtp.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        ${PROJECT_NAME}::mesh
+set(ZLIB_PATH ${PROJECT_BINARY_DIR}/third_party/zlib)
+set(ZLIB_INSTALL_PREFIX ${ZLIB_PATH}/install)
+string(REPLACE "/MDd" "/MD" NEW_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
+ExternalProject_Add(zlib
+    PREFIX ${ZLIB_PATH}
+    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng
+    GIT_PROGRESS ON
+    GIT_TAG fe69810c265858b7b4242663d51336726f4a98be
+    CMAKE_GENERATOR ${CMAKE_GENERATOR}
+    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+    CMAKE_ARGS
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_INSTALL_MESSAGE=LAZY
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    CMAKE_CACHE_ARGS
+        -DCMAKE_C_FLAGS_DEBUG:INTERNAL=${NEW_FLAGS}
+        -DCMAKE_CXX_FLAGS_DEBUG:INTERNAL=${NEW_FLAGS}
+        -DCMAKE_INSTALL_PREFIX:PATH=${ZLIB_INSTALL_PREFIX}
 )
