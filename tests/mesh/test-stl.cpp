@@ -56,12 +56,12 @@ int main()
         // Reload file
         auto reloaded_surface =
             load_triangulated_surface< 3 >( output_file_stl );
-        OPENGEODE_EXCEPTION(
-            surface->nb_vertices() == 525, "[Test] Number of vertices in the "
-                                           "reloaded Surface is not correct" );
-        OPENGEODE_EXCEPTION(
-            surface->nb_polygons() == 1027, "[Test] Number of polygons in the "
-                                            "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
+            "[Test] Number of vertices in the "
+            "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
+            "[Test] Number of polygons in the "
+            "reloaded Surface is not correct" );
 
         Logger::info( "TEST SUCCESS" );
         return 0;
