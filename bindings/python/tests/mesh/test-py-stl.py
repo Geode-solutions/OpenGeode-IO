@@ -31,8 +31,7 @@ if __name__ == '__main__':
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = mesh.TriangulatedSurface3D.create()
-    mesh.load_triangulated_surface3D(surface, os.path.join(data_dir, "thumbwheel.stl"))
+    surface = mesh.load_triangulated_surface3D(os.path.join(data_dir, "thumbwheel.stl"))
     if surface.nb_vertices() != 525:
         raise ValueError("[Test] Number of vertices in the loaded Surface is not correct" )
     if surface.nb_polygons() != 1027:

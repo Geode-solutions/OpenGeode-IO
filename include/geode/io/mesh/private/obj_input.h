@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/mesh/io/polygonal_surface_input.h>
 
 namespace geode
 {

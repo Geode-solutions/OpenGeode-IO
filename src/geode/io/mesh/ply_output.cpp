@@ -34,7 +34,8 @@ namespace geode
         void PLYOutput::write() const
         {
             detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
-                polygonal_surface(), "plyb" };
+                // polygonal_surface(), "plyb" };
+                polygonal_surface(), "ply" };
             impl.build_assimp_scene();
             impl.write_file();
         }
