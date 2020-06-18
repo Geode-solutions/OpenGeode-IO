@@ -36,6 +36,7 @@
 
 #include <geode/mesh/builder/edged_curve_builder.h>
 #include <geode/mesh/builder/point_set_builder.h>
+#include <geode/mesh/core/edged_curve.h>
 
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>

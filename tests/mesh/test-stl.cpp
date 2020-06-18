@@ -39,11 +39,9 @@ int main()
     try
     {
         detail::initialize_mesh_io();
-        auto surface = TriangulatedSurface< 3 >::create();
-
         // Load file
-        load_triangulated_surface(
-            *surface, absl::StrCat( data_path, "thumbwheel.stl" ) );
+        auto surface = load_triangulated_surface< 3 >(
+            absl::StrCat( data_path, "thumbwheel.stl" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
@@ -56,15 +54,15 @@ int main()
         save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file
-        try
-        {
-            load_triangulated_surface( *surface, output_file_stl );
-            OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
-        }
-        catch( ... )
-        {
-            // Exception thrown and catched
-        }
+        auto reloaded_surface =
+            load_triangulated_surface< 3 >( output_file_stl );
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
+            "[Test] Number of vertices in the "
+            "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
+            "[Test] Number of polygons in the "
+            "reloaded Surface is not correct" );
+
         Logger::info( "TEST SUCCESS" );
         return 0;
     }

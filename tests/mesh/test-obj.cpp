@@ -39,11 +39,9 @@ int main()
     try
     {
         detail::initialize_mesh_io();
-        auto surface = PolygonalSurface< 3 >::create();
-
         // Load file
-        load_polygonal_surface(
-            *surface, absl::StrCat( data_path, "TopHat.obj" ) );
+        auto surface = load_polygonal_surface< 3 >(
+            absl::StrCat( data_path, "TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
@@ -56,15 +54,14 @@ int main()
         save_polygonal_surface( *surface, output_file_obj );
 
         // Reload file
-        try
-        {
-            load_polygonal_surface( *surface, output_file_obj );
-            OPENGEODE_EXCEPTION( false, "[Test] Exception was not thrown" );
-        }
-        catch( ... )
-        {
-            // Exception thrown and catched
-        }
+        auto reloaded_surface = load_polygonal_surface< 3 >( output_file_obj );
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
+            "[Test] Number of vertices in the "
+            "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
+            "[Test] Number of polygons in the "
+            "reloaded Surface is not correct" );
+
         Logger::info( "TEST SUCCESS" );
         return 0;
     }
