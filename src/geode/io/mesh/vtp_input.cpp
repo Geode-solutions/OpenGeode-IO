@@ -121,10 +121,15 @@ namespace
             {
                 surface_builder_->set_point( offset + p, points[p] );
             }
+            absl::FixedArray< geode::index_t > new_polygons(
+                polygon_vertices.size() );
+            std::iota( new_polygons.begin(), new_polygons.end(),
+                surface_.nb_polygons() );
             for( const auto& pv : polygon_vertices )
             {
                 surface_builder_->create_polygon( pv );
             }
+            surface_builder_->compute_polygon_adjacencies( new_polygons );
         }
 
         absl::string_view remove_spaces( absl::string_view in )
@@ -167,19 +172,35 @@ namespace
             {
                 return std::vector< T >{};
             }
-            OPENGEODE_EXCEPTION( nb_data_blocks == 1,
-                "More than one data block to decode is not supported yet" );
+            DEBUG( nb_data_blocks );
+            DEBUG( fixed_header_values[1] );
+            DEBUG( fixed_header_values[2] );
+            // OPENGEODE_EXCEPTION( nb_data_blocks == 1,
+            //     "More than one data block to decode is not supported yet" );
             const auto uncompressed_block_size = fixed_header_values[1];
-            // const auto last_partial_block_size = fixed_header_values[2];
-            auto optional_header = clean_input.substr( 16, 8 );
+            const auto last_partial_block_size = fixed_header_values[2];
+            // auto optional_header = clean_input.substr( 16, nb_data_blocks * 8
+            // );
+            const auto nb_characters =
+                std::ceil( nb_data_blocks * 32. / 24. ) * 4;
+            DEBUG( nb_characters );
+            auto optional_header = clean_input.substr( 16, nb_characters );
+            DEBUG( optional_header );
             decode_status = absl::Base64Unescape( optional_header, &bytes );
             OPENGEODE_EXCEPTION(
                 decode_status, "Pb decode base64 (optional header)" );
-            OPENGEODE_ASSERT( bytes.size() == 4, "optional header size wrong" );
+            OPENGEODE_ASSERT( bytes.size() == nb_data_blocks * 4,
+                "optional header size wrong" );
             const auto optional_header_values =
                 reinterpret_cast< const geode::index_t* >(
                     bytes.c_str() ); // should be unsigned long if UInt64
             const auto compressed_block_size = optional_header_values[0];
+            for( const auto b : geode::Range{ nb_data_blocks } )
+            {
+                DEBUG( optional_header_values[b] );
+            }
+
+            exit( 1 );
 
             const auto data_offset = 16 + 8 * nb_data_blocks;
             auto data = clean_input.substr(
@@ -272,24 +293,17 @@ namespace
             const std::vector< geode::index_t >& connectivity,
             const std::vector< geode::index_t >& offsets )
         {
-            for( const auto p : offsets )
-            {
-                DEBUG( p );
-            }
             absl::FixedArray< std::vector< geode::index_t > > polygon_vertices(
                 offsets.size() );
             geode::index_t prev_offset{ 0 };
             for( const auto p : geode::Range{ offsets.size() } )
             {
-                DEBUG( "=====" );
                 const auto cur_offset = offsets[p];
                 auto& vertices = polygon_vertices[p];
-                DEBUG( cur_offset - prev_offset - 1 );
-                vertices.reserve( cur_offset - prev_offset - 1 );
+                vertices.reserve( cur_offset - prev_offset );
                 for( const auto v : geode::Range{ prev_offset, cur_offset } )
                 {
                     vertices.push_back( connectivity[v] );
-                    DEBUG( vertices.back() );
                 }
                 prev_offset = cur_offset;
             }
@@ -306,28 +320,48 @@ namespace
             {
                 if( strcmp( data.attribute( "Name" ).value(), "offsets" ) == 0 )
                 {
-                    offsets = read_data_array( data );
+                    const auto offsets_values =
+                        read_data_array< int64_t >( data );
+                    OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
+                        "Wrong number of offsets" );
+                    offsets = cast_data_array< int64_t, geode::index_t >(
+                        offsets_values );
                 }
                 else if( strcmp(
                              data.attribute( "Name" ).value(), "connectivity" )
                          == 0 )
                 {
-                    connectivity = read_data_array( data );
+                    const auto connectivity_values =
+                        read_data_array< int64_t >( data );
+                    connectivity = cast_data_array< int64_t, geode::index_t >(
+                        connectivity_values );
                 }
             }
             return get_polygon_vertices( connectivity, offsets );
         }
 
-        std::vector< geode::index_t > read_data_array(
-            const pugi::xml_node& data )
+        template < typename T_in, typename T_out >
+        std::vector< T_out > cast_data_array( const std::vector< T_in >& data )
+        {
+            std::vector< T_out > casted;
+            casted.reserve( data.size() );
+            for( const auto& value : data )
+            {
+                casted.push_back( static_cast< T_out >( value ) );
+            }
+            return casted;
+        }
+
+        template < typename T >
+        std::vector< T > read_data_array( const pugi::xml_node& data )
         {
             const auto format = data.attribute( "format" ).value();
             const auto data_string = data.child_value();
             if( strcmp( format, "ascii" ) == 0 )
             {
-                return read_ascii_data_array< geode::index_t >( data_string );
+                return read_ascii_data_array< T >( data_string );
             }
-            return decode< geode::index_t >( data_string );
+            return decode< T >( data_string );
         }
 
         template < typename T >

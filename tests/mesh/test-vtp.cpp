@@ -32,27 +32,39 @@
 
 #include <geode/io/mesh/detail/common.h>
 
-void run_test( absl::string_view filename )
+void check( const geode::PolygonalSurface3D& surface,
+    const std::array< geode::index_t, 2 >& test_answers )
 {
-    auto surface = geode::PolygonalSurface< 3 >::create();
+    OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
+        "[Test] Number of vertices in the loaded Surface is not correct: "
+        "should be ",
+        test_answers[0], ", get ", surface.nb_vertices() );
+    OPENGEODE_EXCEPTION( surface.nb_polygons() == test_answers[1],
+        "[Test] Number of polygons in the loaded Surface is not correct: "
+        "should be ",
+        test_answers[1], ", get ", surface.nb_polygons() );
+}
+
+void run_test( absl::string_view filename,
+    const std::array< geode::index_t, 2 >& test_answers )
+{
+    auto surface = geode::PolygonalSurface3D::create();
     // Load file
     load_polygonal_surface(
         *surface, absl::StrCat( geode::data_path, filename ) );
-    DEBUG( surface->nb_vertices() );
-    DEBUG( surface->nb_polygons() );
-    // OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
-    //     "[Test] Number of vertices in the loaded Surface is not correct" );
-    // OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
-    //     "[Test] Number of polygons in the loaded Surface is not correct" );
+    check( *surface, test_answers );
 
     // Save file
     auto filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
-    save_polygonal_surface( *surface, absl::StrCat( filename_without_ext, ".",
-                                          surface->native_extension() ) );
-    // save_polygonal_surface( *surface, filename );
-    // auto reload_surface = geode::PolygonalSurface< 3 >::create();
-    // load_polygonal_surface( *reload_surface, filename );
+    const auto output_filename =
+        absl::StrCat( filename_without_ext, ".", surface->native_extension() );
+    save_polygonal_surface( *surface, output_filename );
+
+    // Reload file
+    auto reload_surface = geode::PolygonalSurface3D::create();
+    load_polygonal_surface( *reload_surface, output_filename );
+    check( *reload_surface, test_answers );
 }
 
 int main()
@@ -61,9 +73,9 @@ int main()
     {
         geode::detail::initialize_mesh_io();
 
-        run_test( "dfn1.vtp" );
-        DEBUG( "====" );
-        // run_test( "dfn1_compressed.vtp" );
+        run_test( "dfn1_ascii.vtp", { 187, 10 } );
+        run_test( "dfn1_compressed.vtp", { 187, 10 } );
+        run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 } );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
