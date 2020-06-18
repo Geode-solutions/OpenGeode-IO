@@ -31,8 +31,7 @@ if __name__ == '__main__':
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = mesh.PolygonalSurface3D.create()
-    mesh.load_polygonal_surface3D(surface, os.path.join(data_dir, "Armadillo.ply"))
+    surface = mesh.load_polygonal_surface3D(os.path.join(data_dir, "Armadillo.ply"))
     if surface.nb_vertices() != 172974:
         raise ValueError("[Test] Number of vertices in the loaded Surface is not correct" )
     if surface.nb_polygons() != 345944:

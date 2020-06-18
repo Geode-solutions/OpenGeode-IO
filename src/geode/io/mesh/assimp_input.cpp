@@ -33,7 +33,7 @@ namespace geode
         bool AssimpMeshInput::read_file()
         {
             const auto* pScene = importer_.ReadFile( file_.data(), 0 );
-            OPENGEODE_EXCEPTION( pScene, "[AssimpMeshInput::read_file]",
+            OPENGEODE_EXCEPTION( pScene, "[AssimpMeshInput::read_file] ",
                 importer_.GetErrorString() );
             OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
                 "[AssimpMeshInput::read_file] Several meshes in imported file ",
