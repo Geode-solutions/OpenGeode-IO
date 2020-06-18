@@ -55,12 +55,12 @@ int main()
 
         // Reload file
         auto reloaded_surface = load_polygonal_surface< 3 >( output_file_obj );
-        OPENGEODE_EXCEPTION(
-            surface->nb_vertices() == 363, "[Test] Number of vertices in the "
-                                           "reloaded Surface is not correct" );
-        OPENGEODE_EXCEPTION(
-            surface->nb_polygons() == 380, "[Test] Number of polygons in the "
-                                           "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
+            "[Test] Number of vertices in the "
+            "reloaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
+            "[Test] Number of polygons in the "
+            "reloaded Surface is not correct" );
 
         Logger::info( "TEST SUCCESS" );
         return 0;
