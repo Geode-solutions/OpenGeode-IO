@@ -48,10 +48,9 @@ void check( const geode::PolygonalSurface3D& surface,
 void run_test( absl::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
-    auto surface = geode::PolygonalSurface3D::create();
     // Load file
-    load_polygonal_surface(
-        *surface, absl::StrCat( geode::data_path, filename ) );
+    auto surface = geode::load_polygonal_surface< 3 >(
+        absl::StrCat( geode::data_path, filename ) );
     check( *surface, test_answers );
 
     // Save file
@@ -59,11 +58,10 @@ void run_test( absl::string_view filename,
     filename_without_ext.remove_suffix( 4 );
     const auto output_filename =
         absl::StrCat( filename_without_ext, ".", surface->native_extension() );
-    save_polygonal_surface( *surface, output_filename );
+    geode::save_polygonal_surface( *surface, output_filename );
 
     // Reload file
-    auto reload_surface = geode::PolygonalSurface3D::create();
-    load_polygonal_surface( *reload_surface, output_filename );
+    auto reload_surface = geode::load_polygonal_surface< 3 >( output_filename );
     check( *reload_surface, test_answers );
 }
 
