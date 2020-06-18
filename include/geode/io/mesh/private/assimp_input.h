@@ -60,7 +60,7 @@ namespace geode
             }
 
             geode::NNSearch3D::ColocatedInfo build_duplicated_vertices(
-                geode::PolygonalSurface3D& surface )
+                geode::SurfaceMesh3D& surface )
             {
                 const auto duplicated_vertices =
                     load_duplicated_vertices( assimp_mesh() );
@@ -87,14 +87,13 @@ namespace geode
 
             geode::NNSearch3D::ColocatedInfo build_unique_vertices(
                 const std::vector< geode::Point3D >& duplicated_vertices,
-                geode::PolygonalSurface3D& surface )
+                geode::SurfaceMesh3D& surface )
             {
                 const geode::NNSearch3D colocater{ duplicated_vertices };
                 const auto& vertex_mapping =
                     colocater.colocated_index_mapping( geode::global_epsilon );
 
-                auto builder =
-                    geode::PolygonalSurfaceBuilder3D::create( surface );
+                auto builder = geode::SurfaceMeshBuilder3D::create( surface );
                 builder->create_vertices( vertex_mapping.nb_unique_points() );
                 for( const auto v :
                     geode::Range{ vertex_mapping.nb_unique_points() } )

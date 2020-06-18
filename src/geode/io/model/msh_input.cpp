@@ -1114,7 +1114,7 @@ namespace
         }
 
         void update_component_vertex( const geode::Surface3D& surface,
-            geode::PolygonalSurfaceBuilder3D& mesh_builder,
+            geode::SurfaceMeshBuilder3D& mesh_builder,
             geode::index_t old_surface_vertex_id,
             geode::index_t new_surface_vertex_id )
         {
@@ -1128,7 +1128,7 @@ namespace
         }
 
         void update_component_vertex( const geode::Block3D& block,
-            geode::PolyhedralSolidBuilder3D& mesh_builder,
+            geode::SolidMeshBuilder3D& mesh_builder,
             geode::index_t old_block_vertex_id,
             geode::index_t new_block_vertex_id )
         {
@@ -1136,7 +1136,7 @@ namespace
                 block.mesh().polyhedra_around_vertex( old_block_vertex_id );
             OPENGEODE_ASSERT( polyhedra.size() == 1,
                 "By construction, there should be one and only one "
-                "polyhedra pointing to each vertex at this point." );
+                "polyhedron pointing to each vertex at this point." );
             mesh_builder.set_polyhedron_vertex(
                 polyhedra[0], new_block_vertex_id );
         }
