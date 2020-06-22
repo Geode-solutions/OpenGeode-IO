@@ -41,6 +41,8 @@ install(
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)
 
+add_subdirectory(${ZLIB_PATH}/src/zlib)
+
 #------------------------------------------------------------------------------------------------
 # Optional modules configuration
 if(OPENGEODE_IO_WITH_TESTS)
