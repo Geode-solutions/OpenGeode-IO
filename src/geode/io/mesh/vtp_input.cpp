@@ -23,12 +23,12 @@
 
 #include <geode/io/mesh/private/vtp_input.h>
 
-#include <absl/strings/escaping.h>
-#include <absl/strings/numbers.h>
-#include <bitset>
 #include <fstream>
-#include <iostream>
-#include <locale>
+
+#include <absl/strings/ascii.h>
+#include <absl/strings/escaping.h>
+#include <absl/strings/match.h>
+#include <absl/strings/numbers.h>
 #include <pugixml.hpp>
 #include <zlib-ng.h>
 
@@ -39,26 +39,9 @@
 
 namespace
 {
-    absl::string_view remove_spaces( absl::string_view in )
+    bool match( absl::string_view query, absl::string_view ref )
     {
-        auto left = in.begin();
-        while( isspace( *left ) )
-        {
-            left++;
-        }
-        for( ;; ++left )
-        {
-            if( left == in.end() )
-                return absl::string_view();
-            if( !isspace( *left ) )
-                break;
-        }
-        auto right = in.end() - 1;
-        while( isspace( *right ) && right > left )
-        {
-            right--;
-        }
-        return absl::string_view( left, std::distance( left, right ) + 1 );
+        return absl::StartsWith( query, ref ) && absl::EndsWith( query, ref );
     }
 
     class VTPInputImpl
@@ -92,20 +75,18 @@ namespace
         void read_root_attributes()
         {
             OPENGEODE_EXCEPTION(
-                strcmp( root_.attribute( "type" ).value(), "PolyData" ) == 0,
+                match( root_.attribute( "type" ).value(), "PolyData" ),
                 "[VTPInput::read_root_attributes] VTK File type should be "
                 "PolyData" );
-            if( strcmp( root_.attribute( "byte_order" ).value(), "BigEndian" )
-                == 0 )
+            if( match( root_.attribute( "byte_order" ).value(), "BigEndian" ) )
             {
                 little_endian_ = false;
             }
             const auto compressor = root_.attribute( "compressor" ).value();
             OPENGEODE_EXCEPTION(
                 absl::string_view( compressor ).empty()
-                    || strcmp( root_.attribute( "compressor" ).value(),
-                           "vtkZLibDataCompressor" )
-                           == 0,
+                    || match( root_.attribute( "compressor" ).value(),
+                        "vtkZLibDataCompressor" ),
                 "[VTPInput::read_root_attributes] Only vtkZLibDataCompressor "
                 "is supported for now" );
             if( !absl::string_view( compressor ).empty() )
@@ -118,14 +99,16 @@ namespace
         {
             for( const auto& piece : polydata.children( "Piece" ) )
             {
-                const auto nb_polygons =
-                    std::stoul( piece.attribute( "NumberOfPolys" ).value() );
+                geode::index_t nb_polygons;
+                absl::SimpleAtoi(
+                    piece.attribute( "NumberOfPolys" ).value(), &nb_polygons );
                 if( nb_polygons == 0 )
                 {
                     continue;
                 }
-                const auto nb_points =
-                    std::stoul( piece.attribute( "NumberOfPoints" ).value() );
+                geode::index_t nb_points;
+                absl::SimpleAtoi(
+                    piece.attribute( "NumberOfPoints" ).value(), &nb_points );
                 // read_point_data( piece ); TODO for attributes
                 // read_cell_data( piece );
                 const auto points = read_points( piece, nb_points );
@@ -159,8 +142,12 @@ namespace
         template < typename T >
         std::vector< T > decode( absl::string_view input )
         {
-            auto clean_input = remove_spaces( input );
-            auto fixed_header = clean_input.substr( 0, 16 );
+            auto clean_input = absl::StripAsciiWhitespace( input );
+            const geode::index_t fixed_header_length{
+                16
+            }; // 4 series of 4 characters is needed to encode the 3 values in
+               // the fixed header (3 * 4 bytes)
+            auto fixed_header = clean_input.substr( 0, fixed_header_length );
             std::string bytes;
             auto decode_status = absl::Base64Unescape( fixed_header, &bytes );
             OPENGEODE_EXCEPTION( decode_status,
@@ -180,8 +167,12 @@ namespace
             }
             const auto uncompressed_block_size = fixed_header_values[1];
             const auto nb_characters =
-                std::ceil( nb_data_blocks * 32. / 24. ) * 4;
-            auto optional_header = clean_input.substr( 16, nb_characters );
+                std::ceil( nb_data_blocks * 32. / 24. )
+                * 4; // for each blocks 4 bytes (32 bits) are needed to encode a
+                     // value, encoded by packs of 3 bytes (24 bits) represented
+                     // by 4 characters
+            auto optional_header =
+                clean_input.substr( fixed_header_length, nb_characters );
             decode_status = absl::Base64Unescape( optional_header, &bytes );
             OPENGEODE_EXCEPTION( decode_status,
                 "[VTPInput::decode] Error in decoding base64 "
@@ -203,7 +194,7 @@ namespace
                 sum_compressed_block_size += optional_header_values[b];
             }
 
-            const auto data_offset = 16 + nb_characters;
+            const auto data_offset = fixed_header_length + nb_characters;
             auto data = clean_input.substr(
                 data_offset, clean_input.size() - data_offset );
             decode_status = absl::Base64Unescape( data, &bytes );
@@ -219,20 +210,20 @@ namespace
             for( const auto b : geode::Range{ nb_data_blocks } )
             {
                 const auto compressed_data_length =
-                    3 * sum_compressed_block_size;
+                    // 3 * sum_compressed_block_size;
+                    sum_compressed_block_size;
                 size_t decompressed_data_length =
                     nb_data_blocks * uncompressed_block_size;
-                std::unique_ptr< uint8_t > decompressed_data_bytes{
-                    new uint8_t[decompressed_data_length]
-                };
+                absl::FixedArray< uint8_t > decompressed_data_bytes(
+                    decompressed_data_length );
                 const auto uncompress_result = zng_uncompress(
-                    decompressed_data_bytes.get(), &decompressed_data_length,
+                    decompressed_data_bytes.data(), &decompressed_data_length,
                     &compressed_data_bytes[cur_data_offset],
                     compressed_data_length );
                 OPENGEODE_EXCEPTION( uncompress_result == Z_OK,
                     "[VTPInput::decode] Error in zlib decompressing data" );
                 const auto values = reinterpret_cast< const T* >(
-                    decompressed_data_bytes.get() );
+                    decompressed_data_bytes.data() );
                 const auto nb_values = decompressed_data_length / sizeof( T );
                 for( const auto v : geode::Range{ nb_values } )
                 {
@@ -266,14 +257,15 @@ namespace
             const pugi::xml_node& piece, geode::index_t nb_points )
         {
             const auto points = piece.child( "Points" ).child( "DataArray" );
-            OPENGEODE_EXCEPTION(
-                std::stoul( points.attribute( "NumberOfComponents" ).value() )
-                    == 3,
+            geode::index_t nb_components;
+            absl::SimpleAtoi( points.attribute( "NumberOfComponents" ).value(),
+                &nb_components );
+            OPENGEODE_EXCEPTION( nb_components == 3,
                 "[VTPInput::read_points] Trying to import 2D VTK PolyData into "
                 "a 3D Surface is not allowed" );
             const auto format = points.attribute( "format" ).value();
             const auto coords_string = points.child_value();
-            if( strcmp( format, "ascii" ) == 0 )
+            if( match( format, "ascii" ) )
             {
                 const auto coords =
                     read_ascii_coordinates( coords_string, nb_points );
@@ -294,18 +286,20 @@ namespace
             results.reserve( 3 * nb_points );
             std::istringstream iss( coords.data() );
             std::string c;
+            double coord;
             iss >> c;
             while( !iss.eof() )
             {
-                results.push_back( std::stod( c ) );
+                absl::SimpleAtod( c, &coord );
+                results.push_back( coord );
                 iss >> c;
             }
             return results;
         }
 
         absl::FixedArray< std::vector< geode::index_t > > get_polygon_vertices(
-            const std::vector< geode::index_t >& connectivity,
-            const std::vector< geode::index_t >& offsets )
+            absl::Span< const geode::index_t > connectivity,
+            absl::Span< const geode::index_t > offsets )
         {
             absl::FixedArray< std::vector< geode::index_t > > polygon_vertices(
                 offsets.size() );
@@ -327,41 +321,37 @@ namespace
         absl::FixedArray< std::vector< geode::index_t > > read_polygons(
             const pugi::xml_node& piece, geode::index_t nb_polygons )
         {
-            std::vector< geode::index_t > offsets;
-            std::vector< geode::index_t > connectivity;
+            std::vector< int64_t > offsets_values;
+            std::vector< int64_t > connectivity_values;
             for( const auto& data :
                 piece.child( "Polys" ).children( "DataArray" ) )
             {
-                if( strcmp( data.attribute( "Name" ).value(), "offsets" ) == 0 )
+                if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
-                    const auto offsets_values =
-                        read_data_array< int64_t >( data );
+                    offsets_values = read_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
                         "[VTPInput::read_points] Wrong number of offsets" );
-                    offsets = cast_data_array< int64_t, geode::index_t >(
-                        offsets_values );
                 }
-                else if( strcmp(
-                             data.attribute( "Name" ).value(), "connectivity" )
-                         == 0 )
+                else if( match( data.attribute( "Name" ).value(),
+                             "connectivity" ) )
                 {
-                    const auto connectivity_values =
-                        read_data_array< int64_t >( data );
-                    connectivity = cast_data_array< int64_t, geode::index_t >(
-                        connectivity_values );
+                    connectivity_values = read_data_array< int64_t >( data );
                 }
             }
-            return get_polygon_vertices( connectivity, offsets );
+            return get_polygon_vertices(
+                cast_data_array< int64_t, geode::index_t >(
+                    connectivity_values ),
+                cast_data_array< int64_t, geode::index_t >( offsets_values ) );
         }
 
         template < typename T_in, typename T_out >
-        std::vector< T_out > cast_data_array( const std::vector< T_in >& data )
+        absl::FixedArray< T_out > cast_data_array(
+            const std::vector< T_in >& data )
         {
-            std::vector< T_out > casted;
-            casted.reserve( data.size() );
-            for( const auto& value : data )
+            absl::FixedArray< T_out > casted( data.size() );
+            for( const auto& d : geode::Range{ data.size() } )
             {
-                casted.push_back( static_cast< T_out >( value ) );
+                casted[d] = static_cast< T_out >( data[d] );
             }
             return casted;
         }
@@ -371,7 +361,7 @@ namespace
         {
             const auto format = data.attribute( "format" ).value();
             const auto data_string = data.child_value();
-            if( strcmp( format, "ascii" ) == 0 )
+            if( match( format, "ascii" ) )
             {
                 return read_ascii_data_array< T >( data_string );
             }
@@ -390,11 +380,12 @@ namespace
             std::istringstream iss( data.data() );
             std::string c;
             iss >> c;
+            T value;
             while( !iss.eof() )
             {
-                results.push_back(
-                    std::stoul( c ) ); // TODO map between stoXX and T for full
-                                       // compatibility
+                absl::SimpleAtoi( c, &value ); // TODO map between SimpleAtoX
+                                               // and T for full compatibility
+                results.push_back( value );
                 iss >> c;
             }
             return results;
