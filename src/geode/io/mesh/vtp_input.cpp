@@ -29,6 +29,7 @@
 #include <absl/strings/escaping.h>
 #include <absl/strings/match.h>
 #include <absl/strings/numbers.h>
+#include <absl/strings/str_split.h>
 #include <pugixml.hpp>
 #include <zlib-ng.h>
 
@@ -143,7 +144,7 @@ namespace
         std::vector< T > decode( absl::string_view input )
         {
             auto clean_input = absl::StripAsciiWhitespace( input );
-            const geode::index_t fixed_header_length{
+            constexpr geode::index_t fixed_header_length{
                 16
             }; // 4 series of 4 characters is needed to encode the 3 values in
                // the fixed header (3 * 4 bytes)
@@ -209,9 +210,7 @@ namespace
             geode::index_t cur_data_offset{ 0 };
             for( const auto b : geode::Range{ nb_data_blocks } )
             {
-                const auto compressed_data_length =
-                    // 3 * sum_compressed_block_size;
-                    sum_compressed_block_size;
+                const auto compressed_data_length = sum_compressed_block_size;
                 size_t decompressed_data_length =
                     nb_data_blocks * uncompressed_block_size;
                 absl::FixedArray< uint8_t > decompressed_data_bytes(
@@ -264,7 +263,8 @@ namespace
                 "[VTPInput::read_points] Trying to import 2D VTK PolyData into "
                 "a 3D Surface is not allowed" );
             const auto format = points.attribute( "format" ).value();
-            const auto coords_string = points.child_value();
+            std::string coords_string = points.child_value();
+            absl::RemoveExtraAsciiWhitespace( &coords_string );
             if( match( format, "ascii" ) )
             {
                 const auto coords =
@@ -284,15 +284,11 @@ namespace
         {
             std::vector< double > results;
             results.reserve( 3 * nb_points );
-            std::istringstream iss( coords.data() );
-            std::string c;
             double coord;
-            iss >> c;
-            while( !iss.eof() )
+            for( auto string : absl::StrSplit( coords, ' ' ) )
             {
-                absl::SimpleAtod( c, &coord );
+                absl::SimpleAtod( string, &coord );
                 results.push_back( coord );
-                iss >> c;
             }
             return results;
         }
@@ -360,9 +356,10 @@ namespace
         std::vector< T > read_data_array( const pugi::xml_node& data )
         {
             const auto format = data.attribute( "format" ).value();
-            const auto data_string = data.child_value();
+            std::string data_string = data.child_value();
             if( match( format, "ascii" ) )
             {
+                absl::RemoveExtraAsciiWhitespace( &data_string );
                 return read_ascii_data_array< T >( data_string );
             }
             return decode< T >( data_string );
@@ -377,16 +374,13 @@ namespace
             {
                 results.reserve( nb_values );
             }
-            std::istringstream iss( data.data() );
-            std::string c;
-            iss >> c;
             T value;
-            while( !iss.eof() )
+            for( auto string : absl::StrSplit( data, ' ' ) )
             {
-                absl::SimpleAtoi( c, &value ); // TODO map between SimpleAtoX
-                                               // and T for full compatibility
+                absl::SimpleAtoi(
+                    string, &value ); // TODO map between SimpleAtoX
+                                      // and T for full compatibility
                 results.push_back( value );
-                iss >> c;
             }
             return results;
         }
