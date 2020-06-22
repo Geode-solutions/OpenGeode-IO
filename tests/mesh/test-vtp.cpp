@@ -54,7 +54,7 @@ void run_test( absl::string_view filename,
     check( *surface, test_answers );
 
     // Save file
-    auto filename_without_ext{ filename };
+    absl::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
     const auto output_filename =
         absl::StrCat( filename_without_ext, ".", surface->native_extension() );
