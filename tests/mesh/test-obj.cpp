@@ -41,7 +41,7 @@ int main()
         detail::initialize_mesh_io();
         // Load file
         auto surface = load_polygonal_surface< 3 >(
-            absl::StrCat( data_path, "/TopHat.obj" ) );
+            absl::StrCat( data_path, "TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,

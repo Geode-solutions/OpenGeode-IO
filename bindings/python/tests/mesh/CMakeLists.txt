@@ -36,3 +36,9 @@ add_geode_python_test(
         OpenGeode::mesh
         ${PROJECT_NAME}::py_mesh
 )
+add_geode_python_test(
+    SOURCE "test-py-vtp.py"
+    DEPENDENCIES
+        OpenGeode::mesh
+        ${PROJECT_NAME}::py_mesh
+)

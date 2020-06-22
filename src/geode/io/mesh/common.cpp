@@ -29,6 +29,7 @@
 #include <geode/io/mesh/private/ply_output.h>
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
+#include <geode/io/mesh/private/vtp_input.h>
 
 namespace
 {
@@ -40,6 +41,9 @@ namespace
         geode::PolygonalSurfaceInputFactory3D::register_creator<
             geode::detail::OBJInput >(
             geode::detail::OBJInput::extension().data() );
+        geode::PolygonalSurfaceInputFactory3D::register_creator<
+            geode::detail::VTPInput >(
+            geode::detail::VTPInput::extension().data() );
     }
 
     void register_triangulated_surface_input()

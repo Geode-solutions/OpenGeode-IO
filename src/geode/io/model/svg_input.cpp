@@ -54,7 +54,7 @@ namespace
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[SVGInput] Error while opening file: ", filename );
-            auto ok = document_.load_file( filename.data() );
+            const auto ok = document_.load_file( filename.data() );
             OPENGEODE_EXCEPTION(
                 ok, "[SVGInput] Error while parsing file: ", filename );
         }
