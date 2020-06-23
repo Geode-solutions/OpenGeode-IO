@@ -22,16 +22,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.config.python }}
-    - name: Cache Assimp
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/assimp
-        key: assimp-${{ matrix.config.system }}-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
-    - name: Cache Pugixml
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/pugixml
-        key: pugixml-${{ matrix.config.system }}-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -81,16 +71,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
-    - name: Cache Assimp
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/assimp
-        key: assimp-darwin-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
-    - name: Cache Pugixml
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/pugixml
-        key: pugixml-darwin-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
@@ -135,16 +115,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
-    - name: Cache Assimp
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/assimp
-        key: assimp-win64-Release-${{ hashFiles('cmake/ConfigureAssimp.cmake') }}
-    - name: Cache Pugixml
-      uses: actions/cache@v1.0.3
-      with:
-        path: build/third_party/pugixml
-        key: pugixml-win64-Release-${{ hashFiles('cmake/ConfigurePugixml.cmake') }}
     - uses: Geode-solutions/actions/get-release@master
       id: opengeode
       with:
