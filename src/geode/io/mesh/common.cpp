@@ -30,6 +30,7 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
+#include <geode/io/mesh/private/vtu_input.h>
 
 namespace
 {
@@ -44,6 +45,13 @@ namespace
         geode::PolygonalSurfaceInputFactory3D::register_creator<
             geode::detail::VTPInput >(
             geode::detail::VTPInput::extension().data() );
+    }
+
+    void register_polyhedral_solid_input()
+    {
+        geode::PolyhedralSolidInputFactory3D::register_creator<
+            geode::detail::VTUInput >(
+            geode::detail::VTUInput::extension().data() );
     }
 
     void register_triangulated_surface_input()
@@ -74,6 +82,7 @@ namespace
     {
         register_polygonal_surface_input();
         register_triangulated_surface_input();
+        register_polyhedral_solid_input();
 
         register_polygonal_surface_output();
         register_triangulated_surface_output();
