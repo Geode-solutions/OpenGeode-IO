@@ -40,8 +40,8 @@ namespace
         VTUInputImpl(
             absl::string_view filename, geode::PolyhedralSolid3D& solid )
             : geode::detail::VTKInputImpl< geode::PolyhedralSolid3D,
-                  geode::PolyhedralSolidBuilder3D >(
-                  filename, solid, "UnstructuredGrid" )
+                geode::PolyhedralSolidBuilder3D >(
+                filename, solid, "UnstructuredGrid" )
         {
             VTKElement tetra( 4 );
             tetra[0] = { 1, 3, 2 };
