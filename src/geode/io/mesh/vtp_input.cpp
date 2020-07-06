@@ -38,8 +38,8 @@ namespace
         VTPInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
             : geode::detail::VTKInputImpl< geode::PolygonalSurface3D,
-                  geode::PolygonalSurfaceBuilder3D >(
-                  filename, polygonal_surface, "PolyData" )
+                geode::PolygonalSurfaceBuilder3D >(
+                filename, polygonal_surface, "PolyData" )
         {
         }
 
