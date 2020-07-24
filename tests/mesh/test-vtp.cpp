@@ -71,6 +71,7 @@ int main()
     {
         geode::detail::initialize_mesh_io();
 
+        run_test( "dfn3.vtp", { 238819, 13032 } );
         run_test( "dfn1_ascii.vtp", { 187, 10 } );
         run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 } );
 

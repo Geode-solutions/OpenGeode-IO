@@ -24,7 +24,7 @@ Found: https://sketchfab.com/3d-models/top-hat-689cd0d635cf4906920dd3ba435d991e
 
 ## DFNs 
 
-Data: dfn1_ascii.vtp - dfn2_mesh_compressed.vtp
+Data: dfn1_ascii.vtp - dfn2_mesh_compressed.vtp - dfn3.vtp
 
 Courtesy of the Fractory (joint laboratory Itasca Consultants SAS / Univ Rennes 1)
 
