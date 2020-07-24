@@ -96,7 +96,7 @@ namespace
             {
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
-                    offsets_values = read_data_array< int64_t >( data );
+                    offsets_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polyhedra,
                         "[VTKInput::read_polyhedra] Wrong number of offsets" );
                     geode_unused( nb_polyhedra );
@@ -104,11 +104,12 @@ namespace
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
                 {
-                    connectivity_values = read_data_array< int64_t >( data );
+                    connectivity_values =
+                        read_integer_data_array< int64_t >( data );
                 }
                 else if( match( data.attribute( "Name" ).value(), "types" ) )
                 {
-                    types_values = read_data_array< int64_t >( data );
+                    types_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
                         "[VTKInput::read_polyhedra] Wrong number of types" );
                     geode_unused( nb_polyhedra );
@@ -141,6 +142,59 @@ namespace
                 }
             }
             builder().compute_polyhedron_adjacencies( new_polyhedra );
+        }
+
+        void read_cell_data(
+            const pugi::xml_node& point_data, geode::index_t offset )
+        {
+            for( const auto& data : point_data.children( "DataArray" ) )
+            {
+                const auto data_array_name = data.attribute( "Name" ).value();
+                const auto data_array_type = data.attribute( "type" ).value();
+
+                if( match( data_array_type, "Float64" )
+                    || match( data_array_type, "Float32" ) )
+                {
+                    const auto attribute_values =
+                        read_float_data_array< double >( data );
+                    build_attribute( mesh().polyhedron_attribute_manager(),
+                        data_array_name, attribute_values, offset );
+                }
+                else if( match( data_array_type, "Int64" )
+                         || match( data_array_type, "Int32" )
+                         || match( data_array_type, "UInt32" )
+                         || match( data_array_type, "UInt64" ) )
+                {
+                    int64_t min_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMin" ).value(), &min_value );
+                    int64_t max_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMax" ).value(), &max_value );
+                    if( min_value >= 0
+                        && max_value
+                               < std::numeric_limits< geode::index_t >::max() )
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< geode::index_t >( data );
+                        build_attribute( mesh().polyhedron_attribute_manager(),
+                            data_array_name, attribute_values, offset );
+                    }
+                    else
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< long int >( data );
+                        build_attribute( mesh().polyhedron_attribute_manager(),
+                            data_array_name, attribute_values, offset );
+                    }
+                }
+                else
+                {
+                    throw geode::OpenGeodeException(
+                        "[VTKInput::read_point_data] Attribute of type ",
+                        data_array_type, " is not supported" );
+                }
+            }
         }
 
     private:

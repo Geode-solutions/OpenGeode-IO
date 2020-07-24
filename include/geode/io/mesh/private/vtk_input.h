@@ -33,6 +33,8 @@
 #include <pugixml.hpp>
 #include <zlib-ng.h>
 
+#include <geode/basic/attribute_manager.h>
+
 #include <geode/geometry/point.h>
 
 namespace geode
@@ -98,14 +100,28 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > read_data_array( const pugi::xml_node& data )
+            std::vector< T > read_integer_data_array(
+                const pugi::xml_node& data )
             {
                 const auto format = data.attribute( "format" ).value();
                 std::string data_string = data.child_value();
                 if( match( format, "ascii" ) )
                 {
                     absl::RemoveExtraAsciiWhitespace( &data_string );
-                    return read_ascii_data_array< T >( data_string );
+                    return read_ascii_integer_data_array< T >( data_string );
+                }
+                return decode< T >( data_string );
+            }
+
+            template < typename T >
+            std::vector< T > read_float_data_array( const pugi::xml_node& data )
+            {
+                const auto format = data.attribute( "format" ).value();
+                std::string data_string = data.child_value();
+                if( match( format, "ascii" ) )
+                {
+                    absl::RemoveExtraAsciiWhitespace( &data_string );
+                    return read_ascii_float_data_array< T >( data_string );
                 }
                 return decode< T >( data_string );
             }
@@ -129,6 +145,21 @@ namespace geode
                     prev_offset = cur_offset;
                 }
                 return cell_vertices;
+            }
+
+            template < typename T >
+            void build_attribute( AttributeManager& manager,
+                const pugi::char_t* name,
+                const std::vector< T >& values,
+                index_t offset )
+            {
+                auto attribute =
+                    manager.find_or_create_attribute< VariableAttribute, T >(
+                        name, T{} );
+                for( const auto i : geode::Range{ values.size() } )
+                {
+                    attribute->set_value( i + offset, values[i] );
+                }
             }
 
         private:
@@ -162,19 +193,76 @@ namespace geode
             {
                 const auto nb_points =
                     read_attribute( piece, "NumberOfPoints" );
-                // read_point_data( piece ); TODO for attributes
-                build_points( read_points( piece, nb_points ) );
+                const auto vertex_offset =
+                    build_points( read_points( piece, nb_points ) );
+                read_point_data( piece.child( "PointData" ), vertex_offset );
             }
 
             virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
 
-            void build_points( absl::Span< const Point3D > points )
+            index_t build_points( absl::Span< const Point3D > points )
             {
                 const auto nb_points = points.size();
                 const auto offset = mesh_builder_->create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
                     mesh_builder_->set_point( offset + p, points[p] );
+                }
+                return offset;
+            }
+
+            void read_point_data(
+                const pugi::xml_node& point_data, index_t offset )
+            {
+                for( const auto& data : point_data.children( "DataArray" ) )
+                {
+                    const auto data_array_name =
+                        data.attribute( "Name" ).value();
+                    const auto data_array_type =
+                        data.attribute( "type" ).value();
+
+                    if( match( data_array_type, "Float64" )
+                        || match( data_array_type, "Float32" ) )
+                    {
+                        const auto attribute_values =
+                            read_float_data_array< double >( data );
+                        build_attribute( mesh_.vertex_attribute_manager(),
+                            data_array_name, attribute_values, offset );
+                    }
+                    else if( match( data_array_type, "Int64" )
+                             || match( data_array_type, "Int32" )
+                             || match( data_array_type, "UInt32" )
+                             || match( data_array_type, "UInt64" ) )
+                    {
+                        int64_t min_value;
+                        absl::SimpleAtoi(
+                            data.attribute( "RangeMin" ).value(), &min_value );
+                        int64_t max_value;
+                        absl::SimpleAtoi(
+                            data.attribute( "RangeMax" ).value(), &max_value );
+                        if( min_value >= 0
+                            && max_value
+                                   < std::numeric_limits< index_t >::max() )
+                        {
+                            const auto attribute_values =
+                                read_integer_data_array< index_t >( data );
+                            build_attribute( mesh_.vertex_attribute_manager(),
+                                data_array_name, attribute_values, offset );
+                        }
+                        else
+                        {
+                            const auto attribute_values =
+                                read_integer_data_array< long int >( data );
+                            build_attribute( mesh_.vertex_attribute_manager(),
+                                data_array_name, attribute_values, offset );
+                        }
+                    }
+                    else
+                    {
+                        throw OpenGeodeException(
+                            "[VTKInput::read_point_data] Attribute of type ",
+                            data_array_type, " is not supported" );
+                    }
                 }
             }
 
@@ -341,22 +429,60 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > read_ascii_data_array(
-                absl::string_view data, index_t nb_values = 0 )
+            std::vector< T > toto( absl::string_view data,
+                index_t nb_values,
+                bool ( *f )( absl::string_view, T* ) )
             {
                 std::vector< T > results;
                 results.reserve( nb_values );
                 for( auto string : absl::StrSplit( data, ' ' ) )
                 {
                     T value;
-                    const auto ok = absl::SimpleAtoi(
-                        string, &value ); // TODO map between SimpleAtoX
-                    // and T for full compatibility
+                    const auto ok = ( *f )( string, &value );
                     OPENGEODE_EXCEPTION( ok, "[VTKINPUT::read_ascii_data_array]"
                                              " Failed to read value" );
                     results.push_back( value );
                 }
                 return results;
+            }
+
+            template < typename T >
+            std::vector< T > read_ascii_integer_data_array(
+                absl::string_view data, index_t nb_values = 0 )
+            {
+                return toto< T >( data, nb_values, absl::SimpleAtoi );
+                // std::vector< T >
+                //     results;
+                // results.reserve( nb_values );
+                // for( auto string : absl::StrSplit( data, ' ' ) )
+                // {
+                //     T value;
+                //     const auto ok = absl::SimpleAtoi( string, &value );
+                //     OPENGEODE_EXCEPTION( ok,
+                //     "[VTKINPUT::read_ascii_data_array]"
+                //                              " Failed to read value" );
+                //     results.push_back( value );
+                // }
+                // return results;
+            }
+
+            template < typename T >
+            std::vector< T > read_ascii_float_data_array(
+                absl::string_view data, index_t nb_values = 0 )
+            {
+                return toto< T >( data, nb_values, absl::SimpleAtod );
+                // std::vector< T > results;
+                // results.reserve( nb_values );
+                // for( auto string : absl::StrSplit( data, ' ' ) )
+                // {
+                //     T value;
+                //     const auto ok = absl::SimpleAtod( string, &value );
+                //     OPENGEODE_EXCEPTION( ok,
+                //     "[VTKINPUT::read_ascii_data_array]"
+                //                              " Failed to read value" );
+                //     results.push_back( value );
+                // }
+                // return results;
             }
 
         private:

@@ -47,8 +47,9 @@ namespace
         void read_vtk_cells( const pugi::xml_node& piece ) override
         {
             const auto nb_polygons = read_attribute( piece, "NumberOfPolys" );
-            // read_cell_data( piece );
-            build_polygons( read_polygons( piece, nb_polygons ) );
+            const auto polygon_offset =
+                build_polygons( read_polygons( piece, nb_polygons ) );
+            read_cell_data( piece.child( "CellData" ), polygon_offset );
         }
 
         absl::FixedArray< std::vector< geode::index_t > > read_polygons(
@@ -61,7 +62,7 @@ namespace
             {
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
-                    offsets_values = read_data_array< int64_t >( data );
+                    offsets_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
                         "[VTKInput::read_polygons] Wrong number of offsets" );
                     geode_unused( nb_polygons );
@@ -69,13 +70,14 @@ namespace
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
                 {
-                    connectivity_values = read_data_array< int64_t >( data );
+                    connectivity_values =
+                        read_integer_data_array< int64_t >( data );
                 }
             }
             return get_cell_vertices( connectivity_values, offsets_values );
         }
 
-        void build_polygons(
+        geode::index_t build_polygons(
             absl::Span< const std::vector< geode::index_t > > polygon_vertices )
         {
             absl::FixedArray< geode::index_t > new_polygons(
@@ -87,6 +89,60 @@ namespace
                 builder().create_polygon( pv );
             }
             builder().compute_polygon_adjacencies( new_polygons );
+            return new_polygons[0];
+        }
+
+        void read_cell_data(
+            const pugi::xml_node& point_data, geode::index_t offset )
+        {
+            for( const auto& data : point_data.children( "DataArray" ) )
+            {
+                const auto data_array_name = data.attribute( "Name" ).value();
+                const auto data_array_type = data.attribute( "type" ).value();
+
+                if( match( data_array_type, "Float64" )
+                    || match( data_array_type, "Float32" ) )
+                {
+                    const auto attribute_values =
+                        read_float_data_array< double >( data );
+                    build_attribute( mesh().polygon_attribute_manager(),
+                        data_array_name, attribute_values, offset );
+                }
+                else if( match( data_array_type, "Int64" )
+                         || match( data_array_type, "Int32" )
+                         || match( data_array_type, "UInt32" )
+                         || match( data_array_type, "UInt64" ) )
+                {
+                    int64_t min_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMin" ).value(), &min_value );
+                    int64_t max_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMax" ).value(), &max_value );
+                    if( min_value >= 0
+                        && max_value
+                               < std::numeric_limits< geode::index_t >::max() )
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< geode::index_t >( data );
+                        build_attribute( mesh().polygon_attribute_manager(),
+                            data_array_name, attribute_values, offset );
+                    }
+                    else
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< long int >( data );
+                        build_attribute( mesh().polygon_attribute_manager(),
+                            data_array_name, attribute_values, offset );
+                    }
+                }
+                else
+                {
+                    throw geode::OpenGeodeException(
+                        "[VTKInput::read_point_data] Attribute of type ",
+                        data_array_type, " is not supported" );
+                }
+            }
         }
     };
 } // namespace
