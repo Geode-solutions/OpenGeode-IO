@@ -24,11 +24,13 @@ add_geode_library(
     SOURCES
         "common.cpp"
         "msh_input.cpp"
+        "msh_output.cpp"
         "svg_input.cpp"
     ADVANCED_HEADERS
         "detail/common.h"
     PRIVATE_HEADERS
         "private/msh_input.h"
+        "private/msh_output.h"
         "private/svg_input.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
