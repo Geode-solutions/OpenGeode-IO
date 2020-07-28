@@ -206,6 +206,13 @@ void run_test( absl::string_view short_filename, test_function test )
     geode::BRep reloaded_brep;
     load_brep( reloaded_brep, filename );
     test( reloaded_brep );
+
+    const auto filename_msh = absl::StrCat( short_filename, "_output.msh" );
+    save_brep( brep, filename_msh );
+    geode::BRep reloaded_brep2;
+    load_brep( reloaded_brep2, filename_msh );
+    test( reloaded_brep2 );
+    save_brep( reloaded_brep2, "/tmp/toto.og_brep" );
 }
 
 int main()
