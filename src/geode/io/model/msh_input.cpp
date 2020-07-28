@@ -66,6 +66,14 @@ namespace
         return absl::StrSplit( line, ' ' );
     }
 
+    geode::index_t string_to_index( absl::string_view token )
+    {
+        geode::index_t result;
+        const auto ok = absl::SimpleAtoi( token, &result );
+        OPENGEODE_EXCEPTION( ok, "[string_to_index] Error in file reading" );
+        return result;
+    }
+
     struct GmshElementID
     {
         GmshElementID( geode::ComponentType gmsh_type, geode::index_t gmsh_id )
@@ -169,12 +177,10 @@ namespace
 
         void read_vertex_ids()
         {
-            geode::index_t vertex_id;
             vertex_ids().resize( nb_vertices() );
             for( const auto n : geode::Range{ nb_vertices() } )
             {
-                absl::SimpleAtoi( vertex_ids_str_[n], &vertex_id );
-                vertex_ids()[n] = vertex_id;
+                vertex_ids()[n] = string_to_index( vertex_ids_str_[n] );
             }
         }
 
@@ -683,9 +689,7 @@ namespace
             OPENGEODE_EXCEPTION( version() == 2 || version() == 4,
                 "[MSHInput::set_msh_version] Only MSH file format "
                 "versions 2 and 4 are supported for now." );
-            geode::index_t binary;
-            absl::SimpleAtoi( header_tokens[1], &binary );
-            if( binary != 0 )
+            if( string_to_index( header_tokens[1] ) != 0 )
             {
                 binary_ = false;
                 throw geode::OpenGeodeException{ "[MSHInput::set_msh_version]"
@@ -725,15 +729,10 @@ namespace
             std::string line;
             std::getline( file_, line );
             const auto tokens = get_tokens( line );
-            geode::index_t nb_corners, nb_lines, nb_surfaces, nb_blocks;
-            absl::SimpleAtoi( tokens[0], &nb_corners );
-            absl::SimpleAtoi( tokens[1], &nb_lines );
-            absl::SimpleAtoi( tokens[2], &nb_surfaces );
-            absl::SimpleAtoi( tokens[3], &nb_blocks );
-            create_corners( nb_corners );
-            create_lines( nb_lines );
-            create_surfaces( nb_surfaces );
-            create_blocks( nb_blocks );
+            create_corners( string_to_index( tokens.at( 0 ) ) );
+            create_lines( string_to_index( tokens.at( 1 ) ) );
+            create_surfaces( string_to_index( tokens.at( 2 ) ) );
+            create_blocks( string_to_index( tokens.at( 3 ) ) );
             check_keyword( "$EndEntities" );
         }
 
@@ -745,12 +744,10 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = get_tokens( line );
-                geode::index_t corner_msh_id;
-                absl::SimpleAtoi( tokens.at( 0 ), &corner_msh_id );
                 const auto corner_uuid = builder_.add_corner();
-                gmsh_id2uuids_.elementary_ids[{
-                    geode::Corner3D::component_type_static(), corner_msh_id }] =
-                    corner_uuid;
+                gmsh_id2uuids_
+                    .elementary_ids[{ geode::Corner3D::component_type_static(),
+                        string_to_index( tokens.at( 0 ) ) }] = corner_uuid;
             }
         }
 
@@ -762,20 +759,14 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = get_tokens( line );
-                geode::index_t line_msh_id;
-                absl::SimpleAtoi( tokens.at( 0 ), &line_msh_id );
                 const auto line_uuid = builder_.add_line();
-                gmsh_id2uuids_.elementary_ids[{
-                    geode::Line3D::component_type_static(), line_msh_id }] =
-                    line_uuid;
+                gmsh_id2uuids_
+                    .elementary_ids[{ geode::Line3D::component_type_static(),
+                        string_to_index( tokens.at( 0 ) ) }] = line_uuid;
                 // TODO physical tags
-                geode::index_t nb_physical_tags;
-                absl::SimpleAtoi( tokens.at( 7 ), &nb_physical_tags );
-
-                geode::index_t nb_boundaries;
-                absl::SimpleAtoi(
-                    tokens.at( 8 + nb_physical_tags ), &nb_boundaries );
-                for( const auto b : geode::Range{ nb_boundaries } )
+                const auto nb_physical_tags = string_to_index( tokens.at( 7 ) );
+                for( const auto b : geode::Range{ string_to_index(
+                         tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
                     absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
@@ -799,20 +790,14 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = get_tokens( line );
-                geode::index_t surface_msh_id;
-                absl::SimpleAtoi( tokens.at( 0 ), &surface_msh_id );
                 const auto surface_uuid = builder_.add_surface();
                 gmsh_id2uuids_
                     .elementary_ids[{ geode::Surface3D::component_type_static(),
-                        surface_msh_id }] = surface_uuid;
+                        string_to_index( tokens.at( 0 ) ) }] = surface_uuid;
                 // TODO physical tags
-                geode::index_t nb_physical_tags;
-                absl::SimpleAtoi( tokens.at( 7 ), &nb_physical_tags );
-
-                geode::index_t nb_boundaries;
-                absl::SimpleAtoi(
-                    tokens.at( 8 + nb_physical_tags ), &nb_boundaries );
-                for( const auto b : geode::Range{ nb_boundaries } )
+                const auto nb_physical_tags = string_to_index( tokens.at( 7 ) );
+                for( const auto b : geode::Range{ string_to_index(
+                         tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
                     absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
@@ -837,20 +822,14 @@ namespace
                 std::getline( file_, line );
                 const auto tokens = get_tokens( line );
 
-                geode::index_t block_msh_id;
-                absl::SimpleAtoi( tokens.at( 0 ), &block_msh_id );
                 const auto block_uuid = builder_.add_block();
-                gmsh_id2uuids_.elementary_ids[{
-                    geode::Block3D::component_type_static(), block_msh_id }] =
-                    block_uuid;
+                gmsh_id2uuids_
+                    .elementary_ids[{ geode::Block3D::component_type_static(),
+                        string_to_index( tokens.at( 0 ) ) }] = block_uuid;
                 // TODO physical tags
-                geode::index_t nb_physical_tags;
-                absl::SimpleAtoi( tokens.at( 7 ), &nb_physical_tags );
-
-                geode::index_t nb_boundaries;
-                absl::SimpleAtoi(
-                    tokens.at( 8 + nb_physical_tags ), &nb_boundaries );
-                for( const auto b : geode::Range{ nb_boundaries } )
+                const auto nb_physical_tags = string_to_index( tokens.at( 7 ) );
+                for( const auto b : geode::Range{ string_to_index(
+                         tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
                     absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
@@ -901,12 +880,9 @@ namespace
             const std::string& line )
         {
             const auto tokens = get_tokens( line );
-            geode::index_t node_id;
-            const auto ok = absl::SimpleAtoi( tokens[0], &node_id );
-            OPENGEODE_EXCEPTION(
-                ok, "[MSHInput::read_node] Read node index failed" );
-            return std::make_tuple( node_id,
-                read_node_coordinates( tokens[1], tokens[2], tokens[3] ) );
+            return std::make_tuple( string_to_index( tokens.at( 0 ) ),
+                read_node_coordinates(
+                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) );
         }
 
         void read_node_section_v4()
@@ -914,18 +890,17 @@ namespace
             go_to_section( "$Nodes" );
             std::string line;
             std::getline( file_, line );
-            geode::index_t nb_groups, nb_total_nodes, min_node_id, max_node_id;
             const auto tokens = get_tokens( line );
-            absl::SimpleAtoi( tokens[0], &nb_groups );
-            absl::SimpleAtoi( tokens[1], &nb_total_nodes );
-            absl::SimpleAtoi( tokens[2], &min_node_id );
-            absl::SimpleAtoi( tokens[3], &max_node_id );
+            const auto nb_total_nodes = string_to_index( tokens.at( 1 ) );
+            const auto min_node_id = string_to_index( tokens.at( 2 ) );
+            const auto max_node_id = string_to_index( tokens.at( 3 ) );
             OPENGEODE_EXCEPTION(
                 min_node_id == 1 && max_node_id == nb_total_nodes,
                 "[MSHInput::read_node_section_v4] Non continuous node indexing "
                 "is not supported for now" );
             nodes_.resize( nb_total_nodes );
-            for( const auto unused : geode::Range{ nb_groups } )
+            for( const auto unused :
+                geode::Range{ string_to_index( tokens.at( 0 ) ) } )
             {
                 geode_unused( unused );
                 read_node_group();
@@ -939,35 +914,24 @@ namespace
             std::string line;
             std::getline( file_, line );
             const auto tokens = get_tokens( line );
-            geode::index_t entity_dimension, entity_id, parametric, nb_nodes;
-            absl::SimpleAtoi( tokens[0], &entity_dimension );
-            absl::SimpleAtoi( tokens[1], &entity_id );
-            absl::SimpleAtoi( tokens[2], &parametric );
-            absl::SimpleAtoi( tokens[3], &nb_nodes );
-            OPENGEODE_EXCEPTION( parametric == 0,
+            const auto nb_nodes = string_to_index( tokens.at( 3 ) );
+            OPENGEODE_EXCEPTION( string_to_index( tokens.at( 2 ) ) == 0,
                 "[MSHInput::read_node_group] Parametric node coordinates "
                 "is not supported for now" );
             absl::FixedArray< geode::index_t > node_ids( nb_nodes );
             for( const auto n : geode::Range{ nb_nodes } )
             {
                 std::getline( file_, line );
-                const auto tokens = get_tokens( line );
-                OPENGEODE_ASSERT( tokens.size() == 1,
-                    "[MSHInput::read_node_group] Line "
-                    "should contains only node index" );
-                geode::index_t node_id;
-                absl::SimpleAtoi( tokens.front(), &node_id );
-                node_ids[n] = node_id;
+                const auto node_tokens = get_tokens( line );
+                node_ids[n] = string_to_index( node_tokens.at( 0 ) );
             }
             for( const auto node_id : node_ids )
             {
                 std::getline( file_, line );
-                const auto tokens = get_tokens( line );
-                OPENGEODE_ASSERT( tokens.size() == 3,
-                    "[MSHInput::read_node_group] Line "
-                    "should contains only node coordinates" );
+                const auto node_tokens = get_tokens( line );
                 nodes_[node_id - OFFSET_START] =
-                    read_node_coordinates( tokens[0], tokens[1], tokens[2] );
+                    read_node_coordinates( node_tokens.at( 0 ),
+                        node_tokens.at( 1 ), node_tokens.at( 2 ) );
             }
         }
 
@@ -990,31 +954,25 @@ namespace
         {
             const auto tokens = get_tokens( line );
             geode::index_t t{ 0 };
-            geode::index_t line_element_id;
-            absl::SimpleAtoi( tokens[t++], &line_element_id );
-            OPENGEODE_EXCEPTION( expected_element_id == line_element_id,
+            OPENGEODE_EXCEPTION(
+                expected_element_id == string_to_index( tokens.at( t++ ) ),
                 "[MSHInput::read_element] Element indices should be "
                 "continuous." );
 
             // Element type
-            geode::index_t mesh_element_type_id;
-            absl::SimpleAtoi( tokens[t++], &mesh_element_type_id );
-
+            const auto mesh_element_type_id =
+                string_to_index( tokens.at( t++ ) );
             // Tags
-            geode::index_t nb_tags;
-            absl::SimpleAtoi( tokens[t++], &nb_tags );
+            const auto nb_tags = string_to_index( tokens.at( t++ ) );
             OPENGEODE_EXCEPTION( nb_tags >= 2, "[MSHInput::read_element] "
                                                "Number of tags for an element "
                                                "should be at least 2." );
-            geode::index_t physical_entity;
-            absl::SimpleAtoi( tokens[t++], &physical_entity ); //  collection
-            geode::index_t elementary_entity;
-            absl::SimpleAtoi( tokens[t++], &elementary_entity ); // item
+            const auto physical_entity = string_to_index( tokens.at( t++ ) );
+            const auto elementary_entity = string_to_index( tokens.at( t++ ) );
             for( const auto unused : geode::Range{ 2, nb_tags } )
             {
                 geode_unused( unused );
-                geode::index_t skipped_tag;
-                absl::SimpleAtoi( tokens[t++], &skipped_tag );
+                t++;
             }
             // TODO: create relation to the parent
             absl::Span< const absl::string_view > vertex_ids(
@@ -1031,18 +989,16 @@ namespace
             go_to_section( "$Elements" );
             std::string line;
             std::getline( file_, line );
-            geode::index_t nb_groups, nb_total_elements, min_element_id,
-                max_element_id;
             const auto tokens = get_tokens( line );
-            absl::SimpleAtoi( tokens[0], &nb_groups );
-            absl::SimpleAtoi( tokens[1], &nb_total_elements );
-            absl::SimpleAtoi( tokens[2], &min_element_id );
-            absl::SimpleAtoi( tokens[3], &max_element_id );
+            const auto nb_total_elements = string_to_index( tokens.at( 1 ) );
+            const auto min_element_id = string_to_index( tokens.at( 2 ) );
+            const auto max_element_id = string_to_index( tokens.at( 3 ) );
             OPENGEODE_EXCEPTION(
                 min_element_id == 1 && max_element_id == nb_total_elements,
                 "[MSHInput::read_element_section_v4] Non continuous element "
                 "indexing is not supported for now" );
-            for( const auto unused : geode::Range{ nb_groups } )
+            for( const auto unused :
+                geode::Range{ string_to_index( tokens.at( 0 ) ) } )
             {
                 geode_unused( unused );
                 read_element_group();
@@ -1055,13 +1011,10 @@ namespace
             std::string line;
             std::getline( file_, line );
             const auto tokens = get_tokens( line );
-            geode::index_t entity_dimension, entity_id, mesh_element_type_id,
-                nb_elements;
-            absl::SimpleAtoi( tokens[0], &entity_dimension );
-            absl::SimpleAtoi( tokens[1], &entity_id );
-            absl::SimpleAtoi( tokens[2], &mesh_element_type_id );
-            absl::SimpleAtoi( tokens[3], &nb_elements );
-            for( const auto unused : geode::Range{ nb_elements } )
+            const auto entity_id = string_to_index( tokens.at( 1 ) );
+            const auto mesh_element_type_id = string_to_index( tokens.at( 2 ) );
+            for( const auto unused :
+                geode::Range{ string_to_index( tokens.at( 3 ) ) } )
             {
                 geode_unused( unused );
                 std::getline( file_, line );
