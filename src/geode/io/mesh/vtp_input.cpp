@@ -38,8 +38,8 @@ namespace
         VTPInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
             : geode::detail::VTKInputImpl< geode::PolygonalSurface3D,
-                geode::PolygonalSurfaceBuilder3D >(
-                filename, polygonal_surface, "PolyData" )
+                  geode::PolygonalSurfaceBuilder3D >(
+                  filename, polygonal_surface, "PolyData" )
         {
         }
 
@@ -63,7 +63,7 @@ namespace
                 {
                     offsets_values = read_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
-                        "[VTKInput::read_polygons] Wrong number of offsets" );
+                        "[VTPInput::read_polygons] Wrong number of offsets" );
                     geode_unused( nb_polygons );
                 }
                 else if( match( data.attribute( "Name" ).value(),
