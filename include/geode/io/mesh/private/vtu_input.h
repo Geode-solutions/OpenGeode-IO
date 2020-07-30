@@ -39,7 +39,7 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vtpu";
+                static constexpr auto ext = "vtu";
                 return ext;
             }
 

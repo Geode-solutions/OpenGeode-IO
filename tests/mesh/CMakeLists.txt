@@ -46,3 +46,10 @@ add_geode_test(
         OpenGeode::mesh
         ${PROJECT_NAME}::mesh
 )
+add_geode_test(
+    SOURCE "test-vtu.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
+)
