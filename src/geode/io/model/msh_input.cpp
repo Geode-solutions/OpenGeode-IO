@@ -70,7 +70,7 @@ namespace
     {
         geode::index_t result;
         const auto ok = absl::SimpleAtoi( token, &result );
-        OPENGEODE_EXCEPTION( ok, "[string_to_index] Error in file reading" );
+        OPENGEODE_EXCEPTION( ok, "[string_to_index] Error while file reading" );
         return result;
     }
 
@@ -685,7 +685,9 @@ namespace
         void set_msh_version( const std::string& line )
         {
             const auto header_tokens = get_tokens( line );
-            absl::SimpleAtod( header_tokens[0], &version_ );
+            const auto ok = absl::SimpleAtod( header_tokens[0], &version_ );
+            OPENGEODE_EXCEPTION( ok, "[MSHInput::set_msh_version] Error while "
+                                     "reading file version" );
             OPENGEODE_EXCEPTION( version() == 2 || version() == 4,
                 "[MSHInput::set_msh_version] Only MSH file format "
                 "versions 2 and 4 are supported for now." );
@@ -769,8 +771,12 @@ namespace
                          tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
-                    absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
-                        &boundary_msh_id );
+                    const auto ok =
+                        absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
+                            &boundary_msh_id );
+                    OPENGEODE_EXCEPTION( ok,
+                        "[MSHInput::create_lines] "
+                        "Error while reading boundary entity index" );
                     boundary_msh_id = std::abs( boundary_msh_id );
                     builder_.add_corner_line_boundary_relationship(
                         brep_.corner( gmsh_id2uuids_.elementary_ids.at(
@@ -800,8 +806,12 @@ namespace
                          tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
-                    absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
-                        &boundary_msh_id );
+                    const auto ok =
+                        absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
+                            &boundary_msh_id );
+                    OPENGEODE_EXCEPTION( ok,
+                        "[MSHInput::create_surfaces] "
+                        "Error while reading boundary entity index" );
                     boundary_msh_id = std::abs( boundary_msh_id );
                     builder_.add_line_surface_boundary_relationship(
                         brep_.line( gmsh_id2uuids_.elementary_ids.at(
@@ -832,8 +842,12 @@ namespace
                          tokens.at( 8 + nb_physical_tags ) ) } )
                 {
                     geode::signed_index_t boundary_msh_id;
-                    absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
-                        &boundary_msh_id );
+                    const auto ok =
+                        absl::SimpleAtoi( tokens.at( 9 + nb_physical_tags + b ),
+                            &boundary_msh_id );
+                    OPENGEODE_EXCEPTION( ok,
+                        "[MSHInput::create_blocks] "
+                        "Error while reading boundary entity index" );
                     boundary_msh_id = std::abs( boundary_msh_id );
                     builder_.add_surface_block_boundary_relationship(
                         brep_.surface( gmsh_id2uuids_.elementary_ids.at(
@@ -850,9 +864,15 @@ namespace
             absl::string_view z_str )
         {
             double x, y, z;
-            absl::SimpleAtod( x_str, &x );
-            absl::SimpleAtod( y_str, &y );
-            absl::SimpleAtod( z_str, &z );
+            auto ok = absl::SimpleAtod( x_str, &x );
+            OPENGEODE_EXCEPTION( ok, "[MSHInput::read_node_coordinates] "
+                                     "Error while reading node coordinates" );
+            ok = absl::SimpleAtod( y_str, &y );
+            OPENGEODE_EXCEPTION( ok, "[MSHInput::read_node_coordinates] "
+                                     "Error while reading node coordinates" );
+            ok = absl::SimpleAtod( z_str, &z );
+            OPENGEODE_EXCEPTION( ok, "[MSHInput::read_node_coordinates] "
+                                     "Error while reading node coordinates" );
             return geode::Point3D{ { x, y, z } };
         }
 
@@ -861,7 +881,8 @@ namespace
             go_to_section( "$Nodes" );
             std::string line;
             std::getline( file_, line );
-            const auto nb_nodes = std::stoi( line );
+            const auto tokens = get_tokens( line );
+            const auto nb_nodes = string_to_index( tokens.at( 0 ) );
             nodes_.resize( nb_nodes );
             for( const auto unused : geode::Range{ nb_nodes } )
             {
@@ -940,7 +961,8 @@ namespace
             go_to_section( "$Elements" );
             std::string line;
             std::getline( file_, line );
-            const auto nb_elements = std::stoi( line );
+            const auto tokens = get_tokens( line );
+            const auto nb_elements = string_to_index( tokens.at( 0 ) );
             for( auto e_id : geode::Range{ nb_elements } )
             {
                 std::getline( file_, line );
@@ -969,11 +991,7 @@ namespace
                                                "should be at least 2." );
             const auto physical_entity = string_to_index( tokens.at( t++ ) );
             const auto elementary_entity = string_to_index( tokens.at( t++ ) );
-            for( const auto unused : geode::Range{ 2, nb_tags } )
-            {
-                geode_unused( unused );
-                t++;
-            }
+            t += nb_tags - 2;
             // TODO: create relation to the parent
             absl::Span< const absl::string_view > vertex_ids(
                 &tokens[t], tokens.size() - t );
