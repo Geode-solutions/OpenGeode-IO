@@ -40,8 +40,8 @@ namespace
         VTUInputImpl(
             absl::string_view filename, geode::PolyhedralSolid3D& solid )
             : geode::detail::VTKInputImpl< geode::PolyhedralSolid3D,
-                geode::PolyhedralSolidBuilder3D >(
-                filename, solid, "UnstructuredGrid" )
+                  geode::PolyhedralSolidBuilder3D >(
+                  filename, solid, "UnstructuredGrid" )
         {
             VTKElement tetra( 4 );
             tetra[0] = { 1, 3, 2 };
@@ -98,7 +98,7 @@ namespace
                 {
                     offsets_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polyhedra,
-                        "[VTKInput::read_polyhedra] Wrong number of offsets" );
+                        "[VTUInput::read_polyhedra] Wrong number of offsets" );
                     geode_unused( nb_polyhedra );
                 }
                 else if( match( data.attribute( "Name" ).value(),
@@ -111,7 +111,7 @@ namespace
                 {
                     types_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
-                        "[VTKInput::read_polyhedra] Wrong number of types" );
+                        "[VTUInput::read_polyhedra] Wrong number of types" );
                     geode_unused( nb_polyhedra );
                 }
             }
@@ -124,24 +124,16 @@ namespace
                                   polyhedron_vertices,
             absl::Span< const int64_t > types )
         {
-            absl::FixedArray< geode::index_t > new_polyhedra(
-                polyhedron_vertices.size() );
-            std::iota( new_polyhedra.begin(), new_polyhedra.end(),
-                mesh().nb_polyhedra() );
-            for( const auto p : geode::Range{ new_polyhedra.size() } )
+            for( const auto p : geode::Range{ polyhedron_vertices.size() } )
             {
-                try
+                const auto it = elements_.find( types[p] );
+                if( it != elements_.end() )
                 {
                     builder().create_polyhedron(
-                        polyhedron_vertices[p], elements_.at( types[p] ) );
-                }
-                catch( const std::exception& /*unused*/ )
-                {
-                    geode::Logger::warn( "[VTKInput::build_polyhedra] Non "
-                                         "polyhedra element is not supported" );
+                        polyhedron_vertices[p], it->second );
                 }
             }
-            builder().compute_polyhedron_adjacencies( new_polyhedra );
+            builder().compute_polyhedron_adjacencies();
         }
 
         void read_cell_data(

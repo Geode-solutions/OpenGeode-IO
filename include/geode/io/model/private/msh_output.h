@@ -21,48 +21,31 @@
  *
  */
 
-#include <geode/io/model/detail/common.h>
+#pragma once
 
-#include <geode/io/model/private/msh_input.h>
-#include <geode/io/model/private/msh_output.h>
-#include <geode/io/model/private/svg_input.h>
+#include <geode/basic/logger.h>
 
-namespace
-{
-    void register_brep_input()
-    {
-        geode::BRepInputFactory::register_creator< geode::detail::MSHInput >(
-            geode::detail::MSHInput::extension().data() );
-    }
-
-    void register_brep_output()
-    {
-        geode::BRepOutputFactory::register_creator< geode::detail::MSHOutput >(
-            geode::detail::MSHOutput::extension().data() );
-    }
-
-    void register_section_input()
-    {
-        geode::SectionInputFactory::register_creator< geode::detail::SVGInput >(
-            geode::detail::SVGInput::extension().data() );
-    }
-
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_model )
-    {
-        register_brep_input();
-        register_section_input();
-
-        register_brep_output();
-    }
-} // namespace
+#include <geode/model/representation/io/brep_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        void initialize_model_io()
+        class MSHOutput final : public BRepOutput
         {
-            Logger::info( "Initializing OpenGeode-IO model library" );
-        }
+        public:
+            MSHOutput( const BRep& brep, absl::string_view filename )
+                : BRepOutput( brep, filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "msh";
+                return ext;
+            }
+
+            void write() const final;
+        };
     } // namespace detail
 } // namespace geode
