@@ -162,6 +162,56 @@ namespace geode
                 }
             }
 
+            void read_attribute_data( const pugi::xml_node& data,
+                index_t offset,
+                AttributeManager& attribute_manager )
+            {
+                const auto data_array_name = data.attribute( "Name" ).value();
+                const auto data_array_type = data.attribute( "type" ).value();
+
+                if( match( data_array_type, "Float64" )
+                    || match( data_array_type, "Float32" ) )
+                {
+                    const auto attribute_values =
+                        read_float_data_array< double >( data );
+                    build_attribute( attribute_manager, data_array_name,
+                        attribute_values, offset );
+                }
+                else if( match( data_array_type, "Int64" )
+                         || match( data_array_type, "Int32" )
+                         || match( data_array_type, "UInt32" )
+                         || match( data_array_type, "UInt64" ) )
+                {
+                    int64_t min_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMin" ).value(), &min_value );
+                    int64_t max_value;
+                    absl::SimpleAtoi(
+                        data.attribute( "RangeMax" ).value(), &max_value );
+                    if( min_value >= 0
+                        && max_value < std::numeric_limits< index_t >::max() )
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< index_t >( data );
+                        build_attribute( attribute_manager, data_array_name,
+                            attribute_values, offset );
+                    }
+                    else
+                    {
+                        const auto attribute_values =
+                            read_integer_data_array< long int >( data );
+                        build_attribute( attribute_manager, data_array_name,
+                            attribute_values, offset );
+                    }
+                }
+                else
+                {
+                    throw OpenGeodeException(
+                        "[VTKInput::read_point_data] Attribute of type ",
+                        data_array_type, " is not supported" );
+                }
+            }
+
         private:
             void read_root_attributes()
             {
@@ -216,53 +266,8 @@ namespace geode
             {
                 for( const auto& data : point_data.children( "DataArray" ) )
                 {
-                    const auto data_array_name =
-                        data.attribute( "Name" ).value();
-                    const auto data_array_type =
-                        data.attribute( "type" ).value();
-
-                    if( match( data_array_type, "Float64" )
-                        || match( data_array_type, "Float32" ) )
-                    {
-                        const auto attribute_values =
-                            read_float_data_array< double >( data );
-                        build_attribute( mesh_.vertex_attribute_manager(),
-                            data_array_name, attribute_values, offset );
-                    }
-                    else if( match( data_array_type, "Int64" )
-                             || match( data_array_type, "Int32" )
-                             || match( data_array_type, "UInt32" )
-                             || match( data_array_type, "UInt64" ) )
-                    {
-                        int64_t min_value;
-                        absl::SimpleAtoi(
-                            data.attribute( "RangeMin" ).value(), &min_value );
-                        int64_t max_value;
-                        absl::SimpleAtoi(
-                            data.attribute( "RangeMax" ).value(), &max_value );
-                        if( min_value >= 0
-                            && max_value
-                                   < std::numeric_limits< index_t >::max() )
-                        {
-                            const auto attribute_values =
-                                read_integer_data_array< index_t >( data );
-                            build_attribute( mesh_.vertex_attribute_manager(),
-                                data_array_name, attribute_values, offset );
-                        }
-                        else
-                        {
-                            const auto attribute_values =
-                                read_integer_data_array< long int >( data );
-                            build_attribute( mesh_.vertex_attribute_manager(),
-                                data_array_name, attribute_values, offset );
-                        }
-                    }
-                    else
-                    {
-                        throw OpenGeodeException(
-                            "[VTKInput::read_point_data] Attribute of type ",
-                            data_array_type, " is not supported" );
-                    }
+                    read_attribute_data(
+                        data, offset, mesh_.vertex_attribute_manager() );
                 }
             }
 
@@ -429,16 +434,14 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > toto( absl::string_view data,
-                index_t nb_values,
-                bool ( *f )( absl::string_view, T* ) )
+            std::vector< T > read_ascii_data_array( absl::string_view data,
+                bool ( *string_convert )( absl::string_view, T* ) )
             {
                 std::vector< T > results;
-                results.reserve( nb_values );
                 for( auto string : absl::StrSplit( data, ' ' ) )
                 {
                     T value;
-                    const auto ok = ( *f )( string, &value );
+                    const auto ok = ( *string_convert )( string, &value );
                     OPENGEODE_EXCEPTION( ok, "[VTKINPUT::read_ascii_data_array]"
                                              " Failed to read value" );
                     results.push_back( value );
@@ -448,41 +451,16 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_integer_data_array(
-                absl::string_view data, index_t nb_values = 0 )
+                absl::string_view data )
             {
-                return toto< T >( data, nb_values, absl::SimpleAtoi );
-                // std::vector< T >
-                //     results;
-                // results.reserve( nb_values );
-                // for( auto string : absl::StrSplit( data, ' ' ) )
-                // {
-                //     T value;
-                //     const auto ok = absl::SimpleAtoi( string, &value );
-                //     OPENGEODE_EXCEPTION( ok,
-                //     "[VTKINPUT::read_ascii_data_array]"
-                //                              " Failed to read value" );
-                //     results.push_back( value );
-                // }
-                // return results;
+                return read_ascii_data_array< T >( data, absl::SimpleAtoi );
             }
 
             template < typename T >
             std::vector< T > read_ascii_float_data_array(
-                absl::string_view data, index_t nb_values = 0 )
+                absl::string_view data )
             {
-                return toto< T >( data, nb_values, absl::SimpleAtod );
-                // std::vector< T > results;
-                // results.reserve( nb_values );
-                // for( auto string : absl::StrSplit( data, ' ' ) )
-                // {
-                //     T value;
-                //     const auto ok = absl::SimpleAtod( string, &value );
-                //     OPENGEODE_EXCEPTION( ok,
-                //     "[VTKINPUT::read_ascii_data_array]"
-                //                              " Failed to read value" );
-                //     results.push_back( value );
-                // }
-                // return results;
+                return read_ascii_data_array< T >( data, absl::SimpleAtod );
             }
 
         private:
