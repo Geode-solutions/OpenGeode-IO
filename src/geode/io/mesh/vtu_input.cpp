@@ -128,8 +128,7 @@ namespace
         {
             absl::FixedArray< geode::index_t > new_polyhedra(
                 polyhedron_vertices.size() );
-            std::iota( new_polyhedra.begin(), new_polyhedra.end(),
-                mesh().nb_polyhedra() );
+            absl::c_iota( new_polyhedra, mesh().nb_polyhedra() );
             for( const auto p : geode::Range{ polyhedron_vertices.size() } )
             {
                 const auto it = elements_.find( types[p] );
