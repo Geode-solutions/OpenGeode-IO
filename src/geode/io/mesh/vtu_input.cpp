@@ -78,9 +78,10 @@ namespace
         void read_vtk_cells( const pugi::xml_node& piece ) override
         {
             const auto nb_polyhedra = read_attribute( piece, "NumberOfCells" );
-            // read_cell_data( piece );
             const auto output = read_polyhedra( piece, nb_polyhedra );
-            build_polyhedra( std::get< 0 >( output ), std::get< 1 >( output ) );
+            const auto polyhedron_offset = build_polyhedra(
+                std::get< 0 >( output ), std::get< 1 >( output ) );
+            read_cell_data( piece.child( "CellData" ), polyhedron_offset );
         }
 
         std::tuple< absl::FixedArray< std::vector< geode::index_t > >,
@@ -96,7 +97,7 @@ namespace
             {
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
-                    offsets_values = read_data_array< int64_t >( data );
+                    offsets_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polyhedra,
                         "[VTUInput::read_polyhedra] Wrong number of offsets" );
                     geode_unused( nb_polyhedra );
@@ -104,11 +105,12 @@ namespace
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
                 {
-                    connectivity_values = read_data_array< int64_t >( data );
+                    connectivity_values =
+                        read_integer_data_array< int64_t >( data );
                 }
                 else if( match( data.attribute( "Name" ).value(), "types" ) )
                 {
-                    types_values = read_data_array< int64_t >( data );
+                    types_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
                         "[VTUInput::read_polyhedra] Wrong number of types" );
                     geode_unused( nb_polyhedra );
@@ -119,10 +121,14 @@ namespace
                 types_values );
         }
 
-        void build_polyhedra( absl::Span< const std::vector< geode::index_t > >
-                                  polyhedron_vertices,
+        geode::index_t build_polyhedra(
+            absl::Span< const std::vector< geode::index_t > >
+                polyhedron_vertices,
             absl::Span< const int64_t > types )
         {
+            absl::FixedArray< geode::index_t > new_polyhedra(
+                polyhedron_vertices.size() );
+            absl::c_iota( new_polyhedra, mesh().nb_polyhedra() );
             for( const auto p : geode::Range{ polyhedron_vertices.size() } )
             {
                 const auto it = elements_.find( types[p] );
@@ -133,6 +139,17 @@ namespace
                 }
             }
             builder().compute_polyhedron_adjacencies();
+            return new_polyhedra[0];
+        }
+
+        void read_cell_data(
+            const pugi::xml_node& point_data, geode::index_t offset )
+        {
+            for( const auto& data : point_data.children( "DataArray" ) )
+            {
+                read_attribute_data(
+                    data, offset, mesh().polyhedron_attribute_manager() );
+            }
         }
 
     private:

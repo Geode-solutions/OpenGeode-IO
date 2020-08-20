@@ -24,6 +24,7 @@
 #include <geode/tests_config.h>
 
 #include <geode/basic/assert.h>
+#include <geode/basic/attribute_manager.h>
 #include <geode/basic/logger.h>
 
 #include <geode/mesh/core/polygonal_surface.h>
@@ -33,7 +34,9 @@
 #include <geode/io/mesh/detail/common.h>
 
 void check( const geode::PolygonalSurface3D& surface,
-    const std::array< geode::index_t, 2 >& test_answers )
+    const std::array< geode::index_t, 2 >& test_answers,
+    absl::Span< const absl::string_view > vertex_attributes,
+    absl::Span< const absl::string_view > polygon_attributes )
 {
     OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
         "[Test] Number of vertices in the loaded Surface is not correct: "
@@ -43,15 +46,31 @@ void check( const geode::PolygonalSurface3D& surface,
         "[Test] Number of polygons in the loaded Surface is not correct: "
         "should be ",
         test_answers[1], ", get ", surface.nb_polygons() );
+    for( const auto& name : vertex_attributes )
+    {
+        OPENGEODE_EXCEPTION(
+            surface.vertex_attribute_manager().attribute_exists( name ),
+            "[Test] Attribute ", name,
+            " was not be loaded as attribute on vertices" );
+    }
+    for( const auto& name : polygon_attributes )
+    {
+        OPENGEODE_EXCEPTION(
+            surface.polygon_attribute_manager().attribute_exists( name ),
+            "[Test] Attribute ", name,
+            " was not be loaded as attribute on polygons" );
+    }
 }
 
 void run_test( absl::string_view filename,
-    const std::array< geode::index_t, 2 >& test_answers )
+    const std::array< geode::index_t, 2 >& test_answers,
+    absl::Span< const absl::string_view > vertex_attributes,
+    absl::Span< const absl::string_view > polygon_attributes )
 {
     // Load file
     auto surface = geode::load_polygonal_surface< 3 >(
         absl::StrCat( geode::data_path, filename ) );
-    check( *surface, test_answers );
+    check( *surface, test_answers, vertex_attributes, polygon_attributes );
 
     // Save file
     absl::string_view filename_without_ext{ filename };
@@ -62,7 +81,8 @@ void run_test( absl::string_view filename,
 
     // Reload file
     auto reload_surface = geode::load_polygonal_surface< 3 >( output_filename );
-    check( *reload_surface, test_answers );
+    check(
+        *reload_surface, test_answers, vertex_attributes, polygon_attributes );
 }
 
 int main()
@@ -71,8 +91,12 @@ int main()
     {
         geode::detail::initialize_mesh_io();
 
-        run_test( "dfn1_ascii.vtp", { 187, 10 } );
-        run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 } );
+        run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
+            { "FractureId", "FractureSize", "FractureArea" } );
+        run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 }, {},
+            { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
+        run_test( "dfn3.vtp", { 238819, 13032 }, { "FractureSize" },
+            { "FractureId", "FractureSize", "FractureArea" } );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
