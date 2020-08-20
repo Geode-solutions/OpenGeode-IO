@@ -182,12 +182,8 @@ namespace geode
                          || match( data_array_type, "UInt32" )
                          || match( data_array_type, "UInt64" ) )
                 {
-                    int64_t min_value;
-                    absl::SimpleAtoi(
-                        data.attribute( "RangeMin" ).value(), &min_value );
-                    int64_t max_value;
-                    absl::SimpleAtoi(
-                        data.attribute( "RangeMax" ).value(), &max_value );
+                    const auto min_value = read_attribute( data, "RangeMin" );
+                    const auto max_value = read_attribute( data, "RangeMax" );
                     if( min_value >= 0
                         && max_value < std::numeric_limits< index_t >::max() )
                     {
