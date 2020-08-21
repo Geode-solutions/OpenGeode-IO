@@ -31,6 +31,7 @@ add_geode_library(
         "stl_input.cpp"
         "stl_output.cpp"
         "vtp_input.cpp"
+        "vtp_output.cpp"
         "vtu_input.cpp"
     ADVANCED_HEADERS
         "detail/common.h"
@@ -44,7 +45,9 @@ add_geode_library(
         "private/stl_input.h"
         "private/stl_output.h"
         "private/vtk_input.h"
+        "private/vtk_output.h"
         "private/vtp_input.h"
+        "private/vtp_output.h"
         "private/vtu_input.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic

@@ -30,6 +30,7 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
+#include <geode/io/mesh/private/vtp_output.h>
 #include <geode/io/mesh/private/vtu_input.h>
 
 namespace
@@ -69,6 +70,9 @@ namespace
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
             geode::detail::OBJOutput >(
             geode::detail::OBJOutput::extension().data() );
+        geode::PolygonalSurfaceOutputFactory3D::register_creator<
+            geode::detail::VTPOutput >(
+            geode::detail::VTPOutput::extension().data() );
     }
 
     void register_triangulated_surface_output()
