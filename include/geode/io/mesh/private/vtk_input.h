@@ -270,6 +270,7 @@ namespace geode
             template < typename T >
             std::vector< T > decode( absl::string_view input )
             {
+                DEBUG( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
                 auto clean_input = absl::StripAsciiWhitespace( input );
                 constexpr index_t fixed_header_length{
                     16
@@ -288,9 +289,16 @@ namespace geode
                         "[VTKInput::decode] Fixed header size is wrong "
                         "(should be 12 bytes, got ",
                         bytes.size(), " bytes)" ) );
+
+                const auto toto = absl::Base64Escape( bytes );
+                DEBUG( toto );
+
                 const auto fixed_header_values =
                     reinterpret_cast< const index_t* >(
                         bytes.c_str() ); // should be unsigned long if UInt64
+                DEBUG( fixed_header_values[0] );
+                DEBUG( fixed_header_values[1] );
+                DEBUG( fixed_header_values[2] );
                 const auto nb_data_blocks = fixed_header_values[0];
                 if( nb_data_blocks == 0 )
                 {
@@ -304,6 +312,7 @@ namespace geode
                          // bits) represented by 4 characters
                 auto optional_header =
                     clean_input.substr( fixed_header_length, nb_characters );
+                DEBUG( optional_header );
                 decode_status = absl::Base64Unescape( optional_header, &bytes );
                 OPENGEODE_EXCEPTION( decode_status,
                     "[VTKInput::decode] Error in decoding base64 "
@@ -321,6 +330,7 @@ namespace geode
                     nb_data_blocks );
                 for( const auto b : Range{ nb_data_blocks } )
                 {
+                    DEBUG( optional_header_values[b] );
                     compressed_blocks_size[b] = optional_header_values[b];
                     sum_compressed_block_size += optional_header_values[b];
                 }

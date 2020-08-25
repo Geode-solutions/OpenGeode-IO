@@ -37,6 +37,8 @@
 #include <geode/geometry/bounding_box.h>
 #include <geode/geometry/point.h>
 
+#include <geode/io/mesh/private/base64.h>
+
 namespace geode
 {
     namespace detail
@@ -84,7 +86,9 @@ namespace geode
                 root.append_attribute( "version" ).set_value( "1.0" );
                 root.append_attribute( "byte_order" )
                     .set_value( "LittleEndian" );
-                root.append_attribute( "header_type" ).set_value( "UInt64" );
+                root.append_attribute( "header_type" ).set_value( "UInt32" );
+                root.append_attribute( "compressor" )
+                    .set_value( "vtkZLibDataCompressor" );
                 return root;
             }
 
@@ -124,14 +128,20 @@ namespace geode
                 }
                 data_array.append_attribute( "RangeMin" ).set_value( min );
                 data_array.append_attribute( "RangeMax" ).set_value( max );
+                std::vector< double > values;
                 std::string vertices;
                 for( const auto v : Range{ mesh().nb_vertices() } )
                 {
                     vertices += mesh().point( v ).string();
                     vertices += " ";
+                    values.emplace_back( mesh().point( v ).value( 0 ) );
+                    values.emplace_back( mesh().point( v ).value( 1 ) );
+                    values.emplace_back( mesh().point( v ).value( 2 ) );
                 }
                 data_array.text().set( vertices.c_str() );
             }
+
+            std::string encode( const std::vector< double >& values ) {}
 
             void write_vtk_vertex_attributes( pugi::xml_node& piece )
             {
