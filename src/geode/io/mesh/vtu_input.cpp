@@ -110,7 +110,7 @@ namespace
                 }
                 else if( match( data.attribute( "Name" ).value(), "types" ) )
                 {
-                    types_values = read_uint8_data_array( data );
+                    types_values = read_uint8_data_array< uint8_t >( data );
                     OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
                         "[VTUInput::read_polyhedra] Wrong number of types" );
                     geode_unused( nb_polyhedra );
