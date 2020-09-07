@@ -160,6 +160,17 @@ namespace geode
                 return cell_vertices;
             }
 
+            template < typename Out, typename In >
+            std::vector< Out > cast_to_int( const std::vector< In >& values )
+            {
+                std::vector< Out > result( values.size() );
+                for( const auto v : Indices{ values } )
+                {
+                    result[v] = static_cast< Out >( values[v] );
+                }
+                return result;
+            }
+
             template < typename T >
             void build_attribute( AttributeManager& manager,
                 const pugi::char_t* name,
@@ -247,17 +258,21 @@ namespace geode
                 }
                 else if( match( data_array_type, "Int8" ) )
                 {
-                    const auto attribute_values =
-                        read_uint8_data_array< int8_t >( data );
-                    build_attribute( attribute_manager, data_array_name,
-                        attribute_values, nb_components, offset );
+                    // const auto attribute_values =
+                    //     read_uint8_data_array< int8_t >( data );
+                    // const auto attribute_values_as_int =
+                    //     cast_to_int< int >( attribute_values );
+                    // build_attribute( attribute_manager, data_array_name,
+                    //     attribute_values_as_int, nb_components, offset );
                 }
                 else if( match( data_array_type, "UInt8" ) )
                 {
                     const auto attribute_values =
                         read_uint8_data_array< uint8_t >( data );
+                    const auto attribute_values_as_int =
+                        cast_to_int< index_t >( attribute_values );
                     build_attribute( attribute_manager, data_array_name,
-                        attribute_values, nb_components, offset );
+                        attribute_values_as_int, nb_components, offset );
                 }
                 else
                 {
