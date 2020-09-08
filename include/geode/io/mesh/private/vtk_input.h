@@ -161,7 +161,7 @@ namespace geode
             }
 
             template < typename Out, typename In >
-            std::vector< Out > cast_to_int( const std::vector< In >& values )
+            std::vector< Out > cast_to( const std::vector< In >& values )
             {
                 std::vector< Out > result( values.size() );
                 for( const auto v : Indices{ values } )
@@ -261,7 +261,7 @@ namespace geode
                     // const auto attribute_values =
                     //     read_uint8_data_array< int8_t >( data );
                     // const auto attribute_values_as_int =
-                    //     cast_to_int< int >( attribute_values );
+                    //     cast_to< int >( attribute_values );
                     // build_attribute( attribute_manager, data_array_name,
                     //     attribute_values_as_int, nb_components, offset );
                 }
@@ -270,7 +270,7 @@ namespace geode
                     const auto attribute_values =
                         read_uint8_data_array< uint8_t >( data );
                     const auto attribute_values_as_int =
-                        cast_to_int< index_t >( attribute_values );
+                        cast_to< index_t >( attribute_values );
                     build_attribute( attribute_manager, data_array_name,
                         attribute_values_as_int, nb_components, offset );
                 }
