@@ -362,17 +362,17 @@ namespace geode
                 {
                     if( is_uint64_ )
                     {
-                        return templated_decode_uncompressed< T,
-                            unsigned long >( clean_input );
+                        return templated_decode_uncompressed< T, uint64_t >(
+                            clean_input );
                     }
-                    return templated_decode_uncompressed< T, index_t >(
+                    return templated_decode_uncompressed< T, uint32_t >(
                         clean_input );
                 }
                 if( is_uint64_ )
                 {
-                    return templated_decode< T, unsigned long >( clean_input );
+                    return templated_decode< T, uint64_t >( clean_input );
                 }
-                return templated_decode< T, index_t >( clean_input );
+                return templated_decode< T, uint32_t >( clean_input );
             }
 
             template < typename T, typename UInt >
