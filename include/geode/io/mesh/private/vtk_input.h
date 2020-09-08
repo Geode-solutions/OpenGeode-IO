@@ -184,7 +184,7 @@ namespace geode
                         manager
                             .find_or_create_attribute< VariableAttribute, T >(
                                 name, T{} );
-                    for( const auto i : geode::Range{ values.size() } )
+                    for( const auto i : geode::Indices{ values } )
                     {
                         attribute->set_value( i + offset, values[i] );
                     }
