@@ -21,24 +21,20 @@
 add_geode_python_test(
     SOURCE "test-py-obj.py"
     DEPENDENCIES
-        OpenGeode::mesh
         ${PROJECT_NAME}::py_mesh
 )
 add_geode_python_test(
     SOURCE "test-py-ply.py"
     DEPENDENCIES
-        OpenGeode::mesh
         ${PROJECT_NAME}::py_mesh
 )
 add_geode_python_test(
     SOURCE "test-py-stl.py"
     DEPENDENCIES
-        OpenGeode::mesh
         ${PROJECT_NAME}::py_mesh
 )
 add_geode_python_test(
     SOURCE "test-py-vtp.py"
     DEPENDENCIES
-        OpenGeode::mesh
         ${PROJECT_NAME}::py_mesh
 )

@@ -21,10 +21,7 @@
 
 import os 
 
-import opengeode_py_basic
-import opengeode_py_geometry as geom
-import opengeode_py_mesh as mesh
-import opengeode_py_model as model
+import opengeode
 import opengeode_io_py_model as model_io
 
 def nb_closed_lines(section):
@@ -53,11 +50,11 @@ if __name__ == '__main__':
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
 
-    section = model.Section()
-    model.load_section(section, os.path.join(data_dir, "logo.svg"))
+    section = opengeode.Section()
+    opengeode.load_section(section, os.path.join(data_dir, "logo.svg"))
     test_section(section)
 
-    model.save_section(section, "logo.og_sctn")
-    reloaded_section = model.Section()
-    model.load_section(reloaded_section, "logo.og_sctn")
+    opengeode.save_section(section, "logo.og_sctn")
+    reloaded_section = opengeode.Section()
+    opengeode.load_section(reloaded_section, "logo.og_sctn")
     test_section(reloaded_section)

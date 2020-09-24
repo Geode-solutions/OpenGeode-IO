@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 - 2020 Geode-solutions
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,21 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os 
-
 import opengeode
-import opengeode_io_py_mesh as mesh_io
 
-if __name__ == '__main__':
-    mesh_io.initialize_mesh_io()
-    test_dir = os.path.dirname(__file__)
-    data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    
-    surface = opengeode.load_polygonal_surface3D(os.path.join(data_dir, "TopHat.obj"))
-    if surface.nb_vertices() != 363:
-        raise ValueError("[Test] Number of vertices in the loaded Surface is not correct" )
-    if surface.nb_polygons() != 380:
-        raise ValueError("[Test] Number of polygons in the loaded Surface is not correct" )
+from .opengeode_io_py_mesh import *
+from .opengeode_io_py_model import *
 
-    opengeode.save_polygonal_surface3D(surface, "TopHat_save.obj")
-
+initialize_mesh_io()
+initialize_model_io()
