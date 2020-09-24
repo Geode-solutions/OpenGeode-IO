@@ -21,9 +21,7 @@
 
 import os 
 
-import opengeode_py_basic
-import opengeode_py_geometry as geom
-import opengeode_py_mesh as mesh
+import opengeode
 import opengeode_io_py_mesh as mesh_io
 
 if __name__ == '__main__':
@@ -31,11 +29,11 @@ if __name__ == '__main__':
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = mesh.load_polygonal_surface3D(os.path.join(data_dir, "Armadillo.ply"))
+    surface = opengeode.load_polygonal_surface3D(os.path.join(data_dir, "Armadillo.ply"))
     if surface.nb_vertices() != 172974:
         raise ValueError("[Test] Number of vertices in the loaded Surface is not correct" )
     if surface.nb_polygons() != 345944:
         raise ValueError("[Test] Number of polygons in the loaded Surface is not correct" )
 
-    mesh.save_polygonal_surface3D(surface, "Armadillo_save.ply")
+    opengeode.save_polygonal_surface3D(surface, "Armadillo_save.ply")
 

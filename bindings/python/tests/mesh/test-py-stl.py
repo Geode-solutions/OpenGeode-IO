@@ -21,9 +21,7 @@
 
 import os 
 
-import opengeode_py_basic
-import opengeode_py_geometry as geom
-import opengeode_py_mesh as mesh
+import opengeode
 import opengeode_io_py_mesh as mesh_io
 
 if __name__ == '__main__':
@@ -31,10 +29,10 @@ if __name__ == '__main__':
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = mesh.load_triangulated_surface3D(os.path.join(data_dir, "thumbwheel.stl"))
+    surface = opengeode.load_triangulated_surface3D(os.path.join(data_dir, "thumbwheel.stl"))
     if surface.nb_vertices() != 525:
         raise ValueError("[Test] Number of vertices in the loaded Surface is not correct" )
     if surface.nb_polygons() != 1027:
         raise ValueError("[Test] Number of polygons in the loaded Surface is not correct" )
 
-    mesh.save_triangulated_surface3D(surface, "thumbwheel_save.stl")
+    opengeode.save_triangulated_surface3D(surface, "thumbwheel_save.stl")
