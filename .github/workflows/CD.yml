@@ -69,7 +69,7 @@ jobs:
       id: opengeode
       with:
         repository: OpenGeode
-        file: '-${{ matrix.config.system }}.tar.gz'
+        file: '-rhel.tar.gz'
         token: ${{ secrets.TOKEN }}
     - name: Compile
       id: package

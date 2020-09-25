@@ -6,6 +6,7 @@
   <img src="https://github.com/Geode-solutions/OpenGeode-IO/workflows/CD/badge.svg" alt="Deploy Status">
   <img src="https://codecov.io/gh/Geode-solutions/OpenGeode-IO/branch/master/graph/badge.svg" alt="Coverage Status">
   <img src="https://img.shields.io/github/release/Geode-solutions/OpenGeode-IO.svg" alt="Version">
+  <img src="https://img.shields.io/pypi/v/opengeode-io" alt="PyPI" >
 </p>
 
 <p align="center">
