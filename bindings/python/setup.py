@@ -23,6 +23,8 @@ from os import path
 
 with open(path.join('${CMAKE_SOURCE_DIR}', 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+with open('${CMAKE_CURRENT_LIST_DIR}/requirements.txt') as f:
+    install_requires = f.read().strip().split('\n')
 
 setup(
     name='OpenGeode-IO',
@@ -37,6 +39,7 @@ setup(
     package_data={
         '': ['*.so', '*.dll', '*.pyd', '*.dylib']
     },
+    install_requires=install_requires,
     license='MIT',
     classifiers=[
         'License :: OSI Approved :: MIT License'
