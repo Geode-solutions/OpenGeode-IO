@@ -21,8 +21,6 @@
 # Define the project
 project(OpenGeode-IO CXX)
 
-option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
-
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
