@@ -1,6 +1,6 @@
 # Upgrade Guide
 
-## Upgrading from OpenGeode v4.x.x to v5.0.0
+## Upgrading from OpenGeode-IO v4.x.x to v5.0.0
 
 ### Motivations
 
