@@ -81,18 +81,16 @@ int main()
     try
     {
         detail::initialize_model_io();
-        Section section;
 
         // Load file
-        load_section( section, absl::StrCat( data_path, "/logo.svg" ) );
+        auto section = load_section( absl::StrCat( data_path, "/logo.svg" ) );
         test_section( section );
 
         // Save and reload
         const auto filename =
             absl::StrCat( "logo.", section.native_extension() );
         save_section( section, filename );
-        Section reloaded_section;
-        load_section( reloaded_section, filename );
+        auto reloaded_section = load_section( filename );
         test_section( reloaded_section );
 
         Logger::info( "TEST SUCCESS" );
