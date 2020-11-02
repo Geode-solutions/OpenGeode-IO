@@ -21,6 +21,8 @@
  *
  */
 
+#pragma once
+
 #include <geode/io/mesh/detail/common.h>
 
 #include <fstream>
