@@ -75,14 +75,26 @@ void run_test( absl::string_view filename,
     // Save file
     absl::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
-    const auto output_filename =
+    const auto output_filename_default =
         absl::StrCat( filename_without_ext, ".", surface->native_extension() );
-    geode::save_polygonal_surface( *surface, output_filename );
+    geode::save_polygonal_surface( *surface, output_filename_default );
 
     // Reload file
-    auto reload_surface = geode::load_polygonal_surface< 3 >( output_filename );
+    auto reload_surface =
+        geode::load_polygonal_surface< 3 >( output_filename_default );
     check(
         *reload_surface, test_answers, vertex_attributes, polygon_attributes );
+
+    // Save file
+    const auto output_filename_vtp =
+        absl::StrCat( filename_without_ext, "_output.vtp" );
+    geode::save_polygonal_surface( *surface, output_filename_vtp );
+
+    // Reload file
+    auto reload_surface_vtp =
+        geode::load_polygonal_surface< 3 >( output_filename_vtp );
+    check( *reload_surface_vtp, test_answers, vertex_attributes,
+        polygon_attributes );
 }
 
 int main()

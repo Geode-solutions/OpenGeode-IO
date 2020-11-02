@@ -27,12 +27,15 @@
 #include <geode/basic/logger.h>
 
 #include <geode/mesh/core/polyhedral_solid.h>
+#include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/mesh/helpers/convert_solid_mesh.h>
 #include <geode/mesh/io/polyhedral_solid_input.h>
-#include <geode/mesh/io/polyhedral_solid_output.h>
+#include <geode/mesh/io/tetrahedral_solid_input.h>
+#include <geode/mesh/io/tetrahedral_solid_output.h>
 
 #include <geode/io/mesh/detail/common.h>
 
-void check( const geode::PolyhedralSolid3D& solid,
+void check( const geode::SolidMesh< 3 >& solid,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     OPENGEODE_EXCEPTION( solid.nb_vertices() == test_answers[0],
@@ -53,16 +56,28 @@ void run_test( absl::string_view filename,
         absl::StrCat( geode::data_path, filename ) );
     check( *solid, test_answers );
 
+    auto tetra_solid =
+        geode::convert_solid_mesh_into_tetrahedral_solid( *solid ).value();
+
     // Save file
     absl::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
-    const auto output_filename =
-        absl::StrCat( filename_without_ext, ".", solid->native_extension() );
-    geode::save_polyhedral_solid( *solid, output_filename );
+    const auto output_filename = absl::StrCat(
+        filename_without_ext, ".", tetra_solid->native_extension() );
+    geode::save_tetrahedral_solid( *tetra_solid, output_filename );
 
     // Reload file
-    auto reload_solid = geode::load_polyhedral_solid< 3 >( output_filename );
+    auto reload_solid = geode::load_tetrahedral_solid< 3 >( output_filename );
     check( *reload_solid, test_answers );
+
+    // Save file
+    const auto output_filename_vtu =
+        absl::StrCat( filename_without_ext, "_output.vtu" );
+    geode::save_tetrahedral_solid( *tetra_solid, output_filename_vtu );
+
+    // Reload file
+    auto reload_vtu = geode::load_polyhedral_solid< 3 >( output_filename_vtu );
+    check( *reload_vtu, test_answers );
 }
 
 int main()
