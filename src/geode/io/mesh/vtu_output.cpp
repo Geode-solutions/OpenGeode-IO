@@ -72,7 +72,7 @@ namespace
             types.append_attribute( "RangeMax" ).set_value( 14 );
             const auto nb_cells = mesh().nb_polyhedra();
             std::string cell_connectivity;
-            cell_connectivity.reserve( nb_cells * 3 * 4 );
+            cell_connectivity.reserve( nb_cells * 4 );
             std::string cell_offsets;
             cell_offsets.reserve( nb_cells );
             std::string cell_types;
@@ -84,18 +84,13 @@ namespace
                 OPENGEODE_EXCEPTION( nb_vertices == 4,
                     "[VTUOutput::write_vtk_cells] Only tetrahedron elements "
                     "are implemented yet" );
-                offset += 4 * 3;
+                offset += 4;
                 absl::StrAppend( &cell_offsets, offset, " " );
                 absl::StrAppend( &cell_types, 10, " " );
-                for( const auto f : geode::Range{ 4 } )
+                for( const auto v : geode::Range{ 4 } )
                 {
-                    const geode::PolyhedronFacet facet{ p, f };
-                    for( const auto v : geode::Range{ 3 } )
-                    {
-                        absl::StrAppend( &cell_connectivity,
-                            mesh().polyhedron_facet_vertex( { facet, v } ),
-                            " " );
-                    }
+                    absl::StrAppend( &cell_connectivity,
+                        mesh().polyhedron_vertex( { p, v } ), " " );
                 }
             }
             connectivity.text().set( cell_connectivity.c_str() );
