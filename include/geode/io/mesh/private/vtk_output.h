@@ -21,6 +21,8 @@
  *
  */
 
+#pragma once
+
 #include <geode/io/mesh/detail/common.h>
 
 #include <fstream>
@@ -43,7 +45,7 @@ namespace geode
 {
     namespace detail
     {
-        template < typename Mesh, typename MeshBuilder >
+        template < typename Mesh >
         class VTKOutputImpl
         {
         public:
@@ -82,7 +84,7 @@ namespace geode
             pugi::xml_node write_root_attributes()
             {
                 auto root = document_.append_child( "VTKFile" );
-                root.append_attribute( "type" ).set_value( "PolyData" );
+                root.append_attribute( "type" ).set_value( type_ );
                 root.append_attribute( "version" ).set_value( "1.0" );
                 root.append_attribute( "byte_order" )
                     .set_value( "LittleEndian" );
@@ -132,8 +134,8 @@ namespace geode
                 std::string vertices;
                 for( const auto v : Range{ mesh().nb_vertices() } )
                 {
-                    vertices += mesh().point( v ).string();
-                    vertices += " ";
+                    absl::StrAppend(
+                        &vertices, mesh().point( v ).string(), " " );
                     values.emplace_back( mesh().point( v ).value( 0 ) );
                     values.emplace_back( mesh().point( v ).value( 1 ) );
                     values.emplace_back( mesh().point( v ).value( 2 ) );
@@ -141,7 +143,10 @@ namespace geode
                 data_array.text().set( vertices.c_str() );
             }
 
-            std::string encode( const std::vector< double >& values ) {}
+            std::string encode( const std::vector< double >& values )
+            {
+                return "";
+            }
 
             void write_vtk_vertex_attributes( pugi::xml_node& piece )
             {
@@ -170,8 +175,7 @@ namespace geode
                     for( const auto v : geode::Range{ mesh().nb_vertices() } )
                     {
                         const auto value = attribute->generic_value( v );
-                        values += std::to_string( value );
-                        values += " ";
+                        absl::StrAppend( &values, value, " " );
                         min = std::min( min, value );
                         max = std::max( max, value );
                     }

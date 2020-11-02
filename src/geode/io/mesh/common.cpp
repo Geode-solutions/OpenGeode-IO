@@ -30,8 +30,10 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
-#include <geode/io/mesh/private/vtp_output.h>
+#include <geode/io/mesh/private/vtp_polygonal_output.h>
+#include <geode/io/mesh/private/vtp_triangulated_output.h>
 #include <geode/io/mesh/private/vtu_input.h>
+#include <geode/io/mesh/private/vtu_output.h>
 
 namespace
 {
@@ -71,8 +73,8 @@ namespace
             geode::detail::OBJOutput >(
             geode::detail::OBJOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::detail::VTPOutput >(
-            geode::detail::VTPOutput::extension().data() );
+            geode::detail::VTPPolygonalOutput >(
+            geode::detail::VTPPolygonalOutput::extension().data() );
     }
 
     void register_triangulated_surface_output()
@@ -80,6 +82,16 @@ namespace
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::detail::STLOutput >(
             geode::detail::STLOutput::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
+            geode::detail::VTPTriangulatedOutput >(
+            geode::detail::VTPTriangulatedOutput::extension().data() );
+    }
+
+    void register_tetrahedral_solid_output()
+    {
+        geode::TetrahedralSolidOutputFactory3D::register_creator<
+            geode::detail::VTUOutput >(
+            geode::detail::VTUOutput::extension().data() );
     }
 
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_mesh )
@@ -90,6 +102,7 @@ namespace
 
         register_polygonal_surface_output();
         register_triangulated_surface_output();
+        register_tetrahedral_solid_output();
     }
 } // namespace
 

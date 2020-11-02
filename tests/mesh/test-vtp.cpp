@@ -103,12 +103,12 @@ int main()
     {
         geode::detail::initialize_mesh_io();
 
-        // run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
-        //     { "FractureId", "FractureSize", "FractureArea" } );
+        run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
+            { "FractureId", "FractureSize", "FractureArea" } );
         run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 }, {},
             { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
-        // run_test( "dfn3.vtp", { 238819, 13032 }, { "FractureSize" },
-        //     { "FractureId", "FractureSize", "FractureArea" } );
+        run_test( "dfn3.vtp", { 238819, 13032 }, { "FractureSize" },
+            { "FractureId", "FractureSize", "FractureArea" } );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

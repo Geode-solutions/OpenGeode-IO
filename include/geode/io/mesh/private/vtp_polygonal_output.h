@@ -29,10 +29,10 @@ namespace geode
 {
     namespace detail
     {
-        class VTPOutput final : public PolygonalSurfaceOutput< 3 >
+        class VTPPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            VTPOutput( const PolygonalSurface< 3 > &surface,
+            VTPPolygonalOutput( const PolygonalSurface< 3 > &surface,
                 absl::string_view filename )
                 : PolygonalSurfaceOutput< 3 >( surface, filename )
             {
