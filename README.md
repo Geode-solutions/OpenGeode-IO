@@ -6,6 +6,7 @@
   <img src="https://github.com/Geode-solutions/OpenGeode-IO/workflows/CD/badge.svg" alt="Deploy Status">
   <img src="https://codecov.io/gh/Geode-solutions/OpenGeode-IO/branch/master/graph/badge.svg" alt="Coverage Status">
   <img src="https://img.shields.io/github/release/Geode-solutions/OpenGeode-IO.svg" alt="Version">
+  <img src="https://img.shields.io/pypi/v/opengeode-io" alt="PyPI" >
 </p>
 
 <p align="center">
@@ -39,6 +40,10 @@ OpenGeode-IO provides input and output formats for [OpenGeode] models and meshes
 ## Documentation
 
 To check out our live documentation, visit [docs.geode-solutions.com](https://docs.geode-solutions.com).
+
+Installing OpenGeode-IO is done:
+ * either, by compiling the C++ source.
+ * or, by using pip command ```pip install OpenGeode-IO``` and add ```import opengeode_io``` in your Python script.
 
 
 ## Questions

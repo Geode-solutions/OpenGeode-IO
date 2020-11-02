@@ -19,12 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os 
+import os, sys, platform
+if sys.version_info >= (3,8,0) and platform.system() == "Windows":
+    for path in [x.strip() for x in os.environ['PATH'].split(';') if x]:
+        os.add_dll_directory(path)
 
-import opengeode_py_basic
-import opengeode_py_geometry as geom
-import opengeode_py_mesh as mesh
-import opengeode_py_model as model
+import opengeode
 import opengeode_io_py_model as model_io
 
 def test_brep_cube(brep):
@@ -139,18 +139,18 @@ if __name__ == '__main__':
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
 
-    brep_cube = model.BRep()
-    model.load_brep(brep_cube, os.path.join(data_dir, "cube_v22.msh" ))
+    brep_cube = opengeode.BRep()
+    opengeode.load_brep(brep_cube, os.path.join(data_dir, "cube_v22.msh" ))
     test_brep_cube(brep_cube)
-    model.save_brep(brep_cube, "cube_v22.og_brep")
-    reloaded_brep_cube = model.BRep()
-    model.load_brep(reloaded_brep_cube, "cube_v22.og_brep")
+    opengeode.save_brep(brep_cube, "cube_v22.og_brep")
+    reloaded_brep_cube = opengeode.BRep()
+    opengeode.load_brep(reloaded_brep_cube, "cube_v22.og_brep")
     test_brep_cube(reloaded_brep_cube)
 
-    brep_cone = model.BRep()
-    model.load_brep(brep_cone, os.path.join(data_dir, "cone_v4.msh" ))
+    brep_cone = opengeode.BRep()
+    opengeode.load_brep(brep_cone, os.path.join(data_dir, "cone_v4.msh" ))
     test_brep_cone(brep_cone)
-    model.save_brep(brep_cone, "cone_v4.og_brep")
-    reloaded_brep_cone = model.BRep()
-    model.load_brep(reloaded_brep_cone, "cone_v4.og_brep")
+    opengeode.save_brep(brep_cone, "cone_v4.og_brep")
+    reloaded_brep_cone = opengeode.BRep()
+    opengeode.load_brep(reloaded_brep_cone, "cone_v4.og_brep")
     test_brep_cone(reloaded_brep_cone)

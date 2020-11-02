@@ -116,6 +116,19 @@ namespace geode
             }
 
             template < typename T >
+            std::vector< T > read_uint8_data_array( const pugi::xml_node& data )
+            {
+                const auto format = data.attribute( "format" ).value();
+                std::string data_string = data.child_value();
+                if( match( format, "ascii" ) )
+                {
+                    absl::RemoveExtraAsciiWhitespace( &data_string );
+                    return read_ascii_uint8_data_array< T >( data_string );
+                }
+                return decode< T >( data_string );
+            }
+
+            template < typename T >
             std::vector< T > read_float_data_array( const pugi::xml_node& data )
             {
                 const auto format = data.attribute( "format" ).value();
@@ -149,18 +162,56 @@ namespace geode
                 return cell_vertices;
             }
 
+            template < typename Out, typename In >
+            std::vector< Out > cast_to( const std::vector< In >& values )
+            {
+                std::vector< Out > result( values.size() );
+                for( const auto v : Indices{ values } )
+                {
+                    result[v] = static_cast< Out >( values[v] );
+                }
+                return result;
+            }
+
             template < typename T >
             void build_attribute( AttributeManager& manager,
                 const pugi::char_t* name,
                 const std::vector< T >& values,
+                index_t nb_components,
                 index_t offset )
             {
-                auto attribute =
-                    manager.find_or_create_attribute< VariableAttribute, T >(
-                        name, T{} );
-                for( const auto i : geode::Range{ values.size() } )
+                if( nb_components == 1 )
                 {
-                    attribute->set_value( i + offset, values[i] );
+                    auto attribute =
+                        manager
+                            .find_or_create_attribute< VariableAttribute, T >(
+                                name, T{} );
+                    for( const auto i : geode::Indices{ values } )
+                    {
+                        attribute->set_value( i + offset, values[i] );
+                    }
+                }
+                else
+                {
+                    OPENGEODE_EXCEPTION( values.size() % nb_components == 0,
+                        "[VTKInput::build_attribute] Number of attribute "
+                        "values is not a multiple of number of components" );
+                    auto attribute =
+                        manager.find_or_create_attribute< VariableAttribute,
+                            std::vector< T > >(
+                            name, std::vector< T >( nb_components ) );
+                    for( const auto i :
+                        geode::Range{ values.size() / nb_components } )
+                    {
+                        for( const auto c : geode::Range{ nb_components } )
+                        {
+                            const auto& value = values[nb_components * i + c];
+                            attribute->modify_value( i + offset,
+                                [&value, &c]( std::vector< T >& values ) {
+                                    values[c] = value;
+                                } );
+                        }
+                    }
                 }
             }
 
@@ -170,18 +221,23 @@ namespace geode
             {
                 const auto data_array_name = data.attribute( "Name" ).value();
                 const auto data_array_type = data.attribute( "type" ).value();
-
+                index_t nb_components{ 1 };
+                if( const auto data_nb_components =
+                        data.attribute( "NumberOfComponents" ) )
+                {
+                    nb_components =
+                        read_attribute( data, "NumberOfComponents" );
+                }
                 if( match( data_array_type, "Float64" )
                     || match( data_array_type, "Float32" ) )
                 {
                     const auto attribute_values =
                         read_float_data_array< double >( data );
                     build_attribute( attribute_manager, data_array_name,
-                        attribute_values, offset );
+                        attribute_values, nb_components, offset );
                 }
                 else if( match( data_array_type, "Int64" )
                          || match( data_array_type, "Int32" )
-                         || match( data_array_type, "UInt32" )
                          || match( data_array_type, "UInt64" ) )
                 {
                     const auto min_value = read_attribute( data, "RangeMin" );
@@ -192,15 +248,33 @@ namespace geode
                         const auto attribute_values =
                             read_integer_data_array< index_t >( data );
                         build_attribute( attribute_manager, data_array_name,
-                            attribute_values, offset );
+                            attribute_values, nb_components, offset );
                     }
                     else
                     {
                         const auto attribute_values =
                             read_integer_data_array< long int >( data );
                         build_attribute( attribute_manager, data_array_name,
-                            attribute_values, offset );
+                            attribute_values, nb_components, offset );
                     }
+                }
+                else if( match( data_array_type, "Int8" ) )
+                {
+                    // const auto attribute_values =
+                    //     read_uint8_data_array< int8_t >( data );
+                    // const auto attribute_values_as_int =
+                    //     cast_to< int >( attribute_values );
+                    // build_attribute( attribute_manager, data_array_name,
+                    //     attribute_values_as_int, nb_components, offset );
+                }
+                else if( match( data_array_type, "UInt8" ) )
+                {
+                    const auto attribute_values =
+                        read_uint8_data_array< uint8_t >( data );
+                    const auto attribute_values_as_int =
+                        cast_to< index_t >( attribute_values );
+                    build_attribute( attribute_manager, data_array_name,
+                        attribute_values_as_int, nb_components, offset );
                 }
                 else
                 {
@@ -226,6 +300,19 @@ namespace geode
                     "[VTKInput::read_root_attributes] Only "
                     "vtkZLibDataCompressor is supported for now" );
                 compressed_ = !absl::string_view( compressor ).empty();
+
+                if( const auto header_type = root_.attribute( "header_type" ) )
+                {
+                    const auto& header_type_value = header_type.value();
+                    OPENGEODE_EXCEPTION(
+                        match( header_type_value, "UInt32" )
+                            || match( header_type_value, "UInt64" ),
+                        "[VTKInput::read_root_attributes] Cannot read VTKFile "
+                        "with header_type ",
+                        header_type_value,
+                        ". Only UInt32 and Uint64 are accepted" );
+                    is_uint64_ = match( header_type_value, "UInt64" );
+                }
             }
 
             void read_vtk_object( const pugi::xml_node& vtk_object )
@@ -273,27 +360,67 @@ namespace geode
             std::vector< T > decode( absl::string_view input )
             {
                 auto clean_input = absl::StripAsciiWhitespace( input );
+                if( !compressed_ )
+                {
+                    if( is_uint64_ )
+                    {
+                        return templated_decode_uncompressed< T, uint64_t >(
+                            clean_input );
+                    }
+                    return templated_decode_uncompressed< T, uint32_t >(
+                        clean_input );
+                }
+                if( is_uint64_ )
+                {
+                    return templated_decode< T, uint64_t >( clean_input );
+                }
+                return templated_decode< T, uint32_t >( clean_input );
+            }
+
+            template < typename T, typename UInt >
+            std::vector< T > templated_decode_uncompressed(
+                absl::string_view input )
+            {
+                std::string bytes;
+                auto decode_status = absl::Base64Unescape( input, &bytes );
+                OPENGEODE_EXCEPTION( decode_status,
+                    "[VTKInput::decode] Error in decoding base64 "
+                    "uncompressed data" );
+                const auto values = reinterpret_cast< const T* >(
+                    bytes.c_str() + sizeof( UInt ) );
+
+                const auto nb_bytes = bytes.size() - sizeof( UInt );
+                const auto nb_values = nb_bytes / sizeof( T );
+                std::vector< T > result( nb_values );
+                for( const auto v : Range{ nb_values } )
+                {
+                    result[v] = values[v];
+                }
+                return result;
+            }
+
+            template < typename T, typename UInt >
+            std::vector< T > templated_decode( absl::string_view input )
+            {
                 constexpr index_t fixed_header_length{
-                    16
-                }; // 4 series of 4 characters is needed to encode the 3 values
-                   // in the fixed header (3 * 4 bytes)
-                auto fixed_header =
-                    clean_input.substr( 0, fixed_header_length );
+                    4 * sizeof( UInt )
+                }; // to encode the 3 values
+                   // in the fixed header ((3 * 8 * nb bytes) bits / 6)
+                auto fixed_header = input.substr( 0, fixed_header_length );
                 std::string bytes;
                 auto decode_status =
                     absl::Base64Unescape( fixed_header, &bytes );
                 OPENGEODE_EXCEPTION( decode_status,
                     "[VTKInput::decode] Error in decoding base64 "
                     "data for fixed header" );
-                OPENGEODE_ASSERT( bytes.size() == 12,
+                OPENGEODE_ASSERT( bytes.size() == 3 * sizeof( UInt ),
                     absl::StrCat(
                         "[VTKInput::decode] Fixed header size is wrong "
-                        "(should be 12 bytes, got ",
-                        bytes.size(), " bytes)" ) );
-
+                        "(should be ",
+                        3 * sizeof( UInt ), " bytes, got ", bytes.size(),
+                        " bytes)" ) );
                 const auto fixed_header_values =
-                    reinterpret_cast< const index_t* >(
-                        bytes.c_str() ); // should be unsigned long if UInt64
+                    reinterpret_cast< const UInt* >( bytes.c_str() );
                 const auto nb_data_blocks = fixed_header_values[0];
                 if( nb_data_blocks == 0 )
                 {
@@ -301,24 +428,24 @@ namespace geode
                 }
                 const auto uncompressed_block_size = fixed_header_values[1];
                 const auto nb_characters =
-                    std::ceil( nb_data_blocks * 32. / 24. )
+                    std::ceil( nb_data_blocks * 8 * sizeof( UInt ) / 24. )
                     * 4; // for each blocks 4 bytes (32 bits) are needed to
                          // encode a value, encoded by packs of 3 bytes (24
                          // bits) represented by 4 characters
                 auto optional_header =
-                    clean_input.substr( fixed_header_length, nb_characters );
+                    input.substr( fixed_header_length, nb_characters );
                 decode_status = absl::Base64Unescape( optional_header, &bytes );
                 OPENGEODE_EXCEPTION( decode_status,
                     "[VTKInput::decode] Error in decoding base64 "
                     "data for optional header" );
-                OPENGEODE_ASSERT( bytes.size() == nb_data_blocks * 4,
-                    absl::StrCat( "[VTKInput::decode] Fixed header size is "
+                OPENGEODE_ASSERT(
+                    bytes.size() == nb_data_blocks * sizeof( UInt ),
+                    absl::StrCat( "[VTKInput::decode] Optional header size is "
                                   "wrong (should be ",
-                        nb_data_blocks * 4, " bytes, got ", bytes.size(),
-                        " bytes)" ) );
+                        nb_data_blocks * sizeof( UInt ), " bytes, got ",
+                        bytes.size(), " bytes)" ) );
                 const auto optional_header_values =
-                    reinterpret_cast< const index_t* >(
-                        bytes.c_str() ); // should be unsigned long if UInt64
+                    reinterpret_cast< const UInt* >( bytes.c_str() );
                 index_t sum_compressed_block_size{ 0 };
                 absl::FixedArray< index_t > compressed_blocks_size(
                     nb_data_blocks );
@@ -329,8 +456,8 @@ namespace geode
                 }
 
                 const auto data_offset = fixed_header_length + nb_characters;
-                auto data = clean_input.substr(
-                    data_offset, clean_input.size() - data_offset );
+                auto data =
+                    input.substr( data_offset, input.size() - data_offset );
                 decode_status = absl::Base64Unescape( data, &bytes );
                 OPENGEODE_EXCEPTION( decode_status,
                     "[VTKInput::decode] Error in decoding base64 data" );
@@ -395,6 +522,11 @@ namespace geode
                     piece.child( "Points" ).child( "DataArray" );
                 const auto nb_components =
                     read_attribute( points, "NumberOfComponents" );
+                const auto type = points.attribute( "type" ).value();
+                OPENGEODE_EXCEPTION(
+                    match( type, "Float32" ) || match( type, "Float64" ),
+                    "[VTKInput::read_points] Cannot read points of type ", type,
+                    ". Only Float32 and Float64 are accepted" );
                 OPENGEODE_EXCEPTION( nb_components == 3,
                     "[VTKInput::read_points] Trying to import 2D VTK object "
                     "into a 3D Surface is not allowed" );
@@ -409,7 +541,14 @@ namespace geode
                         "[VTKInput::read_points] Wrong number of coordinates" );
                     return get_points( coords );
                 }
-                const auto coords = decode< float >( coords_string );
+                if( match( type, "Float32" ) )
+                {
+                    const auto coords = decode< float >( coords_string );
+                    OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
+                        "[VTKInput::read_points] Wrong number of coordinates" );
+                    return get_points( coords );
+                }
+                const auto coords = decode< double >( coords_string );
                 OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
                     "[VTKInput::read_points] Wrong number of coordinates" );
                 return get_points( coords );
@@ -456,6 +595,18 @@ namespace geode
             }
 
             template < typename T >
+            std::vector< T > read_ascii_uint8_data_array(
+                absl::string_view data )
+            {
+                std::vector< T > results;
+                for( auto string : absl::StrSplit( data, ' ' ) )
+                {
+                    results.push_back( std::atoi( string.data() ) );
+                }
+                return results;
+            }
+
+            template < typename T >
             std::vector< T > read_ascii_float_data_array(
                 absl::string_view data )
             {
@@ -471,6 +622,7 @@ namespace geode
             const char* type_;
             bool little_endian_{ true };
             bool compressed_{ false };
+            bool is_uint64_{ false };
         };
     } // namespace detail
 } // namespace geode

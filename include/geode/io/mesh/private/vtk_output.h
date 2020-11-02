@@ -39,8 +39,6 @@
 #include <geode/geometry/bounding_box.h>
 #include <geode/geometry/point.h>
 
-#include <geode/io/mesh/private/base64.h>
-
 namespace geode
 {
     namespace detail

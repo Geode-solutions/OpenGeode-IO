@@ -19,11 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os 
+import os, sys, platform
+if sys.version_info >= (3,8,0) and platform.system() == "Windows":
+    for path in [x.strip() for x in os.environ['PATH'].split(';') if x]:
+        os.add_dll_directory(path)
 
-import opengeode_py_basic
-import opengeode_py_geometry as geom
-import opengeode_py_mesh as mesh
+import opengeode
 import opengeode_io_py_mesh as mesh_io
 
 def check(surface, nb_vertices, nb_polygons):
@@ -35,10 +36,10 @@ def check(surface, nb_vertices, nb_polygons):
 def run_test(filename, nb_vertices, nb_polygons):
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = mesh.load_polygonal_surface3D(os.path.join(data_dir, filename + ".vtp"))
+    surface = opengeode.load_polygonal_surface3D(os.path.join(data_dir, filename + ".vtp"))
     check(surface, nb_vertices, nb_polygons)
-    mesh.save_polygonal_surface3D(surface, os.path.join(filename + ".og_psf3d"))
-    reloaded_surface = mesh.load_polygonal_surface3D(os.path.join(filename + ".og_psf3d"))
+    opengeode.save_polygonal_surface3D(surface, os.path.join(filename + ".og_psf3d"))
+    reloaded_surface = opengeode.load_polygonal_surface3D(os.path.join(filename + ".og_psf3d"))
     check(surface, nb_vertices, nb_polygons)
 
 if __name__ == '__main__':

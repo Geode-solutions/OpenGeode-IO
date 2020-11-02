@@ -21,12 +21,10 @@
 add_geode_python_test(
     SOURCE "test-py-msh.py"
     DEPENDENCIES
-        OpenGeode::model
         ${PROJECT_NAME}::py_model
 )
 add_geode_python_test(
     SOURCE "test-py-svg.py"
     DEPENDENCIES
-        OpenGeode::model
         ${PROJECT_NAME}::py_model
 )

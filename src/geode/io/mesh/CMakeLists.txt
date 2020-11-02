@@ -24,7 +24,6 @@ add_geode_library(
     SOURCES
         "assimp_input.cpp"
         "common.cpp"
-        "base64.cpp"
         "obj_input.cpp"
         "obj_output.cpp"
         "ply_input.cpp"
@@ -39,7 +38,6 @@ add_geode_library(
     ADVANCED_HEADERS
         "detail/common.h"
     PRIVATE_HEADERS
-        "private/base64.h"
         "private/assimp_input.h"
         "private/assimp_output.h"
         "private/obj_input.h"

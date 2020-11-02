@@ -18,29 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(src)
+import opengeode
 
-if(OPENGEODE_IO_WITH_TESTS)
-    add_subdirectory(tests)
-endif()
+from .opengeode_io_py_mesh import *
+from .opengeode_io_py_model import *
 
-configure_file(
-    __init__.py
-    ${PROJECT_BINARY_DIR}/wheel/opengeode_io/__init__.py
-)
-configure_file(
-    setup.py
-    ${PROJECT_BINARY_DIR}/wheel/setup.py
-)
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install --user -r requirements.txt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-)
-add_custom_target(wheel
-    COMMAND ${CMAKE_COMMAND} 
-        -DSOURCE_DIR="${CMAKE_INSTALL_PREFIX}"
-        -DDEST_DIR="${CMAKE_BINARY_DIR}/wheel/opengeode_io"
-        -P "${CMAKE_CURRENT_LIST_DIR}/copy_wheel.cmake"
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/wheel
-)
+initialize_mesh_io()
+initialize_model_io()

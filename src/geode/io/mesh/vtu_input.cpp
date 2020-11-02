@@ -85,13 +85,13 @@ namespace
         }
 
         std::tuple< absl::FixedArray< std::vector< geode::index_t > >,
-            std::vector< int64_t > >
+            std::vector< uint8_t > >
             read_polyhedra(
                 const pugi::xml_node& piece, geode::index_t nb_polyhedra )
         {
             std::vector< int64_t > offsets_values;
             std::vector< int64_t > connectivity_values;
-            std::vector< int64_t > types_values;
+            std::vector< uint8_t > types_values;
             for( const auto& data :
                 piece.child( "Cells" ).children( "DataArray" ) )
             {
@@ -110,7 +110,7 @@ namespace
                 }
                 else if( match( data.attribute( "Name" ).value(), "types" ) )
                 {
-                    types_values = read_integer_data_array< int64_t >( data );
+                    types_values = read_uint8_data_array< uint8_t >( data );
                     OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
                         "[VTUInput::read_polyhedra] Wrong number of types" );
                     geode_unused( nb_polyhedra );
@@ -124,12 +124,12 @@ namespace
         geode::index_t build_polyhedra(
             absl::Span< const std::vector< geode::index_t > >
                 polyhedron_vertices,
-            absl::Span< const int64_t > types )
+            absl::Span< const uint8_t > types )
         {
             absl::FixedArray< geode::index_t > new_polyhedra(
                 polyhedron_vertices.size() );
             absl::c_iota( new_polyhedra, mesh().nb_polyhedra() );
-            for( const auto& p : geode::Indices{ polyhedron_vertices } )
+            for( const auto p : geode::Indices{ polyhedron_vertices } )
             {
                 const auto it = elements_.find( types[p] );
                 if( it != elements_.end() )

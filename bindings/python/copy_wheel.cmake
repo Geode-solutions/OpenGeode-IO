@@ -18,26 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required(VERSION 3.14)
+file(GLOB_RECURSE SO_LIBRARIES "${SOURCE_DIR}/*.so")
+file(COPY ${SO_LIBRARIES} DESTINATION "${DEST_DIR}")
 
-#-------------------------------------------------------------------------------
-# Project options
+file(GLOB_RECURSE DLL_LIBRARIES "${SOURCE_DIR}/*.dll")
+file(COPY ${DLL_LIBRARIES} DESTINATION "${DEST_DIR}")
 
-# Optional components
-option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
-option(OPENGEODE_IO_WITH_PYTHON "Compile Python bindings" OFF)
+file(GLOB_RECURSE PYD_LIBRARIES "${SOURCE_DIR}/*.pyd")
+file(COPY ${PYD_LIBRARIES} DESTINATION "${DEST_DIR}")
 
-# Internal options
-option(USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
-mark_as_advanced(USE_SUPERBUILD)
-
-#-------------------------------------------------------------------------------
-# When CMake is called, a main project (super build project) is generated.
-# This main project is responsible to create third party cmake projects including
-# the one of OpenGeode-IO. This is done during compilation, i.e., OpenGeode-IO.cmake is
-# called (USE_SUPERBUILD = OFF) when the super build project is compiled.
-if(USE_SUPERBUILD)
-    include(cmake/SuperBuild.cmake)
-else()
-    include(cmake/OpenGeode-IO.cmake)
-endif()
+file(GLOB_RECURSE DYLIB_LIBRARIES "${SOURCE_DIR}/*.dylib")
+file(COPY ${DYLIB_LIBRARIES} DESTINATION "${DEST_DIR}")
