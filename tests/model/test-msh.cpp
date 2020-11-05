@@ -193,26 +193,23 @@ using test_function = void ( * )( const geode::BRep& );
 
 void run_test( absl::string_view short_filename, test_function test )
 {
-    geode::BRep brep;
-
     // Load file
-    load_brep( brep, absl::StrCat( geode::data_path, short_filename, ".msh" ) );
+    auto brep = geode::load_brep(
+        absl::StrCat( geode::data_path, short_filename, ".msh" ) );
     test( brep );
 
     // Save and reload
     const auto filename =
         absl::StrCat( short_filename, ".", brep.native_extension() );
-    save_brep( brep, filename );
-    geode::BRep reloaded_brep;
-    load_brep( reloaded_brep, filename );
+    geode::save_brep( brep, filename );
+    auto reloaded_brep = geode::load_brep( filename );
     test( reloaded_brep );
 
     const auto filename_msh = absl::StrCat( short_filename, "_output.msh" );
-    save_brep( brep, filename_msh );
-    geode::BRep reloaded_brep2;
-    load_brep( reloaded_brep2, filename_msh );
+    geode::save_brep( brep, filename_msh );
+    auto reloaded_brep2 = geode::load_brep( filename_msh );
     test( reloaded_brep2 );
-    save_brep( reloaded_brep2, "/tmp/toto.og_brep" );
+    geode::save_brep( reloaded_brep2, "/tmp/toto.og_brep" );
 }
 
 int main()

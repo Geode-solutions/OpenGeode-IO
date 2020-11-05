@@ -40,6 +40,7 @@
 
 #include <geode/model/mixin/core/corner.h>
 #include <geode/model/mixin/core/line.h>
+#include <geode/model/representation/builder/section_builder.h>
 #include <geode/model/representation/core/section.h>
 
 namespace
@@ -228,7 +229,7 @@ namespace
                 {
                     params[t] = std::stod( token );
                 }
-                catch( std::invalid_argument error )
+                catch( std::invalid_argument& error )
                 {
                     throw geode::OpenGeodeException{
                         "[SVGInputImpl::get_params] Path token is not a "
