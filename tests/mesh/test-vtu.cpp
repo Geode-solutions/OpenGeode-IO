@@ -87,6 +87,7 @@ int main()
         geode::detail::initialize_mesh_io();
 
         run_test( "cone.vtu", { 580, 2197 } );
+        run_test( "cone_append_encoded.vtu", { 580, 2197 } );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
