@@ -369,6 +369,10 @@ namespace geode
                     {
                         return;
                     }
+                    OPENGEODE_EXCEPTION(
+                        match( node.attribute( "encoding" ).value(), "base64" ),
+                        "[VTKInput::read_appended_data] VTK AppendedData "
+                        "section should be encoded" );
                     appended_data_ = node.child_value();
                 }
                 appended_data_ = absl::StripAsciiWhitespace( appended_data_ );
