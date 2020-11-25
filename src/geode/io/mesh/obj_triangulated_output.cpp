@@ -21,9 +21,9 @@
  *
  */
 
-#include <geode/io/mesh/private/obj_output.h>
+#include <geode/io/mesh/private/obj_triangulated_output.h>
 
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/core/triangulated_surface.h>
 
 #include <geode/io/mesh/private/assimp_output.h>
 
@@ -31,10 +31,10 @@ namespace geode
 {
     namespace detail
     {
-        void OBJOutput::write() const
+        void OBJTriangulatedOutput::write() const
         {
-            detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
-                polygonal_surface(), "obj" };
+            detail::AssimpMeshOutput< TriangulatedSurface3D > impl{ filename(),
+                triangulated_surface(), "obj" };
             impl.build_assimp_scene();
             impl.write_file();
         }

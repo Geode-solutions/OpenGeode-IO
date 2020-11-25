@@ -21,30 +21,22 @@
  *
  */
 
-#pragma once
+#include <geode/io/mesh/private/obj_polygonal_output.h>
 
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/core/polygonal_surface.h>
+
+#include <geode/io/mesh/private/assimp_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        class OBJOutput final : public PolygonalSurfaceOutput< 3 >
+        void OBJPolygonalOutput::write() const
         {
-        public:
-            OBJOutput( const PolygonalSurface< 3 > &surface,
-                absl::string_view filename )
-                : PolygonalSurfaceOutput< 3 >( surface, filename )
-            {
-            }
-
-            static absl::string_view extension()
-            {
-                static constexpr auto ext = "obj";
-                return ext;
-            }
-
-            void write() const final;
-        };
+            detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
+                polygonal_surface(), "obj" };
+            impl.build_assimp_scene();
+            impl.write_file();
+        }
     } // namespace detail
 } // namespace geode
