@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 set(OpenGeode-IO_PATH_BIN ${PROJECT_BINARY_DIR}/opengeode-io)
+set(OpenGeode-IO_PATH_INSTALL ${OpenGeode-IO_PATH_BIN}/install)
 ExternalProject_Add(opengeode-io
     PREFIX ${OpenGeode-IO_PATH_BIN}
     SOURCE_DIR ${PROJECT_SOURCE_DIR}
@@ -35,7 +36,7 @@ ExternalProject_Add(opengeode-io
         -DASSIMP_INSTALL_PREFIX:PATH=${ASSIMP_INSTALL_PREFIX}
         -DPUGIXML_INSTALL_PREFIX:PATH=${PUGIXML_INSTALL_PREFIX}
         -DZLIB_INSTALL_PREFIX:PATH=${ZLIB_INSTALL_PREFIX}
-        -DCMAKE_INSTALL_PREFIX:PATH=${OpenGeode-IO_PATH_BIN}/install
+        -DCMAKE_INSTALL_PREFIX:PATH=${OpenGeode-IO_PATH_INSTALL}
     BINARY_DIR ${OpenGeode-IO_PATH_BIN}
     DEPENDS 
         assimp
