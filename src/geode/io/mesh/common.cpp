@@ -24,7 +24,8 @@
 #include <geode/io/mesh/detail/common.h>
 
 #include <geode/io/mesh/private/obj_input.h>
-#include <geode/io/mesh/private/obj_output.h>
+#include <geode/io/mesh/private/obj_polygonal_output.h>
+#include <geode/io/mesh/private/obj_triangulated_output.h>
 #include <geode/io/mesh/private/ply_input.h>
 #include <geode/io/mesh/private/ply_output.h>
 #include <geode/io/mesh/private/stl_input.h>
@@ -70,8 +71,8 @@ namespace
             geode::detail::PLYOutput >(
             geode::detail::PLYOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::detail::OBJOutput >(
-            geode::detail::OBJOutput::extension().data() );
+            geode::detail::OBJPolygonalOutput >(
+            geode::detail::OBJPolygonalOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
             geode::detail::VTPPolygonalOutput >(
             geode::detail::VTPPolygonalOutput::extension().data() );
@@ -85,6 +86,9 @@ namespace
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::detail::VTPTriangulatedOutput >(
             geode::detail::VTPTriangulatedOutput::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
+            geode::detail::OBJTriangulatedOutput >(
+            geode::detail::OBJTriangulatedOutput::extension().data() );
     }
 
     void register_tetrahedral_solid_output()
