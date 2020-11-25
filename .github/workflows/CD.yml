@@ -31,12 +31,11 @@ jobs:
         echo ::set-output name=version::$version
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=${{ matrix.config.system }} ..
         cmake --build . -- -j2
-        cd opengeode-io
         cmake --build . --target package
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-${{ matrix.config.system }}.tar.gz"
+        files: "build/OpenGeode-IO-${{ steps.package.outputs.version }}-${{ matrix.config.system }}.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Doc
@@ -125,12 +124,11 @@ jobs:
         echo ::set-output name=version::$version
         cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=darwin ..
         cmake --build . --config Release
-        cd opengeode-io
         cmake --build . --target package --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
+        files: "build/OpenGeode-IO-${{ steps.package.outputs.version }}-darwin.tar.gz"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
@@ -215,12 +213,11 @@ jobs:
         echo "::set-output name=version::$version"
         cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${env:GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=win64 ..
         cmake --build . --config Release
-        cd opengeode-io
         cmake --build . --target PACKAGE --config Release
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/OpenGeode-IO-${{ steps.package.outputs.version }}-win64.zip"
+        files: "build/OpenGeode-IO-${{ steps.package.outputs.version }}-win64.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack

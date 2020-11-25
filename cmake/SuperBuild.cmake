@@ -24,7 +24,6 @@ endif()
 
 set(OPENGEODE_IO_EXTRA_ARGS
     -DCPACK_SYSTEM_NAME:STRING=${CPACK_SYSTEM_NAME}
-    -DCPACK_PACKAGE_VERSION:STRING=${CPACK_PACKAGE_VERSION}
     -DPYTHON_VERSION:STRING=${PYTHON_VERSION}
     -DOPENGEODE_IO_WITH_TESTS:BOOL=${OPENGEODE_IO_WITH_TESTS}
     -DOPENGEODE_IO_WITH_PYTHON:BOOL=${OPENGEODE_IO_WITH_PYTHON}
@@ -49,3 +48,17 @@ include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePugixml.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureZlib.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
+
+install(DIRECTORY ${OpenGeode-IO_PATH_INSTALL}/ DESTINATION .)
+
+#------------------------------------------------------------------------------------------------
+# Configure CPack
+set(CPACK_PACKAGE_NAME OpenGeode-IO)
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ")
+endif()
+
+# This must always be last!
+include(CPack)
