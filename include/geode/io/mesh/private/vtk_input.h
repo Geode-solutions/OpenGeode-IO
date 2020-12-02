@@ -109,13 +109,7 @@ namespace geode
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
                 {
-                    if( is_uint64_ )
-                    {
-                        return decode< T >(
-                            read_appended_data< T, uint64_t >( data ) );
-                    }
-                    return decode< T >(
-                        read_appended_data< T, uint32_t >( data ) );
+                    return decode< T >( read_appended_data( data ) );
                 }
                 else
                 {
@@ -137,13 +131,7 @@ namespace geode
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
                 {
-                    if( is_uint64_ )
-                    {
-                        return decode< T >(
-                            read_appended_data< T, uint64_t >( data ) );
-                    }
-                    return decode< T >(
-                        read_appended_data< T, uint32_t >( data ) );
+                    return decode< T >( read_appended_data( data ) );
                 }
                 else
                 {
@@ -165,13 +153,7 @@ namespace geode
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
                 {
-                    if( is_uint64_ )
-                    {
-                        return decode< T >(
-                            read_appended_data< T, uint64_t >( data ) );
-                    }
-                    return decode< T >(
-                        read_appended_data< T, uint32_t >( data ) );
+                    return decode< T >( read_appended_data( data ) );
                 }
                 else
                 {
@@ -339,6 +321,9 @@ namespace geode
                     type_ );
                 little_endian_ = match(
                     root_.attribute( "byte_order" ).value(), "LittleEndian" );
+                OPENGEODE_EXCEPTION( little_endian_,
+                    "[VTKInput::read_root_attributes] Big "
+                    "Endian not supported" );
                 const auto compressor = root_.attribute( "compressor" ).value();
                 OPENGEODE_EXCEPTION(
                     absl::string_view( compressor ).empty()
@@ -444,12 +429,22 @@ namespace geode
             std::vector< T > templated_decode_uncompressed(
                 absl::string_view input )
             {
-                const auto decoded_input = decode_base64( input );
+                const auto nb_chars = nb_char_needed< UInt >( 1 );
+                const auto nb_bytes_input = input.substr( 0, nb_chars );
+                const auto decoded_nb_bytes_input =
+                    decode_base64( nb_bytes_input );
+                const auto nb_data = *reinterpret_cast< const UInt* >(
+                                         decoded_nb_bytes_input.c_str() )
+                                     / sizeof( T );
+                const auto nb_chars2 = nb_char_needed< T >( nb_data );
+
+                const auto data = input.substr( 0, nb_chars + nb_chars2 );
+                const auto decoded_data = decode_base64( data );
                 const auto values = reinterpret_cast< const T* >(
-                    decoded_input.c_str() + sizeof( UInt ) );
+                    decoded_data.c_str() + sizeof( UInt ) );
                 // skip first UInt that gives the number of bytes
                 const auto nb_values =
-                    ( decoded_input.size() - sizeof( UInt ) ) / sizeof( T );
+                    ( decoded_data.size() - sizeof( UInt ) ) / sizeof( T );
                 std::vector< T > result( nb_values );
                 for( const auto v : Range{ nb_values } )
                 {
@@ -484,10 +479,7 @@ namespace geode
                 }
                 const auto uncompressed_block_size = fixed_header_values[1];
                 const auto nb_characters =
-                    std::ceil( nb_data_blocks * 8 * sizeof( UInt ) / 24. )
-                    * 4; // for each blocks 4 bytes (32 bits) are needed to
-                         // encode a value, encoded by packs of 3 bytes (24
-                         // bits) represented by 4 characters
+                    nb_char_needed< UInt >( nb_data_blocks );
                 auto optional_header =
                     input.substr( fixed_header_length, nb_characters );
                 const auto decoded_optional_header =
@@ -510,9 +502,11 @@ namespace geode
                     sum_compressed_block_size += optional_header_values[b];
                 }
 
-                const auto data_offset = fixed_header_length + nb_characters;
-                auto data =
-                    input.substr( data_offset, input.size() - data_offset );
+                const auto data_offset =
+                    nb_char_needed< UInt >( 3 + nb_data_blocks );
+                const auto nb_data_char =
+                    std::ceil( sum_compressed_block_size * 4. / 3. );
+                auto data = input.substr( data_offset, nb_data_char );
                 const auto decoded_data = decode_base64( data );
                 const auto compressed_data_bytes =
                     reinterpret_cast< const unsigned char* >(
@@ -569,18 +563,10 @@ namespace geode
                 return points;
             }
 
-            template < typename T, typename UInt >
             absl::string_view read_appended_data( const pugi::xml_node& data )
             {
                 const auto offset = data.attribute( "offset" ).as_uint();
-                const auto nb_chars = nb_char_needed< UInt >( 1 );
-                const auto input = appended_data_.substr( offset, nb_chars );
-                const auto decoded_input = decode_base64( input );
-                const auto nb_data =
-                    *reinterpret_cast< const UInt* >( decoded_input.c_str() )
-                    / sizeof( T );
-                const auto nb_chars2 = nb_char_needed< T >( nb_data );
-                return appended_data_.substr( offset, nb_chars + nb_chars2 );
+                return appended_data_.substr( offset );
             }
 
             std::string decode_base64( absl::string_view input ) const
@@ -610,27 +596,13 @@ namespace geode
                 const auto format = points.attribute( "format" ).value();
                 if( match( format, "appended" ) )
                 {
-                    if( is_uint64_ )
-                    {
-                        if( match( type, "Float32" ) )
-                        {
-                            return decode_points< float >(
-                                read_appended_data< float, uint64_t >( points ),
-                                nb_points );
-                        }
-                        return decode_points< double >(
-                            read_appended_data< double, uint64_t >( points ),
-                            nb_points );
-                    }
                     if( match( type, "Float32" ) )
                     {
                         return decode_points< float >(
-                            read_appended_data< float, uint32_t >( points ),
-                            nb_points );
+                            read_appended_data( points ), nb_points );
                     }
                     return decode_points< double >(
-                        read_appended_data< double, uint32_t >( points ),
-                        nb_points );
+                        read_appended_data( points ), nb_points );
                 }
                 else
                 {
