@@ -109,6 +109,9 @@ int main()
             { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
         run_test( "dfn2_mesh_append_encoded.vtp", { 33413, 58820 }, {},
             { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
+        run_test( "dfn2_mesh_append_encoded_compressed.vtp", { 33413, 58820 },
+            {},
+            { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
         run_test( "dfn3.vtp", { 238819, 13032 }, { "FractureSize" },
             { "FractureId", "FractureSize", "FractureArea" } );
 
