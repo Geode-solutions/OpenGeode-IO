@@ -78,7 +78,7 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/v}"
         echo ::set-output name=version::$version
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DCPACK_PACKAGE_VERSION:STRING=$version ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DCMAKE_PACKAGE_VERSION:STRING=$version ..
         cmake --build . -- -j2
         cd opengeode-io
         cmake --build . --target wheel --config Release
@@ -169,7 +169,7 @@ jobs:
         cd build
         version="${GITHUB_REF##*/*/v}"
         echo ::set-output name=version::$version
-        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=darwin ..
+        cmake -G "Xcode" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH:PATH=${GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCMAKE_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=darwin ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target wheel --config Release
@@ -258,7 +258,7 @@ jobs:
         cd build
         $version = ${env:GITHUB_REF} -replace 'refs\/tags\/v', ''
         echo "::set-output name=version::$version"
-        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${env:GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCPACK_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=win64 ..
+        cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH:PATH=${env:GITHUB_WORKSPACE}/${{ steps.opengeode.outputs.path }} -DOPENGEODE_IO_WITH_PYTHON:BOOL=ON -DPYTHON_VERSION:STRING=${{ matrix.config.python }} -DOPENGEODE_IO_WITH_TESTS:BOOL=OFF -DCMAKE_PACKAGE_VERSION:STRING=$version -DCPACK_SYSTEM_NAME:STRING=win64 ..
         cmake --build . --config Release
         cd opengeode-io
         cmake --build . --target wheel --config Release

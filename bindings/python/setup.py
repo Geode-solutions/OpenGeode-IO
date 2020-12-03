@@ -28,7 +28,7 @@ with open('${CMAKE_CURRENT_LIST_DIR}/requirements.txt') as f:
 
 setup(
     name='OpenGeode-IO',
-    version='${CPACK_PACKAGE_VERSION}',
+    version='${CMAKE_PACKAGE_VERSION}',
     description='Implementation of input and output formats for OpenGeode',
     long_description=long_description,
     long_description_content_type='text/markdown',
