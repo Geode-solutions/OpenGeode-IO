@@ -23,6 +23,7 @@
 
 #include <geode/io/mesh/detail/common.h>
 
+#include <geode/io/mesh/private/dxf_input.h>
 #include <geode/io/mesh/private/obj_input.h>
 #include <geode/io/mesh/private/obj_polygonal_output.h>
 #include <geode/io/mesh/private/obj_triangulated_output.h>
@@ -40,6 +41,9 @@ namespace
 {
     void register_polygonal_surface_input()
     {
+        geode::PolygonalSurfaceInputFactory3D::register_creator<
+            geode::detail::DXFInput >(
+            geode::detail::DXFInput::extension().data() );
         geode::PolygonalSurfaceInputFactory3D::register_creator<
             geode::detail::PLYInput >(
             geode::detail::PLYInput::extension().data() );

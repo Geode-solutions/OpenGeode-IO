@@ -53,7 +53,7 @@ namespace
             for( const auto p : geode::Range{ assimp_mesh()->mNumFaces } )
             {
                 const auto& face = assimp_mesh()->mFaces[p];
-                std::vector< geode::index_t > polygon_vertices(
+                absl::FixedArray< geode::index_t > polygon_vertices(
                     face.mNumIndices );
                 for( const auto i : geode::Range{ polygon_vertices.size() } )
                 {

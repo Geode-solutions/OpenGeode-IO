@@ -53,7 +53,7 @@ namespace
                 geode::TriangulatedSurfaceBuilder3D::create( surface_ );
             for( const auto t : geode::Range{ assimp_mesh()->mNumFaces } )
             {
-                std::vector< geode::index_t > triangle_vertices( 3 );
+                std::array< geode::index_t, 3 > triangle_vertices;
                 const auto& face = assimp_mesh()->mFaces[t];
                 OPENGEODE_EXCEPTION( face.mNumIndices == 3,
                     "[STLInput::build_triangles] At least one face is not a "
@@ -63,7 +63,7 @@ namespace
                     triangle_vertices[i] =
                         vertex_mapping.colocated_mapping[face.mIndices[i]];
                 }
-                builder->create_polygon( triangle_vertices );
+                builder->create_triangle( triangle_vertices );
             }
             builder->compute_polygon_adjacencies();
         }
