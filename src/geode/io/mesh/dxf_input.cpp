@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/ply_input.h>
+#include <geode/io/mesh/private/dxf_input.h>
 
 #include <geode/geometry/nn_search.h>
 #include <geode/geometry/point.h>
@@ -33,10 +33,10 @@
 
 namespace
 {
-    class PLYInputImpl : public geode::detail::AssimpMeshInput
+    class DXFInputImpl : public geode::detail::AssimpMeshInput
     {
     public:
-        PLYInputImpl( absl::string_view filename,
+        DXFInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
             : geode::detail::AssimpMeshInput( filename ),
               surface_( polygonal_surface )
@@ -45,25 +45,13 @@ namespace
 
         void build_mesh() final
         {
-            build_vertices();
-            build_polygons();
+            const auto vertex_mapping = build_duplicated_vertices( surface_ );
+            build_polygons( vertex_mapping );
         }
 
     private:
-        void build_vertices()
-        {
-            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            builder->create_vertices( assimp_mesh()->mNumVertices );
-            for( const auto v : geode::Range{ assimp_mesh()->mNumVertices } )
-            {
-                geode::Point3D point{ { assimp_mesh()->mVertices[v].x,
-                    assimp_mesh()->mVertices[v].y,
-                    assimp_mesh()->mVertices[v].z } };
-                builder->set_point( v, point );
-            }
-        }
-
-        void build_polygons()
+        void build_polygons(
+            const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
             for( const auto p : geode::Range{ assimp_mesh()->mNumFaces } )
@@ -73,7 +61,8 @@ namespace
                     face.mNumIndices );
                 for( const auto i : geode::Range{ face.mNumIndices } )
                 {
-                    polygon_vertices[i] = face.mIndices[i];
+                    polygon_vertices[i] =
+                        vertex_mapping.colocated_mapping[face.mIndices[i]];
                 }
                 builder->create_polygon( polygon_vertices );
             }
@@ -89,11 +78,11 @@ namespace geode
 {
     namespace detail
     {
-        void PLYInput::do_read()
+        void DXFInput::do_read()
         {
-            PLYInputImpl impl{ filename(), polygonal_surface() };
+            DXFInputImpl impl{ filename(), polygonal_surface() };
             const auto success = impl.read_file();
-            OPENGEODE_EXCEPTION( success, "[PLYInput::do_read] Invalid file \"",
+            OPENGEODE_EXCEPTION( success, "[DXFInput::do_read] Invalid file \"",
                 filename(), "\"" );
             impl.build_mesh();
         }

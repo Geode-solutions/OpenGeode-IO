@@ -24,6 +24,7 @@ add_geode_library(
     SOURCES
         "assimp_input.cpp"
         "common.cpp"
+        "dxf_input.cpp"
         "obj_input.cpp"
         "obj_polygonal_output.cpp"
         "obj_triangulated_output.cpp"
@@ -41,6 +42,7 @@ add_geode_library(
     PRIVATE_HEADERS
         "private/assimp_input.h"
         "private/assimp_output.h"
+        "private/dxf_input.h"
         "private/obj_input.h"
         "private/obj_polygonal_output.h"
         "private/obj_triangulated_output.h"
