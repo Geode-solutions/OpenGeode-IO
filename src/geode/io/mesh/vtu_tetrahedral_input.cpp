@@ -21,29 +21,40 @@
  *
  */
 
-#pragma once
+#include <geode/io/mesh/private/vtu_tetrahedral_input.h>
 
-#include <geode/mesh/io/polyhedral_solid_input.h>
+#include <geode/mesh/builder/tetrahedral_solid_builder.h>
+#include <geode/mesh/core/tetrahedral_solid.h>
+
+#include <geode/io/mesh/private/vtu_input_impl.h>
+
+namespace
+{
+    class VTUTetrahedralInputImpl
+        : public geode::detail::VTUInputImpl< geode::TetrahedralSolid3D,
+              geode::TetrahedralSolidBuilder3D >
+    {
+        using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
+
+    public:
+        VTUTetrahedralInputImpl(
+            absl::string_view filename, geode::TetrahedralSolid3D& solid )
+            : geode::detail::VTUInputImpl< geode::TetrahedralSolid3D,
+                geode::TetrahedralSolidBuilder3D >( filename, solid )
+        {
+            enable_tetra();
+        }
+    };
+} // namespace
 
 namespace geode
 {
     namespace detail
     {
-        class VTUInput final : public PolyhedralSolidInput< 3 >
+        void VTUTetrahedralInput::do_read()
         {
-        public:
-            VTUInput( PolyhedralSolid< 3 > &solid, absl::string_view filename )
-                : PolyhedralSolidInput< 3 >( solid, filename )
-            {
-            }
-
-            static absl::string_view extension()
-            {
-                static constexpr auto ext = "vtu";
-                return ext;
-            }
-
-            void do_read() final;
-        };
+            VTUTetrahedralInputImpl impl{ filename(), tetrahedral_solid() };
+            impl.read_file();
+        }
     } // namespace detail
 } // namespace geode

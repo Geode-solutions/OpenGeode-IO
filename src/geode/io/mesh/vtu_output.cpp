@@ -103,7 +103,7 @@ namespace
             auto cell_data = piece.append_child( "CellData" );
             const auto names =
                 mesh().polyhedron_attribute_manager().attribute_names();
-            for( const auto name : names )
+            for( const auto& name : names )
             {
                 const auto attribute = mesh()
                                            .polyhedron_attribute_manager()

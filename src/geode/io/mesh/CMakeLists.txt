@@ -35,7 +35,8 @@ add_geode_library(
         "vtp_input.cpp"
         "vtp_polygonal_output.cpp"
         "vtp_triangulated_output.cpp"
-        "vtu_input.cpp"
+        "vtu_polyhedral_input.cpp"
+        "vtu_tetrahedral_input.cpp"
         "vtu_output.cpp"
     ADVANCED_HEADERS
         "detail/common.h"
@@ -56,7 +57,8 @@ add_geode_library(
         "private/vtp_output_impl.h"
         "private/vtp_polygonal_output.h"
         "private/vtp_triangulated_output.h"
-        "private/vtu_input.h"
+        "private/vtu_polyhedral_input.h"
+        "private/vtu_tetrahedral_input.h"
         "private/vtu_output.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
