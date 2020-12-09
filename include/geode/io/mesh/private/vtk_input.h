@@ -176,7 +176,7 @@ namespace geode
                 absl::FixedArray< std::vector< index_t > > cell_vertices(
                     offsets.size() );
                 index_t prev_offset{ 0 };
-                for( const auto p : Range{ offsets.size() } )
+                for( const auto p : Indices{ offsets } )
                 {
                     const auto cur_offset = offsets[p];
                     auto& vertices = cell_vertices[p];
@@ -377,16 +377,16 @@ namespace geode
             {
                 const auto nb_points =
                     read_attribute( piece, "NumberOfPoints" );
-                const auto vertex_offset =
-                    build_points( read_points( piece, nb_points ) );
+                const auto vertex_offset = build_points( piece, nb_points );
                 read_point_data( piece.child( "PointData" ), vertex_offset );
             }
 
             virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
 
-            index_t build_points( absl::Span< const Point3D > points )
+            index_t build_points(
+                const pugi::xml_node& piece, index_t nb_points )
             {
-                const auto nb_points = points.size();
+                const auto points = read_points( piece, nb_points );
                 const auto offset = mesh_builder_->create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
@@ -520,8 +520,7 @@ namespace geode
                 {
                     const auto compressed_data_length =
                         sum_compressed_block_size;
-                    size_t decompressed_data_length =
-                        nb_data_blocks * uncompressed_block_size;
+                    size_t decompressed_data_length = uncompressed_block_size;
                     absl::FixedArray< uint8_t > decompressed_data_bytes(
                         decompressed_data_length );
                     const auto uncompress_result =
@@ -633,6 +632,7 @@ namespace geode
                 absl::string_view coords_string, index_t nb_points )
             {
                 const auto coords = decode< T >( coords_string );
+                geode_unused( nb_points );
                 OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
                     "[VTKInput::read_points] Wrong number of coordinates" );
                 return get_points( coords );

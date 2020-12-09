@@ -28,7 +28,6 @@
 
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/core/tetrahedral_solid.h>
-#include <geode/mesh/helpers/convert_solid_mesh.h>
 #include <geode/mesh/io/polyhedral_solid_input.h>
 #include <geode/mesh/io/tetrahedral_solid_input.h>
 #include <geode/mesh/io/tetrahedral_solid_output.h>
@@ -52,12 +51,9 @@ void run_test( absl::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
-    auto solid = geode::load_polyhedral_solid< 3 >(
+    auto tetra_solid = geode::load_tetrahedral_solid< 3 >(
         absl::StrCat( geode::data_path, filename ) );
-    check( *solid, test_answers );
-
-    auto tetra_solid =
-        geode::convert_solid_mesh_into_tetrahedral_solid( *solid ).value();
+    check( *tetra_solid, test_answers );
 
     // Save file
     absl::string_view filename_without_ext{ filename };

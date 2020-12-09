@@ -92,7 +92,7 @@ namespace geode
                 auto cell_data = piece.append_child( "CellData" );
                 const auto names =
                     this->mesh().polygon_attribute_manager().attribute_names();
-                for( const auto name : names )
+                for( const auto& name : names )
                 {
                     const auto attribute = this->mesh()
                                                .polygon_attribute_manager()
