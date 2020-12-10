@@ -141,18 +141,40 @@ void test_brep_cone( const geode::BRep& brep )
     }
     for( const auto& s : brep.surfaces() )
     {
-        OPENGEODE_EXCEPTION( s.mesh().nb_vertices() > 0,
+        const auto& mesh = s.mesh();
+        OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
             "[Test] Number of vertices in surfaces should not be null" );
-        OPENGEODE_EXCEPTION( s.mesh().nb_polygons() > 0,
+        OPENGEODE_EXCEPTION( mesh.nb_polygons() > 0,
             "[Test] Number of polygons in surfaces should not be null" );
+        geode::index_t count{ 0 };
+        for( const auto p : geode::Range{ mesh.nb_polygons() } )
+        {
+            for( const auto e : geode::Range{ mesh.nb_polygon_edges( p ) } )
+            {
+                if( mesh.is_edge_on_border( { p, e } ) )
+                    count++;
+            }
+        }
+        OPENGEODE_EXCEPTION( count != 0, "[Test] No polygon adjacency" );
     }
 
     for( const auto& b : brep.blocks() )
     {
-        OPENGEODE_EXCEPTION( b.mesh().nb_vertices() > 0,
+        const auto& mesh = b.mesh();
+        OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
             "[Test] Number of vertices in blocks should not be null" );
-        OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() > 0,
+        OPENGEODE_EXCEPTION( mesh.nb_polyhedra() > 0,
             "[Test] Number of polyhedra in blocks should not be null" );
+        geode::index_t count{ 0 };
+        for( const auto p : geode::Range{ mesh.nb_polyhedra() } )
+        {
+            for( const auto f : geode::Range{ mesh.nb_polyhedron_facets( p ) } )
+            {
+                if( mesh.is_polyhedron_facet_on_border( { p, f } ) )
+                    count++;
+            }
+        }
+        OPENGEODE_EXCEPTION( count != 0, "[Test] No polyhedron adjacency" );
     }
 
     // Number of component boundaries and incidences
