@@ -1062,9 +1062,10 @@ namespace
             for( const auto& l : brep_.lines() )
             {
                 filter_duplicated_line_vertices( l, brep_ );
+                auto line_builder = builder_.line_mesh_builder( l.id() );
                 for( const auto v : geode::Range{ l.mesh().nb_vertices() } )
                 {
-                    builder_.line_mesh_builder( l.id() )->set_point(
+                    line_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
                                { l.component_id(), v } )] );
                 }
@@ -1076,12 +1077,14 @@ namespace
             for( const auto& s : brep_.surfaces() )
             {
                 filter_duplicated_surface_vertices( s, brep_ );
+                auto surface_builder = builder_.surface_mesh_builder( s.id() );
                 for( const auto v : geode::Range{ s.mesh().nb_vertices() } )
                 {
-                    builder_.surface_mesh_builder( s.id() )->set_point(
+                    surface_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
                                { s.component_id(), v } )] );
                 }
+                surface_builder->compute_polygon_adjacencies();
             }
         }
 
@@ -1090,9 +1093,10 @@ namespace
             for( const auto& b : brep_.blocks() )
             {
                 filter_duplicated_block_vertices( b, brep_ );
+                auto block_builder = builder_.block_mesh_builder( b.id() );
                 for( const auto v : geode::Range{ b.mesh().nb_vertices() } )
                 {
-                    builder_.block_mesh_builder( b.id() )->set_point(
+                    block_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
                                { b.component_id(), v } )] );
                 }
