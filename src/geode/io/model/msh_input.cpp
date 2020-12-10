@@ -1100,6 +1100,7 @@ namespace
                         v, nodes_[brep_.unique_vertex(
                                { b.component_id(), v } )] );
                 }
+                block_builder->compute_polyhedron_adjacencies();
             }
         }
 
