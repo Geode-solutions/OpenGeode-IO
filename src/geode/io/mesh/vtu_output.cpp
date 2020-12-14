@@ -87,7 +87,7 @@ namespace
                 offset += 4;
                 absl::StrAppend( &cell_offsets, offset, " " );
                 absl::StrAppend( &cell_types, 10, " " );
-                for( const auto v : geode::Range{ 4 } )
+                for( const auto v : geode::LRange{ 4 } )
                 {
                     absl::StrAppend( &cell_connectivity,
                         mesh().polyhedron_vertex( { p, v } ), " " );

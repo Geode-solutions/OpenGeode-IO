@@ -149,7 +149,7 @@ void test_brep_cone( const geode::BRep& brep )
         geode::index_t count{ 0 };
         for( const auto p : geode::Range{ mesh.nb_polygons() } )
         {
-            for( const auto e : geode::Range{ mesh.nb_polygon_edges( p ) } )
+            for( const auto e : geode::LRange{ mesh.nb_polygon_edges( p ) } )
             {
                 if( mesh.is_edge_on_border( { p, e } ) )
                     count++;
@@ -168,7 +168,8 @@ void test_brep_cone( const geode::BRep& brep )
         geode::index_t count{ 0 };
         for( const auto p : geode::Range{ mesh.nb_polyhedra() } )
         {
-            for( const auto f : geode::Range{ mesh.nb_polyhedron_facets( p ) } )
+            for( const auto f :
+                geode::LRange{ mesh.nb_polyhedron_facets( p ) } )
             {
                 if( mesh.is_polyhedron_facet_on_border( { p, f } ) )
                     count++;

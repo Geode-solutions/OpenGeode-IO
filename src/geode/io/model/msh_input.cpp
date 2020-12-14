@@ -43,9 +43,10 @@
 #include <geode/mesh/builder/polygonal_surface_builder.h>
 #include <geode/mesh/builder/polyhedral_solid_builder.h>
 #include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/core/hybrid_solid.h>
+#include <geode/mesh/core/mesh_factory.h>
 #include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/core/polyhedral_solid.h>
 
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/mixin/core/corner.h>
@@ -273,7 +274,7 @@ namespace
                     ->create_edge( first_v_id, first_v_id + 1 );
 
             const auto& line = brep.line( line_uuid );
-            for( const auto v_id : geode::Range{ vertex_ids().size() } )
+            for( const auto v_id : geode::LIndices{ vertex_ids() } )
             {
                 builder.set_unique_vertex(
                     { line.component_id(),
@@ -323,7 +324,7 @@ namespace
                     ->create_polygon( v_ids );
 
             const auto& surface = brep.surface( surface_uuid );
-            for( const auto v_id : geode::Range{ vertex_ids().size() } )
+            for( const auto v_id : geode::LIndices{ vertex_ids() } )
             {
                 builder.set_unique_vertex(
                     { surface.component_id(),
@@ -389,7 +390,9 @@ namespace
             }
             else
             {
-                block_uuid = builder.add_block();
+                block_uuid =
+                    builder.add_block( geode::MeshFactory::default_impl(
+                        geode::HybridSolid3D::type_name_static() ) );
                 id_map.elementary_ids.insert( { cur_gmsh_id, block_uuid } );
             }
 
@@ -402,7 +405,7 @@ namespace
                 create_gmsh_polyhedron( builder, block_uuid, v_ids );
 
             const auto& block = brep.block( block_uuid );
-            for( const auto v_id : geode::Range{ vertex_ids().size() } )
+            for( const auto v_id : geode::LIndices{ vertex_ids() } )
             {
                 builder.set_unique_vertex(
                     { block.component_id(), block.mesh().polyhedron_vertex(
@@ -427,9 +430,9 @@ namespace
             const geode::uuid& block_uuid,
             const std::vector< geode::index_t >& v_ids ) override final
         {
-            static const std::vector< std::vector< geode::index_t > >
-                gmsh_tetrahedron_faces{ { 0, 1, 2 }, { 0, 2, 3 }, { 1, 3, 2 },
-                    { 0, 3, 1 } };
+            static const std::array< std::vector< geode::local_index_t >, 4 >
+                gmsh_tetrahedron_faces{ { { 0, 1, 2 }, { 0, 2, 3 }, { 1, 3, 2 },
+                    { 0, 3, 1 } } };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_tetrahedron_faces );
         }
@@ -450,10 +453,10 @@ namespace
             const geode::uuid& block_uuid,
             const std::vector< geode::index_t >& v_ids ) override final
         {
-            static const std::vector< std::vector< geode::index_t > >
-                gmsh_hexahedron_faces{ { 0, 1, 2, 3 }, { 7, 6, 5, 4 },
+            static const std::array< std::vector< geode::local_index_t >, 6 >
+                gmsh_hexahedron_faces{ { { 0, 1, 2, 3 }, { 7, 6, 5, 4 },
                     { 0, 3, 7, 4 }, { 1, 5, 6, 2 }, { 2, 6, 7, 3 },
-                    { 0, 4, 5, 1 } };
+                    { 0, 4, 5, 1 } } };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_hexahedron_faces );
         }
@@ -474,9 +477,9 @@ namespace
             const geode::uuid& block_uuid,
             const std::vector< geode::index_t >& v_ids ) override final
         {
-            static const std::vector< std::vector< geode::index_t > >
-                gmsh_prism_faces{ { 0, 1, 2 }, { 5, 4, 3 }, { 0, 2, 5, 3 },
-                    { 0, 3, 4, 1 }, { 1, 4, 5, 2 } };
+            static const std::array< std::vector< geode::local_index_t >, 5 >
+                gmsh_prism_faces{ { { 0, 1, 2 }, { 5, 4, 3 }, { 0, 2, 5, 3 },
+                    { 0, 3, 4, 1 }, { 1, 4, 5, 2 } } };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_prism_faces );
         }
@@ -497,9 +500,9 @@ namespace
             const geode::uuid& block_uuid,
             const std::vector< geode::index_t >& v_ids ) override final
         {
-            static const std::vector< std::vector< geode::index_t > >
-                gmsh_pyramid_faces{ { 0, 3, 4 }, { 0, 4, 1 }, { 4, 3, 2 },
-                    { 1, 4, 2 }, { 0, 1, 2, 3 } };
+            static const std::array< std::vector< geode::local_index_t >, 5 >
+                gmsh_pyramid_faces{ { { 0, 3, 4 }, { 0, 4, 1 }, { 4, 3, 2 },
+                    { 1, 4, 2 }, { 0, 1, 2, 3 } } };
             return builder.block_mesh_builder( block_uuid )
                 ->create_polyhedron( v_ids, gmsh_pyramid_faces );
         }
@@ -833,7 +836,9 @@ namespace
                 std::getline( file_, line );
                 const auto tokens = get_tokens( line );
 
-                const auto block_uuid = builder_.add_block();
+                const auto block_uuid =
+                    builder_.add_block( geode::MeshFactory::default_impl(
+                        geode::HybridSolid3D::type_name_static() ) );
                 gmsh_id2uuids_
                     .elementary_ids[{ geode::Block3D::component_type_static(),
                         string_to_index( tokens.at( 0 ) ) }] = block_uuid;

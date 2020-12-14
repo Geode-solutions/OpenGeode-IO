@@ -47,6 +47,8 @@ namespace geode
         class VTKInputImpl
         {
         public:
+            virtual ~VTKInputImpl() = default;
+
             void read_file()
             {
                 read_root_attributes();
@@ -233,10 +235,11 @@ namespace geode
                     {
                         for( const auto c : geode::Range{ nb_components } )
                         {
-                            const auto& value = values[nb_components * i + c];
+                            const auto& new_value =
+                                values[nb_components * i + c];
                             attribute->modify_value( i + offset,
-                                [&value, &c]( std::vector< T >& values ) {
-                                    values[c] = value;
+                                [&new_value, &c]( std::vector< T >& value ) {
+                                    value[c] = new_value;
                                 } );
                         }
                     }

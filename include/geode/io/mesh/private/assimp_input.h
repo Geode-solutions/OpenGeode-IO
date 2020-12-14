@@ -49,6 +49,8 @@ namespace geode
                     "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
+            virtual ~AssimpMeshInput() = default;
+
             bool read_file();
 
             virtual void build_mesh() = 0;
