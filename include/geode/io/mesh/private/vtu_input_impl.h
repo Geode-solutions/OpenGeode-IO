@@ -32,7 +32,7 @@ namespace geode
         template < typename Mesh, typename Builder >
         class VTUInputImpl : public VTKInputImpl< Mesh, Builder >
         {
-            using VTKElement = absl::FixedArray< std::vector< index_t > >;
+            using VTKElement = absl::FixedArray< std::vector< local_index_t > >;
 
         protected:
             VTUInputImpl( absl::string_view filename, Mesh& solid )

@@ -285,7 +285,7 @@ namespace
                 for( const auto e : geode::Range{ line.mesh().nb_edges() } )
                 {
                     file_ << cur++;
-                    for( const auto v : geode::Range{ 2 } )
+                    for( const auto v : geode::LRange{ 2 } )
                     {
                         const auto edge_vertex =
                             line.mesh().edge_vertex( { e, v } );
@@ -313,7 +313,7 @@ namespace
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
                     file_ << cur++;
-                    for( const auto v : geode::Range{ 3 } )
+                    for( const auto v : geode::LRange{ 3 } )
                     {
                         const auto facet_vertex =
                             surface.mesh().polygon_vertex( { p, v } );
@@ -341,7 +341,7 @@ namespace
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
                     file_ << cur++;
-                    for( const auto v : geode::Range{ 4 } )
+                    for( const auto v : geode::LRange{ 4 } )
                     {
                         const auto facet_vertex =
                             block.mesh().polyhedron_vertex( { p, v } );

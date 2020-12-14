@@ -77,7 +77,7 @@ namespace geode
                         this->mesh().nb_polygon_vertices( p );
                     vertex_count += nb_polygon_vertices;
                     absl::StrAppend( &poly_offsets, vertex_count, " " );
-                    for( const auto v : Range{ nb_polygon_vertices } )
+                    for( const auto v : LRange{ nb_polygon_vertices } )
                     {
                         absl::StrAppend( &poly_connectivity,
                             this->mesh().polygon_vertex( { p, v } ), " " );

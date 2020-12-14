@@ -66,7 +66,7 @@ namespace geode
                     "[VTKOutput] Error while opening file: ", filename );
             }
 
-            ~VTKOutputImpl()
+            virtual ~VTKOutputImpl()
             {
                 const auto ok = document_.save_file( filename_.data() );
                 OPENGEODE_EXCEPTION(

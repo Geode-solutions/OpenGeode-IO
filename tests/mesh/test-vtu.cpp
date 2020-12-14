@@ -26,8 +26,10 @@
 #include <geode/basic/assert.h>
 #include <geode/basic/logger.h>
 
+#include <geode/mesh/core/hybrid_solid.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/mesh/io/hybrid_solid_input.h>
 #include <geode/mesh/io/polyhedral_solid_input.h>
 #include <geode/mesh/io/tetrahedral_solid_input.h>
 #include <geode/mesh/io/tetrahedral_solid_output.h>
@@ -72,7 +74,7 @@ void run_test( absl::string_view filename,
     geode::save_tetrahedral_solid( *tetra_solid, output_filename_vtu );
 
     // Reload file
-    auto reload_vtu = geode::load_polyhedral_solid< 3 >( output_filename_vtu );
+    auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
     check( *reload_vtu, test_answers );
 }
 
