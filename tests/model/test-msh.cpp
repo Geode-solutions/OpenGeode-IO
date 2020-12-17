@@ -42,89 +42,21 @@
 
 #include <geode/io/model/detail/common.h>
 
-void test_brep_cube( const geode::BRep& brep )
+void test_brep( const geode::BRep& brep,
+    geode::index_t nb_corners,
+    geode::index_t nb_lines,
+    geode::index_t nb_surfaces,
+    geode::index_t nb_blocks )
 {
     // Number of components
+    OPENGEODE_EXCEPTION( brep.nb_corners() == nb_corners,
+        "[Test] Number of corners is not correct" );
     OPENGEODE_EXCEPTION(
-        brep.nb_corners() == 8, "[Test] Number of corners is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_lines() == 12, "[Test] Number of lines is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_surfaces() == 6, "[Test] Number of surfaces is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_blocks() == 1, "[Test] Number of blocks is not correct" );
-
-    // Number of vertices and elements in components
-    for( const auto& c : brep.corners() )
-    {
-        OPENGEODE_EXCEPTION( c.mesh().nb_vertices() == 1,
-            "[Test] Number of vertices in corners should be 1" );
-    }
-    for( const auto& l : brep.lines() )
-    {
-        OPENGEODE_EXCEPTION( l.mesh().nb_vertices() == 5,
-            "[Test] Number of vertices in lines should be 5" );
-        OPENGEODE_EXCEPTION( l.mesh().nb_edges() == 4,
-            "[Test] Number of edges in lines should be 4" );
-    }
-    for( const auto& s : brep.surfaces() )
-    {
-        OPENGEODE_EXCEPTION( s.mesh().nb_vertices() == 29,
-            "[Test] Number of vertices in surfaces should be 29" );
-        OPENGEODE_EXCEPTION( s.mesh().nb_polygons() == 40,
-            "[Test] Number of polygons in surfaces should be 40" );
-    }
-
-    for( const auto& b : brep.blocks() )
-    {
-        OPENGEODE_EXCEPTION( b.mesh().nb_vertices() == 131,
-            "[Test] Number of vertices in blocks should be 131" );
-        OPENGEODE_EXCEPTION( b.mesh().nb_polyhedra() == 364,
-            "[Test] Number of polyhedra in blocks should be 364" );
-    }
-
-    // Number of component boundaries and incidences
-    for( const auto& c : brep.corners() )
-    {
-        OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-            "[Test] Number of corner boundary should be 0" );
-        OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 3,
-            "[Test] Number of corner incidences should be 3" );
-    }
-    for( const auto& l : brep.lines() )
-    {
-        OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-            "[Test] Number of line boundary should be 2" );
-        OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 2,
-            "[Test] Number of line incidences should be 2" );
-    }
-    for( const auto& s : brep.surfaces() )
-    {
-        OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 4,
-            "[Test] Number of surface boundary should be 4" );
-        OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1,
-            "[Test] Number of surface incidences should be 1" );
-    }
-    for( const auto& b : brep.blocks() )
-    {
-        OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 6,
-            "[Test] Number of block boundary should be 6" );
-        OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
-            "[Test] Number of block incidences should be 0" );
-    }
-}
-
-void test_brep_cone( const geode::BRep& brep )
-{
-    // Number of components
-    OPENGEODE_EXCEPTION(
-        brep.nb_corners() == 6, "[Test] Number of corners is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_lines() == 13, "[Test] Number of lines is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_surfaces() == 12, "[Test] Number of surfaces is not correct" );
-    OPENGEODE_EXCEPTION(
-        brep.nb_blocks() == 4, "[Test] Number of blocks is not correct" );
+        brep.nb_lines() == nb_lines, "[Test] Number of lines is not correct" );
+    OPENGEODE_EXCEPTION( brep.nb_surfaces() == nb_surfaces,
+        "[Test] Number of surfaces is not correct" );
+    OPENGEODE_EXCEPTION( brep.nb_blocks() == nb_blocks,
+        "[Test] Number of blocks is not correct" );
 
     // Number of vertices and elements in components
     for( const auto& c : brep.corners() )
@@ -177,6 +109,46 @@ void test_brep_cone( const geode::BRep& brep )
         }
         OPENGEODE_EXCEPTION( count != 0, "[Test] No polyhedron adjacency" );
     }
+}
+
+void test_brep_cube( const geode::BRep& brep )
+{
+    test_brep( brep, 8, 12, 6, 1 );
+
+    // Number of component boundaries and incidences
+    for( const auto& c : brep.corners() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
+            "[Test] Number of corner boundary should be 0" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 3,
+            "[Test] Number of corner incidences should be 3" );
+    }
+    for( const auto& l : brep.lines() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
+            "[Test] Number of line boundary should be 2" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 2,
+            "[Test] Number of line incidences should be 2" );
+    }
+    for( const auto& s : brep.surfaces() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 4,
+            "[Test] Number of surface boundary should be 4" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1,
+            "[Test] Number of surface incidences should be 1" );
+    }
+    for( const auto& b : brep.blocks() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 6,
+            "[Test] Number of block boundary should be 6" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
+            "[Test] Number of block incidences should be 0" );
+    }
+}
+
+void test_brep_cone( const geode::BRep& brep )
+{
+    test_brep( brep, 6, 13, 12, 4 );
 
     // Number of component boundaries and incidences
     for( const auto& c : brep.corners() )
@@ -212,6 +184,39 @@ void test_brep_cone( const geode::BRep& brep )
     }
 }
 
+void test_brep_internal( const geode::BRep& brep )
+{
+    test_brep( brep, 5, 4, 1, 0 );
+
+    // Number of component boundaries and incidences
+    for( const auto& c : brep.corners() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
+            "[Test] Number of corner boundary should be 0" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 1
+                                 || brep.nb_incidences( c.id() ) == 2,
+            "[Test] Number of corner incidences should be 1 or 2" );
+    }
+    for( const auto& l : brep.lines() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
+            "[Test] Number of line boundary should be 2" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 1
+                                 || brep.nb_embedding_surfaces( l ) == 1,
+            "[Test] Number of line incidences should be 1 or embedding in 1 "
+            "surface" );
+    }
+    for( const auto& s : brep.surfaces() )
+    {
+        OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 3,
+            "[Test] Number of surface boundary should be 3" );
+        OPENGEODE_EXCEPTION( brep.nb_internal_lines( s ) == 1,
+            "[Test] Number of surface internal should be 1" );
+        OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 0,
+            "[Test] Number of surface incidences should be 0" );
+    }
+}
+
 using test_function = void ( * )( const geode::BRep& );
 
 void run_test( absl::string_view short_filename, test_function test )
@@ -243,6 +248,7 @@ int main()
     {
         detail::initialize_model_io();
 
+        run_test( "triangle_internal", &test_brep_internal );
         run_test( "cube_v22", &test_brep_cube );
         run_test( "cone_v4", &test_brep_cone );
 

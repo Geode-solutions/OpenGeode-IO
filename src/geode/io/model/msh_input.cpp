@@ -722,6 +722,7 @@ namespace
                 if( string_starts_with( line, "$" )
                     && !string_starts_with( line, "$End" ) )
                 {
+                    absl::RemoveExtraAsciiWhitespace( &line );
                     sections_.push_back( line );
                 }
             }
@@ -797,14 +798,17 @@ namespace
             for( const auto unused : geode::Range{ nb_surfaces } )
             {
                 geode_unused( unused );
-                std::string line;
-                std::getline( file_, line );
-                const auto tokens = get_tokens( line );
+                std::string file_line;
+                std::getline( file_, file_line );
+                const auto tokens = get_tokens( file_line );
                 const auto surface_uuid = builder_.add_surface();
+                const auto& surface = brep_.surface( surface_uuid );
                 gmsh_id2uuids_
                     .elementary_ids[{ geode::Surface3D::component_type_static(),
                         string_to_index( tokens.at( 0 ) ) }] = surface_uuid;
                 // TODO physical tags
+                absl::flat_hash_map< geode::index_t, geode::index_t >
+                    boundary_counter;
                 const auto nb_physical_tags = string_to_index( tokens.at( 7 ) );
                 for( const auto b : geode::Range{ string_to_index(
                          tokens.at( 8 + nb_physical_tags ) ) } )
@@ -816,13 +820,34 @@ namespace
                     OPENGEODE_EXCEPTION( ok,
                         "[MSHInput::create_surfaces] "
                         "Error while reading boundary entity index" );
-                    boundary_msh_id = std::abs( boundary_msh_id );
-                    builder_.add_line_surface_boundary_relationship(
+                    auto it = boundary_counter.emplace(
+                        static_cast< geode::index_t >(
+                            std::abs( boundary_msh_id ) ),
+                        1 );
+                    if( !it.second )
+                    {
+                        it.first->second++;
+                    }
+                }
+                for( const auto& boundary : boundary_counter )
+                {
+                    const auto& line =
                         brep_.line( gmsh_id2uuids_.elementary_ids.at(
                             { geode::Line3D::component_type_static(),
-                                static_cast< geode::index_t >(
-                                    boundary_msh_id ) } ) ),
-                        brep_.surface( surface_uuid ) );
+                                boundary.first } ) );
+                    if( boundary.second == 1 )
+                    {
+                        builder_.add_line_surface_boundary_relationship(
+                            line, surface );
+                    }
+                    else
+                    {
+                        OPENGEODE_ASSERT( boundary.second == 2,
+                            "[MSHInput::create_surfaces] Wrong Surface/Line "
+                            "relationship" );
+                        builder_.add_line_surface_internal_relationship(
+                            line, surface );
+                    }
                 }
             }
         }
@@ -1083,13 +1108,52 @@ namespace
             {
                 filter_duplicated_surface_vertices( s, brep_ );
                 auto surface_builder = builder_.surface_mesh_builder( s.id() );
-                for( const auto v : geode::Range{ s.mesh().nb_vertices() } )
+                const auto& mesh = s.mesh();
+                for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
                     surface_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
                                { s.component_id(), v } )] );
                 }
                 surface_builder->compute_polygon_adjacencies();
+                std::vector< geode::PolygonEdge > polygon_edges;
+                for( const auto& line : brep_.internal_lines( s ) )
+                {
+                    const auto& edges = line.mesh();
+                    for( const auto e : geode::Range{ edges.nb_edges() } )
+                    {
+                        const auto e0 = edges.edge_vertex( { e, 0 } );
+                        const auto e1 = edges.edge_vertex( { e, 1 } );
+                        const auto surface0 = brep_.mesh_component_vertices(
+                            brep_.unique_vertex( { line.component_id(), e0 } ),
+                            s.id() );
+                        const auto surface1 = brep_.mesh_component_vertices(
+                            brep_.unique_vertex( { line.component_id(), e1 } ),
+                            s.id() );
+                        for( const auto v0 : surface0 )
+                        {
+                            for( const auto v1 : surface1 )
+                            {
+                                if( const auto edge0 =
+                                        mesh.polygon_edge_from_vertices(
+                                            v0, v1 ) )
+                                {
+                                    polygon_edges.emplace_back( edge0.value() );
+                                }
+                                if( const auto edge1 =
+                                        mesh.polygon_edge_from_vertices(
+                                            v1, v0 ) )
+                                {
+                                    polygon_edges.emplace_back( edge1.value() );
+                                }
+                            }
+                        }
+                    }
+                }
+                for( const auto& edge : polygon_edges )
+                {
+                    surface_builder->unset_polygon_adjacent( edge );
+                }
             }
         }
 

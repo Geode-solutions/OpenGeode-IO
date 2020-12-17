@@ -157,7 +157,25 @@ namespace
             geode::index_t count{ 1 };
             for( const auto& surface : brep_.surfaces() )
             {
-                write_component( surface, count++ );
+                const auto bbox = surface.mesh().bounding_box();
+                file_ << count << SPACE << bbox.min().string() << SPACE
+                      << bbox.max().string() << SPACE << DEFAULT_PHYSICAL_TAG
+                      << SPACE;
+                file_ << brep_.nb_boundaries( surface.id() )
+                             + 2 * brep_.nb_internal_lines( surface );
+                for( const auto& boundary : brep_.boundaries( surface ) )
+                {
+                    file_ << SPACE << uuid2gmsh_[boundary.id()].id;
+                }
+                for( const auto& internal : brep_.internal_lines( surface ) )
+                {
+                    file_ << SPACE << uuid2gmsh_[internal.id()].id << SPACE
+                          << "-" << uuid2gmsh_[internal.id()].id;
+                }
+                file_ << EOL;
+                uuid2gmsh_[surface.id()] =
+                    GmshElementID{ surface.component_type(), count };
+                count++;
             }
         }
 
@@ -166,7 +184,25 @@ namespace
             geode::index_t count{ 1 };
             for( const auto& block : brep_.blocks() )
             {
-                write_component( block, count++ );
+                const auto bbox = block.mesh().bounding_box();
+                file_ << count << SPACE << bbox.min().string() << SPACE
+                      << bbox.max().string() << SPACE << DEFAULT_PHYSICAL_TAG
+                      << SPACE;
+                file_ << brep_.nb_boundaries( block.id() )
+                             + 2 * brep_.nb_internal_surfaces( block );
+                for( const auto& boundary : brep_.boundaries( block ) )
+                {
+                    file_ << SPACE << uuid2gmsh_[boundary.id()].id;
+                }
+                for( const auto& internal : brep_.internal_surfaces( block ) )
+                {
+                    file_ << SPACE << uuid2gmsh_[internal.id()].id << SPACE
+                          << "-" << uuid2gmsh_[internal.id()].id;
+                }
+                file_ << EOL;
+                uuid2gmsh_[block.id()] =
+                    GmshElementID{ block.component_type(), count };
+                count++;
             }
         }
 
