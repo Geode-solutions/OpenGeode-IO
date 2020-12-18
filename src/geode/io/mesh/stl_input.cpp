@@ -41,31 +41,7 @@ namespace
         }
         void build_mesh()
         {
-            const auto vertex_mapping = build_duplicated_vertices( surface_ );
-            build_triangles( vertex_mapping );
-        }
-
-    private:
-        void build_triangles(
-            const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
-        {
-            auto builder =
-                geode::TriangulatedSurfaceBuilder3D::create( surface_ );
-            for( const auto t : geode::Range{ assimp_mesh()->mNumFaces } )
-            {
-                std::array< geode::index_t, 3 > triangle_vertices;
-                const auto& face = assimp_mesh()->mFaces[t];
-                OPENGEODE_EXCEPTION( face.mNumIndices == 3,
-                    "[STLInput::build_triangles] At least one face is not a "
-                    "triangle." );
-                for( const auto i : geode::Range{ 3 } )
-                {
-                    triangle_vertices[i] =
-                        vertex_mapping.colocated_mapping[face.mIndices[i]];
-                }
-                builder->create_triangle( triangle_vertices );
-            }
-            builder->compute_polygon_adjacencies();
+            build_mesh_from_duplicated_vertices( surface_ );
         }
 
     private:
@@ -81,9 +57,7 @@ namespace geode
         void STLInput::do_read()
         {
             STLInputImpl impl{ filename(), triangulated_surface() };
-            auto success = impl.read_file();
-            OPENGEODE_EXCEPTION( success, "[STLInput::do_read] Invalid file \"",
-                filename(), "\"" );
+            impl.read_file();
             impl.build_mesh();
         }
     } // namespace detail

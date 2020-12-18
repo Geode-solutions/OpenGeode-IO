@@ -45,39 +45,46 @@ namespace
 
         void build_mesh() final
         {
-            build_vertices();
-            build_polygons();
+            for( const auto m : geode::Range{ nb_meshes() } )
+            {
+                const auto offset = build_vertices( m );
+                build_polygons( offset, m );
+            }
+            auto builder = geode::SurfaceMeshBuilder3D::create( surface_ );
+            builder->compute_polygon_adjacencies();
         }
 
     private:
-        void build_vertices()
+        geode::index_t build_vertices( geode::index_t mesh )
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            builder->create_vertices( assimp_mesh()->mNumVertices );
-            for( const auto v : geode::Range{ assimp_mesh()->mNumVertices } )
+            const auto* a_mesh = assimp_mesh( mesh );
+            const auto offset =
+                builder->create_vertices( a_mesh->mNumVertices );
+            for( const auto v : geode::Range{ a_mesh->mNumVertices } )
             {
-                geode::Point3D point{ { assimp_mesh()->mVertices[v].x,
-                    assimp_mesh()->mVertices[v].y,
-                    assimp_mesh()->mVertices[v].z } };
-                builder->set_point( v, point );
+                geode::Point3D point{ { a_mesh->mVertices[v].x,
+                    a_mesh->mVertices[v].y, a_mesh->mVertices[v].z } };
+                builder->set_point( offset + v, point );
             }
+            return offset;
         }
 
-        void build_polygons()
+        void build_polygons( geode::index_t offset, geode::index_t mesh )
         {
             auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            for( const auto p : geode::Range{ assimp_mesh()->mNumFaces } )
+            const auto* a_mesh = assimp_mesh( mesh );
+            for( const auto p : geode::Range{ a_mesh->mNumFaces } )
             {
-                const auto& face = assimp_mesh()->mFaces[p];
+                const auto& face = a_mesh->mFaces[p];
                 absl::FixedArray< geode::index_t > polygon_vertices(
                     face.mNumIndices );
                 for( const auto i : geode::Range{ face.mNumIndices } )
                 {
-                    polygon_vertices[i] = face.mIndices[i];
+                    polygon_vertices[i] = offset + face.mIndices[i];
                 }
                 builder->create_polygon( polygon_vertices );
             }
-            builder->compute_polygon_adjacencies();
         }
 
     private:
@@ -92,9 +99,7 @@ namespace geode
         void PLYInput::do_read()
         {
             PLYInputImpl impl{ filename(), polygonal_surface() };
-            const auto success = impl.read_file();
-            OPENGEODE_EXCEPTION( success, "[PLYInput::do_read] Invalid file \"",
-                filename(), "\"" );
+            impl.read_file();
             impl.build_mesh();
         }
     } // namespace detail
