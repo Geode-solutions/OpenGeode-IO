@@ -41,28 +41,7 @@ namespace
 
         void build_mesh()
         {
-            const auto vertex_mapping = build_duplicated_vertices( surface_ );
-            build_polygons( vertex_mapping );
-        }
-
-    private:
-        void build_polygons(
-            const geode::NNSearch3D::ColocatedInfo& vertex_mapping )
-        {
-            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            for( const auto p : geode::Range{ assimp_mesh()->mNumFaces } )
-            {
-                const auto& face = assimp_mesh()->mFaces[p];
-                absl::FixedArray< geode::index_t > polygon_vertices(
-                    face.mNumIndices );
-                for( const auto i : geode::Range{ polygon_vertices.size() } )
-                {
-                    polygon_vertices[i] =
-                        vertex_mapping.colocated_mapping[face.mIndices[i]];
-                }
-                builder->create_polygon( polygon_vertices );
-            }
-            builder->compute_polygon_adjacencies();
+            build_mesh_from_duplicated_vertices( surface_ );
         }
 
     private:
@@ -77,9 +56,7 @@ namespace geode
         void OBJInput::do_read()
         {
             OBJInputImpl impl{ filename(), polygonal_surface() };
-            const auto success = impl.read_file();
-            OPENGEODE_EXCEPTION( success, "[OBJInput::do_read] Invalid file \"",
-                filename(), "\"" );
+            impl.read_file();
             impl.build_mesh();
         }
     } // namespace detail

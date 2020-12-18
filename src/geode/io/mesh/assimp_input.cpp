@@ -30,16 +30,16 @@ namespace geode
 {
     namespace detail
     {
-        bool AssimpMeshInput::read_file()
+        void AssimpMeshInput::read_file()
         {
             const auto* pScene = importer_.ReadFile( file_.data(), 0 );
             OPENGEODE_EXCEPTION( pScene, "[AssimpMeshInput::read_file] ",
                 importer_.GetErrorString() );
-            OPENGEODE_EXCEPTION( pScene->mNumMeshes == 1,
-                "[AssimpMeshInput::read_file] Several meshes in imported file ",
-                file_ );
-            assimp_mesh_ = pScene->mMeshes[0];
-            return true;
+            assimp_meshes_.resize( pScene->mNumMeshes );
+            for( const auto i : Range{ pScene->mNumMeshes } )
+            {
+                assimp_meshes_[i] = pScene->mMeshes[i];
+            }
         }
     } // namespace detail
 } // namespace geode
