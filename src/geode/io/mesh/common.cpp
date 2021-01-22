@@ -31,6 +31,7 @@
 #include <geode/io/mesh/private/ply_output.h>
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
+#include <geode/io/mesh/private/triangle_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
 #include <geode/io/mesh/private/vtp_polygonal_output.h>
 #include <geode/io/mesh/private/vtp_triangulated_output.h>
@@ -109,6 +110,10 @@ namespace
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::detail::OBJTriangulatedOutput >(
             geode::detail::OBJTriangulatedOutput::extension().data() );
+
+        geode::TriangulatedSurfaceOutputFactory2D::register_creator<
+            geode::detail::TriangleOutput >(
+            geode::detail::TriangleOutput::extension().data() );
     }
 
     void register_tetrahedral_solid_output()
