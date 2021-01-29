@@ -46,7 +46,7 @@ namespace geode
             AssimpMeshInput( absl::string_view filename ) : file_( filename )
             {
                 OPENGEODE_EXCEPTION( std::ifstream( file_.data() ).good(),
-                    "[AssimpMeshInput] Error while opening file: ", file_ );
+                    "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
             virtual ~AssimpMeshInput() = default;

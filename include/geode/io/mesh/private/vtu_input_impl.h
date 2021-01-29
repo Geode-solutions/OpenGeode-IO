@@ -115,7 +115,7 @@ namespace geode
                             this->template read_integer_data_array< int64_t >(
                                 data );
                         OPENGEODE_ASSERT( offsets_values.size() == nb_polyhedra,
-                            "[VTUInput::read_polyhedra] Wrong number of "
+                            "[VTUInput::read_polyhedra] Wrong number of "
                             "offsets" );
                         geode_unused( nb_polyhedra );
                     }
@@ -133,7 +133,7 @@ namespace geode
                             this->template read_uint8_data_array< uint8_t >(
                                 data );
                         OPENGEODE_ASSERT( types_values.size() == nb_polyhedra,
-                            "[VTUInput::read_polyhedra] Wrong number of "
+                            "[VTUInput::read_polyhedra] Wrong number of "
                             "types" );
                         geode_unused( nb_polyhedra );
                     }
