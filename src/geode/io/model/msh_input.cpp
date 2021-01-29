@@ -140,7 +140,7 @@ namespace
               vertex_ids_str_( vertex_ids )
         {
             OPENGEODE_EXCEPTION( elementary_entity_id > 0,
-                "[GMSHElement] GMSH tag for elementary entity "
+                "[GMSHElement] GMSH tag for elementary entity "
                 "(second tag) should not be null" );
             try
             {
@@ -527,7 +527,7 @@ namespace
             : file_( filename.data() ), brep_( brep ), builder_{ brep }
         {
             OPENGEODE_EXCEPTION( file_.good(),
-                "[MSHInput] Error while opening file: ", filename );
+                "[MSHInput] Error while opening file: ", filename );
             std::call_once( once_flag, initialize_gmsh_factory );
             first_read( filename );
         }

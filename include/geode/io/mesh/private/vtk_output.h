@@ -63,14 +63,14 @@ namespace geode
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
-                    "[VTKOutput] Error while opening file: ", filename );
+                    "[VTKOutput] Error while opening file: ", filename );
             }
 
             virtual ~VTKOutputImpl()
             {
                 const auto ok = document_.save_file( filename_.data() );
                 OPENGEODE_EXCEPTION(
-                    ok, "[VTKOutput] Error while writing file: ", filename_ );
+                    ok, "[VTKOutput] Error while writing file: ", filename_ );
             }
 
             const Mesh& mesh() const

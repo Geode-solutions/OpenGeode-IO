@@ -69,9 +69,9 @@ namespace geode
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
-                    "[VTKInput] Error while opening file: ", filename );
+                    "[VTKInput] Error while opening file: ", filename );
                 const auto status = document_.load_file( filename.data() );
-                OPENGEODE_EXCEPTION( status, "[VTKInput] Error ",
+                OPENGEODE_EXCEPTION( status, "[VTKInput] Error ",
                     status.description(), " while parsing file: ", filename );
                 root_ = document_.child( "VTKFile" );
             }
@@ -320,7 +320,7 @@ namespace geode
             {
                 OPENGEODE_EXCEPTION(
                     match( root_.attribute( "type" ).value(), type_ ),
-                    "[VTKInput::read_root_attributes] VTK File type should be ",
+                    "[VTKInput::read_root_attributes] VTK File type should be ",
                     type_ );
                 little_endian_ = match(
                     root_.attribute( "byte_order" ).value(), "LittleEndian" );
@@ -341,7 +341,7 @@ namespace geode
                     OPENGEODE_EXCEPTION(
                         match( header_type_value, "UInt32" )
                             || match( header_type_value, "UInt64" ),
-                        "[VTKInput::read_root_attributes] Cannot read VTKFile "
+                        "[VTKInput::read_root_attributes] Cannot read VTKFile "
                         "with header_type ",
                         header_type_value,
                         ". Only UInt32 and Uint64 are accepted" );
@@ -359,7 +359,7 @@ namespace geode
                     }
                     OPENGEODE_EXCEPTION(
                         match( node.attribute( "encoding" ).value(), "base64" ),
-                        "[VTKInput::read_appended_data] VTK AppendedData "
+                        "[VTKInput::read_appended_data] VTK AppendedData "
                         "section should be encoded" );
                     appended_data_ = node.child_value();
                 }
@@ -590,10 +590,10 @@ namespace geode
                 const auto type = points.attribute( "type" ).value();
                 OPENGEODE_EXCEPTION(
                     match( type, "Float32" ) || match( type, "Float64" ),
-                    "[VTKInput::read_points] Cannot read points of type ", type,
+                    "[VTKInput::read_points] Cannot read points of type ", type,
                     ". Only Float32 and Float64 are accepted" );
                 OPENGEODE_EXCEPTION( nb_components == 3,
-                    "[VTKInput::read_points] Trying to import 2D VTK object "
+                    "[VTKInput::read_points] Trying to import 2D VTK object "
                     "into a 3D Surface is not allowed" );
                 const auto format = points.attribute( "format" ).value();
                 if( match( format, "appended" ) )
@@ -617,7 +617,7 @@ namespace geode
                         const auto coords =
                             read_ascii_coordinates( string, nb_points );
                         OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
-                            "[VTKInput::read_points] Wrong number of "
+                            "[VTKInput::read_points] Wrong number of "
                             "coordinates" );
                         return get_points( coords );
                     }
@@ -637,7 +637,7 @@ namespace geode
                 const auto coords = decode< T >( coords_string );
                 geode_unused( nb_points );
                 OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
-                    "[VTKInput::read_points] Wrong number of coordinates" );
+                    "[VTKInput::read_points] Wrong number of coordinates" );
                 return get_points( coords );
             }
 

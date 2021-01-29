@@ -64,7 +64,7 @@ namespace
                 {
                     offsets_values = read_integer_data_array< int64_t >( data );
                     OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
-                        "[VTPInput::read_polygons] Wrong number of offsets" );
+                        "[VTPInput::read_polygons] Wrong number of offsets" );
                     geode_unused( nb_polygons );
                 }
                 else if( match( data.attribute( "Name" ).value(),

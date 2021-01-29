@@ -69,7 +69,7 @@ namespace
             : file_( filename.data() ), brep_( brep )
         {
             OPENGEODE_EXCEPTION( file_.good(),
-                "[MSHInput] Error while opening file: ", filename );
+                "[MSHOutput] Error while opening file: ", filename );
         }
 
         void write_file()

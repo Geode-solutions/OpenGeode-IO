@@ -86,7 +86,7 @@ jobs:
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-manylinux2014_x86_64.whl"
+        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-manylinux2014_x86_64.whl"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: PyPI
@@ -177,7 +177,7 @@ jobs:
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-macosx_10_14_x86_64.whl"
+        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-macosx_10_14_x86_64.whl"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: PyPI
@@ -266,7 +266,7 @@ jobs:
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
-        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-win_amd64.whl"
+        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-win_amd64.whl"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: PyPI

@@ -54,10 +54,10 @@ namespace
             : file_( filename.data() ), section_( section ), builder_{ section }
         {
             OPENGEODE_EXCEPTION( file_.good(),
-                "[SVGInput] Error while opening file: ", filename );
+                "[SVGInput] Error while opening file: ", filename );
             const auto ok = document_.load_file( filename.data() );
             OPENGEODE_EXCEPTION(
-                ok, "[SVGInput] Error while parsing file: ", filename );
+                ok, "[SVGInput] Error while parsing file: ", filename );
         }
 
         void read_file()
