@@ -98,9 +98,6 @@ namespace geode
                 auto piece = object.append_child( "Piece" );
                 piece.append_attribute( "NumberOfPoints" )
                     .set_value( mesh_.nb_vertices() );
-                piece.append_attribute( "NumberOfVerts" ).set_value( 0 );
-                piece.append_attribute( "NumberOfLines" ).set_value( 0 );
-                piece.append_attribute( "NumberOfStrips" ).set_value( 0 );
                 append_number_elements( piece );
 
                 write_vtk_vertex_attributes( piece );
