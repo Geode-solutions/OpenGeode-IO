@@ -32,6 +32,7 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/triangle_output.h>
+#include <geode/io/mesh/private/vtp_edged_curve_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
 #include <geode/io/mesh/private/vtp_polygonal_output.h>
 #include <geode/io/mesh/private/vtp_triangulated_output.h>
@@ -123,6 +124,13 @@ namespace
             geode::detail::VTUOutput::extension().data() );
     }
 
+    void register_edged_curve_output()
+    {
+        geode::EdgedCurveOutputFactory3D::register_creator<
+            geode::detail::VTPEdgedCurveOutput >(
+            geode::detail::VTPEdgedCurveOutput::extension().data() );
+    }
+
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_mesh )
     {
         register_polygonal_surface_input();
@@ -131,6 +139,7 @@ namespace
         register_tetrahedral_solid_input();
         register_hybrid_solid_input();
 
+        register_edged_curve_output();
         register_polygonal_surface_output();
         register_triangulated_surface_output();
         register_tetrahedral_solid_output();
