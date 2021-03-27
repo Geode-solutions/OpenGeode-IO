@@ -21,44 +21,36 @@
  *
  */
 
-#include <geode/io/mesh/private/stl_input.h>
+#include <geode/tests_config.h>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
+#include <geode/basic/assert.h>
+#include <geode/basic/logger.h>
+
 #include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/io/triangulated_surface_input.h>
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/detail/common.h>
 
-namespace
+int main()
 {
-    class STLInputImpl : public geode::detail::AssimpMeshInput
-    {
-    public:
-        STLInputImpl( absl::string_view filename,
-            geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::AssimpMeshInput( filename ),
-              surface_( triangulated_surface )
-        {
-        }
-        void build_mesh()
-        {
-            build_mesh_from_duplicated_vertices( surface_ );
-        }
+    using namespace geode;
 
-    private:
-        geode::TriangulatedSurface3D& surface_;
-        Assimp::Importer importer_;
-    };
-} // namespace
-
-namespace geode
-{
-    namespace detail
+    try
     {
-        void STLInput::do_read()
-        {
-            STLInputImpl impl{ filename(), triangulated_surface() };
-            impl.read_file();
-            impl.build_mesh();
-        }
-    } // namespace detail
-} // namespace geode
+        detail::initialize_mesh_io();
+        // Load file
+        auto surface = load_triangulated_surface< 3 >(
+            absl::StrCat( data_path, "triangulated.smesh" ) );
+        OPENGEODE_EXCEPTION( surface->nb_vertices() == 111,
+            "[Test] Number of vertices in the loaded Surface is not correct" );
+        OPENGEODE_EXCEPTION( surface->nb_polygons() == 186,
+            "[Test] Number of polygons in the loaded Surface is not correct" );
+
+        Logger::info( "TEST SUCCESS" );
+        return 0;
+    }
+    catch( ... )
+    {
+        return geode_lippincott();
+    }
+}

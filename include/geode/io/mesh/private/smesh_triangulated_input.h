@@ -21,44 +21,31 @@
  *
  */
 
-#include <geode/io/mesh/private/stl_input.h>
+#pragma once
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
-
-#include <geode/io/mesh/private/assimp_input.h>
-
-namespace
-{
-    class STLInputImpl : public geode::detail::AssimpMeshInput
-    {
-    public:
-        STLInputImpl( absl::string_view filename,
-            geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::AssimpMeshInput( filename ),
-              surface_( triangulated_surface )
-        {
-        }
-        void build_mesh()
-        {
-            build_mesh_from_duplicated_vertices( surface_ );
-        }
-
-    private:
-        geode::TriangulatedSurface3D& surface_;
-        Assimp::Importer importer_;
-    };
-} // namespace
+#include <geode/mesh/io/triangulated_surface_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        void STLInput::do_read()
+        class SMESHTriangulatedInput final
+            : public TriangulatedSurfaceInput< 3 >
         {
-            STLInputImpl impl{ filename(), triangulated_surface() };
-            impl.read_file();
-            impl.build_mesh();
-        }
+        public:
+            SMESHTriangulatedInput(
+                TriangulatedSurface< 3 > &surface, absl::string_view filename )
+                : TriangulatedSurfaceInput< 3 >( surface, filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "smesh";
+                return ext;
+            }
+
+            void do_read() final;
+        };
     } // namespace detail
 } // namespace geode

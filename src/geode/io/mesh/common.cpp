@@ -29,6 +29,7 @@
 #include <geode/io/mesh/private/obj_triangulated_output.h>
 #include <geode/io/mesh/private/ply_input.h>
 #include <geode/io/mesh/private/ply_output.h>
+#include <geode/io/mesh/private/smesh_triangulated_input.h>
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/triangle_output.h>
@@ -85,6 +86,9 @@ namespace
         geode::TriangulatedSurfaceInputFactory3D::register_creator<
             geode::detail::STLInput >(
             geode::detail::STLInput::extension().data() );
+        geode::TriangulatedSurfaceInputFactory3D::register_creator<
+            geode::detail::SMESHTriangulatedInput >(
+            geode::detail::SMESHTriangulatedInput::extension().data() );
     }
 
     void register_polygonal_surface_output()

@@ -23,7 +23,7 @@
 
 #include <geode/io/mesh/private/obj_input.h>
 
-#include <geode/mesh/core/geode_polygonal_surface.h>
+#include <geode/mesh/core/polygonal_surface.h>
 
 #include <geode/io/mesh/private/assimp_input.h>
 

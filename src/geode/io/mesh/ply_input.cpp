@@ -27,7 +27,7 @@
 #include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/core/geode_polygonal_surface.h>
+#include <geode/mesh/core/polygonal_surface.h>
 
 #include <geode/io/mesh/private/assimp_input.h>
 
