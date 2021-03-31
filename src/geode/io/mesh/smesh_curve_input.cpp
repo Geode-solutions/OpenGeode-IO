@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/smesh_triangulated_input.h>
+#include <geode/io/mesh/private/smesh_curve_input.h>
 
 #include <fstream>
 
@@ -31,32 +31,32 @@
 
 #include <geode/geometry/point.h>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/builder/edged_curve_builder.h>
+#include <geode/mesh/core/edged_curve.h>
 
 #include <geode/io/mesh/private/smesh_input.h>
 
 namespace
 {
-    class SMESHTriangulatedInputImpl
-        : public geode::detail::SMESHInputImpl< geode::TriangulatedSurface3D,
-              geode::TriangulatedSurfaceBuilder3D,
-              3 >
+    class SMESHCurveInputImpl
+        : public geode::detail::SMESHInputImpl< geode::EdgedCurve3D,
+              geode::EdgedCurveBuilder3D,
+              2 >
     {
     public:
-        SMESHTriangulatedInputImpl( absl::string_view filename,
-            geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::SMESHInputImpl< geode::TriangulatedSurface3D,
-                geode::TriangulatedSurfaceBuilder3D,
-                3 >( filename, triangulated_surface )
+        SMESHCurveInputImpl(
+            absl::string_view filename, geode::EdgedCurve3D& curve )
+            : geode::detail::SMESHInputImpl< geode::EdgedCurve3D,
+                geode::EdgedCurveBuilder3D,
+                2 >( filename, curve )
         {
         }
 
     private:
         void create_element(
-            const std::array< geode::index_t, 3 >& vertices ) override
+            const std::array< geode::index_t, 2 >& vertices ) override
         {
-            builder().create_triangle( vertices );
+            builder().create_edge( vertices[0], vertices[1] );
         }
     };
 } // namespace
@@ -65,10 +65,9 @@ namespace geode
 {
     namespace detail
     {
-        void SMESHTriangulatedInput::do_read()
+        void SMESHCurveInput::do_read()
         {
-            SMESHTriangulatedInputImpl impl{ filename(),
-                triangulated_surface() };
+            SMESHCurveInputImpl impl{ filename(), edged_curve() };
             impl.read_file();
         }
     } // namespace detail
