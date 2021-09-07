@@ -25,17 +25,17 @@
 
 #include <geode/mesh/core/tetrahedral_solid.h>
 
-#include <geode/io/mesh/private/vtk_output.h>
+#include <geode/io/mesh/private/vtk_mesh_output.h>
 
 namespace
 {
     class VTUOutputImpl
-        : public geode::detail::VTKOutputImpl< geode::TetrahedralSolid3D >
+        : public geode::detail::VTKMeshOutputImpl< geode::TetrahedralSolid3D >
     {
     public:
         VTUOutputImpl( absl::string_view filename,
             const geode::TetrahedralSolid3D& tetrahedral_solid )
-            : geode::detail::VTKOutputImpl< geode::TetrahedralSolid3D >(
+            : geode::detail::VTKMeshOutputImpl< geode::TetrahedralSolid3D >(
                 filename, tetrahedral_solid, "UnstructuredGrid" )
         {
         }

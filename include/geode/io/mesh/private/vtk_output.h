@@ -36,9 +36,6 @@
 
 #include <geode/basic/attribute_manager.h>
 
-#include <geode/geometry/bounding_box.h>
-#include <geode/geometry/point.h>
-
 namespace geode
 {
     namespace detail
@@ -54,12 +51,11 @@ namespace geode
             }
 
         protected:
-            VTKOutputImpl( absl::string_view filename,
-                const Mesh& polygonal_surface,
-                const char* type )
+            VTKOutputImpl(
+                absl::string_view filename, const Mesh& mesh, const char* type )
                 : filename_{ filename },
                   file_( filename.data() ),
-                  mesh_( polygonal_surface ),
+                  mesh_( mesh ),
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
@@ -96,95 +92,10 @@ namespace geode
             {
                 auto object = root.append_child( type_ );
                 auto piece = object.append_child( "Piece" );
-                piece.append_attribute( "NumberOfPoints" )
-                    .set_value( mesh_.nb_vertices() );
-                append_number_elements( piece );
-
-                write_vtk_vertex_attributes( piece );
-                write_vtk_points( piece );
-                write_vtk_cell_attributes( piece );
-                write_vtk_cells( piece );
+                write_piece( piece );
             }
 
-            void write_vtk_points( pugi::xml_node& piece )
-            {
-                auto points = piece.append_child( "Points" );
-                auto data_array = points.append_child( "DataArray" );
-                data_array.append_attribute( "type" ).set_value( "Float32" );
-                data_array.append_attribute( "Name" ).set_value( "Points" );
-                data_array.append_attribute( "NumberOfComponents" )
-                    .set_value( 3 );
-                data_array.append_attribute( "format" ).set_value( "ascii" );
-                const auto bbox = mesh().bounding_box();
-                auto min = bbox.min().value( 0 );
-                auto max = bbox.max().value( 0 );
-                for( const auto d : Range{ 1, 3 } )
-                {
-                    min = std::min( min, bbox.min().value( d ) );
-                    max = std::max( max, bbox.max().value( d ) );
-                }
-                data_array.append_attribute( "RangeMin" ).set_value( min );
-                data_array.append_attribute( "RangeMax" ).set_value( max );
-                std::vector< double > values;
-                std::string vertices;
-                for( const auto v : Range{ mesh().nb_vertices() } )
-                {
-                    absl::StrAppend(
-                        &vertices, mesh().point( v ).string(), " " );
-                    values.emplace_back( mesh().point( v ).value( 0 ) );
-                    values.emplace_back( mesh().point( v ).value( 1 ) );
-                    values.emplace_back( mesh().point( v ).value( 2 ) );
-                }
-                data_array.text().set( vertices.c_str() );
-            }
-
-            std::string encode( const std::vector< double >& values )
-            {
-                return "";
-            }
-
-            void write_vtk_vertex_attributes( pugi::xml_node& piece )
-            {
-                auto point_data = piece.append_child( "PointData" );
-                const auto names =
-                    mesh().vertex_attribute_manager().attribute_names();
-                for( const auto& name : names )
-                {
-                    const auto attribute = mesh()
-                                               .vertex_attribute_manager()
-                                               .find_generic_attribute( name );
-                    if( !attribute || !attribute->is_genericable() )
-                    {
-                        continue;
-                    }
-                    auto data_array = point_data.append_child( "DataArray" );
-                    data_array.append_attribute( "type" ).set_value(
-                        "Float64" );
-                    data_array.append_attribute( "Name" ).set_value(
-                        name.data() );
-                    data_array.append_attribute( "format" )
-                        .set_value( "ascii" );
-                    auto min = attribute->generic_value( 0 );
-                    auto max = attribute->generic_value( 0 );
-                    std::string values;
-                    for( const auto v : geode::Range{ mesh().nb_vertices() } )
-                    {
-                        const auto value = attribute->generic_value( v );
-                        absl::StrAppend( &values, value, " " );
-                        min = std::min( min, value );
-                        max = std::max( max, value );
-                    }
-                    data_array.append_attribute( "RangeMin" ).set_value( min );
-                    data_array.append_attribute( "RangeMax" ).set_value( max );
-                    data_array.text().set( values.c_str() );
-                }
-            }
-
-            virtual void append_number_elements( pugi::xml_node& piece ) = 0;
-
-            virtual void write_vtk_cells( pugi::xml_node& piece ) = 0;
-
-            virtual void write_vtk_cell_attributes( pugi::xml_node& piece ) = 0;
+            virtual void write_piece( pugi::xml_node& piece ) = 0;
 
         private:
             absl::string_view filename_;
