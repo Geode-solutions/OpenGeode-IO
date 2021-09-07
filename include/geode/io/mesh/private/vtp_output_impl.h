@@ -23,19 +23,19 @@
 
 #pragma once
 
-#include <geode/io/mesh/private/vtk_output.h>
+#include <geode/io/mesh/private/vtk_mesh_output.h>
 
 namespace geode
 {
     namespace detail
     {
         template < typename Mesh >
-        class VTPOutputImpl : public VTKOutputImpl< Mesh >
+        class VTPOutputImpl : public VTKMeshOutputImpl< Mesh >
         {
         public:
             VTPOutputImpl(
                 absl::string_view filename, const Mesh& polygonal_surface )
-                : VTKOutputImpl< Mesh >(
+                : VTKMeshOutputImpl< Mesh >(
                     filename, polygonal_surface, "PolyData" )
             {
             }

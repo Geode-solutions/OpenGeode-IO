@@ -25,17 +25,17 @@
 
 #include <geode/mesh/core/edged_curve.h>
 
-#include <geode/io/mesh/private/vtk_output.h>
+#include <geode/io/mesh/private/vtk_mesh_output.h>
 
 namespace
 {
     class VTPCurveOutputImpl
-        : public geode::detail::VTKOutputImpl< geode::EdgedCurve3D >
+        : public geode::detail::VTKMeshOutputImpl< geode::EdgedCurve3D >
     {
     public:
         VTPCurveOutputImpl(
             absl::string_view filename, const geode::EdgedCurve3D& curve )
-            : geode::detail::VTKOutputImpl< geode::EdgedCurve3D >(
+            : geode::detail::VTKMeshOutputImpl< geode::EdgedCurve3D >(
                 filename, curve, "PolyData" )
         {
         }

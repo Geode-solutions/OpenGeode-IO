@@ -61,6 +61,13 @@ add_geode_test(
         ${PROJECT_NAME}::mesh
 )
 add_geode_test(
+    SOURCE "test-vti.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
+)
+add_geode_test(
     SOURCE "test-vtp.cpp"
     DEPENDENCIES
         OpenGeode::basic
