@@ -524,7 +524,9 @@ namespace
     {
     public:
         MSHInputImpl( absl::string_view filename, geode::BRep& brep )
-            : file_( filename.data() ), brep_( brep ), builder_{ brep }
+            : file_{ geode::to_string( filename ) },
+              brep_( brep ),
+              builder_{ brep }
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[MSHInput] Error while opening file: ", filename );
@@ -652,7 +654,7 @@ namespace
 
         void first_read( absl::string_view filename )
         {
-            std::ifstream reader{ filename.data() };
+            std::ifstream reader{ geode::to_string( filename ) };
             read_header( reader );
         }
 
