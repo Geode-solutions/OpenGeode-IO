@@ -51,11 +51,14 @@ namespace
     {
     public:
         SVGInputImpl( absl::string_view filename, geode::Section& section )
-            : file_( filename.data() ), section_( section ), builder_{ section }
+            : file_{ geode::to_string( filename ) },
+              section_( section ),
+              builder_{ section }
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[SVGInput] Error while opening file: ", filename );
-            const auto ok = document_.load_file( filename.data() );
+            const auto ok =
+                document_.load_file( geode::to_string( filename ).c_str() );
             OPENGEODE_EXCEPTION(
                 ok, "[SVGInput] Error while parsing file: ", filename );
         }

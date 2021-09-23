@@ -42,7 +42,7 @@ namespace geode
             SMESHInputImpl( absl::string_view filename, Mesh& mesh )
                 : mesh_( mesh ),
                   builder_{ Builder::create( mesh ) },
-                  file_{ filename.data() }
+                  file_{ to_string( filename ) }
             {
             }
 

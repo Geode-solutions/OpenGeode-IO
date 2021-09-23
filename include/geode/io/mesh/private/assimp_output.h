@@ -47,7 +47,7 @@ namespace geode
                   surface_mesh_( surface_mesh ),
                   export_id_( assimp_export_id )
             {
-                OPENGEODE_EXCEPTION( std::ofstream( file_.data() ).good(),
+                OPENGEODE_EXCEPTION( std::ofstream{ to_string( file_ ) }.good(),
                     "[AssimpMeshOutput] Error while opening file: ", file_ );
             }
 
@@ -61,8 +61,8 @@ namespace geode
             void write_file()
             {
                 Assimp::Exporter exporter;
-                const auto status = exporter.Export(
-                    &assimp_scene_, export_id_.data(), file_.data() );
+                const auto status = exporter.Export( &assimp_scene_,
+                    to_string( export_id_ ), to_string( file_ ) );
                 OPENGEODE_EXCEPTION( status == AI_SUCCESS,
                     "[AssimpMeshOutput::write_file] Export in file \"", file_,
                     "\" has failed." );

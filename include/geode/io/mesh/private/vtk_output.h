@@ -54,7 +54,7 @@ namespace geode
             VTKOutputImpl(
                 absl::string_view filename, const Mesh& mesh, const char* type )
                 : filename_{ filename },
-                  file_( filename.data() ),
+                  file_{ to_string( filename ) },
                   mesh_( mesh ),
                   type_{ type }
             {
@@ -64,7 +64,8 @@ namespace geode
 
             virtual ~VTKOutputImpl()
             {
-                const auto ok = document_.save_file( filename_.data() );
+                const auto ok =
+                    document_.save_file( to_string( filename_ ).c_str() );
                 OPENGEODE_EXCEPTION(
                     ok, "[VTKOutput] Error while writing file: ", filename_ );
             }

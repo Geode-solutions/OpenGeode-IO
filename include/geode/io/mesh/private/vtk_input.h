@@ -63,14 +63,15 @@ namespace geode
             VTKInputImpl( absl::string_view filename,
                 Mesh& polygonal_surface,
                 const char* type )
-                : file_( filename.data() ),
+                : file_{ to_string( filename ) },
                   mesh_( polygonal_surface ),
                   mesh_builder_{ MeshBuilder::create( polygonal_surface ) },
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
                     "[VTKInput] Error while opening file: ", filename );
-                const auto status = document_.load_file( filename.data() );
+                const auto status =
+                    document_.load_file( to_string( filename ).c_str() );
                 OPENGEODE_EXCEPTION( status, "[VTKInput] Error ",
                     status.description(), " while parsing file: ", filename );
                 root_ = document_.child( "VTKFile" );
@@ -119,7 +120,7 @@ namespace geode
                         absl::StripAsciiWhitespace( data.child_value() );
                     if( match( format, "ascii" ) )
                     {
-                        std::string string{ data_string.data() };
+                        auto string = to_string( data_string );
                         absl::RemoveExtraAsciiWhitespace( &string );
                         return read_ascii_integer_data_array< T >( string );
                     }
@@ -141,7 +142,7 @@ namespace geode
                         absl::StripAsciiWhitespace( data.child_value() );
                     if( match( format, "ascii" ) )
                     {
-                        std::string string{ data_string.data() };
+                        auto string = to_string( data_string );
                         absl::RemoveExtraAsciiWhitespace( &string );
                         return read_ascii_uint8_data_array< T >( string );
                     }
@@ -163,7 +164,7 @@ namespace geode
                         absl::StripAsciiWhitespace( data.child_value() );
                     if( match( format, "ascii" ) )
                     {
-                        std::string string{ data_string.data() };
+                        auto string = to_string( data_string );
                         absl::RemoveExtraAsciiWhitespace( &string );
                         return read_ascii_float_data_array< T >( string );
                     }
@@ -612,7 +613,7 @@ namespace geode
                         absl::StripAsciiWhitespace( points.child_value() );
                     if( match( format, "ascii" ) )
                     {
-                        std::string string{ coords_string.data() };
+                        auto string = to_string( coords_string );
                         absl::RemoveExtraAsciiWhitespace( &string );
                         const auto coords =
                             read_ascii_coordinates( string, nb_points );
@@ -688,7 +689,8 @@ namespace geode
                 std::vector< T > results;
                 for( auto string : absl::StrSplit( data, ' ' ) )
                 {
-                    results.push_back( std::atoi( string.data() ) );
+                    results.push_back(
+                        std::atoi( to_string( string ).c_str() ) );
                 }
                 return results;
             }

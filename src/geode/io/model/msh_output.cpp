@@ -66,7 +66,7 @@ namespace
     {
     public:
         MSHOutputImpl( absl::string_view filename, const geode::BRep& brep )
-            : file_( filename.data() ), brep_( brep )
+            : file_{ geode::to_string( filename ) }, brep_( brep )
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[MSHOutput] Error while opening file: ", filename );
