@@ -85,18 +85,18 @@ jobs:
         cd opengeode-io
         cmake --build . --target wheel --config Release
         mv wheel/dist/*.whl wheel/dist/OpenGeode_IO-$version-${{ matrix.config.tag }}-manylinux2014_x86_64.whl
-    - name: Upload
-      uses: softprops/action-gh-release@v1
-      with:
-        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-manylinux2014_x86_64.whl"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
         packages_dir: "build/opengeode-io/wheel/dist/"
+    - name: Upload
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-manylinux2014_x86_64.whl"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Notify slack
       if: failure() && github.ref == 'refs/heads/master'
       uses: 8398a7/action-slack@v2
@@ -178,16 +178,16 @@ jobs:
         cd opengeode-io
         cmake --build . --target wheel --config Release
         mv wheel/dist/*.whl wheel/dist/OpenGeode_IO-$version-${{ matrix.config.tag }}-macosx_10_14_x86_64.whl
+    - name: PyPI
+      run: |
+        pip install twine
+        twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} build/opengeode-io/wheel/dist/*
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
         files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-macosx_10_14_x86_64.whl"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: PyPI
-      run: |
-        pip install twine
-        twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} build/opengeode-io/wheel/dist/*
     - name: Notify slack
       if: failure()
       uses: 8398a7/action-slack@v2
@@ -269,16 +269,16 @@ jobs:
         cd opengeode-io
         cmake --build . --target wheel --config Release
         mv wheel/dist/*.whl wheel/dist/OpenGeode_IO-$version-${{ matrix.config.tag }}-win_amd64.whl
+    - name: PyPI
+      run: |
+        pip install twine
+        twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} build/opengeode-io/wheel/dist/*
     - name: Upload
       uses: softprops/action-gh-release@v1
       with:
         files: "build/opengeode-io/wheel/dist/OpenGeode_IO-${{ steps.package.outputs.version }}-${{ matrix.config.tag }}-win_amd64.whl"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: PyPI
-      run: |
-        pip install twine
-        twine upload -u __token__ -p ${{ secrets.PYPI_TOKEN }} build/opengeode-io/wheel/dist/*
     - name: Notify slack
       if: failure()
       uses: 8398a7/action-slack@v2
