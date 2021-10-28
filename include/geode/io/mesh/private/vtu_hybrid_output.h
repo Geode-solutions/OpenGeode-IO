@@ -23,18 +23,18 @@
 
 #pragma once
 
-#include <geode/mesh/io/tetrahedral_solid_output.h>
+#include <geode/mesh/io/hybrid_solid_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        class VTUOutput final : public TetrahedralSolidOutput< 3 >
+        class VTUHybridOutput final : public HybridSolidOutput< 3 >
         {
         public:
-            VTUOutput(
-                const TetrahedralSolid< 3 > &solid, absl::string_view filename )
-                : TetrahedralSolidOutput< 3 >( solid, filename )
+            VTUHybridOutput(
+                const HybridSolid< 3 > &solid, absl::string_view filename )
+                : HybridSolidOutput< 3 >( solid, filename )
             {
             }
 
