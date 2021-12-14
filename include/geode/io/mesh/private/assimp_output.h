@@ -43,9 +43,9 @@ namespace geode
             AssimpMeshOutput( absl::string_view filename,
                 const SurfaceMesh& surface_mesh,
                 absl::string_view assimp_export_id )
-                : file_( filename ),
+                : file_{ filename },
                   surface_mesh_( surface_mesh ),
-                  export_id_( assimp_export_id )
+                  export_id_{ assimp_export_id }
             {
                 OPENGEODE_EXCEPTION( std::ofstream{ to_string( file_ ) }.good(),
                     "[AssimpMeshOutput] Error while opening file: ", file_ );
@@ -89,36 +89,38 @@ namespace geode
 
             void build_assimp_vertices()
             {
-                auto pMesh = assimp_scene_.mMeshes[0];
-                pMesh->mVertices = new aiVector3D[surface_mesh_.nb_vertices()];
-                pMesh->mNumVertices = surface_mesh_.nb_vertices();
+                auto* pMesh = assimp_scene_.mMeshes[0];
+                const auto nb_vertices = surface_mesh_.nb_vertices();
+                pMesh->mVertices = new aiVector3D[nb_vertices];
+                pMesh->mNumVertices = nb_vertices;
 
-                for( const auto p :
-                    geode::Range{ surface_mesh_.nb_vertices() } )
+                for( const auto p : Range{ nb_vertices } )
                 {
-                    pMesh->mVertices[p] =
-                        aiVector3D{ surface_mesh_.point( p ).value( 0 ),
-                            surface_mesh_.point( p ).value( 1 ),
-                            surface_mesh_.point( p ).value( 2 ) };
+                    pMesh->mVertices[p] = { surface_mesh_.point( p ).value( 0 ),
+                        surface_mesh_.point( p ).value( 1 ),
+                        surface_mesh_.point( p ).value( 2 ) };
                 }
             }
 
             void build_assimp_faces()
             {
                 auto pMesh = assimp_scene_.mMeshes[0];
-                pMesh->mFaces = new aiFace[surface_mesh_.nb_polygons()];
-                pMesh->mNumFaces = surface_mesh_.nb_polygons();
+                const auto nb_polygons = surface_mesh_.nb_polygons();
+                pMesh->mFaces = new aiFace[nb_polygons];
+                pMesh->mNumFaces = nb_polygons;
 
-                for( const auto t :
-                    geode::Range{ surface_mesh_.nb_polygons() } )
+                for( const auto p : Range{ nb_polygons } )
                 {
-                    auto& face = pMesh->mFaces[t];
-
-                    face.mIndices = new unsigned int[3];
-                    face.mNumIndices = 3;
-                    face.mIndices[0] = surface_mesh_.polygon_vertex( { t, 0 } );
-                    face.mIndices[1] = surface_mesh_.polygon_vertex( { t, 1 } );
-                    face.mIndices[2] = surface_mesh_.polygon_vertex( { t, 2 } );
+                    auto& face = pMesh->mFaces[p];
+                    const auto nb_vertices =
+                        surface_mesh_.nb_polygon_vertices( p );
+                    face.mIndices = new unsigned int[nb_vertices];
+                    face.mNumIndices = nb_vertices;
+                    for( const auto v : LRange{ nb_vertices } )
+                    {
+                        face.mIndices[v] =
+                            surface_mesh_.polygon_vertex( { p, v } );
+                    }
                 }
             }
 
