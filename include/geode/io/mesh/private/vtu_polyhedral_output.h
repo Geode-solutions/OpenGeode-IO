@@ -21,46 +21,30 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_tetrahedral_output.h>
+#pragma once
 
-#include <geode/mesh/core/tetrahedral_solid.h>
-
-#include <geode/io/mesh/private/vtu_output_impl.h>
-
-namespace
-{
-    class VTUTetrahedralOutputImpl
-        : public geode::detail::VTUOutputImpl< geode::TetrahedralSolid3D >
-    {
-    public:
-        VTUTetrahedralOutputImpl(
-            absl::string_view filename, const geode::TetrahedralSolid3D& solid )
-            : geode::detail::VTUOutputImpl< geode::TetrahedralSolid3D >{
-                  filename, solid
-              }
-        {
-        }
-
-    private:
-        void write_cell( geode::index_t /*unused*/,
-            std::string& cell_types,
-            std::string& /*unused*/,
-            std::string& /*unused*/,
-            geode::index_t& /*unused*/ ) const override
-        {
-            absl::StrAppend( &cell_types, "10 " );
-        }
-    };
-} // namespace
+#include <geode/mesh/io/polyhedral_solid_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        void VTUTetrahedralOutput::write() const
+        class VTUPolyhedralOutput final : public PolyhedralSolidOutput< 3 >
         {
-            VTUTetrahedralOutputImpl impl{ filename(), tetrahedral_solid() };
-            impl.write_file();
-        }
+        public:
+            VTUPolyhedralOutput(
+                const PolyhedralSolid< 3 > &solid, absl::string_view filename )
+                : PolyhedralSolidOutput< 3 >( solid, filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "vtu";
+                return ext;
+            }
+
+            void write() const final;
+        };
     } // namespace detail
 } // namespace geode

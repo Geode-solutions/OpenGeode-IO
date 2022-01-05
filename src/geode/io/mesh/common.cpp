@@ -42,6 +42,7 @@
 #include <geode/io/mesh/private/vtu_hybrid_input.h>
 #include <geode/io/mesh/private/vtu_hybrid_output.h>
 #include <geode/io/mesh/private/vtu_polyhedral_input.h>
+#include <geode/io/mesh/private/vtu_polyhedral_output.h>
 #include <geode/io/mesh/private/vtu_tetrahedral_input.h>
 #include <geode/io/mesh/private/vtu_tetrahedral_output.h>
 
@@ -124,6 +125,13 @@ namespace
             geode::detail::TriangleOutput::extension().data() );
     }
 
+    void register_polyhedral_solid_output()
+    {
+        geode::PolyhedralSolidOutputFactory3D::register_creator<
+            geode::detail::VTUPolyhedralOutput >(
+            geode::detail::VTUPolyhedralOutput::extension().data() );
+    }
+
     void register_tetrahedral_solid_output()
     {
         geode::TetrahedralSolidOutputFactory3D::register_creator<
@@ -175,6 +183,7 @@ namespace
         register_edged_curve_output();
         register_polygonal_surface_output();
         register_triangulated_surface_output();
+        register_polyhedral_solid_output();
         register_tetrahedral_solid_output();
         register_regular_grid_output();
         register_hybrid_solid_output();
