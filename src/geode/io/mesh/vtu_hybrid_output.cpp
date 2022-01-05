@@ -26,6 +26,42 @@
 #include <geode/mesh/core/hybrid_solid.h>
 
 #include <geode/io/mesh/private/vtu_output_impl.h>
+namespace
+{
+    static constexpr auto TETRAHEDRON = 10u;
+    static constexpr auto HEXAHEDRON = 12u;
+    static constexpr auto PRISM = 13u;
+    static constexpr auto PYRAMID = 14u;
+    static constexpr std::array< geode::index_t, 9 > VTK_CELL_TYPE{ 0, 0, 0, 0,
+        TETRAHEDRON, PYRAMID, PRISM, 0, HEXAHEDRON };
+
+    class VTUHybridOutputImpl
+        : public geode::detail::VTUOutputImpl< geode::HybridSolid3D >
+    {
+    public:
+        VTUHybridOutputImpl(
+            absl::string_view filename, const geode::HybridSolid3D& solid )
+            : geode::detail::VTUOutputImpl< geode::HybridSolid3D >{ filename,
+                  solid }
+        {
+        }
+
+    private:
+        void write_cell( geode::index_t p,
+            std::string& cell_types,
+            std::string& /*unused*/,
+            std::string& /*unused*/,
+            geode::index_t& /*unused*/ ) const override
+        {
+            const auto nb_vertices = this->mesh().nb_polyhedron_vertices( p );
+            const auto vtk_type = VTK_CELL_TYPE[nb_vertices];
+            OPENGEODE_EXCEPTION( vtk_type != 0,
+                "[VTUHybridOutputImpl::write_vtk_cell] Polyhedron with ",
+                nb_vertices, " vertices not supported" );
+            absl::StrAppend( &cell_types, vtk_type, " " );
+        }
+    };
+} // namespace
 
 namespace geode
 {
@@ -33,7 +69,7 @@ namespace geode
     {
         void VTUHybridOutput::write() const
         {
-            VTUOutputImpl< HybridSolid3D > impl{ filename(), hybrid_solid() };
+            VTUHybridOutputImpl impl{ filename(), hybrid_solid() };
             impl.write_file();
         }
     } // namespace detail

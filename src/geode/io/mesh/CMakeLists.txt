@@ -43,6 +43,7 @@ add_geode_library(
         "vtu_hybrid_input.cpp"
         "vtu_hybrid_output.cpp"
         "vtu_polyhedral_input.cpp"
+        "vtu_polyhedral_output.cpp"
         "vtu_tetrahedral_input.cpp"
         "vtu_tetrahedral_output.cpp"
     ADVANCED_HEADERS
@@ -75,6 +76,7 @@ add_geode_library(
         "private/vtu_output_impl.h"
         "private/vtu_hybrid_input.h"
         "private/vtu_polyhedral_input.h"
+        "private/vtu_polyhedral_output.h"
         "private/vtu_tetrahedral_input.h"
         "private/vtu_tetrahedral_output.h"
     PRIVATE_DEPENDENCIES
