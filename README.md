@@ -29,7 +29,6 @@
 </p>
 
 ---
-
 ## Introduction
 
 OpenGeode-IO provides input and output formats for [OpenGeode] models and meshes.
