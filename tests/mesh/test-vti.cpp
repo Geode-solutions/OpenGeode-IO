@@ -48,6 +48,14 @@ int main()
         {
             att->set_value( c, c );
         }
+        auto att_vertex =
+            grid.vertex_attribute_manager()
+                .find_or_create_attribute< geode::VariableAttribute,
+                    geode::index_t >( "id_vertex", geode::NO_ID );
+        for( const auto c : geode::Range{ grid.nb_vertices() } )
+        {
+            att_vertex->set_value( c, c );
+        }
 
         geode::save_regular_grid( grid, "test.vti" );
 
