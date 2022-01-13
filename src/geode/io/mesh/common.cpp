@@ -37,6 +37,7 @@
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 #include <geode/io/mesh/private/vtp_edged_curve_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
+#include <geode/io/mesh/private/vtp_point_set_output.h>
 #include <geode/io/mesh/private/vtp_polygonal_output.h>
 #include <geode/io/mesh/private/vtp_triangulated_output.h>
 #include <geode/io/mesh/private/vtu_hybrid_input.h>
@@ -146,6 +147,13 @@ namespace
             geode::detail::VTUHybridOutput::extension().data() );
     }
 
+    void register_point_set_output()
+    {
+        geode::PointSetOutputFactory3D::register_creator<
+            geode::detail::VTPPointSetOutput >(
+            geode::detail::VTPPointSetOutput::extension().data() );
+    }
+
     void register_edged_curve_output()
     {
         geode::EdgedCurveOutputFactory3D::register_creator<
@@ -180,6 +188,7 @@ namespace
         register_tetrahedral_solid_input();
         register_hybrid_solid_input();
 
+        register_point_set_output();
         register_edged_curve_output();
         register_polygonal_surface_output();
         register_triangulated_surface_output();
