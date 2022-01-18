@@ -133,10 +133,19 @@ namespace
                 }
                 absl::StrAppend( &extent, "0 ", this->mesh().nb_cells( d ) );
             }
+            if( dimension == 2 )
+            {
+                absl::StrAppend( &extent, " 0 0" );
+            }
             image.append_attribute( "WholeExtent" ).set_value( extent.c_str() );
             piece.append_attribute( "Extent" ).set_value( extent.c_str() );
-            image.append_attribute( "Origin" )
-                .set_value( this->mesh().origin().string().c_str() );
+            std::string origin;
+            absl::StrAppend( &origin, this->mesh().origin().string() );
+            if( dimension == 2 )
+            {
+                absl::StrAppend( &origin, " 0" );
+            }
+            image.append_attribute( "Origin" ).set_value( origin.c_str() );
             std::string spacing;
             for( const auto d : geode::LRange{ dimension } )
             {
@@ -145,6 +154,10 @@ namespace
                     absl::StrAppend( &spacing, " " );
                 }
                 absl::StrAppend( &spacing, this->mesh().cell_size( d ) );
+            }
+            if( dimension == 2 )
+            {
+                absl::StrAppend( &spacing, " 1" );
             }
             image.append_attribute( "Spacing" ).set_value( spacing.c_str() );
         }
