@@ -29,13 +29,13 @@ namespace geode
 {
     namespace detail
     {
-        template < typename Mesh >
-        class VTPOutputImpl : public VTKMeshOutputImpl< Mesh >
+        template < template < index_t > class Mesh, index_t dimension >
+        class VTPOutputImpl : public VTKMeshOutputImpl< Mesh, dimension >
         {
         public:
-            VTPOutputImpl(
-                absl::string_view filename, const Mesh& polygonal_surface )
-                : VTKMeshOutputImpl< Mesh >(
+            VTPOutputImpl( absl::string_view filename,
+                const Mesh< dimension >& polygonal_surface )
+                : VTKMeshOutputImpl< Mesh, dimension >(
                     filename, polygonal_surface, "PolyData" )
             {
             }

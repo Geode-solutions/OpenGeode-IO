@@ -29,13 +29,15 @@ namespace geode
 {
     namespace detail
     {
+        template < index_t dimension >
         class VTPTriangulatedOutput final
-            : public TriangulatedSurfaceOutput< 3 >
+            : public TriangulatedSurfaceOutput< dimension >
         {
         public:
-            VTPTriangulatedOutput( const TriangulatedSurface< 3 > &surface,
+            VTPTriangulatedOutput(
+                const TriangulatedSurface< dimension > &surface,
                 absl::string_view filename )
-                : TriangulatedSurfaceOutput< 3 >( surface, filename )
+                : TriangulatedSurfaceOutput< dimension >( surface, filename )
             {
             }
 

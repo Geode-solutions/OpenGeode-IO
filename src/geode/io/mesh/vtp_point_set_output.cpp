@@ -29,13 +29,14 @@
 
 namespace
 {
-    class VTPCurveOutputImpl
-        : public geode::detail::VTKMeshOutputImpl< geode::PointSet3D >
+    template < geode::index_t dimension >
+    class VTPPointOutputImpl
+        : public geode::detail::VTKMeshOutputImpl< geode::PointSet, dimension >
     {
     public:
-        VTPCurveOutputImpl(
-            absl::string_view filename, const geode::PointSet3D& point_set )
-            : geode::detail::VTKMeshOutputImpl< geode::PointSet3D >(
+        VTPPointOutputImpl( absl::string_view filename,
+            const geode::PointSet< dimension >& point_set )
+            : geode::detail::VTKMeshOutputImpl< geode::PointSet, dimension >(
                 filename, point_set, "PolyData" )
         {
         }
@@ -86,10 +87,15 @@ namespace geode
 {
     namespace detail
     {
-        void VTPPointSetOutput::write() const
+        template < index_t dimension >
+        void VTPPointSetOutput< dimension >::write() const
         {
-            VTPCurveOutputImpl impl{ filename(), point_set() };
+            VTPPointOutputImpl< dimension > impl{ this->filename(),
+                this->point_set() };
             impl.write_file();
         }
+
+        template class VTPPointSetOutput< 2 >;
+        template class VTPPointSetOutput< 3 >;
     } // namespace detail
 } // namespace geode

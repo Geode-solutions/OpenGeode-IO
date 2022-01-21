@@ -29,12 +29,13 @@ namespace geode
 {
     namespace detail
     {
-        class VTPEdgedCurveOutput final : public EdgedCurveOutput< 3 >
+        template < index_t dimension >
+        class VTPEdgedCurveOutput final : public EdgedCurveOutput< dimension >
         {
         public:
-            VTPEdgedCurveOutput(
-                const EdgedCurve< 3 > &curve, absl::string_view filename )
-                : EdgedCurveOutput< 3 >( curve, filename )
+            VTPEdgedCurveOutput( const EdgedCurve< dimension > &curve,
+                absl::string_view filename )
+                : EdgedCurveOutput< dimension >( curve, filename )
             {
             }
 

@@ -29,12 +29,12 @@ namespace geode
 {
     namespace detail
     {
-        template < typename Mesh >
-        class VTUOutputImpl : public VTKMeshOutputImpl< Mesh >
+        template < template < index_t > class Mesh >
+        class VTUOutputImpl : public VTKMeshOutputImpl< Mesh, 3 >
         {
         protected:
-            VTUOutputImpl( absl::string_view filename, const Mesh& solid )
-                : VTKMeshOutputImpl< Mesh >(
+            VTUOutputImpl( absl::string_view filename, const Mesh< 3 >& solid )
+                : VTKMeshOutputImpl< Mesh, 3 >(
                     filename, solid, "UnstructuredGrid" )
             {
             }

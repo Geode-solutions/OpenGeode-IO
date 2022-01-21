@@ -34,13 +34,14 @@ namespace geode
 {
     namespace detail
     {
-        template < typename Mesh >
-        class VTKMeshOutputImpl : public VTKOutputImpl< Mesh >
+        template < template < index_t > class Mesh, index_t dimension >
+        class VTKMeshOutputImpl : public VTKOutputImpl< Mesh< dimension > >
         {
         protected:
-            VTKMeshOutputImpl(
-                absl::string_view filename, const Mesh& mesh, const char* type )
-                : VTKOutputImpl< Mesh >{ filename, mesh, type }
+            VTKMeshOutputImpl( absl::string_view filename,
+                const Mesh< dimension >& mesh,
+                const char* type )
+                : VTKOutputImpl< Mesh< dimension > >{ filename, mesh, type }
             {
             }
 
@@ -69,22 +70,22 @@ namespace geode
                 const auto bbox = this->mesh().bounding_box();
                 auto min = bbox.min().value( 0 );
                 auto max = bbox.max().value( 0 );
-                for( const auto d : Range{ 1, 3 } )
+                for( const auto d : Range{ 1, dimension } )
                 {
                     min = std::min( min, bbox.min().value( d ) );
                     max = std::max( max, bbox.max().value( d ) );
                 }
                 data_array.append_attribute( "RangeMin" ).set_value( min );
                 data_array.append_attribute( "RangeMax" ).set_value( max );
-                std::vector< double > values;
                 std::string vertices;
                 for( const auto v : Range{ this->mesh().nb_vertices() } )
                 {
                     absl::StrAppend(
                         &vertices, this->mesh().point( v ).string(), " " );
-                    values.emplace_back( this->mesh().point( v ).value( 0 ) );
-                    values.emplace_back( this->mesh().point( v ).value( 1 ) );
-                    values.emplace_back( this->mesh().point( v ).value( 2 ) );
+                    if( dimension < 3 )
+                    {
+                        absl::StrAppend( &vertices, "0 " );
+                    }
                 }
                 data_array.text().set( vertices.c_str() );
             }

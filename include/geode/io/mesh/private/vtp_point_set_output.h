@@ -29,12 +29,13 @@ namespace geode
 {
     namespace detail
     {
-        class VTPPointSetOutput final : public PointSetOutput< 3 >
+        template < index_t dimension >
+        class VTPPointSetOutput final : public PointSetOutput< dimension >
         {
         public:
-            VTPPointSetOutput(
-                const PointSet< 3 > &point_set, absl::string_view filename )
-                : PointSetOutput< 3 >( point_set, filename )
+            VTPPointSetOutput( const PointSet< dimension > &point_set,
+                absl::string_view filename )
+                : PointSetOutput< dimension >( point_set, filename )
             {
             }
 

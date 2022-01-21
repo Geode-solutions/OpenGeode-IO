@@ -32,11 +32,16 @@ namespace geode
 {
     namespace detail
     {
-        void VTPTriangulatedOutput::write() const
+        template < index_t dimension >
+        void VTPTriangulatedOutput< dimension >::write() const
         {
-            VTPOutputImpl< geode::TriangulatedSurface3D > impl{ filename(),
-                triangulated_surface() };
+            VTPOutputImpl< geode::TriangulatedSurface, dimension > impl{
+                this->filename(), this->triangulated_surface()
+            };
             impl.write_file();
         }
+
+        template class VTPTriangulatedOutput< 2 >;
+        template class VTPTriangulatedOutput< 3 >;
     } // namespace detail
 } // namespace geode

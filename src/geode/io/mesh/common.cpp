@@ -104,9 +104,12 @@ namespace
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
             geode::detail::OBJPolygonalOutput >(
             geode::detail::OBJPolygonalOutput::extension().data() );
+        geode::PolygonalSurfaceOutputFactory2D::register_creator<
+            geode::detail::VTPPolygonalOutput< 2 > >(
+            geode::detail::VTPPolygonalOutput< 2 >::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::detail::VTPPolygonalOutput >(
-            geode::detail::VTPPolygonalOutput::extension().data() );
+            geode::detail::VTPPolygonalOutput< 3 > >(
+            geode::detail::VTPPolygonalOutput< 3 >::extension().data() );
     }
 
     void register_triangulated_surface_output()
@@ -115,11 +118,14 @@ namespace
             geode::detail::STLOutput >(
             geode::detail::STLOutput::extension().data() );
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
-            geode::detail::VTPTriangulatedOutput >(
-            geode::detail::VTPTriangulatedOutput::extension().data() );
-        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::detail::OBJTriangulatedOutput >(
             geode::detail::OBJTriangulatedOutput::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory2D::register_creator<
+            geode::detail::VTPTriangulatedOutput< 2 > >(
+            geode::detail::VTPTriangulatedOutput< 2 >::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
+            geode::detail::VTPTriangulatedOutput< 3 > >(
+            geode::detail::VTPTriangulatedOutput< 3 >::extension().data() );
 
         geode::TriangulatedSurfaceOutputFactory2D::register_creator<
             geode::detail::TriangleOutput >(
@@ -149,16 +155,22 @@ namespace
 
     void register_point_set_output()
     {
+        geode::PointSetOutputFactory2D::register_creator<
+            geode::detail::VTPPointSetOutput< 2 > >(
+            geode::detail::VTPPointSetOutput< 2 >::extension().data() );
         geode::PointSetOutputFactory3D::register_creator<
-            geode::detail::VTPPointSetOutput >(
-            geode::detail::VTPPointSetOutput::extension().data() );
+            geode::detail::VTPPointSetOutput< 3 > >(
+            geode::detail::VTPPointSetOutput< 3 >::extension().data() );
     }
 
     void register_edged_curve_output()
     {
+        geode::EdgedCurveOutputFactory2D::register_creator<
+            geode::detail::VTPEdgedCurveOutput< 2 > >(
+            geode::detail::VTPEdgedCurveOutput< 2 >::extension().data() );
         geode::EdgedCurveOutputFactory3D::register_creator<
-            geode::detail::VTPEdgedCurveOutput >(
-            geode::detail::VTPEdgedCurveOutput::extension().data() );
+            geode::detail::VTPEdgedCurveOutput< 3 > >(
+            geode::detail::VTPEdgedCurveOutput< 3 >::extension().data() );
     }
 
     void register_edged_curve_input()
