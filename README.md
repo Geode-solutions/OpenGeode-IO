@@ -30,14 +30,12 @@
 
 ---
 ## Introduction
-
 OpenGeode-IO provides input and output formats for [OpenGeode] models and meshes.
 
 [OpenGeode]: https://github.com/Geode-solutions/OpenGeode
 
 
 ## Documentation
-
 To check out our live documentation, visit [docs.geode-solutions.com](https://docs.geode-solutions.com).
 
 Installing OpenGeode-IO is done:
@@ -50,12 +48,10 @@ For questions and support please use the official [slack](https://slackin-openge
 
 
 ## Changelog
-
 Detailed changes for each release are documented in the [release notes](https://github.com/Geode-solutions/OpenGeode-IO/releases).
 
 
 ## License
-
 [MIT](https://opensource.org/licenses/MIT)
 
 Copyright (c) 2019 - 2022, Geode-solutions
