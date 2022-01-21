@@ -29,13 +29,15 @@
 
 namespace
 {
+    template < geode::index_t dimension >
     class VTPCurveOutputImpl
-        : public geode::detail::VTKMeshOutputImpl< geode::EdgedCurve3D >
+        : public geode::detail::VTKMeshOutputImpl< geode::EdgedCurve,
+              dimension >
     {
     public:
-        VTPCurveOutputImpl(
-            absl::string_view filename, const geode::EdgedCurve3D& curve )
-            : geode::detail::VTKMeshOutputImpl< geode::EdgedCurve3D >(
+        VTPCurveOutputImpl( absl::string_view filename,
+            const geode::EdgedCurve< dimension >& curve )
+            : geode::detail::VTKMeshOutputImpl< geode::EdgedCurve, dimension >(
                 filename, curve, "PolyData" )
         {
         }
@@ -124,10 +126,15 @@ namespace geode
 {
     namespace detail
     {
-        void VTPEdgedCurveOutput::write() const
+        template < index_t dimension >
+        void VTPEdgedCurveOutput< dimension >::write() const
         {
-            VTPCurveOutputImpl impl{ filename(), edged_curve() };
+            VTPCurveOutputImpl< dimension > impl{ this->filename(),
+                this->edged_curve() };
             impl.write_file();
         }
+
+        template class VTPEdgedCurveOutput< 2 >;
+        template class VTPEdgedCurveOutput< 3 >;
     } // namespace detail
 } // namespace geode

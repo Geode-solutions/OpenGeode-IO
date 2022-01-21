@@ -30,14 +30,13 @@
 namespace
 {
     class VTUTetrahedralOutputImpl
-        : public geode::detail::VTUOutputImpl< geode::TetrahedralSolid3D >
+        : public geode::detail::VTUOutputImpl< geode::TetrahedralSolid >
     {
     public:
         VTUTetrahedralOutputImpl(
             absl::string_view filename, const geode::TetrahedralSolid3D& solid )
-            : geode::detail::VTUOutputImpl< geode::TetrahedralSolid3D >{
-                  filename, solid
-              }
+            : geode::detail::VTUOutputImpl< geode::TetrahedralSolid >{ filename,
+                  solid }
         {
         }
 

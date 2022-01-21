@@ -36,12 +36,12 @@ namespace
         TETRAHEDRON, PYRAMID, PRISM, 0, HEXAHEDRON };
 
     class VTUHybridOutputImpl
-        : public geode::detail::VTUOutputImpl< geode::HybridSolid3D >
+        : public geode::detail::VTUOutputImpl< geode::HybridSolid >
     {
     public:
         VTUHybridOutputImpl(
             absl::string_view filename, const geode::HybridSolid3D& solid )
-            : geode::detail::VTUOutputImpl< geode::HybridSolid3D >{ filename,
+            : geode::detail::VTUOutputImpl< geode::HybridSolid >{ filename,
                   solid }
         {
         }

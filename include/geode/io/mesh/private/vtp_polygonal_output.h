@@ -29,12 +29,14 @@ namespace geode
 {
     namespace detail
     {
-        class VTPPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
+        template < index_t dimension >
+        class VTPPolygonalOutput final
+            : public PolygonalSurfaceOutput< dimension >
         {
         public:
-            VTPPolygonalOutput( const PolygonalSurface< 3 > &surface,
+            VTPPolygonalOutput( const PolygonalSurface< dimension > &surface,
                 absl::string_view filename )
-                : PolygonalSurfaceOutput< 3 >( surface, filename )
+                : PolygonalSurfaceOutput< dimension >( surface, filename )
             {
             }
 
