@@ -21,7 +21,6 @@
 @PACKAGE_INIT@ 
 
 include(CMakeFindDependencyMacro)
-find_dependency(Assimp)
 find_dependency(OpenGeode)
 
 # Load information for each target

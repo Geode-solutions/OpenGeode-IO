@@ -27,15 +27,6 @@ find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFI
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
 
-# Install OpenGeode-IO third-parties
-install(
-    DIRECTORY
-        ${ASSIMP_INSTALL_PREFIX}/
-        ${PUGIXML_INSTALL_PREFIX}/
-    DESTINATION
-        .
-)
-
 #------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)

@@ -29,6 +29,15 @@ set(OPENGEODE_IO_EXTRA_ARGS
     -DOPENGEODE_IO_WITH_PYTHON:BOOL=${OPENGEODE_IO_WITH_PYTHON}
 )
 
+if(WIN32)
+    if(CMAKE_C_FLAGS_DEBUG)
+        string(REPLACE "/MDd" "/MD" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+    endif()
+    if(CMAKE_CXX_FLAGS_DEBUG)
+        string(REPLACE "/MDd" "/MD" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    endif()
+endif()
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Release' as none was specified.")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING 
