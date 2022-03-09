@@ -153,7 +153,7 @@ namespace
                 {
                     absl::StrAppend( &spacing, " " );
                 }
-                absl::StrAppend( &spacing, this->mesh().cell_size( d ) );
+                absl::StrAppend( &spacing, this->mesh().cell_length( d ) );
             }
             if( dimension == 2 )
             {
