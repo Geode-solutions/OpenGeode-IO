@@ -1218,10 +1218,10 @@ namespace
 
         template < typename Component, typename ComponentMeshBuilder >
         void filter_duplicated_vertices( const Component& component,
-            geode::BRep& brep,
-            const ComponentMeshBuilder& mesh_builder )
+            const geode::BRep& brep,
+            ComponentMeshBuilder& mesh_builder )
         {
-            std::unordered_map< geode::index_t, std::vector< geode::index_t > >
+            absl::flat_hash_map< geode::index_t, std::vector< geode::index_t > >
                 unique2component;
             for( const auto v : geode::Range{ component.mesh().nb_vertices() } )
             {
@@ -1229,63 +1229,42 @@ namespace
                                      { component.component_id(), v } )]
                     .emplace_back( v );
             }
-            std::vector< bool > delete_duplicated(
-                component.mesh().nb_vertices(), false );
-            for( const auto uv : unique2component )
+            for( const auto& uv : unique2component )
             {
                 for( const auto i : geode::Range{ 1, uv.second.size() } )
                 {
                     update_component_vertex(
-                        component, *mesh_builder, uv.second[i], uv.second[0] );
-                    delete_duplicated[uv.second[i]] = true;
+                        component, mesh_builder, uv.second[i], uv.second[0] );
                 }
             }
 
-            std::vector< geode::index_t > updated_unique2component;
-            updated_unique2component.reserve( std::count(
-                delete_duplicated.begin(), delete_duplicated.end(), false ) );
-            for( const auto i : geode::Range{ component.mesh().nb_vertices() } )
-            {
-                if( delete_duplicated[i] )
-                {
-                    continue;
-                }
-                auto ui =
-                    brep_.unique_vertex( { component.component_id(), i } );
-                updated_unique2component.push_back( ui );
-            }
-
-            mesh_builder->delete_vertices( delete_duplicated );
-
-            builder_.unregister_mesh_component( component );
-            builder_.register_mesh_component( component );
-            for( const auto i : geode::Range{ component.mesh().nb_vertices() } )
-            {
-                builder_.set_unique_vertex( { component.component_id(), i },
-                    updated_unique2component[i] );
-            }
+            const auto old2new = mesh_builder.delete_isolated_vertices();
+            builder_.update_unique_vertices(
+                component.component_id(), old2new );
         }
 
         void filter_duplicated_line_vertices(
             const geode::Line3D& line, geode::BRep& brep )
         {
-            filter_duplicated_vertices( line, brep,
-                geode::BRepBuilder{ brep }.line_mesh_builder( line.id() ) );
+            auto builder =
+                geode::BRepBuilder{ brep }.line_mesh_builder( line.id() );
+            filter_duplicated_vertices( line, brep, *builder );
         }
 
         void filter_duplicated_surface_vertices(
             const geode::Surface3D& surface, geode::BRep& brep )
         {
-            filter_duplicated_vertices( surface, brep,
-                geode::BRepBuilder{ brep }.surface_mesh_builder(
-                    surface.id() ) );
+            auto builder =
+                geode::BRepBuilder{ brep }.surface_mesh_builder( surface.id() );
+            filter_duplicated_vertices( surface, brep, *builder );
         }
 
         void filter_duplicated_block_vertices(
             const geode::Block3D& block, geode::BRep& brep )
         {
-            filter_duplicated_vertices( block, brep,
-                geode::BRepBuilder{ brep }.block_mesh_builder( block.id() ) );
+            auto builder =
+                geode::BRepBuilder{ brep }.block_mesh_builder( block.id() );
+            filter_duplicated_vertices( block, brep, *builder );
         }
 
         void add_potential_relationships(
