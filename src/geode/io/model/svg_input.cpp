@@ -25,7 +25,6 @@
 
 #include <cctype>
 #include <fstream>
-#include <unordered_map>
 
 #include <pugixml.hpp>
 
@@ -150,7 +149,7 @@ namespace
                 return param_map.at( letter );
             }
 
-            const std::unordered_map< char, geode::index_t > param_map{
+            const absl::flat_hash_map< char, geode::index_t > param_map{
                 { 'm', 2 }, { 'l', 2 }, { 'h', 1 }, { 'v', 1 }, { 'z', 0 }
             };
 
