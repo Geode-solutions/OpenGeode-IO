@@ -19,7 +19,20 @@
 # SOFTWARE.
 
 from setuptools import setup
+from setuptools.dist import Distribution
+from setuptools.command.install import install
 from os import path
+
+class BinaryDistribution(Distribution):
+    def has_ext_modules(self):
+        return True
+    def is_pure(self):
+        return False
+        
+class InstallPlatlib(install):
+    def finalize_options(self):
+        install.finalize_options(self)
+        self.install_lib = self.install_platlib
 
 with open(path.join('${CMAKE_SOURCE_DIR}', 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -28,7 +41,7 @@ with open('${CMAKE_CURRENT_LIST_DIR}/requirements.txt') as f:
 
 setup(
     name='OpenGeode-IO',
-    version='${CMAKE_PACKAGE_VERSION}',
+    version='${WHEEL_VERSION}',
     description='Implementation of input and output formats for OpenGeode',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -37,12 +50,14 @@ setup(
     url='https://github.com/Geode-solutions/OpenGeode-IO',
     packages=['opengeode_io'],
     package_data={
-        '': ['*.so', '*.dll', '*.pyd', '*.dylib']
+        'opengeode_io': ['*.so', '*.dll', '*.pyd', '*.dylib']
     },
     install_requires=install_requires,
     license='MIT',
     classifiers=[
         'License :: OSI Approved :: MIT License'
     ],
-    zip_safe=False
+    zip_safe=False,
+    distclass=BinaryDistribution,
+    cmdclass={'install': InstallPlatlib}
 )
