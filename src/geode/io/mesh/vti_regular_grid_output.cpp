@@ -56,69 +56,15 @@ namespace
         void write_cell_data( pugi::xml_node& piece )
         {
             auto cell_data = piece.append_child( "CellData" );
-            const auto names =
-                this->mesh().cell_attribute_manager().attribute_names();
-            for( const auto& name : names )
-            {
-                const auto attribute = this->mesh()
-                                           .cell_attribute_manager()
-                                           .find_generic_attribute( name );
-                if( !attribute || !attribute->is_genericable() )
-                {
-                    continue;
-                }
-                auto data_array = cell_data.append_child( "DataArray" );
-                data_array.append_attribute( "type" ).set_value( "Float64" );
-                data_array.append_attribute( "Name" ).set_value( name.data() );
-                data_array.append_attribute( "format" ).set_value( "ascii" );
-                auto min = attribute->generic_value( 0 );
-                auto max = attribute->generic_value( 0 );
-                std::string values;
-                for( const auto c : geode::Range{ this->mesh().nb_cells() } )
-                {
-                    const auto value = attribute->generic_value( c );
-                    absl::StrAppend( &values, value, " " );
-                    min = std::min( min, value );
-                    max = std::max( max, value );
-                }
-                data_array.append_attribute( "RangeMin" ).set_value( min );
-                data_array.append_attribute( "RangeMax" ).set_value( max );
-                data_array.text().set( values.c_str() );
-            }
+            this->write_attributes(
+                cell_data, this->mesh().cell_attribute_manager() );
         }
 
         void write_vertex_data( pugi::xml_node& piece )
         {
             auto vertex_data = piece.append_child( "PointData" );
-            const auto names =
-                this->mesh().vertex_attribute_manager().attribute_names();
-            for( const auto& name : names )
-            {
-                const auto attribute = this->mesh()
-                                           .vertex_attribute_manager()
-                                           .find_generic_attribute( name );
-                if( !attribute || !attribute->is_genericable() )
-                {
-                    continue;
-                }
-                auto data_array = vertex_data.append_child( "DataArray" );
-                data_array.append_attribute( "type" ).set_value( "Float64" );
-                data_array.append_attribute( "Name" ).set_value( name.data() );
-                data_array.append_attribute( "format" ).set_value( "ascii" );
-                auto min = attribute->generic_value( 0 );
-                auto max = attribute->generic_value( 0 );
-                std::string values;
-                for( const auto c : geode::Range{ this->mesh().nb_vertices() } )
-                {
-                    const auto value = attribute->generic_value( c );
-                    absl::StrAppend( &values, value, " " );
-                    min = std::min( min, value );
-                    max = std::max( max, value );
-                }
-                data_array.append_attribute( "RangeMin" ).set_value( min );
-                data_array.append_attribute( "RangeMax" ).set_value( max );
-                data_array.text().set( values.c_str() );
-            }
+            this->write_attributes(
+                vertex_data, this->mesh().vertex_attribute_manager() );
         }
 
         void write_image_header( pugi::xml_node& piece )

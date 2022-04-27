@@ -142,39 +142,8 @@ namespace geode
             void write_vtk_cell_attributes( pugi::xml_node& piece ) override
             {
                 auto cell_data = piece.append_child( "CellData" );
-                const auto names = this->mesh()
-                                       .polyhedron_attribute_manager()
-                                       .attribute_names();
-                for( const auto& name : names )
-                {
-                    const auto attribute = this->mesh()
-                                               .polyhedron_attribute_manager()
-                                               .find_generic_attribute( name );
-                    if( !attribute || !attribute->is_genericable() )
-                    {
-                        continue;
-                    }
-                    auto data_array = cell_data.append_child( "DataArray" );
-                    data_array.append_attribute( "type" ).set_value(
-                        "Float64" );
-                    data_array.append_attribute( "Name" ).set_value(
-                        name.data() );
-                    data_array.append_attribute( "format" )
-                        .set_value( "ascii" );
-                    auto min = attribute->generic_value( 0 );
-                    auto max = attribute->generic_value( 0 );
-                    std::string values;
-                    for( const auto v : Range{ this->mesh().nb_polyhedra() } )
-                    {
-                        const auto value = attribute->generic_value( v );
-                        absl::StrAppend( &values, value, " " );
-                        min = std::min( min, value );
-                        max = std::max( max, value );
-                    }
-                    data_array.append_attribute( "RangeMin" ).set_value( min );
-                    data_array.append_attribute( "RangeMax" ).set_value( max );
-                    data_array.text().set( values.c_str() );
-                }
+                this->write_attributes(
+                    cell_data, this->mesh().polyhedron_attribute_manager() );
             }
         };
     } // namespace detail
