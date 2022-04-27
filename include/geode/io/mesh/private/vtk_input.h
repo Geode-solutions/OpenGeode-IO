@@ -194,7 +194,7 @@ namespace geode
             }
 
             template < typename Out, typename In >
-            std::vector< Out > cast_to( const std::vector< In >& values )
+            std::vector< Out > cast_to( absl::Span< const In > values )
             {
                 std::vector< Out > result( values.size() );
                 for( const auto v : Indices{ values } )
@@ -206,11 +206,18 @@ namespace geode
 
             template < typename T >
             void build_attribute( AttributeManager& manager,
-                const pugi::char_t* name,
-                const std::vector< T >& values,
+                absl::string_view name,
+                absl::Span< const T > values,
                 index_t nb_components,
                 index_t offset )
             {
+                OPENGEODE_EXCEPTION( values.size() % nb_components == 0,
+                    "[VTKInput::build_attribute] Number of attribute "
+                    "values is not a multiple of number of components" );
+                if( manager.find_generic_attribute( name ) )
+                {
+                    return;
+                }
                 if( nb_components == 1 )
                 {
                     auto attribute =
@@ -222,28 +229,21 @@ namespace geode
                         attribute->set_value( i + offset, values[i] );
                     }
                 }
+                else if( nb_components == 2 )
+                {
+                    create_attribute< std::array< T, 2 >, T >(
+                        manager, {}, values, nb_components, name, offset );
+                }
+                else if( nb_components == 3 )
+                {
+                    create_attribute< std::array< T, 3 >, T >(
+                        manager, {}, values, nb_components, name, offset );
+                }
                 else
                 {
-                    OPENGEODE_EXCEPTION( values.size() % nb_components == 0,
-                        "[VTKInput::build_attribute] Number of attribute "
-                        "values is not a multiple of number of components" );
-                    auto attribute =
-                        manager.find_or_create_attribute< VariableAttribute,
-                            std::vector< T > >(
-                            name, std::vector< T >( nb_components ) );
-                    for( const auto i :
-                        geode::Range{ values.size() / nb_components } )
-                    {
-                        for( const auto c : geode::Range{ nb_components } )
-                        {
-                            const auto& new_value =
-                                values[nb_components * i + c];
-                            attribute->modify_value( i + offset,
-                                [&new_value, &c]( std::vector< T >& value ) {
-                                    value[c] = new_value;
-                                } );
-                        }
-                    }
+                    create_attribute< std::vector< T >, T >( manager,
+                        std::vector< T >( nb_components ), values,
+                        nb_components, name, offset );
                 }
             }
 
@@ -265,8 +265,9 @@ namespace geode
                 {
                     const auto attribute_values =
                         read_float_data_array< double >( data );
-                    build_attribute( attribute_manager, data_array_name,
-                        attribute_values, nb_components, offset );
+                    build_attribute< double >( attribute_manager,
+                        data_array_name, attribute_values, nb_components,
+                        offset );
                 }
                 else if( match( data_array_type, "Int64" )
                          || match( data_array_type, "Int32" )
@@ -279,15 +280,17 @@ namespace geode
                     {
                         const auto attribute_values =
                             read_integer_data_array< index_t >( data );
-                        build_attribute( attribute_manager, data_array_name,
-                            attribute_values, nb_components, offset );
+                        build_attribute< index_t >( attribute_manager,
+                            data_array_name, attribute_values, nb_components,
+                            offset );
                     }
                     else
                     {
                         const auto attribute_values =
                             read_integer_data_array< long int >( data );
-                        build_attribute( attribute_manager, data_array_name,
-                            attribute_values, nb_components, offset );
+                        build_attribute< long int >( attribute_manager,
+                            data_array_name, attribute_values, nb_components,
+                            offset );
                     }
                 }
                 else if( match( data_array_type, "Int8" ) )
@@ -304,9 +307,10 @@ namespace geode
                     const auto attribute_values =
                         read_uint8_data_array< uint8_t >( data );
                     const auto attribute_values_as_int =
-                        cast_to< index_t >( attribute_values );
-                    build_attribute( attribute_manager, data_array_name,
-                        attribute_values_as_int, nb_components, offset );
+                        cast_to< index_t, uint8_t >( attribute_values );
+                    build_attribute< index_t >( attribute_manager,
+                        data_array_name, attribute_values_as_int, nb_components,
+                        offset );
                 }
                 else
                 {
@@ -317,6 +321,31 @@ namespace geode
             }
 
         private:
+            template < typename Container, typename T >
+            void create_attribute( AttributeManager& manager,
+                const Container& default_value,
+                absl::Span< const T > values,
+                index_t nb_components,
+                absl::string_view name,
+                index_t offset )
+            {
+                auto attribute =
+                    manager.find_or_create_attribute< VariableAttribute,
+                        Container >( name, default_value );
+                for( const auto i :
+                    geode::Range{ values.size() / nb_components } )
+                {
+                    for( const auto c : geode::Range{ nb_components } )
+                    {
+                        const auto& new_value = values[nb_components * i + c];
+                        attribute->modify_value(
+                            i + offset, [&new_value, &c]( Container& value ) {
+                                value[c] = new_value;
+                            } );
+                    }
+                }
+            }
+
             void read_root_attributes()
             {
                 OPENGEODE_EXCEPTION(
