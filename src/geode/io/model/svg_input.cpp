@@ -183,8 +183,9 @@ namespace
 
         bool string_isalpha( const std::string& str ) const
         {
-            return std::all_of( str.begin(), str.end(),
-                []( const char& c ) { return std::isalpha( c ); } );
+            return std::all_of( str.begin(), str.end(), []( const char& c ) {
+                return std::isalpha( c );
+            } );
         }
 
         void remove_commas( std::string& path ) const
