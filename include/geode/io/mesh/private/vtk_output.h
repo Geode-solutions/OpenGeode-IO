@@ -48,6 +48,7 @@ namespace geode
             {
                 auto root = write_root_attributes();
                 write_vtk_object( root );
+                document_.save( file_ );
             }
 
         protected:
@@ -59,16 +60,10 @@ namespace geode
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
-                    "[VTKOutput] Error while opening file: ", filename );
+                    "[VTKOutput] Error while writing file: ", filename );
             }
 
-            virtual ~VTKOutputImpl()
-            {
-                const auto ok =
-                    document_.save_file( to_string( filename_ ).c_str() );
-                OPENGEODE_EXCEPTION(
-                    ok, "[VTKOutput] Error while writing file: ", filename_ );
-            }
+            virtual ~VTKOutputImpl() {}
 
             const Mesh& mesh() const
             {

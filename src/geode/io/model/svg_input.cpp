@@ -232,7 +232,7 @@ namespace
                 {
                     params[t] = std::stod( token );
                 }
-                catch( std::invalid_argument& error )
+                catch( std::invalid_argument& /*unused*/ )
                 {
                     throw geode::OpenGeodeException{
                         "[SVGInputImpl::get_params] Path token is not a "
