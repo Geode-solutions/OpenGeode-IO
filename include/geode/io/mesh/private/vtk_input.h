@@ -186,7 +186,8 @@ namespace geode
                     vertices.reserve( cur_offset - prev_offset );
                     for( const auto v : Range{ prev_offset, cur_offset } )
                     {
-                        vertices.push_back(static_cast<index_t>( connectivity[v]) );
+                        vertices.push_back(
+                            static_cast< index_t >( connectivity[v] ) );
                     }
                     prev_offset = cur_offset;
                 }
@@ -491,9 +492,10 @@ namespace geode
             {
                 // to encode the nb values in base64
                 // ((nb * 8 * nb bytes) bits / 6) ->ceil
-                return static_cast<index_t>(4
-                       * std::ceil(
-                           nb_values * 8. * sizeof( UInt ) / ( 6. * 4. ) ));
+                return static_cast< index_t >(
+                    4
+                    * std::ceil(
+                        nb_values * 8. * sizeof( UInt ) / ( 6. * 4. ) ) );
             }
 
             template < typename T, typename UInt >
@@ -537,8 +539,8 @@ namespace geode
 
                 const auto data_offset =
                     nb_char_needed< UInt >( 3 + nb_data_blocks );
-                const auto nb_data_char =static_cast < size_t>(
-                    std::ceil( sum_compressed_block_size * 4. / 3. ));
+                const auto nb_data_char = static_cast< size_t >(
+                    std::ceil( sum_compressed_block_size * 4. / 3. ) );
                 auto data = input.substr( data_offset, nb_data_char );
                 const auto decoded_data = decode_base64( data );
                 const auto compressed_data_bytes =
@@ -546,8 +548,9 @@ namespace geode
                         decoded_data.c_str() );
 
                 std::vector< T > result;
-                result.reserve( static_cast < size_t>( std::ceil(
-                    nb_data_blocks * uncompressed_block_size / sizeof( T ) ) ));
+                result.reserve( static_cast< size_t >(
+                    std::ceil( nb_data_blocks * uncompressed_block_size
+                               / sizeof( T ) ) ) );
                 UInt cur_data_offset{ 0 };
                 for( const auto b : Range{ nb_data_blocks } )
                 {
