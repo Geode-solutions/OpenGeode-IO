@@ -178,7 +178,7 @@ namespace geode
             {
                 absl::FixedArray< std::vector< index_t > > cell_vertices(
                     offsets.size() );
-                index_t prev_offset{ 0 };
+                int64_t prev_offset{ 0 };
                 for( const auto p : Indices{ offsets } )
                 {
                     const auto cur_offset = offsets[p];
@@ -186,7 +186,7 @@ namespace geode
                     vertices.reserve( cur_offset - prev_offset );
                     for( const auto v : Range{ prev_offset, cur_offset } )
                     {
-                        vertices.push_back( connectivity[v] );
+                        vertices.push_back(static_cast<index_t>( connectivity[v]) );
                     }
                     prev_offset = cur_offset;
                 }
@@ -486,14 +486,14 @@ namespace geode
                 return result;
             }
 
-            template < typename UInt >
-            constexpr index_t nb_char_needed( index_t nb_values ) const
+            template < typename UInt, typename UInt2 >
+            constexpr index_t nb_char_needed( UInt2 nb_values ) const
             {
                 // to encode the nb values in base64
                 // ((nb * 8 * nb bytes) bits / 6) ->ceil
-                return 4
+                return static_cast<index_t>(4
                        * std::ceil(
-                           nb_values * 8. * sizeof( UInt ) / ( 6. * 4. ) );
+                           nb_values * 8. * sizeof( UInt ) / ( 6. * 4. ) ));
             }
 
             template < typename T, typename UInt >
@@ -526,8 +526,8 @@ namespace geode
                 const auto optional_header_values =
                     reinterpret_cast< const UInt* >(
                         decoded_optional_header.c_str() );
-                index_t sum_compressed_block_size{ 0 };
-                absl::FixedArray< index_t > compressed_blocks_size(
+                UInt sum_compressed_block_size{ 0 };
+                absl::FixedArray< UInt > compressed_blocks_size(
                     nb_data_blocks );
                 for( const auto b : Range{ nb_data_blocks } )
                 {
@@ -537,8 +537,8 @@ namespace geode
 
                 const auto data_offset =
                     nb_char_needed< UInt >( 3 + nb_data_blocks );
-                const auto nb_data_char =
-                    std::ceil( sum_compressed_block_size * 4. / 3. );
+                const auto nb_data_char =static_cast < size_t>(
+                    std::ceil( sum_compressed_block_size * 4. / 3. ));
                 auto data = input.substr( data_offset, nb_data_char );
                 const auto decoded_data = decode_base64( data );
                 const auto compressed_data_bytes =
@@ -546,9 +546,9 @@ namespace geode
                         decoded_data.c_str() );
 
                 std::vector< T > result;
-                result.reserve( std::ceil(
-                    nb_data_blocks * uncompressed_block_size / sizeof( T ) ) );
-                index_t cur_data_offset{ 0 };
+                result.reserve( static_cast < size_t>( std::ceil(
+                    nb_data_blocks * uncompressed_block_size / sizeof( T ) ) ));
+                UInt cur_data_offset{ 0 };
                 for( const auto b : Range{ nb_data_blocks } )
                 {
                     const auto compressed_data_length =
