@@ -1336,12 +1336,14 @@ namespace geode
 {
     namespace detail
     {
-        void MSHInput::read()
+        BRep MSHInput::read()
         {
-            MSHInputImpl impl( filename(), brep() );
+            BRep brep;
+            MSHInputImpl impl( filename(), brep );
             impl.read_file();
             impl.build_geometry();
             impl.build_topology();
+            return brep;
         }
     } // namespace detail
 } // namespace geode

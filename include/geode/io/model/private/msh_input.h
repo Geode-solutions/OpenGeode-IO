@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include <geode/basic/logger.h>
-
 #include <geode/model/representation/io/brep_input.h>
 
 namespace geode
@@ -34,10 +32,7 @@ namespace geode
         class MSHInput final : public BRepInput
         {
         public:
-            MSHInput( BRep& brep, absl::string_view filename )
-                : BRepInput( brep, filename )
-            {
-            }
+            MSHInput( absl::string_view filename ) : BRepInput( filename ) {}
 
             static absl::string_view extension()
             {
@@ -45,7 +40,7 @@ namespace geode
                 return ext;
             }
 
-            void read() final;
+            BRep read() final;
         };
     } // namespace detail
 } // namespace geode

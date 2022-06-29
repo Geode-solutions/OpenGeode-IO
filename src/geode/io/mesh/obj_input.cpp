@@ -53,11 +53,14 @@ namespace geode
 {
     namespace detail
     {
-        void OBJInput::do_read()
+        std::unique_ptr< PolygonalSurface3D > OBJInput::read(
+            const MeshImpl& impl )
         {
-            OBJInputImpl impl{ filename(), polygonal_surface() };
-            impl.read_file();
-            impl.build_mesh();
+            auto surface = PolygonalSurface3D::create( impl );
+            OBJInputImpl reader{ filename(), *surface };
+            reader.read_file();
+            reader.build_mesh();
+            return surface;
         }
     } // namespace detail
 } // namespace geode

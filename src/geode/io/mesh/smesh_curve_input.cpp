@@ -65,10 +65,13 @@ namespace geode
 {
     namespace detail
     {
-        void SMESHCurveInput::do_read()
+        std::unique_ptr< EdgedCurve3D > SMESHCurveInput::read(
+            const MeshImpl& impl )
         {
-            SMESHCurveInputImpl impl{ filename(), edged_curve() };
-            impl.read_file();
+            auto curve = EdgedCurve3D::create( impl );
+            SMESHCurveInputImpl reader{ filename(), *curve };
+            reader.read_file();
+            return curve;
         }
     } // namespace detail
 } // namespace geode

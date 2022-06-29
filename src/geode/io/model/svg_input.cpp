@@ -429,12 +429,14 @@ namespace geode
 {
     namespace detail
     {
-        void SVGInput::read()
+        Section SVGInput::read()
         {
-            SVGInputImpl impl( filename(), section() );
+            Section section;
+            SVGInputImpl impl( filename(), section );
             impl.read_file();
             impl.process_paths();
             impl.build_topology();
+            return section;
         }
     } // namespace detail
 } // namespace geode

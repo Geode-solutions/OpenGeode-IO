@@ -54,11 +54,14 @@ namespace geode
 {
     namespace detail
     {
-        void STLInput::do_read()
+        std::unique_ptr< TriangulatedSurface3D > STLInput::read(
+            const MeshImpl& impl )
         {
-            STLInputImpl impl{ filename(), triangulated_surface() };
-            impl.read_file();
-            impl.build_mesh();
+            auto surface = TriangulatedSurface3D::create( impl );
+            STLInputImpl reader{ filename(), *surface };
+            reader.read_file();
+            reader.build_mesh();
+            return surface;
         }
     } // namespace detail
 } // namespace geode

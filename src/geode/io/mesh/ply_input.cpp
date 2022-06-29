@@ -96,11 +96,14 @@ namespace geode
 {
     namespace detail
     {
-        void PLYInput::do_read()
+        std::unique_ptr< PolygonalSurface3D > PLYInput::read(
+            const MeshImpl& impl )
         {
-            PLYInputImpl impl{ filename(), polygonal_surface() };
-            impl.read_file();
-            impl.build_mesh();
+            auto surface = PolygonalSurface3D::create( impl );
+            PLYInputImpl reader{ filename(), *surface };
+            reader.read_file();
+            reader.build_mesh();
+            return surface;
         }
     } // namespace detail
 } // namespace geode

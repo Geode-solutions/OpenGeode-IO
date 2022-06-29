@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
+    ALIAS_3D( TriangulatedSurface );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class STLInput final : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            STLInput(
-                TriangulatedSurface< 3 > &surface, absl::string_view filename )
-                : TriangulatedSurfaceInput< 3 >( surface, filename )
+            STLInput( absl::string_view filename )
+                : TriangulatedSurfaceInput< 3 >( filename )
             {
             }
 
@@ -44,7 +49,8 @@ namespace geode
                 return ext;
             }
 
-            void do_read() final;
+            std::unique_ptr< TriangulatedSurface3D > read(
+                const MeshImpl& impl ) final;
         };
     } // namespace detail
 } // namespace geode
