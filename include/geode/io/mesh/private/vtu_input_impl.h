@@ -38,15 +38,15 @@ namespace geode
             VTUInputImpl( absl::string_view filename, Mesh& solid )
                 : VTKInputImpl< Mesh, Builder >(
                     filename, solid, "UnstructuredGrid" ),
-                  vtk_tetra_( 4 ),
+                  vtk_tetrahedron_( 4 ),
                   vtk_hexa_( 6 ),
                   vtk_prism_( 5 ),
                   vtk_pyramid_( 5 )
             {
-                vtk_tetra_[0] = { 1, 3, 2 };
-                vtk_tetra_[1] = { 0, 2, 3 };
-                vtk_tetra_[2] = { 3, 1, 0 };
-                vtk_tetra_[3] = { 0, 1, 2 };
+                vtk_tetrahedron_[0] = { 1, 3, 2 };
+                vtk_tetrahedron_[1] = { 0, 2, 3 };
+                vtk_tetrahedron_[2] = { 3, 1, 0 };
+                vtk_tetrahedron_[3] = { 0, 1, 2 };
                 vtk_hexa_[0] = { 0, 4, 5, 1 };
                 vtk_hexa_[1] = { 1, 5, 7, 3 };
                 vtk_hexa_[2] = { 3, 7, 6, 2 };
@@ -65,9 +65,9 @@ namespace geode
                 vtk_pyramid_[4] = { 0, 1, 2, 3 };
             }
 
-            void enable_tetra()
+            void enable_tetrahedron()
             {
-                elements_.emplace( 10, vtk_tetra_ );
+                elements_.emplace( 10, vtk_tetrahedron_ );
             }
 
             void enable_hexa()
@@ -175,7 +175,7 @@ namespace geode
 
         private:
             absl::flat_hash_map< int64_t, VTKElement > elements_;
-            VTKElement vtk_tetra_;
+            VTKElement vtk_tetrahedron_;
             VTKElement vtk_hexa_;
             VTKElement vtk_prism_;
             VTKElement vtk_pyramid_;

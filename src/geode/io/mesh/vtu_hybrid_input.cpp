@@ -42,7 +42,7 @@ namespace
             : geode::detail::VTUInputImpl< geode::HybridSolid3D,
                 geode::HybridSolidBuilder3D >( filename, solid )
         {
-            enable_tetra();
+            enable_tetrahedron();
             enable_hexa();
             enable_prism();
             enable_pyramid();
