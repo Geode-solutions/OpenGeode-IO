@@ -88,10 +88,10 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPPointSetOutput< dimension >::write() const
+        void VTPPointSetOutput< dimension >::write(
+            const PointSet< dimension >& point_set ) const
         {
-            VTPPointOutputImpl< dimension > impl{ this->filename(),
-                this->point_set() };
+            VTPPointOutputImpl< dimension > impl{ this->filename(), point_set };
             impl.write_file();
         }
 

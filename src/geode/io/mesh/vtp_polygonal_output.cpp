@@ -33,10 +33,11 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPPolygonalOutput< dimension >::write() const
+        void VTPPolygonalOutput< dimension >::write(
+            const PolygonalSurface< dimension > &surface ) const
         {
             VTPOutputImpl< geode::PolygonalSurface, dimension > impl{
-                this->filename(), this->polygonal_surface()
+                this->filename(), surface
             };
             impl.write_file();
         }

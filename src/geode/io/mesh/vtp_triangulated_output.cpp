@@ -33,10 +33,11 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPTriangulatedOutput< dimension >::write() const
+        void VTPTriangulatedOutput< dimension >::write(
+            const TriangulatedSurface< dimension > &surface ) const
         {
             VTPOutputImpl< geode::TriangulatedSurface, dimension > impl{
-                this->filename(), this->triangulated_surface()
+                this->filename(), surface
             };
             impl.write_file();
         }

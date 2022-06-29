@@ -31,10 +31,10 @@ namespace geode
 {
     namespace detail
     {
-        void STLOutput::write() const
+        void STLOutput::write( const TriangulatedSurface3D &surface ) const
         {
             detail::AssimpMeshOutput< TriangulatedSurface3D > impl{ filename(),
-                triangulated_surface(), "stlb" };
+                surface, "stlb" };
             impl.build_assimp_scene();
             impl.write_file();
         }

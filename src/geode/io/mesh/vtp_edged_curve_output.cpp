@@ -100,10 +100,10 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPEdgedCurveOutput< dimension >::write() const
+        void VTPEdgedCurveOutput< dimension >::write(
+            const EdgedCurve< dimension >& curve ) const
         {
-            VTPCurveOutputImpl< dimension > impl{ this->filename(),
-                this->edged_curve() };
+            VTPCurveOutputImpl< dimension > impl{ this->filename(), curve };
             impl.write_file();
         }
 

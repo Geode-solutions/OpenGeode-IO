@@ -93,14 +93,13 @@ namespace geode
 {
     namespace detail
     {
-        void TriangleOutput::write() const
+        void TriangleOutput::write( const TriangulatedSurface2D& surface ) const
         {
             auto file = filename();
             file.remove_suffix( TriangleOutput::extension().size() + 1 );
-            const auto& mesh = triangulated_surface();
-            write_node( absl::StrCat( file, ".node" ), mesh );
-            write_ele( absl::StrCat( file, ".ele" ), mesh );
-            write_neigh( absl::StrCat( file, ".neigh" ), mesh );
+            write_node( absl::StrCat( file, ".node" ), surface );
+            write_ele( absl::StrCat( file, ".ele" ), surface );
+            write_neigh( absl::StrCat( file, ".neigh" ), surface );
         }
     } // namespace detail
 } // namespace geode

@@ -115,10 +115,10 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTIRegularGridOutput< dimension >::write() const
+        void VTIRegularGridOutput< dimension >::write(
+            const RegularGrid< dimension >& grid ) const
         {
-            VTIOutputImpl< dimension > impl{ this->regular_grid(),
-                this->filename() };
+            VTIOutputImpl< dimension > impl{ grid, this->filename() };
             impl.write_file();
         }
 

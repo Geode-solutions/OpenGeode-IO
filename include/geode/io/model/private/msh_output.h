@@ -34,10 +34,7 @@ namespace geode
         class MSHOutput final : public BRepOutput
         {
         public:
-            MSHOutput( const BRep& brep, absl::string_view filename )
-                : BRepOutput( brep, filename )
-            {
-            }
+            MSHOutput( absl::string_view filename ) : BRepOutput( filename ) {}
 
             static absl::string_view extension()
             {
@@ -45,7 +42,7 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write( const BRep& brep ) const final;
         };
     } // namespace detail
 } // namespace geode

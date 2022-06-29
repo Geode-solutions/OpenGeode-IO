@@ -75,9 +75,9 @@ namespace geode
 {
     namespace detail
     {
-        void VTUPolyhedralOutput::write() const
+        void VTUPolyhedralOutput::write( const PolyhedralSolid3D& solid ) const
         {
-            VTUPolyhedralOutputImpl impl{ filename(), polyhedral_solid() };
+            VTUPolyhedralOutputImpl impl{ filename(), solid };
             impl.write_file();
         }
     } // namespace detail

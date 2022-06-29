@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( HybridSolid );
+    ALIAS_3D( HybridSolid );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class VTUHybridOutput final : public HybridSolidOutput< 3 >
         {
         public:
-            VTUHybridOutput(
-                const HybridSolid< 3 > &solid, absl::string_view filename )
-                : HybridSolidOutput< 3 >( solid, filename )
+            VTUHybridOutput( absl::string_view filename )
+                : HybridSolidOutput< 3 >( filename )
             {
             }
 
@@ -44,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write( const HybridSolid3D &solid ) const final;
         };
     } // namespace detail
 } // namespace geode

@@ -436,9 +436,9 @@ namespace geode
 {
     namespace detail
     {
-        void MSHOutput::write() const
+        void MSHOutput::write( const BRep& brep ) const
         {
-            MSHOutputImpl impl( filename(), brep() );
+            MSHOutputImpl impl( filename(), brep );
             impl.write_file();
         }
     } // namespace detail

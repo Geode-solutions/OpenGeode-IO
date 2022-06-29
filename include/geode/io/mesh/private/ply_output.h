@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            PLYOutput( const PolygonalSurface< 3 > &surface,
-                absl::string_view filename )
-                : PolygonalSurfaceOutput< 3 >( surface, filename )
+            PLYOutput( absl::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
@@ -44,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write( const PolygonalSurface3D &surface ) const final;
         };
     } // namespace detail
 } // namespace geode
