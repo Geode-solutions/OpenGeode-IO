@@ -42,7 +42,7 @@ namespace
             : geode::detail::VTUInputImpl< geode::TetrahedralSolid3D,
                 geode::TetrahedralSolidBuilder3D >( filename, solid )
         {
-            enable_tetra();
+            enable_tetrahedron();
         }
     };
 } // namespace

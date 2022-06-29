@@ -585,13 +585,13 @@ namespace
 
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.mesh_component_vertices(
+                const auto corners_vertices = brep_.component_mesh_vertices(
                     uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.mesh_component_vertices(
+                const auto lines_vertices = brep_.component_mesh_vertices(
                     uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                const auto surfaces_vertices = brep_.component_mesh_vertices(
                     uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.mesh_component_vertices(
+                const auto blocks_vertices = brep_.component_mesh_vertices(
                     uv, geode::Block3D::component_type_static() );
 
                 add_potential_relationships(
@@ -603,13 +603,13 @@ namespace
             }
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.mesh_component_vertices(
+                const auto corners_vertices = brep_.component_mesh_vertices(
                     uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.mesh_component_vertices(
+                const auto lines_vertices = brep_.component_mesh_vertices(
                     uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.mesh_component_vertices(
+                const auto surfaces_vertices = brep_.component_mesh_vertices(
                     uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.mesh_component_vertices(
+                const auto blocks_vertices = brep_.component_mesh_vertices(
                     uv, geode::Block3D::component_type_static() );
 
                 filter_potential_relationships(
@@ -1126,10 +1126,10 @@ namespace
                     {
                         const auto e0 = edges.edge_vertex( { e, 0 } );
                         const auto e1 = edges.edge_vertex( { e, 1 } );
-                        const auto surface0 = brep_.mesh_component_vertices(
+                        const auto surface0 = brep_.component_mesh_vertices(
                             brep_.unique_vertex( { line.component_id(), e0 } ),
                             s.id() );
-                        const auto surface1 = brep_.mesh_component_vertices(
+                        const auto surface1 = brep_.component_mesh_vertices(
                             brep_.unique_vertex( { line.component_id(), e1 } ),
                             s.id() );
                         for( const auto v0 : surface0 )
@@ -1268,9 +1268,9 @@ namespace
         }
 
         void add_potential_relationships(
-            const std::vector< geode::MeshComponentVertex >&
+            const std::vector< geode::ComponentMeshVertex >&
                 boundary_type_vertices,
-            const std::vector< geode::MeshComponentVertex >&
+            const std::vector< geode::ComponentMeshVertex >&
                 incidence_type_vertices,
             boundary_incidences_relations& b2i_relations )
         {
@@ -1285,9 +1285,9 @@ namespace
         }
 
         void filter_potential_relationships(
-            const std::vector< geode::MeshComponentVertex >&
+            const std::vector< geode::ComponentMeshVertex >&
                 boundary_type_vertices,
-            const std::vector< geode::MeshComponentVertex >&
+            const std::vector< geode::ComponentMeshVertex >&
                 incidence_type_vertices,
             boundary_incidences_relations& b2i_relations )
         {
@@ -1309,8 +1309,8 @@ namespace
                     if( std::find_if( incidence_type_vertices.begin(),
                             incidence_type_vertices.end(),
                             [&incidence_id](
-                                const geode::MeshComponentVertex& mcv ) {
-                                return mcv.component_id.id() == incidence_id;
+                                const geode::ComponentMeshVertex& cmv ) {
+                                return cmv.component_id.id() == incidence_id;
                             } )
                         == incidence_type_vertices.end() )
                     {

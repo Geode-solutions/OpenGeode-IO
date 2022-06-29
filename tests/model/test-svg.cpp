@@ -67,8 +67,8 @@ void test_section( const geode::Section& section )
         "[Test] Number of surfaces is not correct" );
     for( const auto uv : geode::Range{ section.nb_unique_vertices() } )
     {
-        const auto nb_mcv = section.mesh_component_vertices( uv ).size();
-        OPENGEODE_EXCEPTION( nb_mcv == 1 || nb_mcv == 3,
+        const auto nb_cmv = section.component_mesh_vertices( uv ).size();
+        OPENGEODE_EXCEPTION( nb_cmv == 1 || nb_cmv == 3,
             "[Test] Wrong number of mesh component "
             "vertices for one unique vertex" );
     }

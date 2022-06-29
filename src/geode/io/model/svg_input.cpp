@@ -311,7 +311,7 @@ namespace
             const geode::index_t line_vertex )
         {
             potential_corners_.push_back( point );
-            potential_corner_mcv_.emplace_back(
+            potential_corner_cmv_.emplace_back(
                 geode::ComponentID{
                     geode::Line2D::component_type_static(), line_id },
                 line_vertex );
@@ -378,20 +378,20 @@ namespace
             const geode::NNSearch2D::ColocatedInfo& colocated_info,
             const std::vector< geode::uuid >& corner_ids )
         {
-            for( const auto& c : geode::Range{ potential_corner_mcv_.size() } )
+            for( const auto& c : geode::Range{ potential_corner_cmv_.size() } )
             {
                 const auto mapped_corner = colocated_info.colocated_mapping[c];
                 const auto& corner =
                     section_.corner( corner_ids[mapped_corner] );
                 const auto& line =
-                    section_.line( potential_corner_mcv_[c].component_id.id() );
+                    section_.line( potential_corner_cmv_[c].component_id.id() );
                 if( !boundary_relation_exist( corner, line ) )
                 {
                     builder_.add_corner_line_boundary_relationship(
                         corner, line );
                 }
                 builder_.set_unique_vertex(
-                    potential_corner_mcv_[c], mapped_corner );
+                    potential_corner_cmv_[c], mapped_corner );
             }
         }
 
@@ -402,13 +402,13 @@ namespace
                 const auto& mesh = line.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
-                    const auto mcv =
-                        geode::MeshComponentVertex{ line.component_id(), v };
-                    const auto unique_vertex = section_.unique_vertex( mcv );
+                    const auto cmv =
+                        geode::ComponentMeshVertex{ line.component_id(), v };
+                    const auto unique_vertex = section_.unique_vertex( cmv );
                     if( unique_vertex == geode::NO_ID )
                     {
                         builder_.set_unique_vertex(
-                            mcv, builder_.create_unique_vertex() );
+                            cmv, builder_.create_unique_vertex() );
                     }
                 }
             }
@@ -421,7 +421,7 @@ namespace
         pugi::xml_document document_;
         std::vector< std::string > paths_;
         std::vector< geode::Point2D > potential_corners_;
-        std::vector< geode::MeshComponentVertex > potential_corner_mcv_;
+        std::vector< geode::ComponentMeshVertex > potential_corner_cmv_;
     };
 } // namespace
 
