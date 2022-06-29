@@ -54,10 +54,13 @@ namespace geode
 {
     namespace detail
     {
-        void VTUPolyhedralInput::do_read()
+        std::unique_ptr< PolyhedralSolid3D > VTUPolyhedralInput::read(
+            const MeshImpl& impl )
         {
-            VTUPolyhedralInputImpl impl{ filename(), polyhedral_solid() };
-            impl.read_file();
+            auto solid = PolyhedralSolid3D::create( impl );
+            VTUPolyhedralInputImpl reader{ filename(), *solid };
+            reader.read_file();
+            return solid;
         }
     } // namespace detail
 } // namespace geode

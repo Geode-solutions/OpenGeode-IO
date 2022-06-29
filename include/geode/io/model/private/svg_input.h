@@ -23,11 +23,7 @@
 
 #pragma once
 
-#include <geode/basic/logger.h>
-
 #include <geode/model/representation/io/section_input.h>
-
-#include <geode/io/model/detail/common.h>
 
 namespace geode
 {
@@ -36,10 +32,7 @@ namespace geode
         class SVGInput final : public SectionInput
         {
         public:
-            SVGInput( Section& section, absl::string_view filename )
-                : SectionInput( section, filename )
-            {
-            }
+            SVGInput( absl::string_view filename ) : SectionInput( filename ) {}
 
             static absl::string_view extension()
             {
@@ -47,7 +40,7 @@ namespace geode
                 return ext;
             }
 
-            void read() final;
+            Section read() final;
         };
     } // namespace detail
 } // namespace geode

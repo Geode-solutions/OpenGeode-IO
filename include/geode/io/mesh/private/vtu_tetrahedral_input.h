@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( TetrahedralSolid );
+    ALIAS_3D( TetrahedralSolid );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class VTUTetrahedralInput final : public TetrahedralSolidInput< 3 >
         {
         public:
-            VTUTetrahedralInput(
-                TetrahedralSolid< 3 > &solid, absl::string_view filename )
-                : TetrahedralSolidInput< 3 >( solid, filename )
+            VTUTetrahedralInput( absl::string_view filename )
+                : TetrahedralSolidInput< 3 >( filename )
             {
             }
 
@@ -44,7 +49,8 @@ namespace geode
                 return ext;
             }
 
-            void do_read() final;
+            std::unique_ptr< TetrahedralSolid3D > read(
+                const MeshImpl& impl ) final;
         };
     } // namespace detail
 } // namespace geode
