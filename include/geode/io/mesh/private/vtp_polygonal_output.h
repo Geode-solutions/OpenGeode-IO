@@ -34,9 +34,8 @@ namespace geode
             : public PolygonalSurfaceOutput< dimension >
         {
         public:
-            VTPPolygonalOutput( const PolygonalSurface< dimension > &surface,
-                absl::string_view filename )
-                : PolygonalSurfaceOutput< dimension >( surface, filename )
+            VTPPolygonalOutput( absl::string_view filename )
+                : PolygonalSurfaceOutput< dimension >( filename )
             {
             }
 
@@ -46,7 +45,8 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write(
+                const PolygonalSurface< dimension > &surface ) const final;
         };
     } // namespace detail
 } // namespace geode

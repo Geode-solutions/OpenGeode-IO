@@ -31,10 +31,10 @@ namespace geode
 {
     namespace detail
     {
-        void PLYOutput::write() const
+        void PLYOutput::write( const PolygonalSurface3D &surface ) const
         {
             detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
-                polygonal_surface(), "ply" };
+                surface, "ply" };
             impl.build_assimp_scene();
             impl.write_file();
         }

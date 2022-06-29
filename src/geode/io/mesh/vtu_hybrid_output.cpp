@@ -67,9 +67,9 @@ namespace geode
 {
     namespace detail
     {
-        void VTUHybridOutput::write() const
+        void VTUHybridOutput::write( const HybridSolid3D& solid ) const
         {
-            VTUHybridOutputImpl impl{ filename(), hybrid_solid() };
+            VTUHybridOutputImpl impl{ filename(), solid };
             impl.write_file();
         }
     } // namespace detail

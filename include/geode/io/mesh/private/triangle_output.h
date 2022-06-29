@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
+    ALIAS_2D( TriangulatedSurface );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class TriangleOutput final : public TriangulatedSurfaceOutput< 2 >
         {
         public:
-            TriangleOutput( const TriangulatedSurface< 2 > &surface,
-                absl::string_view filename )
-                : TriangulatedSurfaceOutput< 2 >( surface, filename )
+            TriangleOutput( absl::string_view filename )
+                : TriangulatedSurfaceOutput< 2 >( filename )
             {
             }
 
@@ -44,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write( const TriangulatedSurface2D &surface ) const final;
         };
     } // namespace detail
 } // namespace geode

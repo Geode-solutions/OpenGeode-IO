@@ -27,14 +27,19 @@
 
 namespace geode
 {
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolyhedralSolid );
+    ALIAS_3D( PolyhedralSolid );
+} // namespace geode
+
+namespace geode
+{
     namespace detail
     {
         class VTUPolyhedralOutput final : public PolyhedralSolidOutput< 3 >
         {
         public:
-            VTUPolyhedralOutput(
-                const PolyhedralSolid< 3 > &solid, absl::string_view filename )
-                : PolyhedralSolidOutput< 3 >( solid, filename )
+            VTUPolyhedralOutput( absl::string_view filename )
+                : PolyhedralSolidOutput< 3 >( filename )
             {
             }
 
@@ -44,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write() const final;
+            void write( const PolyhedralSolid3D &solid ) const final;
         };
     } // namespace detail
 } // namespace geode
