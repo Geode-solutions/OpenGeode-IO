@@ -43,7 +43,7 @@ namespace
                 geode::PolyhedralSolidBuilder3D >( filename, solid )
         {
             enable_tetrahedron();
-            enable_hexa();
+            enable_hexahedron();
             enable_prism();
             enable_pyramid();
         }

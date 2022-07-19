@@ -53,16 +53,16 @@ void run_test( absl::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
-    auto tetrahedron_solid = geode::load_tetrahedral_solid< 3 >(
+    auto solid = geode::load_tetrahedral_solid< 3 >(
         absl::StrCat( geode::data_path, filename ) );
-    check( *tetrahedron_solid, test_answers );
+    check( *solid, test_answers );
 
     // Save file
     absl::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
-    const auto output_filename = absl::StrCat(
-        filename_without_ext, ".", tetrahedron_solid->native_extension() );
-    geode::save_tetrahedral_solid( *tetrahedron_solid, output_filename );
+    const auto output_filename =
+        absl::StrCat( filename_without_ext, ".", solid->native_extension() );
+    geode::save_tetrahedral_solid( *solid, output_filename );
 
     // Reload file
     auto reload_solid = geode::load_tetrahedral_solid< 3 >( output_filename );
@@ -71,7 +71,7 @@ void run_test( absl::string_view filename,
     // Save file
     const auto output_filename_vtu =
         absl::StrCat( filename_without_ext, "_output.vtu" );
-    geode::save_tetrahedral_solid( *tetrahedron_solid, output_filename_vtu );
+    geode::save_tetrahedral_solid( *solid, output_filename_vtu );
 
     // Reload file
     auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
