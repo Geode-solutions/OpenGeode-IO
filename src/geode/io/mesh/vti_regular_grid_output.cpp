@@ -26,7 +26,8 @@
 #include <geode/geometry/bounding_box.h>
 #include <geode/geometry/point.h>
 
-#include <geode/mesh/core/regular_grid.h>
+#include <geode/mesh/core/regular_grid_solid.h>
+#include <geode/mesh/core/regular_grid_surface.h>
 
 #include <geode/io/mesh/private/vtk_output.h>
 
@@ -77,7 +78,8 @@ namespace
                 {
                     absl::StrAppend( &extent, " " );
                 }
-                absl::StrAppend( &extent, "0 ", this->mesh().nb_cells( d ) );
+                absl::StrAppend(
+                    &extent, "0 ", this->mesh().nb_cells_in_direction( d ) );
             }
             if( dimension == 2 )
             {
@@ -99,7 +101,8 @@ namespace
                 {
                     absl::StrAppend( &spacing, " " );
                 }
-                absl::StrAppend( &spacing, this->mesh().cell_length( d ) );
+                absl::StrAppend(
+                    &spacing, this->mesh().cell_length_in_direction( d ) );
             }
             if( dimension == 2 )
             {
