@@ -44,8 +44,8 @@ def test_section(section):
     if section.nb_surfaces() != 0:
         raise ValueError("[Test] Number of surfaces is not correct")
     for uv in range(section.nb_unique_vertices()):
-        nb_mcv = len(section.component_mesh_vertices(uv))
-        if nb_mcv != 1 and nb_mcv != 3:
+        nb_cmv = len(section.component_mesh_vertices(uv))
+        if nb_cmv != 1 and nb_cmv != 3:
             raise ValueError("[Test] Wrong number of mesh component vertices for one unique vertex")
 
 if __name__ == '__main__':
