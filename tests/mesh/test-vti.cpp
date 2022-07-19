@@ -29,7 +29,8 @@
 
 #include <geode/geometry/point.h>
 
-#include <geode/mesh/core/regular_grid.h>
+#include <geode/mesh/builder/regular_grid_solid_builder.h>
+#include <geode/mesh/core/regular_grid_solid.h>
 #include <geode/mesh/io/regular_grid_output.h>
 
 #include <geode/io/mesh/detail/common.h>
@@ -40,24 +41,26 @@ int main()
     {
         geode::detail::initialize_mesh_io();
 
-        geode::RegularGrid3D grid{ { { 1, 2, 3 } }, { 10, 20, 30 }, 1 };
-        auto att = grid.cell_attribute_manager()
+        auto grid = geode::RegularGrid3D::create();
+        auto builder = geode::RegularGridBuilder3D::create( *grid );
+        builder->initialize_grid( { { 1, 2, 3 } }, { 10, 20, 30 }, 1 );
+        auto att = grid->polyhedron_attribute_manager()
                        .find_or_create_attribute< geode::VariableAttribute,
                            geode::index_t >( "id", geode::NO_ID );
-        for( const auto c : geode::Range{ grid.nb_cells() } )
+        for( const auto c : geode::Range{ grid->nb_polyhedra() } )
         {
             att->set_value( c, c );
         }
         auto att_vertex =
-            grid.vertex_attribute_manager()
+            grid->vertex_attribute_manager()
                 .find_or_create_attribute< geode::VariableAttribute,
                     geode::index_t >( "id_vertex", geode::NO_ID );
-        for( const auto c : geode::Range{ grid.nb_vertices() } )
+        for( const auto c : geode::Range{ grid->nb_vertices() } )
         {
             att_vertex->set_value( c, c );
         }
 
-        geode::save_regular_grid( grid, "test.vti" );
+        geode::save_regular_grid( *grid, "test.vti" );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
