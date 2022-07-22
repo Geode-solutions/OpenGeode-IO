@@ -129,11 +129,10 @@ namespace geode
             void write_vtk_object( pugi::xml_node& root )
             {
                 auto object = root.append_child( type_ );
-                auto piece = object.append_child( "Piece" );
-                write_piece( piece );
+                write_piece( object );
             }
 
-            virtual void write_piece( pugi::xml_node& piece ) = 0;
+            virtual void write_piece( pugi::xml_node& object ) = 0;
 
         private:
             absl::string_view filename_;

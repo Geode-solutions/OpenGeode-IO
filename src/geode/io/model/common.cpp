@@ -26,6 +26,8 @@
 #include <geode/io/model/private/msh_input.h>
 #include <geode/io/model/private/msh_output.h>
 #include <geode/io/model/private/svg_input.h>
+#include <geode/io/model/private/vtm_brep_output.h>
+#include <geode/io/model/private/vtm_section_output.h>
 
 namespace
 {
@@ -39,6 +41,9 @@ namespace
     {
         geode::BRepOutputFactory::register_creator< geode::detail::MSHOutput >(
             geode::detail::MSHOutput::extension().data() );
+        geode::BRepOutputFactory::register_creator<
+            geode::detail::VTMBRepOutput >(
+            geode::detail::VTMBRepOutput::extension().data() );
     }
 
     void register_section_input()
@@ -47,12 +52,20 @@ namespace
             geode::detail::SVGInput::extension().data() );
     }
 
+    void register_section_output()
+    {
+        geode::SectionOutputFactory::register_creator<
+            geode::detail::VTMSectionOutput >(
+            geode::detail::VTMSectionOutput::extension().data() );
+    }
+
     OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_model )
     {
         register_brep_input();
         register_section_input();
 
         register_brep_output();
+        register_section_output();
     }
 } // namespace
 
