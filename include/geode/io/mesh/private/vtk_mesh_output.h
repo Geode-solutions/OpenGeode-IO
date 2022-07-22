@@ -46,8 +46,9 @@ namespace geode
             }
 
         private:
-            void write_piece( pugi::xml_node& piece ) final
+            void write_piece( pugi::xml_node& object ) final
             {
+                auto piece = object.append_child( "Piece" );
                 piece.append_attribute( "NumberOfPoints" )
                     .set_value( this->mesh().nb_vertices() );
                 append_number_elements( piece );

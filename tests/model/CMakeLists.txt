@@ -34,3 +34,11 @@ add_geode_test(
         OpenGeode::model
         ${PROJECT_NAME}::model
 )
+add_geode_test(
+    SOURCE "test-vtm.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        OpenGeode::model
+        ${PROJECT_NAME}::model
+)

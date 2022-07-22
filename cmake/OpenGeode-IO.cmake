@@ -23,15 +23,17 @@ project(OpenGeode-IO CXX)
 
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
+find_package(Async++ REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
+find_package(ghc_filesystem REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${FILESYSTEM_INSTALL_PREFIX})
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
 
-#------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)
 
-#------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 # Optional modules configuration
 if(OPENGEODE_IO_WITH_TESTS)
     # Enable testing with CTest
@@ -45,7 +47,7 @@ if(OPENGEODE_IO_WITH_PYTHON)
     add_subdirectory(bindings/python)
 endif()
 
-#------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 # Configure CPack
 if(WIN32)
     set(CPACK_GENERATOR "ZIP")

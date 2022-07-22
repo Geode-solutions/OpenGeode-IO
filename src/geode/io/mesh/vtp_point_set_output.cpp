@@ -72,7 +72,7 @@ namespace
             vertex_offsets.reserve( nb_vertices );
             for( const auto v : geode::Range{ nb_vertices } )
             {
-                absl::StrAppend( &vertex_offsets, v, " " );
+                absl::StrAppend( &vertex_offsets, v + 1, " " );
                 absl::StrAppend( &vertex_connectivity, v, " " );
             }
             connectivity.text().set( vertex_connectivity.c_str() );
