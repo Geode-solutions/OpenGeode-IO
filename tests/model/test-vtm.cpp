@@ -43,12 +43,12 @@ int main()
     {
         detail::initialize_model_io();
 
-        auto brep = load_brep( absl::StrCat( data_path, "/mss.og_brep" ) );
+        auto brep = load_brep( absl::StrCat( data_path, "mss.og_brep" ) );
         const auto filename = absl::StrCat( "mss.vtm" );
         save_brep( brep, filename );
 
         auto section = load_section(
-            absl::StrCat( data_path, "/mss_cut_section.og_sctn" ) );
+            absl::StrCat( data_path, "mss_cut_section.og_sctn" ) );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
         save_section( section, filename2 );
 
