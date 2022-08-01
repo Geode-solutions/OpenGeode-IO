@@ -96,7 +96,8 @@ namespace geode
             void write_corners( pugi::xml_node& corner_block ) const
             {
                 index_t counter{ 0 };
-                const auto prefix = absl::StrCat( files_directory_, "/" );
+                const auto prefix =
+                    absl::StrCat( files_directory_, "/Corner_" );
                 const auto level = Logger::level();
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
@@ -105,15 +106,15 @@ namespace geode
                 {
                     auto dataset = corner_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    const auto filename = absl::StrCat(
-                        prefix, corner.component_id().string(), ".vtp" );
+                    const auto filename =
+                        absl::StrCat( prefix, corner.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
                     tasks[counter++] = async::spawn( [&corner, &prefix] {
                         const auto& mesh = corner.mesh();
                         const auto file = absl::StrCat(
-                            prefix, corner.component_id().string(), ".vtp" );
+                            prefix, corner.id().string(), ".vtp" );
                         save_point_set( mesh, file );
                     } );
                 }
@@ -127,7 +128,7 @@ namespace geode
             void write_lines( pugi::xml_node& line_block ) const
             {
                 index_t counter{ 0 };
-                const auto prefix = absl::StrCat( files_directory_, "/" );
+                const auto prefix = absl::StrCat( files_directory_, "/Line_" );
                 const auto level = Logger::level();
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
@@ -136,15 +137,15 @@ namespace geode
                 {
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    const auto filename = absl::StrCat(
-                        prefix, line.component_id().string(), ".vtp" );
+                    const auto filename =
+                        absl::StrCat( prefix, line.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
                     tasks[counter++] = async::spawn( [&line, &prefix] {
                         const auto& mesh = line.mesh();
-                        const auto file = absl::StrCat(
-                            prefix, line.component_id().string(), ".vtp" );
+                        const auto file =
+                            absl::StrCat( prefix, line.id().string(), ".vtp" );
                         save_edged_curve( mesh, file );
                     } );
                 }
@@ -158,7 +159,8 @@ namespace geode
             void write_surfaces( pugi::xml_node& surface_block ) const
             {
                 index_t counter{ 0 };
-                const auto prefix = absl::StrCat( files_directory_, "/" );
+                const auto prefix =
+                    absl::StrCat( files_directory_, "/Surface_" );
                 const auto level = Logger::level();
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
@@ -167,15 +169,15 @@ namespace geode
                 {
                     auto dataset = surface_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    const auto filename = absl::StrCat(
-                        prefix, surface.component_id().string(), ".vtp" );
+                    const auto filename =
+                        absl::StrCat( prefix, surface.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
                     tasks[counter++] = async::spawn( [&surface, &prefix] {
                         const auto& mesh = surface.mesh();
                         const auto file = absl::StrCat(
-                            prefix, surface.component_id().string(), ".vtp" );
+                            prefix, surface.id().string(), ".vtp" );
                         if( const auto* triangulated = dynamic_cast<
                                 const TriangulatedSurface< dimension >* >(
                                 &mesh ) )
