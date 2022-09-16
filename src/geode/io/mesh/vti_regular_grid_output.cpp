@@ -47,8 +47,9 @@ namespace
         }
 
     private:
-        void write_piece( pugi::xml_node& piece ) final
+        void write_piece( pugi::xml_node& object ) final
         {
+            auto piece = object.append_child( "Piece" );
             write_image_header( piece );
             write_vertex_data( piece );
             write_cell_data( piece );
