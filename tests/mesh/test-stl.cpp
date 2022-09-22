@@ -30,32 +30,30 @@
 #include <geode/mesh/io/triangulated_surface_input.h>
 #include <geode/mesh/io/triangulated_surface_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
         // Load file
-        auto surface = load_triangulated_surface< 3 >(
-            absl::StrCat( data_path, "thumbwheel.stl" ) );
+        auto surface = geode::load_triangulated_surface< 3 >(
+            absl::StrCat( geode::data_path, "thumbwheel.stl" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        save_triangulated_surface( *surface,
+        geode::save_triangulated_surface( *surface,
             absl::StrCat( "thumbwheel.", surface->native_extension() ) );
         const auto output_file_stl = absl::StrCat( "thumbwheel.stl" );
-        save_triangulated_surface( *surface, output_file_stl );
+        geode::save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file
         auto reloaded_surface =
-            load_triangulated_surface< 3 >( output_file_stl );
+            geode::load_triangulated_surface< 3 >( output_file_stl );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
             "[Test] Number of vertices in the "
             "reloaded Surface is not correct" );
@@ -63,11 +61,11 @@ int main()
             "[Test] Number of polygons in the "
             "reloaded Surface is not correct" );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

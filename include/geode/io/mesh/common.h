@@ -23,12 +23,11 @@
 
 #pragma once
 
-#include <geode/io/model/opengeode_io_model_export.h>
+#include <geode/basic/library.h>
+
+#include <geode/io/mesh/opengeode_io_mesh_export.h>
 
 namespace geode
 {
-    namespace detail
-    {
-        void opengeode_io_model_api initialize_model_io();
-    } // namespace detail
+    OPENGEODE_LIBRARY( opengeode_io_mesh_api, OpenGeodeIOMesh );
 } // namespace geode

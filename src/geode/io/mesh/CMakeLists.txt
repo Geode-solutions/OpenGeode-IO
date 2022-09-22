@@ -47,8 +47,8 @@ add_geode_library(
         "vtu_polyhedral_output.cpp"
         "vtu_tetrahedral_input.cpp"
         "vtu_tetrahedral_output.cpp"
-    ADVANCED_HEADERS
-        "detail/common.h"
+    PUBLIC_HEADERS
+        "common.h"
     PRIVATE_HEADERS
         "private/assimp_input.h"
         "private/assimp_output.h"

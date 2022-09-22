@@ -34,7 +34,7 @@
 #include <geode/mesh/io/tetrahedral_solid_input.h>
 #include <geode/mesh/io/tetrahedral_solid_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 void check( const geode::SolidMesh< 3 >& solid,
     const std::array< geode::index_t, 2 >& test_answers )
@@ -82,7 +82,7 @@ int main()
 {
     try
     {
-        geode::detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
 
         run_test( "cone.vtu", { 580, 2197 } );
         run_test( "cone_append_encoded.vtu", { 580, 2197 } );

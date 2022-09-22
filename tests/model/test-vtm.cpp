@@ -33,30 +33,29 @@
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
 
-#include <geode/io/model/detail/common.h>
+#include <geode/io/model/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_model_io();
+        geode::OpenGeodeIOModel::initialize();
 
-        auto brep = load_brep( absl::StrCat( data_path, "mss.og_brep" ) );
+        auto brep =
+            geode::load_brep( absl::StrCat( geode::data_path, "mss.og_brep" ) );
         const auto filename = absl::StrCat( "mss.vtm" );
-        save_brep( brep, filename );
+        geode::save_brep( brep, filename );
 
-        auto section = load_section(
-            absl::StrCat( data_path, "mss_cut_section.og_sctn" ) );
+        auto section = geode::load_section(
+            absl::StrCat( geode::data_path, "mss_cut_section.og_sctn" ) );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
-        save_section( section, filename2 );
+        geode::save_section( section, filename2 );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

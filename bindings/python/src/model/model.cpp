@@ -23,10 +23,11 @@
 
 #include <pybind11/pybind11.h>
 
-#include <geode/io/model/detail/common.h>
+#include <geode/io/model/common.h>
 
 PYBIND11_MODULE( opengeode_io_py_model, module )
 {
     module.doc() = "OpenGeode-IO Python binding for model";
-    module.def( "initialize_model_io", &geode::detail::initialize_model_io );
+    pybind11::class_< geode::OpenGeodeIOModel >( module, "OpenGeodeIOModel" )
+        .def( "initialize", &geode::OpenGeodeIOModel::initialize );
 }

@@ -26,6 +26,7 @@ cmake_minimum_required(VERSION 3.14)
 # Optional components
 option(OPENGEODE_IO_WITH_TESTS "Compile test projects" ON)
 option(OPENGEODE_IO_WITH_PYTHON "Compile Python bindings" OFF)
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 # Internal options
 option(USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)

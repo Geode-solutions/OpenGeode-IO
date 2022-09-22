@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 #include <fstream>
 

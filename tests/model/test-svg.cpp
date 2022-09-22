@@ -38,7 +38,7 @@
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
 
-#include <geode/io/model/detail/common.h>
+#include <geode/io/model/common.h>
 
 geode::index_t nb_closed_lines( const geode::Section& section )
 {
@@ -74,28 +74,27 @@ void test_section( const geode::Section& section )
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_model_io();
+        geode::OpenGeodeIOModel::initialize();
 
         // Load file
-        auto section = load_section( absl::StrCat( data_path, "/logo.svg" ) );
+        auto section = geode::load_section(
+            absl::StrCat( geode::data_path, "/logo.svg" ) );
         test_section( section );
 
         // Save and reload
         const auto filename =
             absl::StrCat( "logo.", section.native_extension() );
-        save_section( section, filename );
-        auto reloaded_section = load_section( filename );
+        geode::save_section( section, filename );
+        auto reloaded_section = geode::load_section( filename );
         test_section( reloaded_section );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

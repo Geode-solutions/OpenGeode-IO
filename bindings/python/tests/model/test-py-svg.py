@@ -19,39 +19,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os, sys, platform
-if sys.version_info >= (3,8,0) and platform.system() == "Windows":
+import os
+import sys
+import platform
+if sys.version_info >= (3, 8, 0) and platform.system() == "Windows":
     for path in [x.strip() for x in os.environ['PATH'].split(';') if x]:
         os.add_dll_directory(path)
 
 import opengeode
 import opengeode_io_py_model as model_io
 
+
 def nb_closed_lines(section):
     nb = 0
     for line in section.lines():
-        if section.is_line_closed( line ):
+        if section.is_line_closed(line):
             nb += 1
     return nb
+
 
 def test_section(section):
     if section.nb_corners() != 31:
         raise ValueError("[Test] Number of corners is not correct")
     if section.nb_lines() != 31:
         raise ValueError("[Test] Number of lines is not correct")
-    if nb_closed_lines( section ) != 27:
+    if nb_closed_lines(section) != 27:
         raise ValueError("[Test] Number of closed lines is not correct")
     if section.nb_surfaces() != 0:
         raise ValueError("[Test] Number of surfaces is not correct")
     for uv in range(section.nb_unique_vertices()):
         nb_cmv = len(section.component_mesh_vertices(uv))
         if nb_cmv != 1 and nb_cmv != 3:
-            raise ValueError("[Test] Wrong number of mesh component vertices for one unique vertex")
+            raise ValueError(
+                "[Test] Wrong number of mesh component vertices for one unique vertex")
+
 
 if __name__ == '__main__':
-    model_io.initialize_model_io()
+    model_io.OpenGeodeIOModel.initialize()
     test_dir = os.path.dirname(__file__)
-    data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
+    data_dir = os.path.abspath(os.path.join(
+        test_dir, "../../../../tests/data"))
 
     section = opengeode.load_section(os.path.join(data_dir, "logo.svg"))
     test_section(section)

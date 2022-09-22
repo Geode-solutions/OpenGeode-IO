@@ -30,31 +30,30 @@
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
         // Load file
-        auto surface = load_polygonal_surface< 3 >(
-            absl::StrCat( data_path, "TopHat.obj" ) );
+        auto surface = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::data_path, "TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
             "[Test] Number of polygons in the loaded Surface is not correct" );
 
         // Save file
-        save_polygonal_surface(
+        geode::save_polygonal_surface(
             *surface, absl::StrCat( "TopHat.", surface->native_extension() ) );
         const auto output_file_obj = absl::StrCat( "TopHat.obj" );
-        save_polygonal_surface( *surface, output_file_obj );
+        geode::save_polygonal_surface( *surface, output_file_obj );
 
         // Reload file
-        auto reloaded_surface = load_polygonal_surface< 3 >( output_file_obj );
+        auto reloaded_surface =
+            geode::load_polygonal_surface< 3 >( output_file_obj );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the "
             "reloaded Surface is not correct" );
@@ -62,11 +61,11 @@ int main()
             "[Test] Number of polygons in the "
             "reloaded Surface is not correct" );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

@@ -31,7 +31,7 @@
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 void check( const geode::PolygonalSurface3D& surface,
     const std::array< geode::index_t, 2 >& test_answers,
@@ -101,7 +101,7 @@ int main()
 {
     try
     {
-        geode::detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
 
         run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
             { "FractureId", "FractureSize", "FractureArea" } );

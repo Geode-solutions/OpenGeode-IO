@@ -40,7 +40,7 @@
 #include <geode/model/representation/io/brep_input.h>
 #include <geode/model/representation/io/brep_output.h>
 
-#include <geode/io/model/detail/common.h>
+#include <geode/io/model/common.h>
 
 void test_brep( const geode::BRep& brep,
     geode::index_t nb_corners,
@@ -242,21 +242,19 @@ void run_test( absl::string_view short_filename, test_function test )
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_model_io();
+        geode::OpenGeodeIOModel::initialize();
 
         run_test( "triangle_internal", &test_brep_internal );
         run_test( "cube_v22", &test_brep_cube );
         run_test( "cone_v4", &test_brep_cone );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }
