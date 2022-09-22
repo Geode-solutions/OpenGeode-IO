@@ -29,6 +29,17 @@ find_package(ghc_filesystem REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${FILESYSTEM_I
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
 
+# Install OpenGeode-IO third-parties
+if(NOT BUILD_SHARED_LIBS)
+    install(
+        DIRECTORY
+            ${ASSIMP_INSTALL_PREFIX}/
+            ${PUGIXML_INSTALL_PREFIX}/
+            ${ZLIB_INSTALL_PREFIX}/
+        DESTINATION
+            .
+    )
+endif()
 # ------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)
