@@ -33,13 +33,13 @@
 #include <geode/mesh/core/regular_grid_solid.h>
 #include <geode/mesh/io/regular_grid_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
     try
     {
-        geode::detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
 
         auto grid = geode::RegularGrid3D::create();
         auto builder = geode::RegularGridBuilder3D::create( *grid );

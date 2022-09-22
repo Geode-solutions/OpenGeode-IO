@@ -30,18 +30,16 @@
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
         // Load file
-        auto surface = load_polygonal_surface< 3 >(
-            absl::StrCat( data_path, "Armadillo.ply" ) );
+        auto surface = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::data_path, "Armadillo.ply" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
@@ -50,12 +48,13 @@ int main()
         // Save file
         const auto output_file_og =
             absl::StrCat( "armadillo.", surface->native_extension() );
-        save_polygonal_surface( *surface, output_file_og );
+        geode::save_polygonal_surface( *surface, output_file_og );
         const auto output_file_ply = absl::StrCat( "armadillo.ply" );
-        save_polygonal_surface( *surface, output_file_ply );
+        geode::save_polygonal_surface( *surface, output_file_ply );
 
         // Reload file
-        auto reloaded_surface = load_polygonal_surface< 3 >( output_file_ply );
+        auto reloaded_surface =
+            geode::load_polygonal_surface< 3 >( output_file_ply );
         OPENGEODE_EXCEPTION( reloaded_surface->nb_vertices() == 172974,
             "[Test] Number of vertices in the reloaded Surface is not "
             "correct" );
@@ -63,11 +62,11 @@ int main()
             "[Test] Number of polygons in the reloaded Surface is not "
             "correct" );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

@@ -29,29 +29,27 @@
 #include <geode/mesh/core/edged_curve.h>
 #include <geode/mesh/io/edged_curve_input.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
         // Load file
-        auto curve =
-            load_edged_curve< 3 >( absl::StrCat( data_path, "curve.smesh" ) );
+        auto curve = geode::load_edged_curve< 3 >(
+            absl::StrCat( geode::data_path, "curve.smesh" ) );
         OPENGEODE_EXCEPTION( curve->nb_vertices() == 1023,
             "[Test] Number of vertices in the "
             "loaded EdgedCurve is not correct" );
         OPENGEODE_EXCEPTION( curve->nb_edges() == 1022,
             "[Test] Number of edges in the loaded EdgedCurve is not correct" );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

@@ -28,8 +28,8 @@ add_geode_library(
         "svg_input.cpp"
         "vtm_section_output.cpp"
         "vtm_brep_output.cpp"
-    ADVANCED_HEADERS
-        "detail/common.h"
+    PUBLIC_HEADERS
+        "common.h"
     PRIVATE_HEADERS
         "private/msh_input.h"
         "private/msh_output.h"

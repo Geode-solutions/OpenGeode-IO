@@ -30,18 +30,16 @@
 #include <geode/mesh/io/polygonal_surface_input.h>
 #include <geode/mesh/io/polygonal_surface_output.h>
 
-#include <geode/io/mesh/detail/common.h>
+#include <geode/io/mesh/common.h>
 
 int main()
 {
-    using namespace geode;
-
     try
     {
-        detail::initialize_mesh_io();
+        geode::OpenGeodeIOMesh::initialize();
         // Load file
-        auto surface = load_polygonal_surface< 3 >(
-            absl::StrCat( data_path, "3D_faces.dxf" ) );
+        auto surface = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::data_path, "3D_faces.dxf" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 51884,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 97966,
@@ -50,13 +48,13 @@ int main()
         // Save file
         const auto output_file_og =
             absl::StrCat( "dxf.", surface->native_extension() );
-        save_polygonal_surface( *surface, output_file_og );
+        geode::save_polygonal_surface( *surface, output_file_og );
 
-        Logger::info( "TEST SUCCESS" );
+        geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
     catch( ... )
     {
-        return geode_lippincott();
+        return geode::geode_lippincott();
     }
 }

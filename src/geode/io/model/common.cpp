@@ -21,7 +21,9 @@
  *
  */
 
-#include <geode/io/model/detail/common.h>
+#include <geode/io/model/common.h>
+
+#include <geode/model/common.h>
 
 #include <geode/io/model/private/msh_input.h>
 #include <geode/io/model/private/msh_output.h>
@@ -58,24 +60,18 @@ namespace
             geode::detail::VTMSectionOutput >(
             geode::detail::VTMSectionOutput::extension().data() );
     }
+} // namespace
 
-    OPENGEODE_LIBRARY_INITIALIZE( OpenGeode_IO_model )
+namespace geode
+{
+    OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOModel )
     {
+        OpenGeodeModel::initialize();
+
         register_brep_input();
         register_section_input();
 
         register_brep_output();
         register_section_output();
     }
-} // namespace
-
-namespace geode
-{
-    namespace detail
-    {
-        void initialize_model_io()
-        {
-            Logger::info( "Initializing OpenGeode-IO model library" );
-        }
-    } // namespace detail
 } // namespace geode

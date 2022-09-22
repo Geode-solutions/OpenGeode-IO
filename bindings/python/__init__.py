@@ -23,5 +23,5 @@ import opengeode
 from .opengeode_io_py_mesh import *
 from .opengeode_io_py_model import *
 
-initialize_mesh_io()
-initialize_model_io()
+OpenGeodeIOMesh.initialize()
+OpenGeodeIOModel.initialize()
