@@ -18,8 +18,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+cmake_policy(GET CMP0091 AAA)
+
 # Define the project
 project(OpenGeode-IO CXX)
+
+if(WIN32)
+    if(CMAKE_C_FLAGS_DEBUG)
+        string(REPLACE "/MDd" "/MD" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+    endif()
+    if(CMAKE_CXX_FLAGS_DEBUG)
+        string(REPLACE "/MDd" "/MD" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    endif()
+endif()
 
 # Get OpenGeode-IO dependencies
 find_package(OpenGeode REQUIRED)
