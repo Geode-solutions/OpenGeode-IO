@@ -237,7 +237,6 @@ void run_test( absl::string_view short_filename, test_function test )
     geode::save_brep( brep, filename_msh );
     auto reloaded_brep2 = geode::load_brep( filename_msh );
     test( reloaded_brep2 );
-    geode::save_brep( reloaded_brep2, "/tmp/toto.og_brep" );
 }
 
 int main()
