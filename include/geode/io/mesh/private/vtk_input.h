@@ -33,7 +33,7 @@
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_split.h>
 #include <pugixml.hpp>
-#include <zlib-ng.h>
+#include <zlib.h>
 
 #include <geode/basic/attribute_manager.h>
 
@@ -556,11 +556,11 @@ namespace geode
                 {
                     const auto compressed_data_length =
                         sum_compressed_block_size;
-                    size_t decompressed_data_length = uncompressed_block_size;
+                    unsigned long decompressed_data_length = uncompressed_block_size;
                     absl::FixedArray< uint8_t > decompressed_data_bytes(
                         decompressed_data_length );
                     const auto uncompress_result =
-                        zng_uncompress( decompressed_data_bytes.data(),
+                        uncompress( decompressed_data_bytes.data(),
                             &decompressed_data_length,
                             &compressed_data_bytes[cur_data_offset],
                             compressed_data_length );

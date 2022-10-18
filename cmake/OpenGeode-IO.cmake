@@ -39,20 +39,29 @@ find_package(OpenGeode REQUIRED)
 find_package(Async++ REQUIRED)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 find_package(ghc_filesystem REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${FILESYSTEM_INSTALL_PREFIX})
+find_package(libjpeg-turbo REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${JPEG_INSTALL_PREFIX})
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
+
+find_package(libpng REQUIRED CONFIG CONFIGS libpng16.cmake NO_DEFAULT_PATH PATHS ${PNG_INSTALL_PREFIX})
+set_target_properties(png_static PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES ${PNG_INSTALL_PREFIX}/include
+)
 
 # Install OpenGeode-IO third-parties
 if(NOT BUILD_SHARED_LIBS)
     install(
         DIRECTORY
             ${ASSIMP_INSTALL_PREFIX}/
+            ${JPEG_INSTALL_PREFIX}/
+            ${PNG_INSTALL_PREFIX}/
             ${PUGIXML_INSTALL_PREFIX}/
             ${ZLIB_INSTALL_PREFIX}/
         DESTINATION
             .
     )
 endif()
+
 # ------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)
