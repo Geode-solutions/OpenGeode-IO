@@ -42,17 +42,30 @@ find_package(ghc_filesystem REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${FILESYSTEM_I
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
 
+list(APPEND CMAKE_PREFIX_PATH ${PNG_INSTALL_PREFIX} ${JPEG_INSTALL_PREFIX})
+find_package(PNG REQUIRED)
+find_package(JPEG REQUIRED)
+
+add_library(CImg::CImg INTERFACE IMPORTED)
+set_target_properties(CImg::CImg PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES ${CIMG_INCLUDE_FILES_PREFIX}
+    INTERFACE_LINK_LIBRARIES "PNG::PNG;JPEG::JPEG"
+)
+
 # Install OpenGeode-IO third-parties
 if(NOT BUILD_SHARED_LIBS)
     install(
         DIRECTORY
             ${ASSIMP_INSTALL_PREFIX}/
+            ${JPEG_INSTALL_PREFIX}/
+            ${PNG_INSTALL_PREFIX}/
             ${PUGIXML_INSTALL_PREFIX}/
             ${ZLIB_INSTALL_PREFIX}/
         DESTINATION
             .
     )
 endif()
+
 # ------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)

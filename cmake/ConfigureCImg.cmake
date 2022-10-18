@@ -18,20 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required(VERSION 3.15)
-
-if(NOT TARGET OpenGeode-IO::mesh)
-    project(OpenGeode-IO CXX)
-    find_package(OpenGeode REQUIRED CONFIG)
-    find_package(OpenGeode-IO REQUIRED CONFIG)
-    enable_testing()
-endif()
-
-set(DATA_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/data)
-set(test_config_file_in ${CMAKE_CURRENT_LIST_DIR}/tests_config.h.in)
-set(test_config_file ${PROJECT_BINARY_DIR}/geode/tests_config.h)
-configure_file(${test_config_file_in} ${test_config_file})
-include_directories(${PROJECT_BINARY_DIR})
-
-add_subdirectory(mesh)
-add_subdirectory(model)
+set(CIMG_PATH ${PROJECT_BINARY_DIR}/third_party/cimg)
+set(CIMG_INCLUDE_FILES_PREFIX ${CIMG_PATH}/src)
+ExternalProject_Add(cimg
+    PREFIX ${CIMG_PATH}
+    GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+    GIT_TAG 866b6d752ad77e5c904472b6a09bc237591bd37b
+    GIT_PROGRESS ON
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
