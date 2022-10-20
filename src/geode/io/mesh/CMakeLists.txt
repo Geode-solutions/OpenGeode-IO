@@ -94,8 +94,8 @@ add_geode_library(
         assimp::assimp
         pugixml::pugixml
         zlib::zlibstatic
-        JPEG::JPEG
-        PNG::PNG
+        libjpeg-turbo::jpeg-static
+        png_static
 )
 target_include_directories(mesh 
     SYSTEM PRIVATE ${CIMG_INCLUDE_FILES_PREFIX}
