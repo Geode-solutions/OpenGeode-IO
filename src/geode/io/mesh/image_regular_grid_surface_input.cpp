@@ -32,8 +32,6 @@
 #include <geode/basic/greyscale_color.h>
 #include <geode/basic/rgb_color.h>
 
-#include <geode/basic/logger.h>
-
 #include <geode/geometry/point.h>
 
 #include <geode/mesh/builder/regular_grid_surface_builder.h>
@@ -74,7 +72,7 @@ namespace geode
                     {
                         image_attribute->set_value(
                             grid_.cell_index( { image_i, cell_j } ),
-                            { image( image_i, image_j, 0, 0 ) } );
+                            { image( image_i, image_j ) } );
                     }
                 }
             }
@@ -92,13 +90,12 @@ namespace geode
                     {
                         image_attribute->set_value(
                             grid_.cell_index( { image_i, cell_j } ),
-                            { image( image_i, image_j, 0, 0 ),
+                            { image( image_i, image_j, 0 ),
                                 image( image_i, image_j, 0, 1 ),
                                 image( image_i, image_j, 0, 2 ) } );
                     }
                 }
             }
-            // stbi_image_free( data );
         }
     } // namespace detail
 } // namespace geode

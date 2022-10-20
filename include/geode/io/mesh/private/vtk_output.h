@@ -32,7 +32,7 @@
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_split.h>
 #include <pugixml.hpp>
-#include <zlib-ng.h>
+#include <zlib.h>
 
 #include <geode/basic/attribute_manager.h>
 
