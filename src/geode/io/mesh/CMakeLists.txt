@@ -93,7 +93,7 @@ add_geode_library(
         OpenGeode::mesh
         assimp::assimp
         pugixml::pugixml
-        zlib::zlibstatic
+        zlib::zlib
         libjpeg-turbo::jpeg-static
         png_static
 )
