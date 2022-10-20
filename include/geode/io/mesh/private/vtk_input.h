@@ -556,7 +556,8 @@ namespace geode
                 {
                     const auto compressed_data_length =
                         sum_compressed_block_size;
-                    unsigned long decompressed_data_length = uncompressed_block_size;
+                    unsigned long decompressed_data_length =
+                        uncompressed_block_size;
                     absl::FixedArray< uint8_t > decompressed_data_bytes(
                         decompressed_data_length );
                     const auto uncompress_result =
