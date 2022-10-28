@@ -5,6 +5,7 @@
         "${workspaceFolder}/build/opengeode-io",
         "${workspaceFolder}/build/third_party/assimp/install/include",
         "${workspaceFolder}/build/third_party/pugixml/install/include",
+        "${workspaceFolder}/build/third_party/cimg/src",
         "${workspaceFolder}/build/third_party/zlib/install/include",
         "${workspaceFolder:OpenGeode}/include",
         "${workspaceFolder:OpenGeode}/build/opengeode",

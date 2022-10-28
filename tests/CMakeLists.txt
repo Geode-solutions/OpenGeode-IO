@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 cmake_minimum_required(VERSION 3.15)
-    
+
 if(NOT TARGET OpenGeode-IO::mesh)
     project(OpenGeode-IO CXX)
     find_package(OpenGeode REQUIRED CONFIG)
