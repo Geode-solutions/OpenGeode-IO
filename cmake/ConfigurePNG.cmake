@@ -22,8 +22,8 @@ set(PNG_PATH ${PROJECT_BINARY_DIR}/third_party/png)
 set(PNG_INSTALL_PREFIX ${PNG_PATH}/install)
 ExternalProject_Add(png
     PREFIX ${PNG_PATH}
-    GIT_REPOSITORY https://github.com/glennrp/libpng
-    GIT_TAG e56f79c0c6d94f5d727fc147d4487038e188cdf2
+    GIT_REPOSITORY https://github.com/Geode-solutions/libpng
+    GIT_TAG f61907036da8b911856c51ab624b4876c430d32c
     GIT_PROGRESS ON
     CMAKE_GENERATOR ${CMAKE_GENERATOR}
     CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
