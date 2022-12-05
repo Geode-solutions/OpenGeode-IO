@@ -33,12 +33,14 @@
 #include <geode/model/representation/io/section_input.h>
 #include <geode/model/representation/io/section_output.h>
 
+#include <geode/io/mesh/common.h>
 #include <geode/io/model/common.h>
 
 int main()
 {
     try
     {
+        geode::OpenGeodeIOMesh::initialize();
         geode::OpenGeodeIOModel::initialize();
 
         auto brep =
