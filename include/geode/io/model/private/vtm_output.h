@@ -118,11 +118,13 @@ namespace geode
                         save_point_set( mesh, file );
                     } );
                 }
-                async::when_all( tasks.begin(), tasks.end() )
-                    .then( [level] {
-                        Logger::set_level( level );
-                    } )
-                    .wait();
+                auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
+                all_tasks.wait();
+                Logger::set_level( level );
+                for( auto& task : all_tasks.get() )
+                {
+                    task.get();
+                }
             }
 
             void write_lines( pugi::xml_node& line_block ) const
@@ -149,11 +151,13 @@ namespace geode
                         save_edged_curve( mesh, file );
                     } );
                 }
-                async::when_all( tasks.begin(), tasks.end() )
-                    .then( [level] {
-                        Logger::set_level( level );
-                    } )
-                    .wait();
+                auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
+                all_tasks.wait();
+                Logger::set_level( level );
+                for( auto& task : all_tasks.get() )
+                {
+                    task.get();
+                }
             }
 
             void write_surfaces( pugi::xml_node& surface_block ) const
@@ -204,11 +208,13 @@ namespace geode
                         }
                     } );
                 }
-                async::when_all( tasks.begin(), tasks.end() )
-                    .then( [level] {
-                        Logger::set_level( level );
-                    } )
-                    .wait();
+                auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
+                all_tasks.wait();
+                Logger::set_level( level );
+                for( auto& task : all_tasks.get() )
+                {
+                    task.get();
+                }
             }
 
         private:

@@ -40,5 +40,6 @@ add_geode_test(
         OpenGeode::basic
         OpenGeode::mesh
         OpenGeode::model
+        ${PROJECT_NAME}::mesh
         ${PROJECT_NAME}::model
 )
