@@ -41,7 +41,9 @@ mark_as_advanced(USE_SUPERBUILD)
 # the one of OpenGeode-IO. This is done during compilation, i.e., OpenGeode-IO.cmake is
 # called (USE_SUPERBUILD = OFF) when the super build project is compiled.
 if(USE_SUPERBUILD)
+    project(SuperBuild)
     include(cmake/SuperBuild.cmake)
 else()
+    project(OpenGeode-IO CXX)
     include(cmake/OpenGeode-IO.cmake)
 endif()
