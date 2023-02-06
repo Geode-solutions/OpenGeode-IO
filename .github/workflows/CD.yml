@@ -27,6 +27,7 @@ jobs:
       name: OPENGEODE_IO
       directory: opengeode-io
       repos: OpenGeode
+      config: RelWithDebInfo
     secrets: inherit
 
   release-windows-python:
