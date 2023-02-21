@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 - 2022 Geode-solutions
+ * Copyright (c) 2019 - 2023 Geode-solutions
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,11 @@
 
 #pragma once
 
-#include <geode/mesh/io/regular_grid_input.h>
+#include <geode/basic/library.h>
+
+#include <geode/io/image/opengeode_io_image_export.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RegularGrid );
-    ALIAS_2D( RegularGrid );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
-    {
-        class PNGInput final : public RegularGridInput< 2 >
-        {
-        public:
-            PNGInput( absl::string_view filename )
-                : RegularGridInput< 2 >( filename )
-            {
-            }
-
-            static absl::string_view extension()
-            {
-                static constexpr auto ext = "png";
-                return ext;
-            }
-
-            std::unique_ptr< RegularGrid2D > read( const MeshImpl& impl ) final;
-        };
-    } // namespace detail
+    OPENGEODE_LIBRARY( opengeode_io_image_api, OpenGeodeIOImage );
 } // namespace geode

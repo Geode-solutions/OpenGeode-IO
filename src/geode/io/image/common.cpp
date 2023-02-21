@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 - 2022 Geode-solutions
+ * Copyright (c) 2019 - 2023 Geode-solutions
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,32 @@
  *
  */
 
-#pragma once
+#include <geode/io/image/common.h>
 
-#include <geode/io/mesh/common.h>
+#include <geode/image/common.h>
 
-namespace geode
+#include <geode/io/image/private/jpg_input.h>
+#include <geode/io/image/private/png_input.h>
+
+namespace
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RegularGrid );
-    ALIAS_2D( RegularGrid );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    void register_raster_input()
     {
-        class ImageInputImpl final
-        {
-        public:
-            ImageInputImpl(
-                absl::string_view filename, geode::RegularGrid2D& grid );
+        geode::RasterInputFactory2D::register_creator<
+            geode::detail::JPGInput >(
+            geode::detail::JPGInput::extension().data() );
 
-            void read_file();
+        geode::RasterInputFactory2D::register_creator<
+            geode::detail::PNGInput >(
+            geode::detail::PNGInput::extension().data() );
+    }
+} // namespace
 
-        private:
-            absl::string_view filename_;
-            geode::RegularGrid2D& grid_;
-        };
-    } // namespace detail
+namespace geode
+{
+    OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOImage )
+    {
+        OpenGeodeImage::initialize();
+        register_raster_input();
+    }
 } // namespace geode
