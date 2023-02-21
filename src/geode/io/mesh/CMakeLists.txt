@@ -47,9 +47,6 @@ add_geode_library(
         "vtu_polyhedral_output.cpp"
         "vtu_tetrahedral_input.cpp"
         "vtu_tetrahedral_output.cpp"
-        "image_regular_grid_surface_input.cpp"
-        "jpg_input.cpp"
-        "png_input.cpp"
     PUBLIC_HEADERS
         "common.h"
     PRIVATE_HEADERS
@@ -84,9 +81,6 @@ add_geode_library(
         "private/vtu_polyhedral_output.h"
         "private/vtu_tetrahedral_input.h"
         "private/vtu_tetrahedral_output.h"
-        "private/image_regular_grid_surface_input.h"
-        "private/jpg_input.h"
-        "private/png_input.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
@@ -94,9 +88,4 @@ add_geode_library(
         assimp::assimp
         pugixml::pugixml
         zlib::zlib
-        libjpeg-turbo::jpeg-static
-        png_static
-)
-target_include_directories(mesh 
-    SYSTEM PRIVATE ${CIMG_INCLUDE_FILES_PREFIX}
 )

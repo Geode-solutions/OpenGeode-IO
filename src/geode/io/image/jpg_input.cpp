@@ -21,22 +21,20 @@
  *
  */
 
-#include <geode/io/mesh/private/jpg_input.h>
+#include <geode/io/image/private/jpg_input.h>
 
-#include <geode/mesh/core/regular_grid_surface.h>
+#include <geode/image/core/raster.h>
 
-#include <geode/io/mesh/private/image_regular_grid_surface_input.h>
+#include <geode/io/image/private/image_raster_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< RegularGrid2D > JPGInput::read( const MeshImpl& impl )
+        Raster2D JPGInput::read()
         {
-            auto grid = RegularGrid2D::create( impl );
-            ImageInputImpl reader{ filename(), *grid };
-            reader.read_file();
-            return grid;
+            ImageInputImpl reader{ filename() };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode

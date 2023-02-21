@@ -21,35 +21,32 @@
  *
  */
 
-#pragma once
+#include <geode/io/image/common.h>
 
-#include <geode/mesh/io/regular_grid_input.h>
+#include <geode/image/common.h>
 
-namespace geode
+#include <geode/io/image/private/jpg_input.h>
+#include <geode/io/image/private/png_input.h>
+
+namespace
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RegularGrid );
-    ALIAS_2D( RegularGrid );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    void register_raster_input()
     {
-        class PNGInput final : public RegularGridInput< 2 >
-        {
-        public:
-            PNGInput( absl::string_view filename )
-                : RegularGridInput< 2 >( filename )
-            {
-            }
+        geode::RasterInputFactory2D::register_creator<
+            geode::detail::JPGInput >(
+            geode::detail::JPGInput::extension().data() );
 
-            static absl::string_view extension()
-            {
-                static constexpr auto ext = "png";
-                return ext;
-            }
+        geode::RasterInputFactory2D::register_creator<
+            geode::detail::PNGInput >(
+            geode::detail::PNGInput::extension().data() );
+    }
+} // namespace
 
-            std::unique_ptr< RegularGrid2D > read( const MeshImpl& impl ) final;
-        };
-    } // namespace detail
+namespace geode
+{
+    OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOImage )
+    {
+        OpenGeodeImage::initialize();
+        register_raster_input();
+    }
 } // namespace geode

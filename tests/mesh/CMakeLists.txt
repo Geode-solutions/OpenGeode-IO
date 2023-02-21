@@ -26,13 +26,6 @@ add_geode_test(
         ${PROJECT_NAME}::mesh
 )
 add_geode_test(
-    SOURCE "test-image.cpp"
-    DEPENDENCIES
-        OpenGeode::basic
-        OpenGeode::mesh
-        ${PROJECT_NAME}::mesh
-)
-add_geode_test(
     SOURCE "test-obj.cpp"
     DEPENDENCIES
         OpenGeode::basic

@@ -26,13 +26,11 @@
 #include <geode/mesh/common.h>
 
 #include <geode/io/mesh/private/dxf_input.h>
-#include <geode/io/mesh/private/jpg_input.h>
 #include <geode/io/mesh/private/obj_input.h>
 #include <geode/io/mesh/private/obj_polygonal_output.h>
 #include <geode/io/mesh/private/obj_triangulated_output.h>
 #include <geode/io/mesh/private/ply_input.h>
 #include <geode/io/mesh/private/ply_output.h>
-#include <geode/io/mesh/private/png_input.h>
 #include <geode/io/mesh/private/smesh_curve_input.h>
 #include <geode/io/mesh/private/smesh_triangulated_input.h>
 #include <geode/io/mesh/private/stl_input.h>
@@ -184,17 +182,6 @@ namespace
             geode::detail::SMESHCurveInput::extension().data() );
     }
 
-    void register_regular_grid_input()
-    {
-        geode::RegularGridInputFactory2D::register_creator<
-            geode::detail::JPGInput >(
-            geode::detail::JPGInput::extension().data() );
-
-        geode::RegularGridInputFactory2D::register_creator<
-            geode::detail::PNGInput >(
-            geode::detail::PNGInput::extension().data() );
-    }
-
     void register_regular_grid_output()
     {
         geode::RegularGridOutputFactory2D::register_creator<
@@ -219,7 +206,6 @@ namespace geode
         register_polyhedral_solid_input();
         register_tetrahedral_solid_input();
         register_hybrid_solid_input();
-        register_regular_grid_input();
 
         register_point_set_output();
         register_edged_curve_output();

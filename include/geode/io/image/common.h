@@ -23,29 +23,11 @@
 
 #pragma once
 
-#include <geode/io/mesh/common.h>
+#include <geode/basic/library.h>
+
+#include <geode/io/image/opengeode_io_image_export.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RegularGrid );
-    ALIAS_2D( RegularGrid );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
-    {
-        class ImageInputImpl final
-        {
-        public:
-            ImageInputImpl(
-                absl::string_view filename, geode::RegularGrid2D& grid );
-
-            void read_file();
-
-        private:
-            absl::string_view filename_;
-            geode::RegularGrid2D& grid_;
-        };
-    } // namespace detail
+    OPENGEODE_LIBRARY( opengeode_io_image_api, OpenGeodeIOImage );
 } // namespace geode

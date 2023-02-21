@@ -18,21 +18,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required(VERSION 3.15)
-
-if(NOT TARGET OpenGeode-IO::mesh)
-    project(OpenGeode-IO CXX)
-    find_package(OpenGeode REQUIRED CONFIG)
-    find_package(OpenGeode-IO REQUIRED CONFIG)
-    enable_testing()
-endif()
-
-set(DATA_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/data)
-set(test_config_file_in ${CMAKE_CURRENT_LIST_DIR}/tests_config.h.in)
-set(test_config_file ${PROJECT_BINARY_DIR}/geode/tests_config.h)
-configure_file(${test_config_file_in} ${test_config_file})
-include_directories(${PROJECT_BINARY_DIR})
-
-add_subdirectory(image)
-add_subdirectory(mesh)
-add_subdirectory(model)
+add_geode_library(
+    NAME image
+    FOLDER "geode/io/image"
+    SOURCES
+        "common.cpp"
+        "image_raster_input.cpp"
+        "jpg_input.cpp"
+        "png_input.cpp"
+    PUBLIC_HEADERS
+        "common.h"
+    PRIVATE_HEADERS
+        "private/image_raster_input.h"
+        "private/jpg_input.h"
+        "private/png_input.h"
+    PRIVATE_DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::geometry
+        OpenGeode::image
+        libjpeg-turbo::jpeg-static
+        png_static
+)
+target_include_directories(image 
+    SYSTEM PRIVATE ${CIMG_INCLUDE_FILES_PREFIX}
+)
