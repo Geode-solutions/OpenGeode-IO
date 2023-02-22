@@ -41,10 +41,11 @@ namespace geode
         {
         }
 
-        Raster2D ImageInputImpl::read_file()
+        RasterImage2D ImageInputImpl::read_file()
         {
             const cimg_library::CImg< local_index_t > image( filename_.data() );
-            Raster2D raster{ { static_cast< geode::index_t >( image.width() ),
+            RasterImage2D raster{ { static_cast< geode::index_t >(
+                                        image.width() ),
                 static_cast< geode::index_t >( image.height() ) } };
             const auto nb_color_components =
                 static_cast< geode::index_t >( image.spectrum() );

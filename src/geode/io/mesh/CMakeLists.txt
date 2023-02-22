@@ -65,7 +65,7 @@ add_geode_library(
         "private/stl_output.h"
         "private/triangle_output.h"
         "private/vtk_input.h"
-        "private/vtk_output.h"
+        "private/vtk_mesh_output.h"
         "private/vti_regular_grid_output.h"
         "private/vtp_edged_curve_output.h"
         "private/vtp_input.h"
@@ -88,4 +88,5 @@ add_geode_library(
         assimp::assimp
         pugixml::pugixml
         zlib::zlib
+        ${PROJECT_NAME}::image
 )

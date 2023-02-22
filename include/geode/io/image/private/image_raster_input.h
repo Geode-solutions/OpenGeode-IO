@@ -27,8 +27,8 @@
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( Raster );
-    ALIAS_2D( Raster );
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
 } // namespace geode
 
 namespace geode
@@ -40,7 +40,7 @@ namespace geode
         public:
             ImageInputImpl( absl::string_view filename );
 
-            geode::Raster2D read_file();
+            geode::RasterImage2D read_file();
 
         private:
             absl::string_view filename_;

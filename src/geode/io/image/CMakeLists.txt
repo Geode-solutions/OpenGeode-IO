@@ -26,16 +26,21 @@ add_geode_library(
         "image_raster_input.cpp"
         "jpg_input.cpp"
         "png_input.cpp"
+        "vti_raster_output.cpp"
     PUBLIC_HEADERS
         "common.h"
     PRIVATE_HEADERS
         "private/image_raster_input.h"
         "private/jpg_input.h"
         "private/png_input.h"
+        "private/vti_output_impl.h"
+        "private/vti_raster_output.h"
+        "private/vtk_output.h"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
         OpenGeode::image
+        pugixml::pugixml
         libjpeg-turbo::jpeg-static
         png_static
 )

@@ -27,12 +27,7 @@
 
 #include <fstream>
 
-#include <absl/strings/ascii.h>
-#include <absl/strings/escaping.h>
-#include <absl/strings/numbers.h>
-#include <absl/strings/str_split.h>
 #include <pugixml.hpp>
-#include <zlib.h>
 
 #include <geode/basic/attribute_manager.h>
 
