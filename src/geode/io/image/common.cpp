@@ -27,7 +27,7 @@
 
 #include <geode/io/image/private/jpg_input.h>
 #include <geode/io/image/private/png_input.h>
-#include <geode/io/image/private/vti_raster_output.h>
+#include <geode/io/image/private/vti_raster_image_output.h>
 
 namespace
 {

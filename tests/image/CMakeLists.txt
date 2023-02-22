@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 add_geode_test(
-    SOURCE "test-image.cpp"
+    SOURCE "test-raster-image.cpp"
     DEPENDENCIES
         OpenGeode::basic
         OpenGeode::image

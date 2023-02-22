@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/image/private/image_raster_input.h>
+#include <geode/io/image/private/raster_image_input.h>
 
 #define cimg_display 0
 #define cimg_use_jpeg
@@ -29,7 +29,7 @@
 #include <cimg/CImg.h>
 
 #include <geode/basic/attribute_manager.h>
-#include <geode/image/core/raster.h>
+#include <geode/image/core/raster_image.h>
 #include <geode/image/core/rgb_color.h>
 
 namespace geode
