@@ -32,12 +32,12 @@ namespace
 {
     template < geode::index_t dimension >
     class VTIOutputImpl
-        : public geode::detail::VTIOutputImpl< geode::RegularGrid, dimension >
+        : public geode::detail::VTIOutputImpl< geode::RegularGrid< dimension > >
     {
     public:
         VTIOutputImpl( const geode::RegularGrid< dimension >& grid,
             absl::string_view filename )
-            : geode::detail::VTIOutputImpl< geode::RegularGrid, dimension >{
+            : geode::detail::VTIOutputImpl< geode::RegularGrid< dimension > >{
                   grid, filename
               }
         {

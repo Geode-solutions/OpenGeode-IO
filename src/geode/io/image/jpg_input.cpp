@@ -23,9 +23,9 @@
 
 #include <geode/io/image/private/jpg_input.h>
 
-#include <geode/image/core/raster.h>
+#include <geode/image/core/raster_image.h>
 
-#include <geode/io/image/private/image_raster_input.h>
+#include <geode/io/image/private/raster_image_input.h>
 
 namespace geode
 {

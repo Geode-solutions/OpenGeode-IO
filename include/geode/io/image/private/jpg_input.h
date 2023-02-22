@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/image/io/raster_input.h>
+#include <geode/image/io/raster_image_input.h>
 
 namespace geode
 {

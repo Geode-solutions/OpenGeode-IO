@@ -21,13 +21,9 @@
  *
  */
 
-#include <geode/io/mesh/private/vti_regular_grid_output.h>
+#pragma once
 
-#include <geode/geometry/bounding_box.h>
 #include <geode/geometry/point.h>
-
-#include <geode/mesh/core/regular_grid_solid.h>
-#include <geode/mesh/core/regular_grid_surface.h>
 
 #include <geode/io/image/private/vtk_output.h>
 
@@ -35,13 +31,14 @@ namespace geode
 {
     namespace detail
     {
-        template < template < index_t > class Mesh, index_t dimension >
-        class VTIOutputImpl : public detail::VTKOutputImpl< Mesh< dimension > >
+        template < typename CellArray >
+        class VTIOutputImpl : public detail::VTKOutputImpl< CellArray >
         {
+            static constexpr auto dimension = CellArray::dim;
+
         protected:
-            VTIOutputImpl(
-                const Mesh< dimension >& mesh, absl::string_view filename )
-                : detail::VTKOutputImpl< Mesh< dimension > >{ filename, mesh,
+            VTIOutputImpl( const CellArray& array, absl::string_view filename )
+                : detail::VTKOutputImpl< CellArray >{ filename, array,
                       "ImageData" }
             {
             }

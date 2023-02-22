@@ -21,9 +21,9 @@
  *
  */
 
-#include <geode/io/image/private/vti_raster_output.h>
+#include <geode/io/image/private/vti_raster_image_output.h>
 
-#include <geode/image/core/raster.h>
+#include <geode/image/core/raster_image.h>
 #include <geode/image/core/rgb_color.h>
 
 #include <geode/io/image/private/vti_output_impl.h>
@@ -32,12 +32,12 @@ namespace
 {
     template < geode::index_t dimension >
     class VTIOutputImpl
-        : public geode::detail::VTIOutputImpl< geode::RasterImage, dimension >
+        : public geode::detail::VTIOutputImpl< geode::RasterImage< dimension > >
     {
     public:
         VTIOutputImpl( const geode::RasterImage< dimension >& raster,
             absl::string_view filename )
-            : geode::detail::VTIOutputImpl< geode::RasterImage, dimension >{
+            : geode::detail::VTIOutputImpl< geode::RasterImage< dimension > >{
                   raster, filename
               }
         {
