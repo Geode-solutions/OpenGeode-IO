@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include <geode/io/mesh/private/vtk_output.h>
-
 #include <async++.h>
 
 #include <ghc/filesystem.hpp>
@@ -46,7 +44,7 @@
 #include <geode/model/mixin/core/line.h>
 #include <geode/model/mixin/core/surface.h>
 
-#include <geode/io/mesh/private/vtk_output.h>
+#include <geode/io/image/private/vtk_output.h>
 
 namespace geode
 {

@@ -25,7 +25,6 @@
 
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/vtk_output.h>
 #include <geode/io/mesh/private/vtp_output_impl.h>
 
 namespace geode

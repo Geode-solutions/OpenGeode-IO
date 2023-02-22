@@ -25,6 +25,8 @@
 
 #include <geode/io/mesh/private/vtk_mesh_output.h>
 
+#include <absl/strings/str_split.h>
+
 namespace geode
 {
     namespace detail

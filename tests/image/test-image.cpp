@@ -58,8 +58,7 @@ void test_jpg_from_gimp_input()
             " on image loaded from grid_image_from_gimp.jpg." );
     }
 
-    // geode::save_regular_grid( *raster, "test_grid_output_from_gimp_jpg.vti"
-    // );
+    geode::save_raster( raster, "test_grid_output_from_gimp_jpg.vti" );
 }
 
 void test_jpg_from_paraview_input()
@@ -81,8 +80,7 @@ void test_jpg_from_paraview_input()
             " on image loaded from grid_image_from_paraview.jpg." );
     }
 
-    // geode::save_regular_grid(
-    //     *raster, "test_grid_output_from_paraview_jpg.vti" );
+    geode::save_raster( raster, "test_grid_output_from_paraview_jpg.vti" );
 }
 
 void test_png_input()
@@ -104,7 +102,7 @@ void test_png_input()
             " on image loaded from grid_image.png." );
     }
 
-    // geode::save_regular_grid( *raster, "test_grid_output_from_png.vti" );
+    geode::save_raster( raster, "test_grid_output_from_png.vti" );
 }
 
 int main()

@@ -31,7 +31,7 @@ namespace geode
 {
     namespace detail
     {
-        Raster2D JPGInput::read()
+        RasterImage2D JPGInput::read()
         {
             ImageInputImpl reader{ filename() };
             return reader.read_file();

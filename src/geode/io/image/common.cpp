@@ -27,18 +27,30 @@
 
 #include <geode/io/image/private/jpg_input.h>
 #include <geode/io/image/private/png_input.h>
+#include <geode/io/image/private/vti_raster_output.h>
 
 namespace
 {
     void register_raster_input()
     {
-        geode::RasterInputFactory2D::register_creator<
+        geode::RasterImageInputFactory2D::register_creator<
             geode::detail::JPGInput >(
             geode::detail::JPGInput::extension().data() );
 
-        geode::RasterInputFactory2D::register_creator<
+        geode::RasterImageInputFactory2D::register_creator<
             geode::detail::PNGInput >(
             geode::detail::PNGInput::extension().data() );
+    }
+
+    void register_raster_output()
+    {
+        geode::RasterImageOutputFactory2D::register_creator<
+            geode::detail::VTIRasterImageOutput2D >(
+            geode::detail::VTIRasterImageOutput2D::extension().data() );
+
+        geode::RasterImageOutputFactory3D::register_creator<
+            geode::detail::VTIRasterImageOutput3D >(
+            geode::detail::VTIRasterImageOutput3D::extension().data() );
     }
 } // namespace
 
@@ -48,5 +60,6 @@ namespace geode
     {
         OpenGeodeImage::initialize();
         register_raster_input();
+        register_raster_output();
     }
 } // namespace geode

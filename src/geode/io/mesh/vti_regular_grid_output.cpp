@@ -23,25 +23,22 @@
 
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 
-#include <geode/geometry/bounding_box.h>
-#include <geode/geometry/point.h>
-
 #include <geode/mesh/core/regular_grid_solid.h>
 #include <geode/mesh/core/regular_grid_surface.h>
 
-#include <geode/io/mesh/private/vtk_output.h>
+#include <geode/io/image/private/vti_output_impl.h>
 
 namespace
 {
     template < geode::index_t dimension >
     class VTIOutputImpl
-        : public geode::detail::VTKOutputImpl< geode::RegularGrid< dimension > >
+        : public geode::detail::VTIOutputImpl< geode::RegularGrid, dimension >
     {
     public:
         VTIOutputImpl( const geode::RegularGrid< dimension >& grid,
             absl::string_view filename )
-            : geode::detail::VTKOutputImpl< geode::RegularGrid< dimension > >{
-                  filename, grid, "ImageData"
+            : geode::detail::VTIOutputImpl< geode::RegularGrid, dimension >{
+                  grid, filename
               }
         {
         }
@@ -50,7 +47,12 @@ namespace
         void write_piece( pugi::xml_node& object ) final
         {
             auto piece = object.append_child( "Piece" );
-            write_image_header( piece );
+            std::array< double, dimension > spacing;
+            for( const auto d : geode::LRange{ dimension } )
+            {
+                spacing[d] = this->mesh().cell_length_in_direction( d );
+            }
+            this->write_image_header( piece, this->mesh().origin(), spacing );
             write_vertex_data( piece );
             write_cell_data( piece );
         }
@@ -68,49 +70,6 @@ namespace
             this->write_attributes(
                 vertex_data, this->mesh().vertex_attribute_manager() );
         }
-
-        void write_image_header( pugi::xml_node& piece )
-        {
-            auto image = piece.parent();
-            std::string extent;
-            for( const auto d : geode::LRange{ dimension } )
-            {
-                if( d != 0 )
-                {
-                    absl::StrAppend( &extent, " " );
-                }
-                absl::StrAppend(
-                    &extent, "0 ", this->mesh().nb_cells_in_direction( d ) );
-            }
-            if( dimension == 2 )
-            {
-                absl::StrAppend( &extent, " 0 0" );
-            }
-            image.append_attribute( "WholeExtent" ).set_value( extent.c_str() );
-            piece.append_attribute( "Extent" ).set_value( extent.c_str() );
-            std::string origin;
-            absl::StrAppend( &origin, this->mesh().origin().string() );
-            if( dimension == 2 )
-            {
-                absl::StrAppend( &origin, " 0" );
-            }
-            image.append_attribute( "Origin" ).set_value( origin.c_str() );
-            std::string spacing;
-            for( const auto d : geode::LRange{ dimension } )
-            {
-                if( d != 0 )
-                {
-                    absl::StrAppend( &spacing, " " );
-                }
-                absl::StrAppend(
-                    &spacing, this->mesh().cell_length_in_direction( d ) );
-            }
-            if( dimension == 2 )
-            {
-                absl::StrAppend( &spacing, " 1" );
-            }
-            image.append_attribute( "Spacing" ).set_value( spacing.c_str() );
-        }
     };
 } // namespace
 
@@ -122,7 +81,7 @@ namespace geode
         void VTIRegularGridOutput< dimension >::write(
             const RegularGrid< dimension >& grid ) const
         {
-            VTIOutputImpl< dimension > impl{ grid, this->filename() };
+            ::VTIOutputImpl< dimension > impl{ grid, this->filename() };
             impl.write_file();
         }
 

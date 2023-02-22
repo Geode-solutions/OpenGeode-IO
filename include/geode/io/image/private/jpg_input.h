@@ -27,19 +27,19 @@
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( Raster );
-    ALIAS_2D( Raster );
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
 } // namespace geode
 
 namespace geode
 {
     namespace detail
     {
-        class JPGInput final : public RasterInput< 2 >
+        class JPGInput final : public RasterImageInput< 2 >
         {
         public:
             JPGInput( absl::string_view filename )
-                : RasterInput< 2 >( filename )
+                : RasterImageInput< 2 >( filename )
             {
             }
 
@@ -49,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            Raster2D read() final;
+            RasterImage2D read() final;
         };
     } // namespace detail
 } // namespace geode

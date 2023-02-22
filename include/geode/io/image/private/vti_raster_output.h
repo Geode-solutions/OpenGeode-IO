@@ -21,20 +21,31 @@
  *
  */
 
-#include <geode/io/image/private/png_input.h>
+#pragma once
 
-#include <geode/image/core/raster.h>
-
-#include <geode/io/image/private/image_raster_input.h>
+#include <geode/image/io/raster_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        RasterImage2D PNGInput::read()
+        template < index_t dimension >
+        class VTIRasterImageOutput final : public RasterImageOutput< dimension >
         {
-            ImageInputImpl reader{ filename() };
-            return reader.read_file();
-        }
+        public:
+            VTIRasterImageOutput( absl::string_view filename )
+                : RasterImageOutput< dimension >{ filename }
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "vti";
+                return ext;
+            }
+
+            void write( const RasterImage< dimension > &raster ) const final;
+        };
+        ALIAS_2D_AND_3D( VTIRasterImageOutput );
     } // namespace detail
 } // namespace geode
