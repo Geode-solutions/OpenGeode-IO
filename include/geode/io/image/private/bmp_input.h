@@ -21,42 +21,35 @@
  *
  */
 
-#include <geode/io/mesh/private/obj_input.h>
+#pragma once
 
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/image/io/raster_image_input.h>
 
-#include <geode/io/mesh/private/assimp_input.h>
-
-namespace
+namespace geode
 {
-    class OBJInputImpl : public geode::detail::AssimpMeshInput
-    {
-    public:
-        OBJInputImpl( absl::string_view filename,
-            geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( filename, polygonal_surface )
-        {
-        }
-
-        void build_mesh()
-        {
-            build_mesh_from_duplicated_vertices();
-        }
-    };
-} // namespace
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
+} // namespace geode
 
 namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< PolygonalSurface3D > OBJInput::read(
-            const MeshImpl& impl )
+        class BMPInput final : public RasterImageInput< 2 >
         {
-            auto surface = PolygonalSurface3D::create( impl );
-            OBJInputImpl reader{ filename(), *surface };
-            reader.read_file();
-            reader.build_mesh();
-            return surface;
-        }
+        public:
+            BMPInput( absl::string_view filename )
+                : RasterImageInput< 2 >( filename )
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "bmp";
+                return ext;
+            }
+
+            RasterImage2D read() final;
+        };
     } // namespace detail
 } // namespace geode

@@ -22,17 +22,19 @@ add_geode_library(
     NAME image
     FOLDER "geode/io/image"
     SOURCES
+        "bmp_input.cpp"
         "common.cpp"
-        "raster_image_input.cpp"
         "jpg_input.cpp"
         "png_input.cpp"
+        "raster_image_input.cpp"
         "vti_raster_image_output.cpp"
     PUBLIC_HEADERS
         "common.h"
     PRIVATE_HEADERS
-        "private/raster_image_input.h"
+        "private/bmp_input.h"
         "private/jpg_input.h"
         "private/png_input.h"
+        "private/raster_image_input.h"
         "private/vti_output_impl.h"
         "private/vti_raster_image_output.h"
         "private/vtk_output.h"

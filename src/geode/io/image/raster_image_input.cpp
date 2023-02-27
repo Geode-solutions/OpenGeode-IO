@@ -32,6 +32,52 @@
 #include <geode/image/core/raster_image.h>
 #include <geode/image/core/rgb_color.h>
 
+namespace
+{
+    template < typename SpecificRange >
+    geode::RasterImage2D read_file( absl::string_view filename )
+    {
+        const cimg_library::CImg< geode::local_index_t > image(
+            geode::to_string( filename ).c_str() );
+        geode::RasterImage2D raster{ { static_cast< geode::index_t >(
+                                           image.width() ),
+            static_cast< geode::index_t >( image.height() ) } };
+        const auto nb_color_components =
+            static_cast< geode::index_t >( image.spectrum() );
+        if( nb_color_components <= 2 )
+        {
+            geode::index_t cell{ 0 };
+            for( const auto image_j :
+                SpecificRange{ raster.nb_cells_in_direction( 1 ) } )
+            {
+                for( const auto image_i :
+                    geode::Range{ raster.nb_cells_in_direction( 0 ) } )
+                {
+                    const auto value = image( image_i, image_j );
+                    raster.set_color( cell++, { value, value, value } );
+                }
+            }
+        }
+        else if( nb_color_components <= 4 )
+        {
+            geode::index_t cell{ 0 };
+            for( const auto image_j :
+                SpecificRange{ raster.nb_cells_in_direction( 1 ) } )
+            {
+                for( const auto image_i :
+                    geode::Range{ raster.nb_cells_in_direction( 0 ) } )
+                {
+                    raster.set_color(
+                        cell++, { image( image_i, image_j, 0 ),
+                                    image( image_i, image_j, 0, 1 ),
+                                    image( image_i, image_j, 0, 2 ) } );
+                }
+            }
+        }
+        return raster;
+    }
+} // namespace
+
 namespace geode
 {
     namespace detail
@@ -43,48 +89,12 @@ namespace geode
 
         RasterImage2D ImageInputImpl::read_file()
         {
-            const cimg_library::CImg< local_index_t > image( filename_.data() );
-            RasterImage2D raster{ { static_cast< geode::index_t >(
-                                        image.width() ),
-                static_cast< geode::index_t >( image.height() ) } };
-            const auto nb_color_components =
-                static_cast< geode::index_t >( image.spectrum() );
-            if( nb_color_components <= 2 )
-            {
-                index_t cell{ 0 };
-                for( const auto image_j :
-                    geode::ReverseRange{ raster.nb_cells_in_direction( 1 ) } )
-                {
-                    // const auto cell_j = nb_cells[1] - 1 - image_j;
-                    for( const auto image_i :
-                        geode::Range{ raster.nb_cells_in_direction( 0 ) } )
-                    {
-                        const auto value = image( image_i, image_j );
-                        raster.set_color( cell++,
-                            // grid_.cell_index( { image_i, cell_j } ),
-                            { value, value, value } );
-                    }
-                }
-            }
-            else if( nb_color_components <= 4 )
-            {
-                index_t cell{ 0 };
-                for( const auto image_j :
-                    geode::ReverseRange{ raster.nb_cells_in_direction( 1 ) } )
-                {
-                    // const auto cell_j = nb_cells[1] - 1 - image_j;
-                    for( const auto image_i :
-                        geode::Range{ raster.nb_cells_in_direction( 0 ) } )
-                    {
-                        raster.set_color( cell++,
-                            // grid_.cell_index( { image_i, cell_j } ),
-                            { image( image_i, image_j, 0 ),
-                                image( image_i, image_j, 0, 1 ),
-                                image( image_i, image_j, 0, 2 ) } );
-                    }
-                }
-            }
-            return raster;
+            return ::read_file< Range >( filename_ );
+        }
+
+        RasterImage2D ImageInputImpl::read_reversed_y_axis_file()
+        {
+            return ::read_file< ReverseRange >( filename_ );
         }
     } // namespace detail
 } // namespace geode

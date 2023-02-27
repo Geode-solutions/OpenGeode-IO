@@ -25,6 +25,8 @@
 
 #include <geode/mesh/common.h>
 
+#include <geode/io/image/common.h>
+
 #include <geode/io/mesh/private/dxf_input.h>
 #include <geode/io/mesh/private/obj_input.h>
 #include <geode/io/mesh/private/obj_polygonal_output.h>
@@ -199,6 +201,7 @@ namespace geode
     OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOMesh )
     {
         OpenGeodeMesh::initialize();
+        OpenGeodeIOImage::initialize();
 
         register_edged_curve_input();
         register_polygonal_surface_input();

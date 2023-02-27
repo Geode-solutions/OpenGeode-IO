@@ -38,57 +38,14 @@ namespace
     public:
         PLYInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( filename ),
-              surface_( polygonal_surface )
+            : geode::detail::AssimpMeshInput( filename, polygonal_surface )
         {
         }
 
         void build_mesh() final
         {
-            for( const auto m : geode::Range{ nb_meshes() } )
-            {
-                const auto offset = build_vertices( m );
-                build_polygons( offset, m );
-            }
-            auto builder = geode::SurfaceMeshBuilder3D::create( surface_ );
-            builder->compute_polygon_adjacencies();
+            build_mesh_without_duplicated_vertices();
         }
-
-    private:
-        geode::index_t build_vertices( geode::index_t mesh )
-        {
-            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            const auto* a_mesh = assimp_mesh( mesh );
-            const auto offset =
-                builder->create_vertices( a_mesh->mNumVertices );
-            for( const auto v : geode::Range{ a_mesh->mNumVertices } )
-            {
-                geode::Point3D point{ { a_mesh->mVertices[v].x,
-                    a_mesh->mVertices[v].y, a_mesh->mVertices[v].z } };
-                builder->set_point( offset + v, point );
-            }
-            return offset;
-        }
-
-        void build_polygons( geode::index_t offset, geode::index_t mesh )
-        {
-            auto builder = geode::PolygonalSurfaceBuilder3D::create( surface_ );
-            const auto* a_mesh = assimp_mesh( mesh );
-            for( const auto p : geode::Range{ a_mesh->mNumFaces } )
-            {
-                const auto& face = a_mesh->mFaces[p];
-                absl::FixedArray< geode::index_t > polygon_vertices(
-                    face.mNumIndices );
-                for( const auto i : geode::Range{ face.mNumIndices } )
-                {
-                    polygon_vertices[i] = offset + face.mIndices[i];
-                }
-                builder->create_polygon( polygon_vertices );
-            }
-        }
-
-    private:
-        geode::PolygonalSurface3D& surface_;
     };
 } // namespace
 

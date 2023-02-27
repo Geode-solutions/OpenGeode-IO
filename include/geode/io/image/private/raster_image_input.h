@@ -40,7 +40,9 @@ namespace geode
         public:
             ImageInputImpl( absl::string_view filename );
 
-            geode::RasterImage2D read_file();
+            RasterImage2D read_file();
+
+            RasterImage2D read_reversed_y_axis_file();
 
         private:
             absl::string_view filename_;

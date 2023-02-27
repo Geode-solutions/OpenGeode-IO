@@ -65,8 +65,22 @@ namespace geode
                 return mesh_;
             }
 
+            absl::string_view filename() const
+            {
+                return filename_;
+            }
+
             void write_attributes( pugi::xml_node& attribute_node,
-                const AttributeManager& manager )
+                const AttributeManager& manager ) const
+            {
+                absl::FixedArray< index_t > elements( manager.nb_elements() );
+                absl::c_iota( elements, 0 );
+                write_attributes( attribute_node, manager, elements );
+            }
+
+            void write_attributes( pugi::xml_node& attribute_node,
+                const AttributeManager& manager,
+                absl::Span< const index_t > elements ) const
             {
                 for( const auto& name : manager.attribute_names() )
                 {
@@ -76,26 +90,17 @@ namespace geode
                     {
                         continue;
                     }
-                    auto data_array =
-                        attribute_node.append_child( "DataArray" );
-                    data_array.append_attribute( "type" ).set_value(
-                        "Float64" );
-                    data_array.append_attribute( "Name" ).set_value(
-                        name.data() );
-                    data_array.append_attribute( "format" )
-                        .set_value( "ascii" );
-                    data_array.append_attribute( "NumberOfComponents" )
-                        .set_value( attribute->nb_items() );
+                    auto data_array = write_attribute_header(
+                        attribute_node, name, attribute->nb_items() );
                     auto min = std::numeric_limits< float >::max();
                     auto max = std::numeric_limits< float >::lowest();
                     std::string values;
-                    for( const auto v : geode::Range{ manager.nb_elements() } )
+                    for( const auto e : elements )
                     {
-                        for( const auto i :
-                            geode::LRange{ attribute->nb_items() } )
+                        for( const auto i : LRange{ attribute->nb_items() } )
                         {
                             const auto value =
-                                attribute->generic_item_value( v, i );
+                                attribute->generic_item_value( e, i );
                             absl::StrAppend( &values, value, " " );
                             min = std::min( min, value );
                             max = std::max( max, value );
@@ -105,6 +110,21 @@ namespace geode
                     data_array.append_attribute( "RangeMax" ).set_value( max );
                     data_array.text().set( values.c_str() );
                 }
+            }
+
+            pugi::xml_node write_attribute_header(
+                pugi::xml_node& attribute_node,
+                absl::string_view name,
+                local_index_t nb_components ) const
+            {
+                auto data_array = attribute_node.append_child( "DataArray" );
+                data_array.append_attribute( "type" ).set_value( "Float64" );
+                data_array.append_attribute( "Name" ).set_value(
+                    to_string( name ).c_str() );
+                data_array.append_attribute( "format" ).set_value( "ascii" );
+                data_array.append_attribute( "NumberOfComponents" )
+                    .set_value( nb_components );
+                return data_array;
             }
 
         private:

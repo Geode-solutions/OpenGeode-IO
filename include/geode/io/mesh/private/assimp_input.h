@@ -43,7 +43,11 @@ namespace geode
         class AssimpMeshInput
         {
         public:
-            AssimpMeshInput( absl::string_view filename ) : file_( filename )
+            AssimpMeshInput(
+                absl::string_view filename, SurfaceMesh3D& surface )
+                : surface_( surface ),
+                  builder_{ SurfaceMeshBuilder3D::create( surface ) },
+                  file_( filename )
             {
                 OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
                     "[AssimpMeshInput] Error while opening file: ", file_ );
@@ -56,104 +60,27 @@ namespace geode
             virtual void build_mesh() = 0;
 
         protected:
-            index_t nb_meshes() const
-            {
-                return assimp_meshes_.size();
-            }
+            void build_mesh_from_duplicated_vertices();
 
-            const aiMesh* assimp_mesh( index_t mesh )
-            {
-                return assimp_meshes_[mesh];
-            }
-
-            void build_mesh_from_duplicated_vertices( SurfaceMesh3D& surface )
-            {
-                for( const auto m : geode::Range{ nb_meshes() } )
-                {
-                    const auto output = build_duplicated_vertices( surface, m );
-                    build_polygons( surface, std::get< 0 >( output ),
-                        std::get< 1 >( output ), m );
-                }
-                auto builder = geode::SurfaceMeshBuilder3D::create( surface );
-                builder->compute_polygon_adjacencies();
-            }
-
-            std::tuple< NNSearch3D::ColocatedInfo, index_t >
-                build_duplicated_vertices(
-                    SurfaceMesh3D& surface, index_t mesh )
-            {
-                const auto duplicated_vertices =
-                    load_duplicated_vertices( assimp_mesh( mesh ) );
-                return build_unique_vertices( duplicated_vertices, surface );
-            }
-
-            void build_polygons( SurfaceMesh3D& surface,
-                const geode::NNSearch3D::ColocatedInfo& vertex_mapping,
-                geode::index_t offset,
-                geode::index_t mesh )
-            {
-                auto builder = geode::SurfaceMeshBuilder3D::create( surface );
-                const auto* a_mesh = assimp_mesh( mesh );
-                for( const auto p : geode::Range{ a_mesh->mNumFaces } )
-                {
-                    const auto& face = a_mesh->mFaces[p];
-                    absl::FixedArray< geode::index_t > polygon_vertices(
-                        face.mNumIndices );
-                    for( const auto i :
-                        geode::Range{ polygon_vertices.size() } )
-                    {
-                        polygon_vertices[i] =
-                            offset
-                            + vertex_mapping
-                                  .colocated_mapping[face.mIndices[i]];
-                    }
-                    builder->create_polygon( polygon_vertices );
-                }
-            }
+            void build_mesh_without_duplicated_vertices();
 
         private:
-            std::vector< Point3D > load_duplicated_vertices(
-                const aiMesh* paiMesh )
-            {
-                std::vector< Point3D > duplicated_vertices;
-                duplicated_vertices.resize( paiMesh->mNumVertices );
-                for( const auto v : Range{ paiMesh->mNumVertices } )
-                {
-                    duplicated_vertices[v].set_value(
-                        0, paiMesh->mVertices[v].x );
-                    duplicated_vertices[v].set_value(
-                        1, paiMesh->mVertices[v].y );
-                    duplicated_vertices[v].set_value(
-                        2, paiMesh->mVertices[v].z );
-                }
-                return duplicated_vertices;
-            }
+            index_t build_vertices( absl::Span< const Point3D > points );
 
-            std::tuple< NNSearch3D::ColocatedInfo, index_t >
-                build_unique_vertices(
-                    const std::vector< Point3D >& duplicated_vertices,
-                    SurfaceMesh3D& surface )
-            {
-                const NNSearch3D colocater{ duplicated_vertices };
-                const auto& vertex_mapping =
-                    colocater.colocated_index_mapping( global_epsilon );
+            index_t build_polygons( absl::Span< const index_t > vertex_mapping,
+                index_t vertex_offset,
+                index_t mesh_id );
 
-                auto builder = SurfaceMeshBuilder3D::create( surface );
-                const auto offset = builder->create_vertices(
-                    vertex_mapping.nb_unique_points() );
-                for( const auto v : Range{ vertex_mapping.nb_unique_points() } )
-                {
-                    builder->set_point(
-                        offset + v, vertex_mapping.unique_points[v] );
-                }
-
-                return std::make_tuple( vertex_mapping, offset );
-            }
+            void build_texture( index_t polygon_offset, index_t mesh_id );
 
         private:
+            SurfaceMesh3D& surface_;
+            std::unique_ptr< SurfaceMeshBuilder3D > builder_;
             absl::string_view file_;
             Assimp::Importer importer_;
             std::vector< aiMesh* > assimp_meshes_;
+            std::vector< std::pair< std::string, std::string > >
+                assimp_materials_;
         };
     } // namespace detail
 } // namespace geode
