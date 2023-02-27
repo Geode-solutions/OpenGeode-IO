@@ -38,18 +38,14 @@ namespace
     public:
         DXFInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( filename ),
-              surface_( polygonal_surface )
+            : geode::detail::AssimpMeshInput( filename, polygonal_surface )
         {
         }
 
         void build_mesh() final
         {
-            build_mesh_from_duplicated_vertices( surface_ );
+            build_mesh_from_duplicated_vertices();
         }
-
-    private:
-        geode::PolygonalSurface3D& surface_;
     };
 } // namespace
 

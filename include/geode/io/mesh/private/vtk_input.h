@@ -224,7 +224,7 @@ namespace geode
                         manager
                             .find_or_create_attribute< VariableAttribute, T >(
                                 name, T{} );
-                    for( const auto i : geode::Indices{ values } )
+                    for( const auto i : Indices{ values } )
                     {
                         attribute->set_value( i + offset, values[i] );
                     }
@@ -332,10 +332,9 @@ namespace geode
                 auto attribute =
                     manager.find_or_create_attribute< VariableAttribute,
                         Container >( name, default_value );
-                for( const auto i :
-                    geode::Range{ values.size() / nb_components } )
+                for( const auto i : Range{ values.size() / nb_components } )
                 {
-                    for( const auto c : geode::Range{ nb_components } )
+                    for( const auto c : Range{ nb_components } )
                     {
                         const auto& new_value = values[nb_components * i + c];
                         attribute->modify_value(

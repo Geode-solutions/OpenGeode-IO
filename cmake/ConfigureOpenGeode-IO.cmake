@@ -53,3 +53,11 @@ ExternalProject_Add(opengeode-io
         pugixml
         zlib
 )
+
+ExternalProject_Add_StepTargets(opengeode-io configure)
+
+add_custom_target(third_party
+    DEPENDS
+        opengeode-io-configure
+)
+

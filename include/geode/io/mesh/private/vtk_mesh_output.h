@@ -34,6 +34,21 @@ namespace geode
 {
     namespace detail
     {
+
+        template < index_t dimension >
+        inline void write_point(
+            std::string& string, const Point< dimension >& point )
+        {
+            if( dimension < 3 )
+            {
+                absl::StrAppend( &string, point.string(), " 0 " );
+            }
+            else
+            {
+                absl::StrAppend( &string, point.string(), " " );
+            }
+        }
+
         template < template < index_t > class Mesh, index_t dimension >
         class VTKMeshOutputImpl : public VTKOutputImpl< Mesh< dimension > >
         {
@@ -45,29 +60,36 @@ namespace geode
             {
             }
 
+            virtual std::vector< index_t > compute_vertices()
+            {
+                std::vector< index_t > vertices( this->mesh().nb_vertices() );
+                absl::c_iota( vertices, 0 );
+                return vertices;
+            }
+
         private:
             void write_piece( pugi::xml_node& object ) final
             {
                 auto piece = object.append_child( "Piece" );
+                const auto vertices = compute_vertices();
                 piece.append_attribute( "NumberOfPoints" )
-                    .set_value( this->mesh().nb_vertices() );
+                    .set_value( vertices.size() );
                 append_number_elements( piece );
 
-                write_vtk_vertex_attributes( piece );
-                write_vtk_points( piece );
+                auto vertex_node =
+                    write_vtk_vertex_attributes( piece, vertices );
+                write_vtk_textures( vertex_node );
+                write_vtk_points( piece, vertices );
                 write_vtk_cell_attributes( piece );
                 write_vtk_cells( piece );
             }
 
-            void write_vtk_points( pugi::xml_node& piece )
+            pugi::xml_node write_vtk_points( pugi::xml_node& piece,
+                absl::Span< const index_t > vertices ) const
             {
                 auto points = piece.append_child( "Points" );
-                auto data_array = points.append_child( "DataArray" );
-                data_array.append_attribute( "type" ).set_value( "Float32" );
-                data_array.append_attribute( "Name" ).set_value( "Points" );
-                data_array.append_attribute( "NumberOfComponents" )
-                    .set_value( 3 );
-                data_array.append_attribute( "format" ).set_value( "ascii" );
+                auto data_array =
+                    this->write_attribute_header( points, "Points", 3 );
                 const auto bbox = this->mesh().bounding_box();
                 auto min = bbox.min().value( 0 );
                 auto max = bbox.max().value( 0 );
@@ -78,31 +100,32 @@ namespace geode
                 }
                 data_array.append_attribute( "RangeMin" ).set_value( min );
                 data_array.append_attribute( "RangeMax" ).set_value( max );
-                std::string vertices;
-                for( const auto v : Range{ this->mesh().nb_vertices() } )
+                std::string vertices_str;
+                for( const auto v : vertices )
                 {
-                    absl::StrAppend(
-                        &vertices, this->mesh().point( v ).string(), " " );
-                    if( dimension < 3 )
-                    {
-                        absl::StrAppend( &vertices, "0 " );
-                    }
+                    write_point( vertices_str, this->mesh().point( v ) );
                 }
-                data_array.text().set( vertices.c_str() );
+                data_array.text().set( vertices_str.c_str() );
+                return points;
             }
 
-            void write_vtk_vertex_attributes( pugi::xml_node& piece )
+            pugi::xml_node write_vtk_vertex_attributes( pugi::xml_node& piece,
+                absl::Span< const index_t > vertices ) const
             {
                 auto point_data = piece.append_child( "PointData" );
-                this->write_attributes(
-                    point_data, this->mesh().vertex_attribute_manager() );
+                this->write_attributes( point_data,
+                    this->mesh().vertex_attribute_manager(), vertices );
+                return point_data;
             }
 
             virtual void append_number_elements( pugi::xml_node& piece ) = 0;
 
-            virtual void write_vtk_cells( pugi::xml_node& piece ) = 0;
+            virtual void write_vtk_textures( pugi::xml_node& /*unused*/ ){};
 
-            virtual void write_vtk_cell_attributes( pugi::xml_node& piece ) = 0;
+            virtual pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) = 0;
+
+            virtual pugi::xml_node write_vtk_cell_attributes(
+                pugi::xml_node& piece ) = 0;
         };
     } // namespace detail
 } // namespace geode

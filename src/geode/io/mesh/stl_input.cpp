@@ -35,18 +35,14 @@ namespace
     public:
         STLInputImpl( absl::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::AssimpMeshInput( filename ),
-              surface_( triangulated_surface )
+            : geode::detail::AssimpMeshInput( filename, triangulated_surface )
         {
-        }
-        void build_mesh()
-        {
-            build_mesh_from_duplicated_vertices( surface_ );
         }
 
-    private:
-        geode::TriangulatedSurface3D& surface_;
-        Assimp::Importer importer_;
+        void build_mesh()
+        {
+            build_mesh_from_duplicated_vertices();
+        }
     };
 } // namespace
 

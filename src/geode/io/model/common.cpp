@@ -25,6 +25,8 @@
 
 #include <geode/model/common.h>
 
+#include <geode/io/mesh/common.h>
+
 #include <geode/io/model/private/msh_input.h>
 #include <geode/io/model/private/msh_output.h>
 #include <geode/io/model/private/svg_input.h>
@@ -67,6 +69,7 @@ namespace geode
     OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOModel )
     {
         OpenGeodeModel::initialize();
+        OpenGeodeIOMesh::initialize();
 
         register_brep_input();
         register_section_input();

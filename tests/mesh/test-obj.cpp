@@ -32,6 +32,8 @@
 
 #include <geode/io/mesh/common.h>
 
+#include <geode/image/core/raster_image.h>
+#include <geode/mesh/core/texture2d.h>
 int main()
 {
     try

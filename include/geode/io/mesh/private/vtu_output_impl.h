@@ -48,7 +48,7 @@ namespace geode
                     .set_value( this->mesh().nb_polyhedra() );
             }
 
-            void write_vtk_cells( pugi::xml_node& piece ) override
+            pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
             {
                 const auto nb_cells = this->mesh().nb_polyhedra();
                 std::string cell_connectivity;
@@ -133,19 +133,22 @@ namespace geode
                         .set_value( tokens.size() );
                     face_offsets.text().set( cell_face_offsets.c_str() );
                 }
+                return cells;
             }
 
-            virtual void write_cell( geode::index_t c,
+            virtual void write_cell( index_t c,
                 std::string& cell_types,
                 std::string& cell_faces,
                 std::string& cell_face_offsets,
                 index_t& face_offset ) const = 0;
 
-            void write_vtk_cell_attributes( pugi::xml_node& piece ) override
+            pugi::xml_node write_vtk_cell_attributes(
+                pugi::xml_node& piece ) override
             {
                 auto cell_data = piece.append_child( "CellData" );
                 this->write_attributes(
                     cell_data, this->mesh().polyhedron_attribute_manager() );
+                return cell_data;
             }
         };
     } // namespace detail

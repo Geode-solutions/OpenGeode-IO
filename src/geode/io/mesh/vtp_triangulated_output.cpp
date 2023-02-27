@@ -25,7 +25,7 @@
 
 #include <geode/mesh/core/triangulated_surface.h>
 
-#include <geode/io/mesh/private/vtp_output_impl.h>
+#include <geode/io/mesh/private/vtp_surface_output_impl.h>
 
 namespace geode
 {
@@ -35,7 +35,7 @@ namespace geode
         void VTPTriangulatedOutput< dimension >::write(
             const TriangulatedSurface< dimension > &surface ) const
         {
-            VTPOutputImpl< geode::TriangulatedSurface, dimension > impl{
+            VTPSurfaceOutputImpl< TriangulatedSurface, dimension > impl{
                 this->filename(), surface
             };
             impl.write_file();
