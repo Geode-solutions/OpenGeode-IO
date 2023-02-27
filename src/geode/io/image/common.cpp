@@ -25,6 +25,7 @@
 
 #include <geode/image/common.h>
 
+#include <geode/io/image/private/bmp_input.h>
 #include <geode/io/image/private/jpg_input.h>
 #include <geode/io/image/private/png_input.h>
 #include <geode/io/image/private/vti_raster_image_output.h>
@@ -40,6 +41,10 @@ namespace
         geode::RasterImageInputFactory2D::register_creator<
             geode::detail::PNGInput >(
             geode::detail::PNGInput::extension().data() );
+
+        geode::RasterImageInputFactory2D::register_creator<
+            geode::detail::BMPInput >(
+            geode::detail::BMPInput::extension().data() );
     }
 
     void register_raster_output()

@@ -48,17 +48,17 @@ namespace
                 .set_value( this->mesh().nb_vertices() );
         }
 
-        void write_vtk_cells( pugi::xml_node& piece ) override
+        pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
         {
-            auto polys = piece.append_child( "Verts" );
-            auto connectivity = polys.append_child( "DataArray" );
+            auto verts = piece.append_child( "Verts" );
+            auto connectivity = verts.append_child( "DataArray" );
             connectivity.append_attribute( "type" ).set_value( "Int64" );
             connectivity.append_attribute( "Name" ).set_value( "connectivity" );
             connectivity.append_attribute( "format" ).set_value( "ascii" );
             connectivity.append_attribute( "RangeMin" ).set_value( 0 );
             connectivity.append_attribute( "RangeMax" )
                 .set_value( this->mesh().nb_vertices() - 1 );
-            auto offsets = polys.append_child( "DataArray" );
+            auto offsets = verts.append_child( "DataArray" );
             offsets.append_attribute( "type" ).set_value( "Int64" );
             offsets.append_attribute( "Name" ).set_value( "offsets" );
             offsets.append_attribute( "format" ).set_value( "ascii" );
@@ -77,9 +77,14 @@ namespace
             }
             connectivity.text().set( vertex_connectivity.c_str() );
             offsets.text().set( vertex_offsets.c_str() );
+            return verts;
         }
 
-        void write_vtk_cell_attributes( pugi::xml_node& /*unsued*/ ) override {}
+        pugi::xml_node write_vtk_cell_attributes(
+            pugi::xml_node& /*unsued*/ ) override
+        {
+            return {};
+        }
     };
 } // namespace
 

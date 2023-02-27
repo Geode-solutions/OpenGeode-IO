@@ -25,7 +25,7 @@
 
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/vtp_output_impl.h>
+#include <geode/io/mesh/private/vtp_surface_output_impl.h>
 
 namespace geode
 {
@@ -35,7 +35,7 @@ namespace geode
         void VTPPolygonalOutput< dimension >::write(
             const PolygonalSurface< dimension > &surface ) const
         {
-            VTPOutputImpl< geode::PolygonalSurface, dimension > impl{
+            VTPSurfaceOutputImpl< geode::PolygonalSurface, dimension > impl{
                 this->filename(), surface
             };
             impl.write_file();

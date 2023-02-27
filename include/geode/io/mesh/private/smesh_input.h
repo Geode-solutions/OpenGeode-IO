@@ -116,7 +116,7 @@ namespace geode
             }
 
             virtual void create_element(
-                const std::array< geode::index_t, element >& vertices ) = 0;
+                const std::array< index_t, element >& vertices ) = 0;
 
             std::vector< absl::string_view > tokens()
             {
