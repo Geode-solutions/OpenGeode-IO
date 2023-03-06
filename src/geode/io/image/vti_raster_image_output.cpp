@@ -30,16 +30,15 @@
 
 namespace
 {
-    template < geode::index_t dimension >
+    template < geode::index_t dim >
     class VTIOutputImpl
-        : public geode::detail::VTIOutputImpl< geode::RasterImage< dimension > >
+        : public geode::detail::VTIOutputImpl< geode::RasterImage< dim > >
     {
     public:
-        VTIOutputImpl( const geode::RasterImage< dimension >& raster,
+        VTIOutputImpl( const geode::RasterImage< dim >& raster,
             absl::string_view filename )
-            : geode::detail::VTIOutputImpl< geode::RasterImage< dimension > >{
-                  raster, filename
-              }
+            : geode::detail::VTIOutputImpl< geode::RasterImage< dim > >{ raster,
+                  filename }
         {
         }
 
@@ -47,7 +46,7 @@ namespace
         void write_piece( pugi::xml_node& object ) final
         {
             auto piece = object.append_child( "Piece" );
-            std::array< double, dimension > spacing;
+            std::array< double, dim > spacing;
             spacing.fill( 1 );
             this->write_image_header( piece, {}, spacing );
             write_cell_data( piece );
