@@ -95,7 +95,7 @@ namespace geode
             impl.write_file();
         }
 
-        template class opengeode_io_image_api VTIRasterImageOutput< 2 >;
-        template class opengeode_io_image_api VTIRasterImageOutput< 3 >;
+        template class VTIRasterImageOutput< 2 >;
+        template class VTIRasterImageOutput< 3 >;
     } // namespace detail
 } // namespace geode

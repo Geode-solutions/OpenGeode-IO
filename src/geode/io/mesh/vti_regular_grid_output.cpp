@@ -85,7 +85,7 @@ namespace geode
             impl.write_file();
         }
 
-        template class opengeode_io_mesh_api VTIRegularGridOutput< 2 >;
-        template class opengeode_io_mesh_api VTIRegularGridOutput< 3 >;
+        template class VTIRegularGridOutput< 2 >;
+        template class VTIRegularGridOutput< 3 >;
     } // namespace detail
 } // namespace geode
