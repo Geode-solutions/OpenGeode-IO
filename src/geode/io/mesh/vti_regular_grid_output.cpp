@@ -30,16 +30,15 @@
 
 namespace
 {
-    template < geode::index_t dimension >
+    template < geode::index_t dim >
     class VTIOutputImpl
-        : public geode::detail::VTIOutputImpl< geode::RegularGrid< dimension > >
+        : public geode::detail::VTIOutputImpl< geode::RegularGrid< dim > >
     {
     public:
-        VTIOutputImpl( const geode::RegularGrid< dimension >& grid,
-            absl::string_view filename )
-            : geode::detail::VTIOutputImpl< geode::RegularGrid< dimension > >{
-                  grid, filename
-              }
+        VTIOutputImpl(
+            const geode::RegularGrid< dim >& grid, absl::string_view filename )
+            : geode::detail::VTIOutputImpl< geode::RegularGrid< dim > >{ grid,
+                  filename }
         {
         }
 
@@ -47,8 +46,8 @@ namespace
         void write_piece( pugi::xml_node& object ) final
         {
             auto piece = object.append_child( "Piece" );
-            std::array< double, dimension > spacing;
-            for( const auto d : geode::LRange{ dimension } )
+            std::array< double, dim > spacing;
+            for( const auto d : geode::LRange{ dim } )
             {
                 spacing[d] = this->mesh().cell_length_in_direction( d );
             }

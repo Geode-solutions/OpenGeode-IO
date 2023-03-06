@@ -84,6 +84,7 @@ add_geode_library(
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
+        OpenGeode::image
         OpenGeode::mesh
         assimp::assimp
         pugixml::pugixml
