@@ -45,8 +45,7 @@ namespace geode
             VTPSurfaceOutputImpl( absl::string_view filename,
                 const Mesh< dimension >& polygonal_surface )
                 : VTKMeshOutputImpl< Mesh, dimension >(
-                    filename, polygonal_surface, "PolyData" ),
-                  vertex_mapping_( polygonal_surface.nb_vertices() )
+                    filename, polygonal_surface, "PolyData" )
             {
                 const auto manager = this->mesh().texture_manager();
                 const auto texture_names = manager.texture_names();
@@ -55,6 +54,10 @@ namespace geode
                 {
                     textures_info_.emplace_back(
                         texture_name, manager.find_texture( texture_name ) );
+                }
+                if( !textures_info_.empty() )
+                {
+                    vertex_mapping_.resize( polygonal_surface.nb_vertices() );
                 }
             }
 
