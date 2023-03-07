@@ -34,7 +34,6 @@
 
 #include <geode/mesh/core/texture2d.h>
 
-#include <assimp/Exporter.hpp>
 namespace
 {
     std::vector< geode::Point3D > load_vertices( const aiMesh& mesh )
@@ -70,6 +69,11 @@ namespace geode
             for( const auto i : Range{ pScene->mNumMaterials } )
             {
                 const auto material = pScene->mMaterials[i];
+                assimp_materials_[i].first = material->GetName().C_Str();
+                if( assimp_materials_[i].first.empty() )
+                {
+                    assimp_materials_[i].first = absl::StrCat( "texture", i );
+                }
                 if( material->GetTextureCount( aiTextureType_DIFFUSE ) == 0 )
                 {
                     continue;
@@ -79,10 +83,8 @@ namespace geode
                         nullptr, nullptr, nullptr, nullptr, nullptr )
                     == AI_SUCCESS )
                 {
-                    auto image = absl::StrCat(
+                    assimp_materials_[i].second = absl::StrCat(
                         filepath_without_filename( file_ ), Path.C_Str() );
-                    assimp_materials_[i] = std::make_pair(
-                        material->GetName().C_Str(), std::move( image ) );
                 }
             }
             assimp_meshes_.resize( pScene->mNumMeshes );
