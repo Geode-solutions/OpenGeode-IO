@@ -90,8 +90,6 @@ namespace geode
                     return;
                 }
                 save_images();
-                vertex_node.append_attribute( "TCoord" )
-                    .set_value( to_string( textures_info_[0].first ).c_str() );
                 for( const auto& texture_info : textures_info_ )
                 {
                     auto data_array = this->write_attribute_header(
