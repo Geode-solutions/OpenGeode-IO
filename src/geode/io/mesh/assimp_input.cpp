@@ -185,7 +185,8 @@ namespace geode
             {
                 try
                 {
-                    texture.set_image( load_raster< 2 >( material.second ) );
+                    texture.set_image(
+                        load_raster_image< 2 >( material.second ) );
                 }
                 catch( const OpenGeodeException& e )
                 {
