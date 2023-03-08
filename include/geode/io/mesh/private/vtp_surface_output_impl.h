@@ -77,7 +77,7 @@ namespace geode
                     const auto& image = texture.second.get().image();
                     if( image.nb_cells() > 0 )
                     {
-                        save_raster( image,
+                        save_raster_image( image,
                             absl::StrCat( path, "_", texture.first, ".vti" ) );
                     }
                 }
