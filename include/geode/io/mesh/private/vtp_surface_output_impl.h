@@ -124,17 +124,19 @@ namespace geode
                 const auto& mesh = this->mesh();
                 std::vector< index_t > vertices;
                 vertices.reserve( mesh.nb_vertices() );
-                for( const auto v : Range{ mesh.nb_vertices() } )
+                using TextureCoords = absl::InlinedVector< Point2D, 1 >;
+                absl::FixedArray<
+                    absl::flat_hash_map< TextureCoords, index_t > >
+                    vertices_textures( mesh.nb_vertices() );
+                for( const auto p : Range{ mesh.nb_polygons() } )
                 {
-                    const auto& polygons = mesh.polygons_around_vertex( v );
-                    using TextureCoords = absl::InlinedVector< Point2D, 2 >;
-                    absl::flat_hash_map< TextureCoords, index_t >
-                        vertex_textures;
-                    vertex_textures.reserve( polygons.size() );
-                    auto& mapping = vertex_mapping_[v];
-                    mapping.reserve( polygons.size() );
-                    for( const auto& pv : polygons )
+                    for( const auto v :
+                        LRange{ mesh.nb_polygon_vertices( p ) } )
                     {
+                        const PolygonVertex pv{ p, v };
+                        const auto vertex = mesh.polygon_vertex( pv );
+                        auto& vertex_textures = vertices_textures[vertex];
+                        auto& mapping = vertex_mapping_[vertex];
                         TextureCoords coords;
                         coords.reserve( textures_info_.size() );
                         for( const auto& texture : textures_info_ )
@@ -147,10 +149,10 @@ namespace geode
                             std::move( coords ), vertices.size() );
                         if( it.second )
                         {
-                            vertices.push_back( v );
+                            vertices.push_back( vertex );
                             unique_texture_vertices_.push_back( pv );
                         }
-                        mapping[pv.polygon_id] = it.first->second;
+                        mapping[p] = it.first->second;
                     }
                 }
                 return vertices;
