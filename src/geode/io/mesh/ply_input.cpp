@@ -31,36 +31,17 @@
 
 #include <geode/io/mesh/private/assimp_input.h>
 
-namespace
-{
-    class PLYInputImpl : public geode::detail::AssimpMeshInput
-    {
-    public:
-        PLYInputImpl( absl::string_view filename,
-            geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::AssimpMeshInput( filename, polygonal_surface )
-        {
-        }
-
-        void build_mesh() final
-        {
-            build_mesh_without_duplicated_vertices();
-        }
-    };
-} // namespace
-
 namespace geode
 {
     namespace detail
     {
         std::unique_ptr< PolygonalSurface3D > PLYInput::read(
-            const MeshImpl& impl )
+            const MeshImpl& /*unused*/ )
         {
-            auto surface = PolygonalSurface3D::create( impl );
-            PLYInputImpl reader{ filename(), *surface };
-            reader.read_file();
-            reader.build_mesh();
-            return surface;
+            geode::detail::AssimpMeshInput< geode::PolygonalSurface3D > reader{
+                filename()
+            };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode
