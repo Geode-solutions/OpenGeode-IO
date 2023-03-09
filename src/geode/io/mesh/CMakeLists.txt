@@ -89,5 +89,6 @@ add_geode_library(
         assimp::assimp
         pugixml::pugixml
         zlib::zlib
+        Async++
         ${PROJECT_NAME}::image
 )

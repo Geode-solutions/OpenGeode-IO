@@ -23,36 +23,55 @@
 
 #include <geode/io/mesh/private/assimp_input.h>
 
+#include <assimp/Importer.hpp>
+
+#include <async++.h>
+
 #include <absl/algorithm/container.h>
 
 #include <geode/basic/common.h>
 #include <geode/basic/filename.h>
 #include <geode/basic/logger.h>
 
+#include <geode/geometry/point.h>
+
 #include <geode/image/core/raster_image.h>
 #include <geode/image/io/raster_image_input.h>
 
+#include <geode/mesh/builder/polygonal_surface_builder.h>
+#include <geode/mesh/builder/triangulated_surface_builder.h>
+#include <geode/mesh/core/polygonal_surface.h>
 #include <geode/mesh/core/texture2d.h>
+#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/helpers/detail/surface_merger.h>
 
 namespace
 {
-    std::vector< geode::Point3D > load_vertices( const aiMesh& mesh )
+    template < typename Mesh >
+    std::unique_ptr< Mesh > build_mesh( const aiMesh& assimp_mesh )
     {
-        std::vector< geode::Point3D > vertices;
-        vertices.resize( mesh.mNumVertices );
-        for( const auto v : geode::Range{ mesh.mNumVertices } )
+        auto mesh = Mesh::create();
+        auto builder = Mesh::Builder::create( *mesh );
+        builder->create_vertices( assimp_mesh.mNumVertices );
+        async::parallel_for(
+            async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
+            [&assimp_mesh, &builder]( geode::index_t v ) {
+                const auto& vertex = assimp_mesh.mVertices[v];
+                builder->set_point( v, { { vertex.x, vertex.y, vertex.z } } );
+            } );
+        for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
-            const auto& vertex = mesh.mVertices[v];
-            vertices[v] = { { vertex.x, vertex.y, vertex.z } };
+            const auto& face = assimp_mesh.mFaces[p];
+            absl::FixedArray< geode::index_t > polygon_vertices(
+                face.mNumIndices );
+            for( const auto i : geode::LIndices{ polygon_vertices } )
+            {
+                polygon_vertices[i] = face.mIndices[i];
+            }
+            builder->create_polygon( polygon_vertices );
         }
-        return vertices;
-    }
-
-    geode::NNSearch3D::ColocatedInfo build_unique_vertices(
-        std::vector< geode::Point3D >&& duplicated_vertices )
-    {
-        const geode::NNSearch3D colocater{ std::move( duplicated_vertices ) };
-        return colocater.colocated_index_mapping( geode::global_epsilon );
+        builder->compute_polygon_adjacencies();
+        return mesh;
     }
 } // namespace
 
@@ -60,19 +79,140 @@ namespace geode
 {
     namespace detail
     {
-        void AssimpMeshInput::read_file()
+        template < typename Mesh >
+        std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
         {
-            const auto* pScene = importer_.ReadFile( to_string( file_ ), 0 );
-            OPENGEODE_EXCEPTION( pScene, "[AssimpMeshInput::read_file] ",
-                importer_.GetErrorString() );
-            assimp_materials_.resize( pScene->mNumMaterials );
-            for( const auto i : Range{ pScene->mNumMaterials } )
+            Assimp::Importer importer;
+            const auto* assimp_scene =
+                importer.ReadFile( to_string( file_ ), 0 );
+            OPENGEODE_EXCEPTION( assimp_scene, "[AssimpMeshInput::read_file] ",
+                importer.GetErrorString() );
+            read_materials( assimp_scene );
+            read_meshes( assimp_scene );
+            read_textures( assimp_scene );
+            return merge_meshes();
+        }
+
+        template < typename Mesh >
+        void AssimpMeshInput< Mesh >::read_textures(
+            const aiScene* assimp_scene )
+        {
+            for( const auto i : Range{ assimp_scene->mNumMeshes } )
             {
-                const auto material = pScene->mMaterials[i];
-                assimp_materials_[i].first = material->GetName().C_Str();
-                if( assimp_materials_[i].first.empty() )
+                const auto& assimp_mesh = *assimp_scene->mMeshes[i];
+                if( !assimp_mesh.HasTextureCoords( 0 ) )
                 {
-                    assimp_materials_[i].first = absl::StrCat( "texture", i );
+                    return;
+                }
+                const auto& mesh = *surfaces_[i];
+                const auto& material = materials_[assimp_mesh.mMaterialIndex];
+                auto& texture = mesh.texture_manager().find_or_create_texture(
+                    material.first );
+                for( const auto p : Range{ assimp_mesh.mNumFaces } )
+                {
+                    const auto& face = assimp_mesh.mFaces[p];
+                    for( const auto v : LRange{ face.mNumIndices } )
+                    {
+                        const auto mesh_vertex = face.mIndices[v];
+                        const auto& coord =
+                            assimp_mesh.mTextureCoords[0][mesh_vertex];
+                        texture.set_texture_coordinates(
+                            { p, v }, { { coord.x, coord.y } } );
+                    }
+                }
+                if( !material.second.empty() )
+                {
+                    try
+                    {
+                        texture.set_image(
+                            load_raster_image< 2 >( material.second ) );
+                    }
+                    catch( const OpenGeodeException& e )
+                    {
+                        Logger::warn( e.what() );
+                    }
+                }
+            }
+        }
+
+        template < typename Mesh >
+        void AssimpMeshInput< Mesh >::read_meshes( const aiScene* assimp_scene )
+        {
+            surfaces_.resize( assimp_scene->mNumMeshes );
+            absl::FixedArray< async::task< void > > tasks(
+                assimp_scene->mNumMeshes );
+            for( const auto i : Range{ assimp_scene->mNumMeshes } )
+            {
+                tasks[i] = async::spawn( [this, i, &assimp_scene] {
+                    surfaces_[i] =
+                        build_mesh< Mesh >( *assimp_scene->mMeshes[i] );
+                } );
+            }
+            for( auto& task :
+                async::when_all( tasks.begin(), tasks.end() ).get() )
+            {
+                task.get();
+            }
+        }
+
+        template < typename Mesh >
+        std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::merge_meshes()
+        {
+            std::vector< std::reference_wrapper< const SurfaceMesh3D > >
+                ref_surfaces;
+            ref_surfaces.reserve( surfaces_.size() );
+            for( const auto& surface : surfaces_ )
+            {
+                ref_surfaces.emplace_back( *surface );
+            }
+            SurfaceMeshMerger3D merger{ ref_surfaces, global_epsilon };
+            std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
+                merger.merge().release() ) };
+            Mesh::Builder::create( *merged )->compute_polygon_adjacencies();
+            auto merged_manager = merged->texture_manager();
+            for( const auto s : Indices{ surfaces_ } )
+            {
+                const auto& mesh = surfaces_[s];
+                auto manager = mesh->texture_manager();
+                for( const auto name : manager.texture_names() )
+                {
+                    const auto& texture = manager.find_texture( name );
+                    auto& merged_texture =
+                        merged_manager.find_or_create_texture( name );
+                    merged_texture.set_image( texture.image().clone() );
+                    for( const auto p : Range{ mesh->nb_polygons() } )
+                    {
+                        const auto merged_polygon =
+                            merger.polygon_in_merged( s, p );
+                        if( merged_polygon == NO_ID )
+                        {
+                            continue;
+                        }
+                        for( const auto v :
+                            LRange{ mesh->nb_polygon_vertices( p ) } )
+                        {
+                            merged_texture.set_texture_coordinates(
+                                { merged_polygon, v },
+                                texture.texture_coordinates( { p, v } ) );
+                        }
+                    }
+                }
+            }
+            return merged;
+        }
+
+        template < typename Mesh >
+        void AssimpMeshInput< Mesh >::read_materials(
+            const aiScene* assimp_scene )
+        {
+            materials_.resize( assimp_scene->mNumMaterials );
+            for( const auto i : Range{ assimp_scene->mNumMaterials } )
+            {
+                const auto material = assimp_scene->mMaterials[i];
+                materials_[i].first = material->GetName().C_Str();
+                if( materials_[i].first.empty() )
+                {
+                    materials_[i].first = absl::StrCat( "texture", i );
                 }
                 if( material->GetTextureCount( aiTextureType_DIFFUSE ) == 0 )
                 {
@@ -83,116 +223,13 @@ namespace geode
                         nullptr, nullptr, nullptr, nullptr, nullptr )
                     == AI_SUCCESS )
                 {
-                    assimp_materials_[i].second = absl::StrCat(
+                    materials_[i].second = absl::StrCat(
                         filepath_without_filename( file_ ), Path.C_Str() );
                 }
             }
-            assimp_meshes_.resize( pScene->mNumMeshes );
-            for( const auto i : Range{ pScene->mNumMeshes } )
-            {
-                assimp_meshes_[i] = pScene->mMeshes[i];
-            }
         }
 
-        void AssimpMeshInput::build_mesh_from_duplicated_vertices()
-        {
-            for( const auto m : Indices{ assimp_meshes_ } )
-            {
-                const auto info = build_unique_vertices(
-                    load_vertices( *assimp_meshes_[m] ) );
-                const auto vertex_offset = build_vertices( info.unique_points );
-                const auto polygon_offset =
-                    build_polygons( info.colocated_mapping, vertex_offset, m );
-                build_texture( polygon_offset, m );
-            }
-            SurfaceMeshBuilder3D::create( surface_ )
-                ->compute_polygon_adjacencies();
-        }
-
-        void AssimpMeshInput::build_mesh_without_duplicated_vertices()
-        {
-            for( const auto m : Indices{ assimp_meshes_ } )
-            {
-                const auto points = load_vertices( *assimp_meshes_[m] );
-                const auto vertex_offset = build_vertices( points );
-                absl::FixedArray< index_t > mapping( points.size() );
-                absl::c_iota( mapping, 0 );
-                const auto polygon_offset =
-                    build_polygons( mapping, vertex_offset, m );
-                build_texture( polygon_offset, m );
-            }
-            SurfaceMeshBuilder3D::create( surface_ )
-                ->compute_polygon_adjacencies();
-        }
-
-        index_t AssimpMeshInput::build_vertices(
-            absl::Span< const Point3D > points )
-        {
-            const auto offset = builder_->create_vertices( points.size() );
-            for( const auto v : Indices{ points } )
-            {
-                builder_->set_point( offset + v, points[v] );
-            }
-            return offset;
-        }
-
-        index_t AssimpMeshInput::build_polygons(
-            absl::Span< const index_t > vertex_mapping,
-            index_t vertex_offset,
-            index_t mesh_id )
-        {
-            const auto& mesh = *assimp_meshes_[mesh_id];
-            const auto offset = surface_.nb_polygons();
-            for( const auto p : Range{ mesh.mNumFaces } )
-            {
-                const auto& face = mesh.mFaces[p];
-                absl::FixedArray< index_t > polygon_vertices(
-                    face.mNumIndices );
-                for( const auto i : LIndices{ polygon_vertices } )
-                {
-                    polygon_vertices[i] =
-                        vertex_offset + vertex_mapping[face.mIndices[i]];
-                }
-                builder_->create_polygon( polygon_vertices );
-            }
-            return offset;
-        }
-
-        void AssimpMeshInput::build_texture(
-            index_t polygon_offset, index_t mesh_id )
-        {
-            const auto& mesh = *assimp_meshes_[mesh_id];
-            if( !mesh.HasTextureCoords( 0 ) )
-            {
-                return;
-            }
-            const auto& material = assimp_materials_[mesh.mMaterialIndex];
-            auto& texture = surface_.texture_manager().find_or_create_texture(
-                material.first );
-            for( const auto p : Range{ mesh.mNumFaces } )
-            {
-                const auto& face = mesh.mFaces[p];
-                const auto polygon = polygon_offset + p;
-                for( const auto i : LRange{ face.mNumIndices } )
-                {
-                    const auto mesh_vertex = face.mIndices[i];
-                    const auto& coord = mesh.mTextureCoords[0][mesh_vertex];
-                    texture.set_texture_coordinates(
-                        { polygon, i }, { { coord.x, coord.y } } );
-                }
-            }
-            if( !material.second.empty() )
-            {
-                try
-                {
-                    texture.set_image(
-                        load_raster_image< 2 >( material.second ) );
-                }
-                catch( const OpenGeodeException& e )
-                {
-                    Logger::warn( e.what() );
-                }
-            }
-        }
+        template class AssimpMeshInput< PolygonalSurface3D >;
+        template class AssimpMeshInput< TriangulatedSurface3D >;
     } // namespace detail
 } // namespace geode

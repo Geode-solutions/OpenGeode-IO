@@ -28,36 +28,16 @@
 
 #include <geode/io/mesh/private/assimp_input.h>
 
-namespace
-{
-    class STLInputImpl : public geode::detail::AssimpMeshInput
-    {
-    public:
-        STLInputImpl( absl::string_view filename,
-            geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::AssimpMeshInput( filename, triangulated_surface )
-        {
-        }
-
-        void build_mesh()
-        {
-            build_mesh_from_duplicated_vertices();
-        }
-    };
-} // namespace
-
 namespace geode
 {
     namespace detail
     {
         std::unique_ptr< TriangulatedSurface3D > STLInput::read(
-            const MeshImpl& impl )
+            const MeshImpl& /*unused*/ )
         {
-            auto surface = TriangulatedSurface3D::create( impl );
-            STLInputImpl reader{ filename(), *surface };
-            reader.read_file();
-            reader.build_mesh();
-            return surface;
+            geode::detail::AssimpMeshInput< geode::TriangulatedSurface3D >
+                reader{ filename() };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode
