@@ -23,6 +23,8 @@
 
 #include <geode/io/image/common.h>
 
+#include <gdal_priv.h>
+
 #include <geode/image/common.h>
 
 #include <geode/io/image/private/bmp_input.h>
@@ -66,5 +68,6 @@ namespace geode
         OpenGeodeImage::initialize();
         register_raster_input();
         register_raster_output();
+        GDALAllRegister();
     }
 } // namespace geode

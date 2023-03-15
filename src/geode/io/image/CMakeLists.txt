@@ -43,9 +43,5 @@ add_geode_library(
         OpenGeode::geometry
         OpenGeode::image
         pugixml::pugixml
-        libjpeg-turbo::jpeg-static
-        png_static
-)
-target_include_directories(image 
-    SYSTEM PRIVATE ${CIMG_INCLUDE_FILES_PREFIX}
+        GDAL::GDAL
 )
