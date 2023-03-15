@@ -35,10 +35,7 @@ endif()
 include(ExternalProject)
 
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureJPEG.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureZlib.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePNG.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/ConfigureCImg.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePugixml.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
 
