@@ -49,13 +49,14 @@ namespace
             std::array< double, dim > spacing;
             spacing.fill( 1 );
             this->write_image_header( piece, {}, spacing );
-            write_cell_data( piece );
+            write_point_data( piece );
         }
 
-        void write_cell_data( pugi::xml_node& piece )
+        void write_point_data( pugi::xml_node& piece )
         {
-            auto cell_data = piece.append_child( "CellData" );
-            auto data_array = cell_data.append_child( "DataArray" );
+            auto point_data = piece.append_child( "PointData" );
+            point_data.append_attribute( "Scalars" ).set_value( "Color" );
+            auto data_array = point_data.append_child( "DataArray" );
             data_array.append_attribute( "type" ).set_value( "UInt8" );
             data_array.append_attribute( "Name" ).set_value( "Color" );
             data_array.append_attribute( "format" ).set_value( "ascii" );
