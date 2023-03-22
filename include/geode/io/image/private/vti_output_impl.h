@@ -56,7 +56,7 @@ namespace geode
                         absl::StrAppend( &extent, " " );
                     }
                     absl::StrAppend( &extent, "0 ",
-                        this->mesh().nb_cells_in_direction( d ) );
+                        this->mesh().nb_cells_in_direction( d ) - 1 );
                 }
                 if( dimension == 2 )
                 {
