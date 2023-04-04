@@ -18,19 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(src)
+import opengeode
 
-if(OPENGEODE_IO_WITH_TESTS)
-    add_subdirectory(tests)
-endif()
-
-add_geode_python_wheel(
-    NAME "OpenGeode-IO"
-    DESCRIPTION 
-        "Implementation of input and output formats for OpenGeode"
-    MODULES
-        "mesh.py"
-        "model.py"
-    SUPERBUILD
-    LICENSE "MIT"
-)
+from .opengeode_io_py_mesh import *
+OpenGeodeIOMesh.initialize()
