@@ -21,4 +21,4 @@
 import opengeode
 
 from opengeode_io_py_mesh import *
-IOMesh.initialize()
+IOMeshLibrary.initialize()

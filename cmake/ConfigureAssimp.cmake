@@ -22,6 +22,9 @@ set(ASSIMP_PATH ${PROJECT_BINARY_DIR}/third_party/assimp)
 set(ASSIMP_INSTALL_PREFIX ${ASSIMP_PATH}/install)
 ExternalProject_Add(assimp
     PREFIX ${ASSIMP_PATH}
+    SOURCE_DIR ${ASSIMP_PATH}/src
+    BINARY_DIR ${ASSIMP_PATH}/build
+    STAMP_DIR ${ASSIMP_PATH}/stamp
     GIT_REPOSITORY https://github.com/Geode-solutions/assimp
     GIT_TAG 21533617f448a0cee34b3d5a329ef4899c49dfb1
     GIT_PROGRESS ON

@@ -101,7 +101,7 @@ int main()
 {
     try
     {
-        geode::IOMesh::initialize();
+        geode::IOMeshLibrary::initialize();
 
         run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
             { "FractureId", "FractureSize", "FractureArea" } );

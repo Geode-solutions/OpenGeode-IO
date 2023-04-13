@@ -28,6 +28,6 @@
 PYBIND11_MODULE( opengeode_io_py_model, module )
 {
     module.doc() = "OpenGeode-IO Python binding for model";
-    pybind11::class_< geode::IOModel >( module, "IOModel" )
-        .def( "initialize", &geode::IOModel::initialize );
+    pybind11::class_< geode::IOModelLibrary >( module, "IOModelLibrary" )
+        .def( "initialize", &geode::IOModelLibrary::initialize );
 }

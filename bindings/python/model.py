@@ -21,4 +21,4 @@
 import opengeode
 
 from opengeode_io_py_model import *
-IOModel.initialize()
+IOModelLibrary.initialize()

@@ -200,8 +200,8 @@ namespace geode
 {
     OPENGEODE_LIBRARY_IMPLEMENTATION( IOMesh )
     {
-        OpenGeodeMesh::initialize();
-        IOImage::initialize();
+        OpenGeodeMeshLibrary::initialize();
+        IOImageLibrary::initialize();
 
         register_edged_curve_input();
         register_polygonal_surface_input();
