@@ -29,6 +29,7 @@ add_geode_python_wheel(
     DESCRIPTION 
         "Implementation of input and output formats for OpenGeode"
     MODULES
+        "image.py"
         "mesh.py"
         "model.py"
     SUPERBUILD

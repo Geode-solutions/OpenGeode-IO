@@ -34,14 +34,23 @@ find_package(ghc_filesystem REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${FILESYSTEM_I
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 
 # Install OpenGeode-IO third-parties
+install(
+    DIRECTORY
+        ${PUGIXML_INSTALL_PREFIX}/
+    DESTINATION
+        .
+    COMPONENT
+        public
+)
 if(NOT BUILD_SHARED_LIBS)
     install(
         DIRECTORY
             ${ASSIMP_INSTALL_PREFIX}/
-            ${PUGIXML_INSTALL_PREFIX}/
             ${ZLIB_INSTALL_PREFIX}/
         DESTINATION
             .
+        COMPONENT
+            public
     )
 endif()
 

@@ -243,7 +243,7 @@ int main()
 {
     try
     {
-        geode::OpenGeodeIOModel::initialize();
+        geode::IOModel::initialize();
 
         run_test( "triangle_internal", &test_brep_internal );
         run_test( "cube_v22", &test_brep_cube );

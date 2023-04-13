@@ -76,7 +76,7 @@ int main()
 {
     try
     {
-        geode::OpenGeodeIOModel::initialize();
+        geode::IOModel::initialize();
 
         // Load file
         auto section = geode::load_section(

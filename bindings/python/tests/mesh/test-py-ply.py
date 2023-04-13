@@ -30,7 +30,7 @@ import opengeode
 import opengeode_io_py_mesh as mesh_io
 
 if __name__ == '__main__':
-    mesh_io.OpenGeodeIOMesh.initialize()
+    mesh_io.IOMesh.initialize()
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(
