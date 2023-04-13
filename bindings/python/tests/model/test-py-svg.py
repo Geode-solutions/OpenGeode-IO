@@ -55,7 +55,7 @@ def test_section(section):
 
 
 if __name__ == '__main__':
-    model_io.IOModel.initialize()
+    model_io.IOModelLibrary.initialize()
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(
         test_dir, "../../../../tests/data"))

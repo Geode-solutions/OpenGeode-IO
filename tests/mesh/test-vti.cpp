@@ -39,7 +39,7 @@ int main()
 {
     try
     {
-        geode::IOMesh::initialize();
+        geode::IOMeshLibrary::initialize();
 
         auto grid = geode::RegularGrid3D::create();
         auto builder = geode::RegularGridBuilder3D::create( *grid );

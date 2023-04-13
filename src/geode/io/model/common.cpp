@@ -68,8 +68,8 @@ namespace geode
 {
     OPENGEODE_LIBRARY_IMPLEMENTATION( IOModel )
     {
-        OpenGeodeModel::initialize();
-        IOMesh::initialize();
+        OpenGeodeModelLibrary::initialize();
+        IOMeshLibrary::initialize();
 
         register_brep_input();
         register_section_input();

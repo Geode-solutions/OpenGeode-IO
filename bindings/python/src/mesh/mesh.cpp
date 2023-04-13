@@ -28,6 +28,6 @@
 PYBIND11_MODULE( opengeode_io_py_mesh, module )
 {
     module.doc() = "OpenGeode-IO Python binding for mesh";
-    pybind11::class_< geode::IOMesh >( module, "IOMesh" )
-        .def( "initialize", &geode::IOMesh::initialize );
+    pybind11::class_< geode::IOMeshLibrary >( module, "IOMeshLibrary" )
+        .def( "initialize", &geode::IOMeshLibrary::initialize );
 }

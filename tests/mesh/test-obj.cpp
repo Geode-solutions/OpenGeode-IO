@@ -38,7 +38,7 @@ int main()
 {
     try
     {
-        geode::IOMesh::initialize();
+        geode::IOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
             absl::StrCat( geode::data_path, "TopHat.obj" ) );

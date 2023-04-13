@@ -35,7 +35,7 @@ int main()
 {
     try
     {
-        geode::IOMesh::initialize();
+        geode::IOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_triangulated_surface< 3 >(
             absl::StrCat( geode::data_path, "triangulated.smesh" ) );

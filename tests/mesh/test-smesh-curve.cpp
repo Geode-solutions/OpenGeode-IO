@@ -35,7 +35,7 @@ int main()
 {
     try
     {
-        geode::IOMesh::initialize();
+        geode::IOMeshLibrary::initialize();
         // Load file
         auto curve = geode::load_edged_curve< 3 >(
             absl::StrCat( geode::data_path, "curve.smesh" ) );

@@ -110,8 +110,8 @@ int main()
 {
     try
     {
-        geode::OpenGeodeMesh::initialize();
-        geode::IOImage::initialize();
+        geode::OpenGeodeMeshLibrary::initialize();
+        geode::IOImageLibrary::initialize();
 
         test_jpg_from_gimp_input();
         test_jpg_from_paraview_input();

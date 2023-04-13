@@ -22,6 +22,9 @@ set(ZLIB_PATH ${PROJECT_BINARY_DIR}/third_party/zlib)
 set(ZLIB_INSTALL_PREFIX ${ZLIB_PATH}/install)
 ExternalProject_Add(zlib
     PREFIX ${ZLIB_PATH}
+    SOURCE_DIR ${ZLIB_PATH}/src
+    BINARY_DIR ${ZLIB_PATH}/build
+    STAMP_DIR ${ZLIB_PATH}/stamp
     GIT_REPOSITORY https://github.com/Geode-solutions/zlib-ng
     GIT_TAG 07996372dcc133b3c06aac2acd7fd2ee2c3a59b8
     GIT_PROGRESS ON

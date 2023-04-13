@@ -31,6 +31,9 @@ set(PUGIXML_PATH ${PROJECT_BINARY_DIR}/third_party/pugixml)
 set(PUGIXML_INSTALL_PREFIX ${PUGIXML_PATH}/install)
 ExternalProject_Add(pugixml
     PREFIX ${PUGIXML_PATH}
+    SOURCE_DIR ${PUGIXML_PATH}/src
+    BINARY_DIR ${PUGIXML_PATH}/build
+    STAMP_DIR ${PUGIXML_PATH}/stamp
     GIT_REPOSITORY https://github.com/zeux/pugixml
     GIT_TAG c2c61a590508922964a425c603c7016329b14655
     GIT_PROGRESS ON
