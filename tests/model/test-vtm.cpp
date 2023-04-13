@@ -40,8 +40,8 @@ int main()
 {
     try
     {
-        geode::OpenGeodeIOMesh::initialize();
-        geode::OpenGeodeIOModel::initialize();
+        geode::IOMesh::initialize();
+        geode::IOModel::initialize();
 
         auto brep =
             geode::load_brep( absl::StrCat( geode::data_path, "mss.og_brep" ) );

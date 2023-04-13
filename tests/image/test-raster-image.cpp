@@ -111,7 +111,7 @@ int main()
     try
     {
         geode::OpenGeodeMesh::initialize();
-        geode::OpenGeodeIOImage::initialize();
+        geode::IOImage::initialize();
 
         test_jpg_from_gimp_input();
         test_jpg_from_paraview_input();

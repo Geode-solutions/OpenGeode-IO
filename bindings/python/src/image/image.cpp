@@ -21,13 +21,13 @@
  *
  */
 
-#pragma once
+#include <pybind11/pybind11.h>
 
-#include <geode/basic/library.h>
+#include <geode/io/image/common.h>
 
-#include <geode/io/model/opengeode_io_model_export.h>
-
-namespace geode
+PYBIND11_MODULE( opengeode_io_py_image, module )
 {
-    OPENGEODE_LIBRARY( opengeode_io_model_api, IOModel );
-} // namespace geode
+    module.doc() = "OpenGeode-IO Python binding for image";
+    pybind11::class_< geode::IOImage >( module, "IOImage" )
+        .def( "initialize", &geode::IOImage::initialize );
+}

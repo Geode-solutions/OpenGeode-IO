@@ -63,7 +63,7 @@ namespace
 
 namespace geode
 {
-    OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIOImage )
+    OPENGEODE_LIBRARY_IMPLEMENTATION( IOImage )
     {
         OpenGeodeImage::initialize();
         register_raster_input();

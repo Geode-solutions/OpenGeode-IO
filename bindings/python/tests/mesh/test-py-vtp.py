@@ -54,6 +54,6 @@ def run_test(filename, nb_vertices, nb_polygons):
 
 
 if __name__ == '__main__':
-    mesh_io.OpenGeodeIOMesh.initialize()
+    mesh_io.IOMesh.initialize()
     run_test("dfn1_ascii", 187, 10)
     run_test("dfn2_mesh_compressed", 33413, 58820)

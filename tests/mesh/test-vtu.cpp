@@ -82,7 +82,7 @@ int main()
 {
     try
     {
-        geode::OpenGeodeIOMesh::initialize();
+        geode::IOMesh::initialize();
 
         run_test( "cone.vtu", { 580, 2197 } );
         run_test( "cone_append_encoded.vtu", { 580, 2197 } );

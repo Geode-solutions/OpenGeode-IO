@@ -55,7 +55,7 @@ def test_section(section):
 
 
 if __name__ == '__main__':
-    model_io.OpenGeodeIOModel.initialize()
+    model_io.IOModel.initialize()
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(
         test_dir, "../../../../tests/data"))

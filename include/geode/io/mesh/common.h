@@ -29,5 +29,5 @@
 
 namespace geode
 {
-    OPENGEODE_LIBRARY( opengeode_io_mesh_api, OpenGeodeIOMesh );
+    OPENGEODE_LIBRARY( opengeode_io_mesh_api, IOMesh );
 } // namespace geode
