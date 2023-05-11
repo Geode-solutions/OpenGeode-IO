@@ -45,26 +45,27 @@ namespace geode
 
             void write_image_header( pugi::xml_node& piece,
                 const Point< dimension >& origin,
+                const std::array< index_t, dimension >& extent,
                 const std::array< double, dimension >& spacing )
             {
                 auto image = piece.parent();
-                std::string extent;
+                std::string extent_str;
                 for( const auto d : LRange{ dimension } )
                 {
                     if( d != 0 )
                     {
-                        absl::StrAppend( &extent, " " );
+                        absl::StrAppend( &extent_str, " " );
                     }
-                    absl::StrAppend( &extent, "0 ",
-                        this->mesh().nb_cells_in_direction( d )  );
+                    absl::StrAppend( &extent_str, "0 ", extent[d] - 1 );
                 }
                 if( dimension == 2 )
                 {
-                    absl::StrAppend( &extent, " 0 0" );
+                    absl::StrAppend( &extent_str, " 0 0" );
                 }
                 image.append_attribute( "WholeExtent" )
-                    .set_value( extent.c_str() );
-                piece.append_attribute( "Extent" ).set_value( extent.c_str() );
+                    .set_value( extent_str.c_str() );
+                piece.append_attribute( "Extent" )
+                    .set_value( extent_str.c_str() );
                 std::string origin_str;
                 absl::StrAppend( &origin_str, origin.string() );
                 if( dimension == 2 )

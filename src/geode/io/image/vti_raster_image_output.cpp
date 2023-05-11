@@ -46,9 +46,14 @@ namespace
         void write_piece( pugi::xml_node& object ) final
         {
             auto piece = object.append_child( "Piece" );
+            std::array< geode::index_t, dim > extent;
+            for( const auto d : geode::LRange{ dim } )
+            {
+                extent[d] = this->mesh().nb_cells_in_direction( d );
+            }
             std::array< double, dim > spacing;
             spacing.fill( 1 );
-            this->write_image_header( piece, {}, spacing );
+            this->write_image_header( piece, {}, extent, spacing );
             write_point_data( piece );
         }
 
