@@ -46,12 +46,18 @@ namespace
         void write_piece( pugi::xml_node& object ) final
         {
             auto piece = object.append_child( "Piece" );
+            std::array< geode::index_t, dim > extent;
+            for( const auto d : geode::LRange{ dim } )
+            {
+                extent[d] = this->mesh().nb_vertices_in_direction( d );
+            }
             std::array< double, dim > spacing;
             for( const auto d : geode::LRange{ dim } )
             {
                 spacing[d] = this->mesh().cell_length_in_direction( d );
             }
-            this->write_image_header( piece, this->mesh().origin(), spacing );
+            this->write_image_header(
+                piece, this->mesh().origin(), extent, spacing );
             write_vertex_data( piece );
             write_cell_data( piece );
         }
