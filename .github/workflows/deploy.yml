@@ -1,0 +1,13 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: Geode-solutions/actions/.github/workflows/deploy.yml@master
+    with:
+      name: OPENGEODE_IO
+      directory: opengeode-io
+      repos: OpenGeode
+    secrets: inherit
