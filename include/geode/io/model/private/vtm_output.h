@@ -57,20 +57,17 @@ namespace geode
             VTMOutputImpl( absl::string_view filename, const Model& brep )
                 : VTKOutputImpl< Model >{ filename, brep,
                       "vtkMultiBlockDataSet" },
-                  files_directory_{ filename_without_extension( filename ) }
+                  files_directory_{ filepath_without_extension( filename ) }
             {
                 if( ghc::filesystem::path{ to_string( filename ) }
                         .is_relative() )
                 {
-                    const ghc::filesystem::path files_directory =
-                        ghc::filesystem::current_path()
-                        / filepath_without_extension( filename );
-                    ghc::filesystem::create_directory( files_directory );
+                    ghc::filesystem::create_directory(
+                        ghc::filesystem::current_path() / files_directory_ );
                 }
                 else
                 {
-                    ghc::filesystem::create_directory(
-                        filepath_without_extension( filename ) );
+                    ghc::filesystem::create_directory( files_directory_ );
                 }
             }
 
