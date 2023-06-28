@@ -43,10 +43,8 @@ namespace geode
             {
             }
 
-            void write_image_header( pugi::xml_node& piece,
-                const Point< dimension >& origin,
-                const std::array< index_t, dimension >& extent,
-                const std::array< double, dimension >& spacing )
+            pugi::xml_node write_image_header( pugi::xml_node& piece,
+                const std::array< index_t, dimension >& extent )
             {
                 auto image = piece.parent();
                 std::string extent_str;
@@ -66,29 +64,7 @@ namespace geode
                     .set_value( extent_str.c_str() );
                 piece.append_attribute( "Extent" )
                     .set_value( extent_str.c_str() );
-                std::string origin_str;
-                absl::StrAppend( &origin_str, origin.string() );
-                if( dimension == 2 )
-                {
-                    absl::StrAppend( &origin_str, " 0" );
-                }
-                image.append_attribute( "Origin" )
-                    .set_value( origin_str.c_str() );
-                std::string spacing_str;
-                for( const auto d : LRange{ dimension } )
-                {
-                    if( d != 0 )
-                    {
-                        absl::StrAppend( &spacing_str, " " );
-                    }
-                    absl::StrAppend( &spacing_str, spacing[d] );
-                }
-                if( dimension == 2 )
-                {
-                    absl::StrAppend( &spacing_str, " 1" );
-                }
-                image.append_attribute( "Spacing" )
-                    .set_value( spacing_str.c_str() );
+                return image;
             }
         };
     } // namespace detail
