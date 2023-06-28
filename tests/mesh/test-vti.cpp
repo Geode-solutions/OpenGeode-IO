@@ -27,7 +27,7 @@
 #include <geode/basic/attribute_manager.h>
 #include <geode/basic/logger.h>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/vector.h>
 
 #include <geode/mesh/builder/regular_grid_solid_builder.h>
 #include <geode/mesh/core/regular_grid_solid.h>
@@ -43,7 +43,8 @@ int main()
 
         auto grid = geode::RegularGrid3D::create();
         auto builder = geode::RegularGridBuilder3D::create( *grid );
-        builder->initialize_grid( { { 1, 2, 3 } }, { 10, 20, 30 }, 1 );
+        builder->initialize_grid(
+            geode::Point3D{ { 1, 2, 3 } }, { 10, 20, 30 }, 1 );
         auto att = grid->polyhedron_attribute_manager()
                        .find_or_create_attribute< geode::VariableAttribute,
                            geode::index_t >( "id", geode::NO_ID );

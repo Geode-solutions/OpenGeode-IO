@@ -23,6 +23,8 @@
 
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 
+#include <geode/geometry/coordinate_system.h>
+
 #include <geode/mesh/core/regular_grid_solid.h>
 #include <geode/mesh/core/regular_grid_surface.h>
 
@@ -51,15 +53,63 @@ namespace
             {
                 extent[d] = this->mesh().nb_vertices_in_direction( d );
             }
-            std::array< double, dim > spacing;
-            for( const auto d : geode::LRange{ dim } )
-            {
-                spacing[d] = this->mesh().cell_length_in_direction( d );
-            }
-            this->write_image_header(
-                piece, this->mesh().origin(), extent, spacing );
+            auto header_node = this->write_image_header( piece, extent );
+            write_header( header_node );
             write_vertex_data( piece );
             write_cell_data( piece );
+        }
+
+        void write_header( pugi::xml_node& header_node )
+        {
+            const auto& coordinate_system =
+                this->mesh().grid_coordinate_system();
+            std::string origin_str;
+            absl::StrAppend( &origin_str, coordinate_system.origin().string() );
+            if( dim == 2 )
+            {
+                absl::StrAppend( &origin_str, " 0" );
+            }
+            header_node.append_attribute( "Origin" )
+                .set_value( origin_str.c_str() );
+            std::string spacing_str;
+            for( const auto d : geode::LRange{ dim } )
+            {
+                if( d != 0 )
+                {
+                    absl::StrAppend( &spacing_str, " " );
+                }
+                absl::StrAppend(
+                    &spacing_str, this->mesh().cell_length_in_direction( d ) );
+            }
+            if( dim == 2 )
+            {
+                absl::StrAppend( &spacing_str, " 1" );
+            }
+            header_node.append_attribute( "Spacing" )
+                .set_value( spacing_str.c_str() );
+            std::string direction_str;
+            for( const auto d1 : geode::LRange{ dim } )
+            {
+                const auto& direction = coordinate_system.direction( d1 );
+                for( const auto d2 : geode::LRange{ dim } )
+                {
+                    if( d1 + d2 != 0 )
+                    {
+                        absl::StrAppend( &direction_str, " " );
+                    }
+                    absl::StrAppend( &direction_str, direction.value( d2 ) );
+                }
+                if( dim == 2 )
+                {
+                    absl::StrAppend( &direction_str, " 0" );
+                }
+            }
+            if( dim == 2 )
+            {
+                absl::StrAppend( &direction_str, " 0 0 1" );
+            }
+            header_node.append_attribute( "Direction" )
+                .set_value( direction_str.c_str() );
         }
 
         void write_cell_data( pugi::xml_node& piece )

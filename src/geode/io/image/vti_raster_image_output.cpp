@@ -51,9 +51,7 @@ namespace
             {
                 extent[d] = this->mesh().nb_cells_in_direction( d );
             }
-            std::array< double, dim > spacing;
-            spacing.fill( 1 );
-            this->write_image_header( piece, {}, extent, spacing );
+            this->write_image_header( piece, extent );
             write_point_data( piece );
         }
 
