@@ -90,15 +90,13 @@ namespace
             std::string direction_str;
             for( const auto d1 : geode::LRange{ dim } )
             {
-                const auto& direction = coordinate_system.direction( d1 );
-                for( const auto d2 : geode::LRange{ dim } )
+                if( d1 != 0 )
                 {
-                    if( d1 + d2 != 0 )
-                    {
-                        absl::StrAppend( &direction_str, " " );
-                    }
-                    absl::StrAppend( &direction_str, direction.value( d2 ) );
+                    absl::StrAppend( &direction_str, " " );
                 }
+                const auto direction =
+                    coordinate_system.direction( d1 ).normalize();
+                absl::StrAppend( &direction_str, direction.string() );
                 if( dim == 2 )
                 {
                     absl::StrAppend( &direction_str, " 0" );
