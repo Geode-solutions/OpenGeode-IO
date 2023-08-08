@@ -31,16 +31,15 @@
 namespace
 {
     class VTUHybridInputImpl
-        : public geode::detail::VTUInputImpl< geode::HybridSolid3D,
-              geode::HybridSolidBuilder3D >
+        : public geode::detail::VTUInputImpl< geode::HybridSolid3D >
     {
         using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
 
     public:
         VTUHybridInputImpl(
             absl::string_view filename, geode::HybridSolid3D& solid )
-            : geode::detail::VTUInputImpl< geode::HybridSolid3D,
-                geode::HybridSolidBuilder3D >( filename, solid )
+            : geode::detail::VTUInputImpl< geode::HybridSolid3D >(
+                filename, solid )
         {
             enable_tetrahedron();
             enable_hexahedron();

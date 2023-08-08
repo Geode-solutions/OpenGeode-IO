@@ -31,16 +31,15 @@
 namespace
 {
     class VTUPolyhedralInputImpl
-        : public geode::detail::VTUInputImpl< geode::PolyhedralSolid3D,
-              geode::PolyhedralSolidBuilder3D >
+        : public geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >
     {
         using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
 
     public:
         VTUPolyhedralInputImpl(
             absl::string_view filename, geode::PolyhedralSolid3D& solid )
-            : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D,
-                geode::PolyhedralSolidBuilder3D >( filename, solid )
+            : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
+                filename, solid )
         {
             enable_tetrahedron();
             enable_hexahedron();

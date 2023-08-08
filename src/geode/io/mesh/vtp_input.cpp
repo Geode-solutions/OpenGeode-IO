@@ -26,19 +26,17 @@
 #include <geode/mesh/builder/polygonal_surface_builder.h>
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/vtk_input.h>
+#include <geode/io/mesh/private/vtk_mesh_input.h>
 
 namespace
 {
     class VTPInputImpl
-        : public geode::detail::VTKInputImpl< geode::PolygonalSurface3D,
-              geode::PolygonalSurfaceBuilder3D >
+        : public geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >
     {
     public:
         VTPInputImpl( absl::string_view filename,
             geode::PolygonalSurface3D& polygonal_surface )
-            : geode::detail::VTKInputImpl< geode::PolygonalSurface3D,
-                geode::PolygonalSurfaceBuilder3D >(
+            : geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >(
                 filename, polygonal_surface, "PolyData" )
         {
         }

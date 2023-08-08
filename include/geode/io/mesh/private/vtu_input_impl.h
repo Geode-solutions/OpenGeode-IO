@@ -23,20 +23,20 @@
 
 #pragma once
 
-#include <geode/io/mesh/private/vtk_input.h>
+#include <geode/io/mesh/private/vtk_mesh_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        template < typename Mesh, typename Builder >
-        class VTUInputImpl : public VTKInputImpl< Mesh, Builder >
+        template < typename Mesh >
+        class VTUInputImpl : public VTKMeshInputImpl< Mesh >
         {
             using VTKElement = absl::FixedArray< std::vector< local_index_t > >;
 
         protected:
             VTUInputImpl( absl::string_view filename, Mesh& solid )
-                : VTKInputImpl< Mesh, Builder >(
+                : VTKMeshInputImpl< Mesh >(
                     filename, solid, "UnstructuredGrid" ),
                   vtk_tetrahedron_( 4 ),
                   vtk_hexahedron_( 6 ),
