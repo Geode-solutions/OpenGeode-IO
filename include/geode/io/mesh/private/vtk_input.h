@@ -336,22 +336,6 @@ namespace geode
             }
 
         private:
-            void read_appended_data()
-            {
-                const auto node = root_.child( "AppendedData" );
-                if( !node )
-                {
-                    return;
-                }
-                OPENGEODE_EXCEPTION(
-                    match( node.attribute( "encoding" ).value(), "base64" ),
-                    "[VTKInput::read_appended_data] VTK AppendedData "
-                    "section should be encoded" );
-                appended_data_ = node.child_value();
-                appended_data_ = absl::StripAsciiWhitespace( appended_data_ );
-                appended_data_.remove_prefix( 1 ); // skip first char: '_'
-            }
-
             template < typename Container, typename T >
             void create_attribute( AttributeManager& manager,
                 const Container& default_value,
@@ -407,6 +391,22 @@ namespace geode
                         ". Only UInt32 and Uint64 are accepted" );
                     is_uint64_ = match( header_type_value, "UInt64" );
                 }
+            }
+
+            void read_appended_data()
+            {
+                const auto node = root_.child( "AppendedData" );
+                if( !node )
+                {
+                    return;
+                }
+                OPENGEODE_EXCEPTION(
+                    match( node.attribute( "encoding" ).value(), "base64" ),
+                    "[VTKInput::read_appended_data] VTK AppendedData "
+                    "section should be encoded" );
+                appended_data_ = node.child_value();
+                appended_data_ = absl::StripAsciiWhitespace( appended_data_ );
+                appended_data_.remove_prefix( 1 ); // skip first char: '_'
             }
 
             virtual void read_vtk_object(
