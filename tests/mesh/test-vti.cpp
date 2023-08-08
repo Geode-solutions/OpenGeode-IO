@@ -27,10 +27,12 @@
 #include <geode/basic/attribute_manager.h>
 #include <geode/basic/logger.h>
 
+#include <geode/geometry/coordinate_system.h>
 #include <geode/geometry/vector.h>
 
 #include <geode/mesh/builder/regular_grid_solid_builder.h>
 #include <geode/mesh/core/regular_grid_solid.h>
+#include <geode/mesh/io/regular_grid_input.h>
 #include <geode/mesh/io/regular_grid_output.h>
 
 #include <geode/io/mesh/common.h>
@@ -62,6 +64,30 @@ int main()
         }
 
         geode::save_regular_grid( *grid, "test.vti" );
+        const auto reload_grid = geode::load_regular_grid< 3 >( "test.vti" );
+        OPENGEODE_EXCEPTION( grid->nb_cells() == reload_grid->nb_cells(),
+            "[TEST] Wrong number of cells." );
+        OPENGEODE_EXCEPTION( grid->nb_vertices() == reload_grid->nb_vertices(),
+            "[TEST] Wrong number of vertices." );
+        for( const auto d : geode::LRange{ 3 } )
+        {
+            OPENGEODE_EXCEPTION( grid->nb_cells_in_direction( d )
+                                     == reload_grid->nb_cells_in_direction( d ),
+                "[TEST] Wrong number of cells in direction ", d );
+            OPENGEODE_EXCEPTION(
+                grid->cell_length_in_direction( d )
+                    == reload_grid->cell_length_in_direction( d ),
+                "[TEST] Wrong cell length in direction ", d );
+            OPENGEODE_EXCEPTION(
+                grid->grid_coordinate_system().direction( d ).inexact_equal(
+                    reload_grid->grid_coordinate_system().direction( d ) ),
+                "[TEST] Wrong direction in direction ", d );
+        }
+        OPENGEODE_EXCEPTION(
+            grid->grid_coordinate_system().origin().inexact_equal(
+                reload_grid->grid_coordinate_system().origin() ),
+            "[TEST] Wrong origin." );
+        geode::save_regular_grid( *reload_grid, "test2.vti" );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

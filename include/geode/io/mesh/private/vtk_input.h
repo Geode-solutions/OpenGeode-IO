@@ -42,10 +42,12 @@ namespace geode
 {
     namespace detail
     {
-        template < typename Mesh, typename MeshBuilder >
+        template < typename Mesh >
         class VTKInputImpl
         {
         public:
+            using MeshBuilder = typename Mesh::Builder;
+
             virtual ~VTKInputImpl() = default;
 
             void read_file()
@@ -59,12 +61,11 @@ namespace geode
             }
 
         protected:
-            VTKInputImpl( absl::string_view filename,
-                Mesh& polygonal_surface,
-                const char* type )
+            VTKInputImpl(
+                absl::string_view filename, Mesh& mesh, const char* type )
                 : file_{ to_string( filename ) },
-                  mesh_( polygonal_surface ),
-                  mesh_builder_{ MeshBuilder::create( polygonal_surface ) },
+                  mesh_( mesh ),
+                  mesh_builder_{ MeshBuilder::create( mesh ) },
                   type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
@@ -169,28 +170,6 @@ namespace geode
                     }
                     return decode< T >( data_string );
                 }
-            }
-
-            absl::FixedArray< std::vector< index_t > > get_cell_vertices(
-                absl::Span< const int64_t > connectivity,
-                absl::Span< const int64_t > offsets )
-            {
-                absl::FixedArray< std::vector< index_t > > cell_vertices(
-                    offsets.size() );
-                int64_t prev_offset{ 0 };
-                for( const auto p : Indices{ offsets } )
-                {
-                    const auto cur_offset = offsets[p];
-                    auto& vertices = cell_vertices[p];
-                    vertices.reserve( cur_offset - prev_offset );
-                    for( const auto v : Range{ prev_offset, cur_offset } )
-                    {
-                        vertices.push_back(
-                            static_cast< index_t >( connectivity[v] ) );
-                    }
-                    prev_offset = cur_offset;
-                }
-                return cell_vertices;
             }
 
             template < typename Out, typename In >
@@ -320,7 +299,59 @@ namespace geode
                 }
             }
 
+            void read_point_data(
+                const pugi::xml_node& point_data, index_t offset )
+            {
+                for( const auto& data : point_data.children( "DataArray" ) )
+                {
+                    read_attribute_data(
+                        data, offset, mesh_.vertex_attribute_manager() );
+                }
+            }
+
+            absl::string_view read_appended_data( const pugi::xml_node& data )
+            {
+                const auto offset = data.attribute( "offset" ).as_uint();
+                return appended_data_.substr( offset );
+            }
+
+            template < typename T >
+            std::vector< T > decode( absl::string_view input )
+            {
+                if( !compressed_ )
+                {
+                    if( is_uint64_ )
+                    {
+                        return templated_decode_uncompressed< T, uint64_t >(
+                            input );
+                    }
+                    return templated_decode_uncompressed< T, uint32_t >(
+                        input );
+                }
+                if( is_uint64_ )
+                {
+                    return templated_decode< T, uint64_t >( input );
+                }
+                return templated_decode< T, uint32_t >( input );
+            }
+
         private:
+            void read_appended_data()
+            {
+                const auto node = root_.child( "AppendedData" );
+                if( !node )
+                {
+                    return;
+                }
+                OPENGEODE_EXCEPTION(
+                    match( node.attribute( "encoding" ).value(), "base64" ),
+                    "[VTKInput::read_appended_data] VTK AppendedData "
+                    "section should be encoded" );
+                appended_data_ = node.child_value();
+                appended_data_ = absl::StripAsciiWhitespace( appended_data_ );
+                appended_data_.remove_prefix( 1 ); // skip first char: '_'
+            }
+
             template < typename Container, typename T >
             void create_attribute( AttributeManager& manager,
                 const Container& default_value,
@@ -378,84 +409,8 @@ namespace geode
                 }
             }
 
-            void read_appended_data()
-            {
-                {
-                    const auto node = root_.child( "AppendedData" );
-                    if( !node )
-                    {
-                        return;
-                    }
-                    OPENGEODE_EXCEPTION(
-                        match( node.attribute( "encoding" ).value(), "base64" ),
-                        "[VTKInput::read_appended_data] VTK AppendedData "
-                        "section should be encoded" );
-                    appended_data_ = node.child_value();
-                }
-                appended_data_ = absl::StripAsciiWhitespace( appended_data_ );
-                appended_data_.remove_prefix( 1 ); // skip first char: '_'
-            }
-
-            void read_vtk_object( const pugi::xml_node& vtk_object )
-            {
-                for( const auto& piece : vtk_object.children( "Piece" ) )
-                {
-                    read_vtk_points( piece );
-                    read_vtk_cells( piece );
-                }
-            }
-
-            void read_vtk_points( const pugi::xml_node& piece )
-            {
-                const auto nb_points =
-                    read_attribute( piece, "NumberOfPoints" );
-                const auto vertex_offset = build_points( piece, nb_points );
-                read_point_data( piece.child( "PointData" ), vertex_offset );
-            }
-
-            virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
-
-            index_t build_points(
-                const pugi::xml_node& piece, index_t nb_points )
-            {
-                const auto points = read_points( piece, nb_points );
-                const auto offset = mesh_builder_->create_vertices( nb_points );
-                for( const auto p : Range{ nb_points } )
-                {
-                    mesh_builder_->set_point( offset + p, points[p] );
-                }
-                return offset;
-            }
-
-            void read_point_data(
-                const pugi::xml_node& point_data, index_t offset )
-            {
-                for( const auto& data : point_data.children( "DataArray" ) )
-                {
-                    read_attribute_data(
-                        data, offset, mesh_.vertex_attribute_manager() );
-                }
-            }
-
-            template < typename T >
-            std::vector< T > decode( absl::string_view input )
-            {
-                if( !compressed_ )
-                {
-                    if( is_uint64_ )
-                    {
-                        return templated_decode_uncompressed< T, uint64_t >(
-                            input );
-                    }
-                    return templated_decode_uncompressed< T, uint32_t >(
-                        input );
-                }
-                if( is_uint64_ )
-                {
-                    return templated_decode< T, uint64_t >( input );
-                }
-                return templated_decode< T, uint32_t >( input );
-            }
+            virtual void read_vtk_object(
+                const pugi::xml_node& vtk_object ) = 0;
 
             template < typename T, typename UInt >
             std::vector< T > templated_decode_uncompressed(
@@ -578,31 +533,6 @@ namespace geode
                 return result;
             }
 
-            template < typename T >
-            absl::FixedArray< Point3D > get_points(
-                const std::vector< T >& coords )
-            {
-                OPENGEODE_ASSERT( coords.size() % 3 == 0,
-                    "[VTKInput::get_points] Number of "
-                    "coordinates is not multiple of 3" );
-                const auto nb_points = coords.size() / 3;
-                absl::FixedArray< Point3D > points( nb_points );
-                for( const auto p : Range{ nb_points } )
-                {
-                    for( const auto c : Range{ 3 } )
-                    {
-                        points[p].set_value( c, coords[3 * p + c] );
-                    }
-                }
-                return points;
-            }
-
-            absl::string_view read_appended_data( const pugi::xml_node& data )
-            {
-                const auto offset = data.attribute( "offset" ).as_uint();
-                return appended_data_.substr( offset );
-            }
-
             std::string decode_base64( absl::string_view input ) const
             {
                 std::string bytes;
@@ -610,84 +540,6 @@ namespace geode
                 OPENGEODE_EXCEPTION( decode_status,
                     "[VTKInput::decode_base64] Error in decoding base64 data" );
                 return bytes;
-            }
-
-            absl::FixedArray< Point3D > read_points(
-                const pugi::xml_node& piece, index_t nb_points )
-            {
-                const auto points =
-                    piece.child( "Points" ).child( "DataArray" );
-                const auto nb_components =
-                    read_attribute( points, "NumberOfComponents" );
-                const auto type = points.attribute( "type" ).value();
-                OPENGEODE_EXCEPTION(
-                    match( type, "Float32" ) || match( type, "Float64" ),
-                    "[VTKInput::read_points] Cannot read points of type ", type,
-                    ". Only Float32 and Float64 are accepted" );
-                OPENGEODE_EXCEPTION( nb_components == 3,
-                    "[VTKInput::read_points] Trying to import 2D VTK object "
-                    "into a 3D Surface is not allowed" );
-                const auto format = points.attribute( "format" ).value();
-                if( match( format, "appended" ) )
-                {
-                    if( match( type, "Float32" ) )
-                    {
-                        return decode_points< float >(
-                            read_appended_data( points ), nb_points );
-                    }
-                    return decode_points< double >(
-                        read_appended_data( points ), nb_points );
-                }
-                else
-                {
-                    const auto coords_string =
-                        absl::StripAsciiWhitespace( points.child_value() );
-                    if( match( format, "ascii" ) )
-                    {
-                        auto string = to_string( coords_string );
-                        absl::RemoveExtraAsciiWhitespace( &string );
-                        const auto coords =
-                            read_ascii_coordinates( string, nb_points );
-                        OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
-                            "[VTKInput::read_points] Wrong number of "
-                            "coordinates" );
-                        return get_points( coords );
-                    }
-                    if( match( type, "Float32" ) )
-                    {
-                        return decode_points< float >(
-                            coords_string, nb_points );
-                    }
-                    return decode_points< double >( coords_string, nb_points );
-                }
-            }
-
-            template < typename T >
-            absl::FixedArray< Point3D > decode_points(
-                absl::string_view coords_string, index_t nb_points )
-            {
-                const auto coords = decode< T >( coords_string );
-                geode_unused( nb_points );
-                OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
-                    "[VTKInput::read_points] Wrong number of coordinates" );
-                return get_points( coords );
-            }
-
-            std::vector< double > read_ascii_coordinates(
-                absl::string_view coords, index_t nb_points )
-            {
-                std::vector< double > results;
-                results.reserve( 3 * nb_points );
-                for( auto string : absl::StrSplit( coords, ' ' ) )
-                {
-                    double coord;
-                    const auto ok = absl::SimpleAtod( string, &coord );
-                    OPENGEODE_EXCEPTION( ok,
-                        "[VTKInput::read_ascii_coordinates] Failed to read "
-                        "coordinate" );
-                    results.push_back( coord );
-                }
-                return results;
             }
 
             template < typename T >

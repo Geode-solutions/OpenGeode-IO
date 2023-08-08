@@ -21,42 +21,31 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_tetrahedral_input.h>
+#pragma once
 
-#include <geode/mesh/builder/tetrahedral_solid_builder.h>
-#include <geode/mesh/core/tetrahedral_solid.h>
-
-#include <geode/io/mesh/private/vtu_input_impl.h>
-
-namespace
-{
-    class VTUTetrahedralInputImpl
-        : public geode::detail::VTUInputImpl< geode::TetrahedralSolid3D >
-    {
-        using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
-
-    public:
-        VTUTetrahedralInputImpl(
-            absl::string_view filename, geode::TetrahedralSolid3D& solid )
-            : geode::detail::VTUInputImpl< geode::TetrahedralSolid3D >(
-                filename, solid )
-        {
-            enable_tetrahedron();
-        }
-    };
-} // namespace
+#include <geode/mesh/io/regular_grid_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< TetrahedralSolid3D > VTUTetrahedralInput::read(
-            const MeshImpl& impl )
+        template < index_t dimension >
+        class VTIRegularGridInput final : public RegularGridInput< dimension >
         {
-            auto solid = TetrahedralSolid3D::create( impl );
-            VTUTetrahedralInputImpl reader{ filename(), *solid };
-            reader.read_file();
-            return solid;
-        }
+        public:
+            VTIRegularGridInput( absl::string_view filename )
+                : RegularGridInput< dimension >{ filename }
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "vti";
+                return ext;
+            }
+
+            std::unique_ptr< RegularGrid< dimension > > read(
+                const MeshImpl& impl ) final;
+        };
     } // namespace detail
 } // namespace geode

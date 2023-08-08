@@ -38,6 +38,7 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/triangle_output.h>
+#include <geode/io/mesh/private/vti_regular_grid_input.h>
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 #include <geode/io/mesh/private/vtp_edged_curve_output.h>
 #include <geode/io/mesh/private/vtp_input.h>
@@ -194,6 +195,17 @@ namespace
             geode::detail::VTIRegularGridOutput< 3 > >(
             geode::detail::VTIRegularGridOutput< 3 >::extension().data() );
     }
+
+    void register_regular_grid_input()
+    {
+        geode::RegularGridInputFactory2D::register_creator<
+            geode::detail::VTIRegularGridInput< 2 > >(
+            geode::detail::VTIRegularGridInput< 2 >::extension().data() );
+
+        geode::RegularGridInputFactory3D::register_creator<
+            geode::detail::VTIRegularGridInput< 3 > >(
+            geode::detail::VTIRegularGridInput< 3 >::extension().data() );
+    }
 } // namespace
 
 namespace geode
@@ -208,6 +220,7 @@ namespace geode
         register_triangulated_surface_input();
         register_polyhedral_solid_input();
         register_tetrahedral_solid_input();
+        register_regular_grid_input();
         register_hybrid_solid_input();
 
         register_point_set_output();
