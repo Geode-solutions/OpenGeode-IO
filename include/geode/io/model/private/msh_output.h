@@ -43,6 +43,8 @@ namespace geode
             }
 
             void write( const BRep& brep ) const final;
+
+            bool is_saveable( const BRep& brep ) const final;
         };
     } // namespace detail
 } // namespace geode
