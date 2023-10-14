@@ -32,6 +32,8 @@
 #include <geode/mesh/core/point_set.h>
 #include <geode/mesh/core/solid_mesh.h>
 #include <geode/mesh/core/surface_mesh.h>
+#include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/mesh/core/triangulated_surface.h>
 
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/mixin/core/corner.h>
@@ -440,6 +442,27 @@ namespace geode
         {
             MSHOutputImpl impl( filename(), brep );
             impl.write_file();
+        }
+
+        bool MSHOutput::is_saveable( const BRep& brep ) const
+        {
+            for( const auto& surface : brep.surfaces() )
+            {
+                if( surface.mesh().type_name()
+                    != TriangulatedSurface3D::type_name_static() )
+                {
+                    return false;
+                }
+            }
+            for( const auto& block : brep.blocks() )
+            {
+                if( block.mesh().type_name()
+                    != TetrahedralSolid3D::type_name_static() )
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     } // namespace detail
 } // namespace geode
