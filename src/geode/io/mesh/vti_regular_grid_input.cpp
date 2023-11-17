@@ -69,6 +69,7 @@ namespace
             for( const auto d : geode::LRange{ dimension } )
             {
                 cell_directions[d].set_value( d, 1 );
+                cells_length[d] = 1;
             }
             for( const auto& attribute : vtk_object.attributes() )
             {
