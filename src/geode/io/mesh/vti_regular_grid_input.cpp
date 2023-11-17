@@ -69,9 +69,11 @@ namespace
             for( const auto d : geode::LRange{ dimension } )
             {
                 cell_directions[d].set_value( d, 1 );
+                cells_length[d] = 1;
             }
             for( const auto& attribute : vtk_object.attributes() )
             {
+                DEBUG( attribute.name() );
                 if( std::strcmp( attribute.name(), "WholeExtent" ) == 0 )
                 {
                     const auto tokens =
@@ -121,7 +123,10 @@ namespace
             }
             for( const auto d : geode::LRange{ dimension } )
             {
+                DEBUG( cells_length[d] );
+                SDEBUG( cell_directions[d] );
                 cell_directions[d] *= cells_length[d];
+                SDEBUG( cell_directions[d] );
             }
             this->builder().initialize_grid(
                 origin, cells_number, cell_directions );
