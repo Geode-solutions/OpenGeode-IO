@@ -23,6 +23,9 @@
 
 #include <geode/io/mesh/private/vti_regular_grid_input.h>
 
+#include <array>
+#include <fstream>
+
 #include <geode/basic/string.h>
 
 #include <geode/geometry/coordinate_system.h>
@@ -172,16 +175,17 @@ namespace geode
         template < index_t dimension >
         bool VTIRegularGridInput< dimension >::is_loadable() const
         {
-            std::ifstream file{ to_string( filename ) };
+            std::ifstream file{ to_string( this->filename() ) };
             OPENGEODE_EXCEPTION( file.good(),
                 "[VTIRegularGridInput::is_loadable] Error while opening file: ",
-                filename );
+                this->filename() );
             pugi::xml_document document;
             const auto status =
-                document.load_file( to_string( filename ).c_str() );
+                document.load_file( to_string( this->filename() ).c_str() );
             OPENGEODE_EXCEPTION( status,
                 "[VTIRegularGridInput::is_loadable] Error ",
-                status.description(), " while parsing file: ", filename );
+                status.description(),
+                " while parsing file: ", this->filename() );
             const auto node = document.child( "VTKFile" ).child( "ImageData" );
             const auto grid_attributes =
                 read_grid_attributes< dimension >( node );
