@@ -37,6 +37,81 @@
 namespace
 {
     template < geode::index_t dimension >
+    struct GridAttributes
+    {
+        GridAttributes()
+        {
+            cells_number.fill( 0 );
+            cells_length.fill( 1 );
+            for( const auto d : geode::LRange{ dimension } )
+            {
+                cell_directions[d].set_value( d, 1 );
+            }
+        }
+
+        geode::Point< dimension > origin;
+        std::array< geode::index_t, dimension > cells_number;
+        std::array< double, dimension > cells_length;
+        std::array< geode::Vector< dimension >, dimension > cell_directions;
+    };
+
+    template < geode::index_t dimension >
+    GridAttributes< dimension > read_grid_attributes(
+        const pugi::xml_node& vtk_object )
+    {
+        GridAttributes< dimension > grid;
+        for( const auto& attribute : vtk_object.attributes() )
+        {
+            if( std::strcmp( attribute.name(), "WholeExtent" ) == 0 )
+            {
+                const auto tokens = geode::string_split( attribute.value() );
+                for( const auto d : geode::LRange{ dimension } )
+                {
+                    const auto start = geode::string_to_index( tokens[2 * d] );
+                    const auto end =
+                        geode::string_to_index( tokens[2 * d + 1] );
+                    grid.cells_number[d] = end - start;
+                }
+            }
+            else if( std::strcmp( attribute.name(), "Origin" ) == 0 )
+            {
+                const auto tokens = geode::string_split( attribute.value() );
+                for( const auto d : geode::LRange{ dimension } )
+                {
+                    grid.origin.set_value(
+                        d, geode::string_to_double( tokens[d] ) );
+                }
+            }
+            else if( std::strcmp( attribute.name(), "Spacing" ) == 0 )
+            {
+                const auto tokens = geode::string_split( attribute.value() );
+                for( const auto d : geode::LRange{ dimension } )
+                {
+                    grid.cells_length[d] = geode::string_to_double( tokens[d] );
+                }
+            }
+            else if( std::strcmp( attribute.name(), "Direction" ) == 0 )
+            {
+                const auto tokens = geode::string_split( attribute.value() );
+                for( const auto d : geode::LRange{ dimension } )
+                {
+                    auto& direction = grid.cell_directions[d];
+                    for( const auto i : geode::LRange{ dimension } )
+                    {
+                        direction.set_value(
+                            i, geode::string_to_double( tokens[3 * d + i] ) );
+                    }
+                }
+            }
+        }
+        for( const auto d : geode::LRange{ dimension } )
+        {
+            grid.cell_directions[d] *= grid.cells_length[d];
+        }
+        return grid;
+    }
+
+    template < geode::index_t dimension >
     class VTIRegularGridInputImpl
         : public geode::detail::VTKInputImpl< geode::RegularGrid< dimension > >
     {
@@ -62,70 +137,10 @@ namespace
 
         void build_grid( const pugi::xml_node& vtk_object )
         {
-            geode::Point< dimension > origin;
-            std::array< geode::index_t, dimension > cells_number;
-            std::array< double, dimension > cells_length;
-            std::array< geode::Vector< dimension >, dimension > cell_directions;
-            for( const auto d : geode::LRange{ dimension } )
-            {
-                cell_directions[d].set_value( d, 1 );
-                cells_length[d] = 1;
-            }
-            for( const auto& attribute : vtk_object.attributes() )
-            {
-                if( std::strcmp( attribute.name(), "WholeExtent" ) == 0 )
-                {
-                    const auto tokens =
-                        geode::string_split( attribute.value() );
-                    for( const auto d : geode::LRange{ dimension } )
-                    {
-                        const auto start =
-                            geode::string_to_index( tokens[2 * d] );
-                        const auto end =
-                            geode::string_to_index( tokens[2 * d + 1] );
-                        cells_number[d] = end - start;
-                    }
-                }
-                else if( std::strcmp( attribute.name(), "Origin" ) == 0 )
-                {
-                    const auto tokens =
-                        geode::string_split( attribute.value() );
-                    for( const auto d : geode::LRange{ dimension } )
-                    {
-                        origin.set_value(
-                            d, geode::string_to_double( tokens[d] ) );
-                    }
-                }
-                else if( std::strcmp( attribute.name(), "Spacing" ) == 0 )
-                {
-                    const auto tokens =
-                        geode::string_split( attribute.value() );
-                    for( const auto d : geode::LRange{ dimension } )
-                    {
-                        cells_length[d] = geode::string_to_double( tokens[d] );
-                    }
-                }
-                else if( std::strcmp( attribute.name(), "Direction" ) == 0 )
-                {
-                    const auto tokens =
-                        geode::string_split( attribute.value() );
-                    for( const auto d : geode::LRange{ dimension } )
-                    {
-                        auto& direction = cell_directions[d];
-                        for( const auto i : geode::LRange{ dimension } )
-                        {
-                            direction.set_value( i,
-                                geode::string_to_double( tokens[3 * d + i] ) );
-                        }
-                    }
-                }
-            }
-            for( const auto d : geode::LRange{ dimension } )
-            {
-                cell_directions[d] *= cells_length[d];
-            }
-            this->builder().initialize_grid(
-                origin, cells_number, cell_directions );
+            const auto grid_attributes =
+                read_grid_attributes< dimension >( vtk_object );
+            this->builder().initialize_grid( grid_attributes.origin,
+                grid_attributes.cells_number, grid_attributes.cell_directions );
         }
 
         void read_cell_data( const pugi::xml_node& point_data )
@@ -152,6 +167,26 @@ namespace geode
                 *grid };
             reader.read_file();
             return grid;
+        }
+
+        template < index_t dimension >
+        bool VTIRegularGridInput< dimension >::is_loadable() const
+        {
+            std::ifstream file{ to_string( filename ) };
+            OPENGEODE_EXCEPTION( file.good(),
+                "[VTIRegularGridInput::is_loadable] Error while opening file: ",
+                filename );
+            pugi::xml_document document;
+            const auto status =
+                document.load_file( to_string( filename ).c_str() );
+            OPENGEODE_EXCEPTION( status,
+                "[VTIRegularGridInput::is_loadable] Error ",
+                status.description(), " while parsing file: ", filename );
+            const auto node = document.child( "VTKFile" ).child( "ImageData" );
+            const auto grid_attributes =
+                read_grid_attributes< dimension >( node );
+            const auto nb_cells_3d = grid_attributes.cells_number[2];
+            return dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0;
         }
 
         template class VTIRegularGridInput< 2 >;
