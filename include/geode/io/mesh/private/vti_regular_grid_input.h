@@ -46,6 +46,8 @@ namespace geode
 
             std::unique_ptr< RegularGrid< dimension > > read(
                 const MeshImpl& impl ) final;
+
+            bool is_loadable() const final;
         };
     } // namespace detail
 } // namespace geode
