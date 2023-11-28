@@ -25,4 +25,5 @@ add_geode_test(
         OpenGeode::image
         OpenGeode::mesh
         ${PROJECT_NAME}::image
+    ESSENTIAL
 )

@@ -42,4 +42,5 @@ add_geode_test(
         OpenGeode::model
         ${PROJECT_NAME}::mesh
         ${PROJECT_NAME}::model
+    ESSENTIAL
 )

@@ -1,13 +1,11 @@
-name: Test
+name: Test PR
 
 on:
-  push:
-    branches-ignore:
-      - master
+  pull_request:
 
 jobs:
   test:
-    uses: Geode-solutions/actions/.github/workflows/cpp-test.yml@master
+    uses: Geode-solutions/actions/.github/workflows/cpp-test-pr.yml@master
     with:
       name: OPENGEODE_IO
       directory: opengeode-io
