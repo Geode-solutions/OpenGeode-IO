@@ -23,6 +23,9 @@
 
 #include <geode/io/mesh/private/obj_triangulated_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/core/triangulated_surface.h>
 
 #include <geode/io/mesh/private/assimp_output.h>

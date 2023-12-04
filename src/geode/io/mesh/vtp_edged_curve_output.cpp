@@ -23,6 +23,9 @@
 
 #include <geode/io/mesh/private/vtp_edged_curve_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/core/edged_curve.h>
 
 #include <geode/io/mesh/private/vtk_mesh_output.h>

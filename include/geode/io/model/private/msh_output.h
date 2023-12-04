@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include <geode/basic/logger.h>
+#include <string>
+#include <vector>
 
 #include <geode/model/representation/io/brep_output.h>
 

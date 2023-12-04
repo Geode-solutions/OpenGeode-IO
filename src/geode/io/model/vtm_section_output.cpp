@@ -23,6 +23,9 @@
 
 #include <geode/io/model/private/vtm_section_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/model/representation/core/section.h>
 
 #include <geode/io/model/private/vtm_output.h>

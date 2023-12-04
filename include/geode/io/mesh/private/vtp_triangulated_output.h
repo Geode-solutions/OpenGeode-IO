@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/io/triangulated_surface_output.h>
 
 namespace geode

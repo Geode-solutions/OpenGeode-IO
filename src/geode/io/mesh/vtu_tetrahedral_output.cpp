@@ -23,6 +23,9 @@
 
 #include <geode/io/mesh/private/vtu_tetrahedral_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/core/tetrahedral_solid.h>
 
 #include <geode/io/mesh/private/vtu_output_impl.h>

@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/io/regular_grid_output.h>
 
 namespace geode

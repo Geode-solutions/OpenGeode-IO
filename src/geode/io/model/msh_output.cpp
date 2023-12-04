@@ -24,6 +24,8 @@
 #include <geode/io/model/private/msh_output.h>
 
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include <geode/geometry/bounding_box.h>
 #include <geode/geometry/point.h>

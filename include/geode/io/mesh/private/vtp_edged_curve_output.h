@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/io/edged_curve_output.h>
 
 namespace geode

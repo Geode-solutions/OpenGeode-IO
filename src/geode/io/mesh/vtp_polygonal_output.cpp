@@ -23,6 +23,9 @@
 
 #include <geode/io/mesh/private/vtp_polygonal_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/core/polygonal_surface.h>
 
 #include <geode/io/mesh/private/vtp_surface_output_impl.h>

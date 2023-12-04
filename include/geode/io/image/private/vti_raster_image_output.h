@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/image/io/raster_image_output.h>
 
 namespace geode

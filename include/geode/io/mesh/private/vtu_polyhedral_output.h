@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/io/polyhedral_solid_output.h>
 
 namespace geode

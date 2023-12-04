@@ -24,6 +24,8 @@
 #include <geode/io/mesh/private/triangle_output.h>
 
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include <geode/geometry/point.h>
 

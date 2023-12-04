@@ -23,6 +23,9 @@
 
 #include <geode/io/model/private/vtm_brep_output.h>
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/core/hybrid_solid.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/core/regular_grid_solid.h>

@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <geode/mesh/io/point_set_output.h>
 
 namespace geode
