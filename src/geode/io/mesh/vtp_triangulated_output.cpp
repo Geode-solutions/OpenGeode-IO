@@ -23,8 +23,6 @@
 
 #include <geode/io/mesh/private/vtp_triangulated_output.h>
 
-#include <string>
-
 #include <geode/mesh/core/triangulated_surface.h>
 
 #include <geode/io/mesh/private/vtp_surface_output_impl.h>
