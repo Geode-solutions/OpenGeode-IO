@@ -49,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write( const PolygonalSurface3D &surface ) const final;
+            std::vector< std::string > write( const PolygonalSurface3D &surface ) const final;
         };
     } // namespace detail
 } // namespace geode

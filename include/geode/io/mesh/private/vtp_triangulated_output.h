@@ -47,7 +47,7 @@ namespace geode
                 return ext;
             }
 
-            void write(
+            std::vector< std::string > write(
                 const TriangulatedSurface< dimension > &surface ) const final;
         };
     } // namespace detail

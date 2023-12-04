@@ -103,11 +103,12 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPEdgedCurveOutput< dimension >::write(
+        std::vector< std::string > VTPEdgedCurveOutput< dimension >::write(
             const EdgedCurve< dimension >& curve ) const
         {
             VTPCurveOutputImpl< dimension > impl{ this->filename(), curve };
             impl.write_file();
+            return { to_string( this->filename() ) };
         }
 
         template class VTPEdgedCurveOutput< 2 >;

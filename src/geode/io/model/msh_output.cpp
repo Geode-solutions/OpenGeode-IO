@@ -438,10 +438,11 @@ namespace geode
 {
     namespace detail
     {
-        void MSHOutput::write( const BRep& brep ) const
+        std::vector< std::string > MSHOutput::write( const BRep& brep ) const
         {
             MSHOutputImpl impl( filename(), brep );
             impl.write_file();
+            return { to_string( filename() ) };
         }
 
         bool MSHOutput::is_saveable( const BRep& brep ) const

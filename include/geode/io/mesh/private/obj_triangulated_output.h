@@ -50,7 +50,8 @@ namespace geode
                 return ext;
             }
 
-            void write( const TriangulatedSurface3D &surface ) const final;
+            std::vector< std::string > write(
+                const TriangulatedSurface3D &surface ) const final;
         };
     } // namespace detail
 } // namespace geode

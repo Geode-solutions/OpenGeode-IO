@@ -93,11 +93,12 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPPointSetOutput< dimension >::write(
+        std::vector< std::string > VTPPointSetOutput< dimension >::write(
             const PointSet< dimension >& point_set ) const
         {
             VTPPointOutputImpl< dimension > impl{ this->filename(), point_set };
             impl.write_file();
+            return { to_string( this->filename() ) };
         }
 
         template class VTPPointSetOutput< 2 >;

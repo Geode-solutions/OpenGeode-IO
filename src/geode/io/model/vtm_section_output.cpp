@@ -52,10 +52,12 @@ namespace geode
 {
     namespace detail
     {
-        void VTMSectionOutput::write( const Section& section ) const
+        std::vector< std::string > VTMSectionOutput::write(
+            const Section& section ) const
         {
             VTMSectionOutputImpl impl{ filename(), section };
             impl.write_file();
+            return impl.files();
         }
     } // namespace detail
 } // namespace geode

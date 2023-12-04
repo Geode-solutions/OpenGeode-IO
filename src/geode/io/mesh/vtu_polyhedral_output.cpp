@@ -75,10 +75,12 @@ namespace geode
 {
     namespace detail
     {
-        void VTUPolyhedralOutput::write( const PolyhedralSolid3D& solid ) const
+        std::vector< std::string > VTUPolyhedralOutput::write(
+            const PolyhedralSolid3D& solid ) const
         {
             VTUPolyhedralOutputImpl impl{ filename(), solid };
             impl.write_file();
+            return { to_string( filename() ) };
         }
     } // namespace detail
 } // namespace geode

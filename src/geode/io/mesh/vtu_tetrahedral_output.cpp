@@ -56,11 +56,12 @@ namespace geode
 {
     namespace detail
     {
-        void VTUTetrahedralOutput::write(
+        std::vector< std::string > VTUTetrahedralOutput::write(
             const TetrahedralSolid3D& solid ) const
         {
             VTUTetrahedralOutputImpl impl{ filename(), solid };
             impl.write_file();
+            return { to_string( filename() ) };
         }
     } // namespace detail
 } // namespace geode

@@ -92,11 +92,12 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTIRasterImageOutput< dimension >::write(
+        std::vector< std::string > VTIRasterImageOutput< dimension >::write(
             const RasterImage< dimension >& raster ) const
         {
             ::VTIOutputImpl< dimension > impl{ raster, this->filename() };
             impl.write_file();
+            return { to_string( this->filename() ) };
         }
 
         template class VTIRasterImageOutput< 2 >;

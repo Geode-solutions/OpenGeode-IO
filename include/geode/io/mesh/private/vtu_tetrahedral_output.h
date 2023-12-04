@@ -49,7 +49,7 @@ namespace geode
                 return ext;
             }
 
-            void write( const TetrahedralSolid3D &solid ) const final;
+            std::vector< std::string > write( const TetrahedralSolid3D &solid ) const final;
         };
     } // namespace detail
 } // namespace geode

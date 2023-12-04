@@ -44,7 +44,8 @@ namespace geode
                 return ext;
             }
 
-            void write( const RasterImage< dimension > &raster ) const final;
+            std::vector< std::string > write(
+                const RasterImage< dimension > &raster ) const final;
         };
         ALIAS_2D_AND_3D( VTIRasterImageOutput );
     } // namespace detail

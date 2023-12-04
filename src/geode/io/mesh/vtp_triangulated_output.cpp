@@ -32,13 +32,14 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTPTriangulatedOutput< dimension >::write(
+        std::vector< std::string > VTPTriangulatedOutput< dimension >::write(
             const TriangulatedSurface< dimension > &surface ) const
         {
             VTPSurfaceOutputImpl< TriangulatedSurface, dimension > impl{
                 this->filename(), surface
             };
             impl.write_file();
+            return { to_string( this->filename() ) };
         }
 
         template class VTPTriangulatedOutput< 2 >;

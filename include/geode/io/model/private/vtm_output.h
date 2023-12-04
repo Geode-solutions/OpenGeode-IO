@@ -69,10 +69,16 @@ namespace geode
                 {
                     ghc::filesystem::create_directory( files_directory_ );
                 }
+                add_file( to_string( filename ) );
+            }
+
+            std::vector< std::string > files()
+            {
+                return std::move( files_ );
             }
 
         protected:
-            index_t write_corners_lines_surfaces( pugi::xml_node& object ) const
+            index_t write_corners_lines_surfaces( pugi::xml_node& object )
             {
                 index_t counter{ 0 };
                 auto corner_block = object.append_child( "Block" );
@@ -97,8 +103,13 @@ namespace geode
                 return files_directory_;
             }
 
+            void add_file( const std::string& filename )
+            {
+                add_file( filename );
+            }
+
         private:
-            void write_corners( pugi::xml_node& corner_block ) const
+            void write_corners( pugi::xml_node& corner_block )
             {
                 index_t counter{ 0 };
                 const auto prefix =
@@ -113,6 +124,7 @@ namespace geode
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename =
                         absl::StrCat( prefix, corner.id().string(), ".vtp" );
+                    add_file( filename );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
@@ -132,7 +144,7 @@ namespace geode
                 }
             }
 
-            void write_lines( pugi::xml_node& line_block ) const
+            void write_lines( pugi::xml_node& line_block )
             {
                 index_t counter{ 0 };
                 const auto prefix = absl::StrCat( files_directory_, "/Line_" );
@@ -146,6 +158,7 @@ namespace geode
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename =
                         absl::StrCat( prefix, line.id().string(), ".vtp" );
+                    add_file( filename );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
@@ -165,7 +178,7 @@ namespace geode
                 }
             }
 
-            void write_surfaces( pugi::xml_node& surface_block ) const
+            void write_surfaces( pugi::xml_node& surface_block )
             {
                 index_t counter{ 0 };
                 const auto prefix =
@@ -180,6 +193,7 @@ namespace geode
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename =
                         absl::StrCat( prefix, surface.id().string(), ".vtp" );
+                    add_file( filename );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
 
@@ -224,6 +238,7 @@ namespace geode
 
         private:
             DEBUG_CONST std::string files_directory_;
+            std::vector< std::string > files_;
         };
     } // namespace detail
 } // namespace geode

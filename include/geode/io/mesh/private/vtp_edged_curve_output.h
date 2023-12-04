@@ -44,7 +44,7 @@ namespace geode
                 return ext;
             }
 
-            void write( const EdgedCurve< dimension > &curve ) const final;
+            std::vector< std::string > write( const EdgedCurve< dimension > &curve ) const final;
         };
     } // namespace detail
 } // namespace geode

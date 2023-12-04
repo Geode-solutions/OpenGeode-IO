@@ -48,7 +48,7 @@ namespace geode
                 return ext;
             }
 
-            void write( const Section& section ) const final;
+            std::vector< std::string > write( const Section& section ) const final;
         };
     } // namespace detail
 } // namespace geode

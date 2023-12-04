@@ -71,6 +71,7 @@ namespace
                 dataset.append_attribute( "index" ).set_value( counter );
                 const auto filename =
                     absl::StrCat( prefix, block.id().string(), ".vtu" );
+                add_file( filename );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
 
@@ -124,10 +125,12 @@ namespace geode
 {
     namespace detail
     {
-        void VTMBRepOutput::write( const BRep& brep ) const
+        std::vector< std::string > VTMBRepOutput::write(
+            const BRep& brep ) const
         {
             VTMBRepOutputImpl impl{ filename(), brep };
             impl.write_file();
+            return impl.files();
         }
     } // namespace detail
 } // namespace geode

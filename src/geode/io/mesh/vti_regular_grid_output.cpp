@@ -132,11 +132,12 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        void VTIRegularGridOutput< dimension >::write(
+        std::vector< std::string > VTIRegularGridOutput< dimension >::write(
             const RegularGrid< dimension >& grid ) const
         {
             ::VTIOutputImpl< dimension > impl{ grid, this->filename() };
             impl.write_file();
+            return { to_string( this->filename() ) };
         }
 
         template class VTIRegularGridOutput< 2 >;

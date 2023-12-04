@@ -67,10 +67,12 @@ namespace geode
 {
     namespace detail
     {
-        void VTUHybridOutput::write( const HybridSolid3D& solid ) const
+        std::vector< std::string > VTUHybridOutput::write(
+            const HybridSolid3D& solid ) const
         {
             VTUHybridOutputImpl impl{ filename(), solid };
             impl.write_file();
+            return { to_string( filename() ) };
         }
     } // namespace detail
 } // namespace geode

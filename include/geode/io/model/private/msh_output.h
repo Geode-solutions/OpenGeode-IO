@@ -42,7 +42,7 @@ namespace geode
                 return ext;
             }
 
-            void write( const BRep& brep ) const final;
+            std::vector< std::string > write( const BRep& brep ) const final;
 
             bool is_saveable( const BRep& brep ) const final;
         };

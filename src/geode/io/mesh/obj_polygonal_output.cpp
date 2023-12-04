@@ -31,13 +31,14 @@ namespace geode
 {
     namespace detail
     {
-        void OBJPolygonalOutput::write(
+        std::vector< std::string > OBJPolygonalOutput::write(
             const PolygonalSurface3D &surface ) const
         {
             detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
                 surface, "obj" };
             impl.build_assimp_scene();
             impl.write_file();
+            return { to_string( filename() ) };
         }
     } // namespace detail
 } // namespace geode
