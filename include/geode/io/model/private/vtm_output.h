@@ -23,6 +23,10 @@
 
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <async++.h>
 
 #include <ghc/filesystem.hpp>
@@ -105,7 +109,7 @@ namespace geode
 
             void add_file( const std::string& filename )
             {
-                add_file( filename );
+                files_.emplace_back( filename );
             }
 
         private:

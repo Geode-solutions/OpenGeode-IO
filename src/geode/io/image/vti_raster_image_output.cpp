@@ -24,7 +24,6 @@
 #include <geode/io/image/private/vti_raster_image_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/image/core/raster_image.h>
 #include <geode/image/core/rgb_color.h>

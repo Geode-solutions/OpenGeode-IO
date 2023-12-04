@@ -24,7 +24,6 @@
 #include <geode/io/mesh/private/vtp_point_set_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/mesh/core/point_set.h>
 

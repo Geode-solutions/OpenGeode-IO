@@ -24,7 +24,6 @@
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/geometry/coordinate_system.h>
 

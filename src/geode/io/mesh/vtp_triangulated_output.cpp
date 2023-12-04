@@ -24,7 +24,6 @@
 #include <geode/io/mesh/private/vtp_triangulated_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/mesh/core/triangulated_surface.h>
 

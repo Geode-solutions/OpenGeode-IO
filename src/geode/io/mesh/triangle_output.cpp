@@ -25,7 +25,8 @@
 
 #include <fstream>
 #include <string>
-#include <vector>
+
+#include <absl/strings/str_cat.h>
 
 #include <geode/geometry/point.h>
 

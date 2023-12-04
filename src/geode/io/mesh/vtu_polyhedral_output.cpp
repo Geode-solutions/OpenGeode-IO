@@ -24,7 +24,6 @@
 #include <geode/io/mesh/private/vtu_polyhedral_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/mesh/core/polyhedral_solid.h>
 

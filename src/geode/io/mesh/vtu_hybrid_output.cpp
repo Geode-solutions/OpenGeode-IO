@@ -24,7 +24,6 @@
 #include <geode/io/mesh/private/vtu_hybrid_output.h>
 
 #include <string>
-#include <vector>
 
 #include <geode/mesh/core/hybrid_solid.h>
 
