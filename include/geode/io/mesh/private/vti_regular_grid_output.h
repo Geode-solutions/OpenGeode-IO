@@ -44,7 +44,8 @@ namespace geode
                 return ext;
             }
 
-            std::vector< std::string > write( const RegularGrid< dimension > &grid ) const final;
+            std::vector< std::string > write(
+                const RegularGrid< dimension > &grid ) const final;
         };
     } // namespace detail
 } // namespace geode

@@ -49,7 +49,8 @@ namespace geode
                 return ext;
             }
 
-            std::vector< std::string > write( const PolyhedralSolid3D &solid ) const final;
+            std::vector< std::string > write(
+                const PolyhedralSolid3D &solid ) const final;
         };
     } // namespace detail
 } // namespace geode

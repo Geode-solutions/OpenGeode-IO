@@ -44,7 +44,8 @@ namespace geode
                 return ext;
             }
 
-            std::vector< std::string > write( const PointSet< dimension > &point_set ) const final;
+            std::vector< std::string > write(
+                const PointSet< dimension > &point_set ) const final;
         };
     } // namespace detail
 } // namespace geode
