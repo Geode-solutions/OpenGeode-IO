@@ -23,7 +23,11 @@
 
 #pragma once
 
+#include <string>
+
 #include <async++.h>
+
+#include <absl/strings/string_view.h>
 
 #include <ghc/filesystem.hpp>
 
