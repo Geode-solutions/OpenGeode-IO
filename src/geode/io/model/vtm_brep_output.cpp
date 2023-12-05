@@ -23,6 +23,10 @@
 
 #include <geode/io/model/private/vtm_brep_output.h>
 
+#include <async++.h>
+
+#include <absl/strings/str_cat.h>
+
 #include <geode/mesh/core/hybrid_solid.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/core/regular_grid_solid.h>
@@ -61,7 +65,6 @@ namespace
         void write_blocks( pugi::xml_node& block_block )
         {
             geode::index_t counter{ 0 };
-            const auto prefix = absl::StrCat( files_directory(), "/Block_" );
             const auto level = geode::Logger::level();
             geode::Logger::set_level( geode::Logger::Level::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
@@ -69,15 +72,15 @@ namespace
             {
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
-                const auto filename =
-                    absl::StrCat( prefix, block.id().string(), ".vtu" );
+                const auto filename = absl::StrCat(
+                    prefix(), "/Block_", block.id().string(), ".vtu" );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
 
-                tasks[counter++] = async::spawn( [&block, &prefix] {
+                tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
-                    const auto file =
-                        absl::StrCat( prefix, block.id().string(), ".vtu" );
+                    const auto file = absl::StrCat( files_directory(),
+                        "/Block_", block.id().string(), ".vtu" );
                     if( const auto* tetra =
                             dynamic_cast< const geode::TetrahedralSolid3D* >(
                                 &mesh ) )
