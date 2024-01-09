@@ -23,10 +23,6 @@
 
 #include <string>
 
-#include <geode/geometry/coordinate_system.h>
-
-// #include <geode/mesh/core/regular_grid_solid.h>
-// #include <geode/mesh/core/regular_grid_surface.h>
 #include <geode/mesh/core/grid.h>
 
 #include <geode/io/image/private/vti_output_impl.h>

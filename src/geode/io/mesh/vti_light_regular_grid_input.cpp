@@ -76,23 +76,8 @@ namespace geode
         template < index_t dimension >
         bool VTILightRegularGridInput< dimension >::is_loadable() const
         {
-            std::ifstream file{ to_string( this->filename() ) };
-            OPENGEODE_EXCEPTION( file.good(),
-                "[VTILightRegularGridInput::is_loadable] Error while opening "
-                "file: ",
-                this->filename() );
-            pugi::xml_document document;
-            const auto status =
-                document.load_file( to_string( this->filename() ).c_str() );
-            OPENGEODE_EXCEPTION( status,
-                "[VTILightRegularGridInput::is_loadable] Error ",
-                status.description(),
-                " while parsing file: ", this->filename() );
-            const auto node = document.child( "VTKFile" ).child( "ImageData" );
-            const auto grid_attributes = VTIGridInputImpl<
-                LightRegularGrid< dimension > >::read_grid_attributes( node );
-            const auto nb_cells_3d = grid_attributes.cells_number[2];
-            return dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0;
+            return VTIGridInputImpl< LightRegularGrid< dimension > >::
+                is_loadable( this->filename() );
         }
 
         template class VTILightRegularGridInput< 2 >;

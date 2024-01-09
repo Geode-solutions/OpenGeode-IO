@@ -37,15 +37,15 @@ namespace geode
             : public LightRegularGridOutput< dimension >
         {
         public:
-            VTILightRegularGridOutput( absl::string_view filename )
+            explicit VTILightRegularGridOutput( absl::string_view filename )
                 : LightRegularGridOutput< dimension >{ filename }
             {
             }
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vti";
-                return ext;
+                static constexpr auto EXT = "vti";
+                return EXT;
             }
 
             std::vector< std::string > write(

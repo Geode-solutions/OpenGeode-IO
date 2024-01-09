@@ -33,7 +33,7 @@ namespace geode
         class VTIRegularGridInput final : public RegularGridInput< dimension >
         {
         public:
-            VTIRegularGridInput( absl::string_view filename )
+            explicit VTIRegularGridInput( absl::string_view filename )
                 : RegularGridInput< dimension >{ filename }
             {
             }
