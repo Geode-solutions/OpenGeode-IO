@@ -46,11 +46,9 @@ namespace geode
         class VTKInputImpl
         {
         public:
-            using MeshBuilder = typename Mesh::Builder;
-
             virtual ~VTKInputImpl() = default;
 
-            void read_file()
+            std::unique_ptr< Mesh > read_file()
             {
                 read_root_attributes();
                 read_appended_data();
@@ -58,15 +56,12 @@ namespace geode
                 {
                     read_vtk_object( vtk_object );
                 }
+                return std::move( mesh_ );
             }
 
         protected:
-            VTKInputImpl(
-                absl::string_view filename, Mesh& mesh, const char* type )
-                : file_{ to_string( filename ) },
-                  mesh_( mesh ),
-                  mesh_builder_{ MeshBuilder::create( mesh ) },
-                  type_{ type }
+            VTKInputImpl( absl::string_view filename, const char* type )
+                : file_{ to_string( filename ) }, type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
                     "[VTKInput] Error while opening file: ", filename );
@@ -77,14 +72,14 @@ namespace geode
                 root_ = document_.child( "VTKFile" );
             }
 
-            const Mesh& mesh() const
+            void initialize_mesh( std::unique_ptr< Mesh > mesh )
             {
-                return mesh_;
+                mesh_ = std::move( mesh );
             }
 
-            MeshBuilder& builder()
+            Mesh& mesh()
             {
-                return *mesh_builder_;
+                return *mesh_;
             }
 
             bool match( absl::string_view query, absl::string_view ref ) const
@@ -294,18 +289,18 @@ namespace geode
                 else
                 {
                     throw OpenGeodeException(
-                        "[VTKInput::read_point_data] Attribute of type ",
+                        "[VTKInput::read_data] Attribute of type ",
                         data_array_type, " is not supported" );
                 }
             }
 
-            void read_point_data(
-                const pugi::xml_node& point_data, index_t offset )
+            void read_data( const pugi::xml_node& point_data,
+                index_t offset,
+                AttributeManager& attribute_manager )
             {
                 for( const auto& data : point_data.children( "DataArray" ) )
                 {
-                    read_attribute_data(
-                        data, offset, mesh_.vertex_attribute_manager() );
+                    read_attribute_data( data, offset, attribute_manager );
                 }
             }
 
@@ -587,8 +582,7 @@ namespace geode
 
         private:
             std::ifstream file_;
-            Mesh& mesh_;
-            std::unique_ptr< MeshBuilder > mesh_builder_;
+            std::unique_ptr< Mesh > mesh_;
             pugi::xml_document document_;
             pugi::xml_node root_;
             const char* type_;

@@ -21,43 +21,34 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_polyhedral_input.h>
+#pragma once
 
-#include <geode/mesh/builder/polyhedral_solid_builder.h>
-#include <geode/mesh/core/polyhedral_solid.h>
-
-#include <geode/io/mesh/private/vtu_input_impl.h>
-
-namespace
-{
-    class VTUPolyhedralInputImpl
-        : public geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >
-    {
-        using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
-
-    public:
-        VTUPolyhedralInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
-            : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
-                filename, impl )
-        {
-            enable_tetrahedron();
-            enable_hexahedron();
-            enable_prism();
-            enable_pyramid();
-        }
-    };
-} // namespace
+#include <geode/mesh/io/light_regular_grid_input.h>
 
 namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< PolyhedralSolid3D > VTUPolyhedralInput::read(
-            const MeshImpl& impl )
+        template < index_t dimension >
+        class VTILightRegularGridInput final
+            : public LightRegularGridInput< dimension >
         {
-            VTUPolyhedralInputImpl reader{ filename(), impl };
-            return reader.read_file();
-        }
+        public:
+            VTILightRegularGridInput( absl::string_view filename )
+                : LightRegularGridInput< dimension >{ filename }
+            {
+            }
+
+            static absl::string_view extension()
+            {
+                static constexpr auto ext = "vti";
+                return ext;
+            }
+
+            LightRegularGrid< dimension > read() final;
+
+            bool is_loadable() const final;
+        };
+        ALIAS_2D_AND_3D( VTILightRegularGridInput );
     } // namespace detail
 } // namespace geode

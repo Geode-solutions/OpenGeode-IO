@@ -21,43 +21,31 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_polyhedral_input.h>
+#include <geode/io/mesh/private/vti_light_regular_grid_output.h>
 
-#include <geode/mesh/builder/polyhedral_solid_builder.h>
-#include <geode/mesh/core/polyhedral_solid.h>
+#include <string>
 
-#include <geode/io/mesh/private/vtu_input_impl.h>
+#include <geode/geometry/coordinate_system.h>
 
-namespace
-{
-    class VTUPolyhedralInputImpl
-        : public geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >
-    {
-        using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
+#include <geode/mesh/core/light_regular_grid.h>
 
-    public:
-        VTUPolyhedralInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
-            : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
-                filename, impl )
-        {
-            enable_tetrahedron();
-            enable_hexahedron();
-            enable_prism();
-            enable_pyramid();
-        }
-    };
-} // namespace
+#include <geode/io/mesh/private/vti_grid_output.h>
 
 namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< PolyhedralSolid3D > VTUPolyhedralInput::read(
-            const MeshImpl& impl )
+        template < index_t dimension >
+        std::vector< std::string >
+            VTILightRegularGridOutput< dimension >::write(
+                const LightRegularGrid< dimension >& grid ) const
         {
-            VTUPolyhedralInputImpl reader{ filename(), impl };
-            return reader.read_file();
+            VTIGridOutputImpl< dimension > impl{ grid, this->filename() };
+            impl.write_file();
+            return { to_string( this->filename() ) };
         }
+
+        template class VTILightRegularGridOutput< 2 >;
+        template class VTILightRegularGridOutput< 3 >;
     } // namespace detail
 } // namespace geode

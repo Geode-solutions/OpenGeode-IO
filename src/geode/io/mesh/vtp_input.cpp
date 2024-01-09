@@ -34,10 +34,9 @@ namespace
         : public geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >
     {
     public:
-        VTPInputImpl( absl::string_view filename,
-            geode::PolygonalSurface3D& polygonal_surface )
+        VTPInputImpl( absl::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >(
-                filename, polygonal_surface, "PolyData" )
+                filename, impl, "PolyData" )
         {
         }
 
@@ -47,7 +46,8 @@ namespace
             const auto nb_polygons = read_attribute( piece, "NumberOfPolys" );
             const auto polygon_offset =
                 build_polygons( read_polygons( piece, nb_polygons ) );
-            read_cell_data( piece.child( "CellData" ), polygon_offset );
+            this->read_data( piece.child( "CellData" ), polygon_offset,
+                this->mesh().polygon_attribute_manager() );
         }
 
         absl::FixedArray< std::vector< geode::index_t > > read_polygons(
@@ -89,16 +89,6 @@ namespace
             builder().compute_polygon_adjacencies();
             return new_polygons[0];
         }
-
-        void read_cell_data(
-            const pugi::xml_node& point_data, geode::index_t offset )
-        {
-            for( const auto& data : point_data.children( "DataArray" ) )
-            {
-                read_attribute_data(
-                    data, offset, mesh().polygon_attribute_manager() );
-            }
-        }
     };
 } // namespace
 
@@ -109,10 +99,8 @@ namespace geode
         std::unique_ptr< PolygonalSurface3D > VTPInput::read(
             const MeshImpl& impl )
         {
-            auto surface = PolygonalSurface3D::create( impl );
-            VTPInputImpl reader{ filename(), *surface };
-            reader.read_file();
-            return surface;
+            VTPInputImpl reader{ filename(), impl };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode

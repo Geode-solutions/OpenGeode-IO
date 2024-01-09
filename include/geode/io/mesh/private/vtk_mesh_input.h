@@ -47,11 +47,21 @@ namespace geode
         template < typename Mesh >
         class VTKMeshInputImpl : public VTKInputImpl< Mesh >
         {
+            using MeshBuilder = typename Mesh::Builder;
+
         protected:
-            VTKMeshInputImpl(
-                absl::string_view filename, Mesh& mesh, const char* type )
-                : VTKInputImpl< Mesh >{ filename, mesh, type }
+            VTKMeshInputImpl( absl::string_view filename,
+                const MeshImpl& impl,
+                const char* type )
+                : VTKInputImpl< Mesh >{ filename, type }
             {
+                this->initialize_mesh( Mesh::create( impl ) );
+                mesh_builder_ = MeshBuilder::create( this->mesh() );
+            }
+
+            MeshBuilder& builder()
+            {
+                return *mesh_builder_;
             }
 
             absl::FixedArray< std::vector< index_t > > get_cell_vertices(
@@ -91,8 +101,8 @@ namespace geode
                 const auto nb_points =
                     this->read_attribute( piece, "NumberOfPoints" );
                 const auto vertex_offset = build_points( piece, nb_points );
-                this->read_point_data(
-                    piece.child( "PointData" ), vertex_offset );
+                this->read_data( piece.child( "PointData" ), vertex_offset,
+                    this->mesh().vertex_attribute_manager() );
             }
 
             virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
@@ -206,6 +216,9 @@ namespace geode
                 }
                 return results;
             }
+
+        private:
+            std::unique_ptr< MeshBuilder > mesh_builder_;
         }; // namespace detail
     } // namespace detail
 } // namespace geode
