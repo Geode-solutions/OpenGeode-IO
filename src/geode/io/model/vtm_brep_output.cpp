@@ -82,29 +82,35 @@ namespace
 
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
-                    const auto file = absl::StrCat( files_directory(),
-                        "/Block_", block.id().string(), ".vtu" );
                     if( const auto* tetra =
                             dynamic_cast< const geode::TetrahedralSolid3D* >(
                                 &mesh ) )
                     {
-                        save_tetrahedral_solid( *tetra, file );
+                        const auto file = absl::StrCat( files_directory(),
+                            "/Block_", block.id().string(), ".vtu" );
+                        geode::save_tetrahedral_solid( *tetra, file );
                     }
                     else if( const auto* hybrid =
                                  dynamic_cast< const geode::HybridSolid3D* >(
                                      &mesh ) )
                     {
-                        save_hybrid_solid( *hybrid, file );
+                        const auto file = absl::StrCat( files_directory(),
+                            "/Block_", block.id().string(), ".vtu" );
+                        geode::save_hybrid_solid( *hybrid, file );
                     }
                     else if( const auto* poly = dynamic_cast<
                                  const geode::PolyhedralSolid3D* >( &mesh ) )
                     {
-                        save_polyhedral_solid( *poly, file );
+                        const auto file = absl::StrCat( files_directory(),
+                            "/Block_", block.id().string(), ".vtu" );
+                        geode::save_polyhedral_solid( *poly, file );
                     }
                     else if( const auto* grid =
                                  dynamic_cast< const geode::RegularGrid3D* >(
                                      &mesh ) )
                     {
+                        const auto file = absl::StrCat( files_directory(),
+                            "/Block_", block.id().string(), ".vti" );
                         geode::save_regular_grid( *grid, file );
                     }
                     else
