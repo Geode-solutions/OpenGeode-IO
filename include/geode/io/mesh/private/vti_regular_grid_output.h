@@ -36,7 +36,7 @@ namespace geode
         class VTIRegularGridOutput final : public RegularGridOutput< dimension >
         {
         public:
-            VTIRegularGridOutput( absl::string_view filename )
+            explicit VTIRegularGridOutput( absl::string_view filename )
                 : RegularGridOutput< dimension >{ filename }
             {
             }

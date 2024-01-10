@@ -37,9 +37,9 @@ namespace
 
     public:
         VTUHybridInputImpl(
-            absl::string_view filename, geode::HybridSolid3D& solid )
+            absl::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::HybridSolid3D >(
-                filename, solid )
+                filename, impl )
         {
             enable_tetrahedron();
             enable_hexahedron();
@@ -56,10 +56,8 @@ namespace geode
         std::unique_ptr< HybridSolid3D > VTUHybridInput::read(
             const MeshImpl& impl )
         {
-            auto solid = HybridSolid3D::create( impl );
-            VTUHybridInputImpl reader{ filename(), *solid };
-            reader.read_file();
-            return solid;
+            VTUHybridInputImpl reader{ filename(), impl };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode

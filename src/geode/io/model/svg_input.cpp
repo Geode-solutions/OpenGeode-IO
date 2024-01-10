@@ -279,11 +279,8 @@ namespace
             }
             if( command.letter == 'm' && !vertices.empty() )
             {
-                if( !vertices.empty() )
-                {
-                    create_line( vertices );
-                    vertices.clear();
-                }
+                create_line( vertices );
+                vertices.clear();
             }
             cur_position = command.apply( cur_position, params );
             vertices.push_back( cur_position );

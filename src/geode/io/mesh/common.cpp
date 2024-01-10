@@ -38,6 +38,8 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/triangle_output.h>
+#include <geode/io/mesh/private/vti_light_regular_grid_input.h>
+#include <geode/io/mesh/private/vti_light_regular_grid_output.h>
 #include <geode/io/mesh/private/vti_regular_grid_input.h>
 #include <geode/io/mesh/private/vti_regular_grid_output.h>
 #include <geode/io/mesh/private/vtp_edged_curve_output.h>
@@ -206,6 +208,28 @@ namespace
             geode::detail::VTIRegularGridInput< 3 > >(
             geode::detail::VTIRegularGridInput< 3 >::extension().data() );
     }
+
+    void register_light_regular_grid_output()
+    {
+        geode::LightRegularGridOutputFactory2D::register_creator<
+            geode::detail::VTILightRegularGridOutput< 2 > >(
+            geode::detail::VTILightRegularGridOutput< 2 >::extension().data() );
+
+        geode::LightRegularGridOutputFactory3D::register_creator<
+            geode::detail::VTILightRegularGridOutput< 3 > >(
+            geode::detail::VTILightRegularGridOutput< 3 >::extension().data() );
+    }
+
+    void register_light_regular_grid_input()
+    {
+        geode::LightRegularGridInputFactory2D::register_creator<
+            geode::detail::VTILightRegularGridInput< 2 > >(
+            geode::detail::VTILightRegularGridInput< 2 >::extension().data() );
+
+        geode::LightRegularGridInputFactory3D::register_creator<
+            geode::detail::VTILightRegularGridInput< 3 > >(
+            geode::detail::VTILightRegularGridInput< 3 >::extension().data() );
+    }
 } // namespace
 
 namespace geode
@@ -220,6 +244,7 @@ namespace geode
         register_triangulated_surface_input();
         register_polyhedral_solid_input();
         register_tetrahedral_solid_input();
+        register_light_regular_grid_input();
         register_regular_grid_input();
         register_hybrid_solid_input();
 
@@ -229,6 +254,7 @@ namespace geode
         register_triangulated_surface_output();
         register_polyhedral_solid_output();
         register_tetrahedral_solid_output();
+        register_light_regular_grid_output();
         register_regular_grid_output();
         register_hybrid_solid_output();
     }

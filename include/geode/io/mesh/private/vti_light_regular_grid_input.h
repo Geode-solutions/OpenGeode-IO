@@ -23,31 +23,32 @@
 
 #pragma once
 
-#include <geode/mesh/io/regular_grid_input.h>
+#include <geode/mesh/io/light_regular_grid_input.h>
 
 namespace geode
 {
     namespace detail
     {
         template < index_t dimension >
-        class VTIRegularGridInput final : public RegularGridInput< dimension >
+        class VTILightRegularGridInput final
+            : public LightRegularGridInput< dimension >
         {
         public:
-            explicit VTIRegularGridInput( absl::string_view filename )
-                : RegularGridInput< dimension >{ filename }
+            explicit VTILightRegularGridInput( absl::string_view filename )
+                : LightRegularGridInput< dimension >{ filename }
             {
             }
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vti";
-                return ext;
+                static constexpr auto EXT = "vti";
+                return EXT;
             }
 
-            std::unique_ptr< RegularGrid< dimension > > read(
-                const MeshImpl& impl ) final;
+            LightRegularGrid< dimension > read() final;
 
             bool is_loadable() const final;
         };
+        ALIAS_2D_AND_3D( VTILightRegularGridInput );
     } // namespace detail
 } // namespace geode

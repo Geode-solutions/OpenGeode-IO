@@ -37,9 +37,9 @@ namespace
 
     public:
         VTUPolyhedralInputImpl(
-            absl::string_view filename, geode::PolyhedralSolid3D& solid )
+            absl::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
-                filename, solid )
+                filename, impl )
         {
             enable_tetrahedron();
             enable_hexahedron();
@@ -56,10 +56,8 @@ namespace geode
         std::unique_ptr< PolyhedralSolid3D > VTUPolyhedralInput::read(
             const MeshImpl& impl )
         {
-            auto solid = PolyhedralSolid3D::create( impl );
-            VTUPolyhedralInputImpl reader{ filename(), *solid };
-            reader.read_file();
-            return solid;
+            VTUPolyhedralInputImpl reader{ filename(), impl };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode

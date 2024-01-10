@@ -21,33 +21,31 @@
  *
  */
 
-#pragma once
+#include <geode/io/mesh/private/vti_light_regular_grid_output.h>
 
-#include <geode/mesh/io/regular_grid_input.h>
+#include <string>
+
+#include <geode/geometry/coordinate_system.h>
+
+#include <geode/mesh/core/light_regular_grid.h>
+
+#include <geode/io/mesh/private/vti_grid_output.h>
 
 namespace geode
 {
     namespace detail
     {
         template < index_t dimension >
-        class VTIRegularGridInput final : public RegularGridInput< dimension >
+        std::vector< std::string >
+            VTILightRegularGridOutput< dimension >::write(
+                const LightRegularGrid< dimension >& grid ) const
         {
-        public:
-            explicit VTIRegularGridInput( absl::string_view filename )
-                : RegularGridInput< dimension >{ filename }
-            {
-            }
+            VTIGridOutputImpl< dimension > impl{ grid, this->filename() };
+            impl.write_file();
+            return { to_string( this->filename() ) };
+        }
 
-            static absl::string_view extension()
-            {
-                static constexpr auto ext = "vti";
-                return ext;
-            }
-
-            std::unique_ptr< RegularGrid< dimension > > read(
-                const MeshImpl& impl ) final;
-
-            bool is_loadable() const final;
-        };
+        template class VTILightRegularGridOutput< 2 >;
+        template class VTILightRegularGridOutput< 3 >;
     } // namespace detail
 } // namespace geode

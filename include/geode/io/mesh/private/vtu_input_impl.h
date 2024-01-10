@@ -35,9 +35,10 @@ namespace geode
             using VTKElement = absl::FixedArray< std::vector< local_index_t > >;
 
         protected:
-            VTUInputImpl( absl::string_view filename, Mesh& solid )
+            VTUInputImpl(
+                absl::string_view filename, const geode::MeshImpl& impl )
                 : VTKMeshInputImpl< Mesh >(
-                    filename, solid, "UnstructuredGrid" ),
+                    filename, impl, "UnstructuredGrid" ),
                   vtk_tetrahedron_( 4 ),
                   vtk_hexahedron_( 6 ),
                   vtk_prism_( 5 ),
@@ -94,7 +95,8 @@ namespace geode
                 const auto polyhedron_offset =
                     build_polyhedra( piece, nb_polyhedra );
                 this->builder().compute_polyhedron_adjacencies();
-                read_cell_data( piece.child( "CellData" ), polyhedron_offset );
+                this->read_data( piece.child( "CellData" ), polyhedron_offset,
+                    this->mesh().polyhedron_attribute_manager() );
             }
 
             std::tuple< absl::FixedArray< std::vector< index_t > >,
@@ -161,16 +163,6 @@ namespace geode
                     }
                 }
                 return polyhedra_offset;
-            }
-
-            void read_cell_data(
-                const pugi::xml_node& point_data, index_t offset )
-            {
-                for( const auto& data : point_data.children( "DataArray" ) )
-                {
-                    this->read_attribute_data( data, offset,
-                        this->mesh().polyhedron_attribute_manager() );
-                }
             }
 
         private:

@@ -37,9 +37,9 @@ namespace
 
     public:
         VTUTetrahedralInputImpl(
-            absl::string_view filename, geode::TetrahedralSolid3D& solid )
+            absl::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::TetrahedralSolid3D >(
-                filename, solid )
+                filename, impl )
         {
             enable_tetrahedron();
         }
@@ -53,10 +53,8 @@ namespace geode
         std::unique_ptr< TetrahedralSolid3D > VTUTetrahedralInput::read(
             const MeshImpl& impl )
         {
-            auto solid = TetrahedralSolid3D::create( impl );
-            VTUTetrahedralInputImpl reader{ filename(), *solid };
-            reader.read_file();
-            return solid;
+            VTUTetrahedralInputImpl reader{ filename(), impl };
+            return reader.read_file();
         }
     } // namespace detail
 } // namespace geode

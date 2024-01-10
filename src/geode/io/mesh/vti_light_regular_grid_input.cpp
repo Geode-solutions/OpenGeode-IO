@@ -21,34 +21,29 @@
  *
  */
 
-#include <geode/io/mesh/private/vti_regular_grid_input.h>
+#include <geode/io/mesh/private/vti_light_regular_grid_input.h>
 
 #include <array>
 #include <fstream>
 
 #include <geode/basic/string.h>
 
-#include <geode/mesh/builder/regular_grid_solid_builder.h>
-#include <geode/mesh/builder/regular_grid_surface_builder.h>
-#include <geode/mesh/core/regular_grid_solid.h>
-#include <geode/mesh/core/regular_grid_surface.h>
+#include <geode/mesh/core/light_regular_grid.h>
 
 #include <geode/io/mesh/private/vti_grid_input.h>
 
 namespace
 {
     template < geode::index_t dimension >
-    class VTIRegularGridInputImpl : public geode::detail::VTIGridInputImpl<
-                                        geode::RegularGrid< dimension > >
+    class VTILightRegularGridInputImpl
+        : public geode::detail::VTIGridInputImpl<
+              geode::LightRegularGrid< dimension > >
     {
     public:
-        VTIRegularGridInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
+        VTILightRegularGridInputImpl( absl::string_view filename )
             : geode::detail::VTIGridInputImpl<
-                geode::RegularGrid< dimension > >{ filename }
+                geode::LightRegularGrid< dimension > >{ filename }
         {
-            this->initialize_mesh(
-                geode::RegularGrid< dimension >::create( impl ) );
         }
 
     private:
@@ -56,10 +51,10 @@ namespace
         {
             const auto grid_attributes =
                 this->read_grid_attributes( vtk_object );
-            auto builder = geode::RegularGrid< dimension >::Builder::create(
-                this->mesh() );
-            builder->initialize_grid( grid_attributes.origin,
-                grid_attributes.cells_number, grid_attributes.cell_directions );
+            this->initialize_mesh(
+                absl::make_unique< geode::LightRegularGrid< dimension > >(
+                    grid_attributes.origin, grid_attributes.cells_number,
+                    grid_attributes.cells_length ) );
         }
     };
 } // namespace
@@ -69,22 +64,23 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        std::unique_ptr< RegularGrid< dimension > >
-            VTIRegularGridInput< dimension >::read( const MeshImpl& impl )
+        LightRegularGrid< dimension >
+            VTILightRegularGridInput< dimension >::read()
         {
-            VTIRegularGridInputImpl< dimension > reader{ this->filename(),
-                impl };
-            return reader.read_file();
+            VTILightRegularGridInputImpl< dimension > reader{
+                this->filename()
+            };
+            return std::move( *reader.read_file().release() );
         }
 
         template < index_t dimension >
-        bool VTIRegularGridInput< dimension >::is_loadable() const
+        bool VTILightRegularGridInput< dimension >::is_loadable() const
         {
-            return VTIGridInputImpl< RegularGrid< dimension > >::is_loadable(
-                this->filename() );
+            return VTIGridInputImpl< LightRegularGrid< dimension > >::
+                is_loadable( this->filename() );
         }
 
-        template class VTIRegularGridInput< 2 >;
-        template class VTIRegularGridInput< 3 >;
+        template class VTILightRegularGridInput< 2 >;
+        template class VTILightRegularGridInput< 3 >;
     } // namespace detail
 } // namespace geode
