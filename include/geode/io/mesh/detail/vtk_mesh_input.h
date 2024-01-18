@@ -38,7 +38,7 @@
 
 #include <geode/geometry/point.h>
 
-#include <geode/io/mesh/private/vtk_input.h>
+#include <geode/io/mesh/detail/vtk_input.h>
 
 namespace geode
 {

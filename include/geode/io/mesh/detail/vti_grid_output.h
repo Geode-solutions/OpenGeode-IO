@@ -25,7 +25,7 @@
 
 #include <geode/mesh/core/grid.h>
 
-#include <geode/io/image/private/vti_output_impl.h>
+#include <geode/io/image/detail/vti_output_impl.h>
 
 namespace geode
 {

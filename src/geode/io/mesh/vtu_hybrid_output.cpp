@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_hybrid_output.h>
+#include <geode/io/mesh/detail/vtu_hybrid_output.h>
 
 #include <string>
 
 #include <geode/mesh/core/hybrid_solid.h>
 
-#include <geode/io/mesh/private/vtu_output_impl.h>
+#include <geode/io/mesh/detail/vtu_output_impl.h>
 namespace
 {
     static constexpr auto TETRAHEDRON = 10u;

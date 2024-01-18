@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/vtm_brep_output.h>
+#include <geode/io/model/detail/vtm_brep_output.h>
 
 #include <string>
 #include <vector>
@@ -42,7 +42,7 @@
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/representation/core/brep.h>
 
-#include <geode/io/model/private/vtm_output.h>
+#include <geode/io/model/detail/vtm_output.h>
 
 namespace
 {

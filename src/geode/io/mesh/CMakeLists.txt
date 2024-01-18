@@ -52,6 +52,30 @@ add_geode_library(
         "vtu_tetrahedral_output.cpp"
     PUBLIC_HEADERS
         "common.h"
+    ADVANCED_HEADERS
+        "detail/vtk_input.h"
+        "detail/vtk_mesh_input.h"
+        "detail/vtk_mesh_output.h"
+        "detail/vti_grid_input.h"
+        "detail/vti_grid_output.h"
+        "detail/vti_light_regular_grid_input.h"
+        "detail/vti_light_regular_grid_output.h"
+        "detail/vti_regular_grid_input.h"
+        "detail/vti_regular_grid_output.h"
+        "detail/vtp_edged_curve_output.h"
+        "detail/vtp_input.h"
+        "detail/vtp_point_set_output.h"
+        "detail/vtp_polygonal_output.h"
+        "detail/vtp_surface_output_impl.h"
+        "detail/vtp_triangulated_output.h"
+        "detail/vtu_hybrid_output.h"
+        "detail/vtu_input_impl.h"
+        "detail/vtu_output_impl.h"
+        "detail/vtu_hybrid_input.h"
+        "detail/vtu_polyhedral_input.h"
+        "detail/vtu_polyhedral_output.h"
+        "detail/vtu_tetrahedral_input.h"
+        "detail/vtu_tetrahedral_output.h"
     PRIVATE_HEADERS
         "private/assimp_input.h"
         "private/assimp_output.h"
@@ -67,33 +91,11 @@ add_geode_library(
         "private/stl_input.h"
         "private/stl_output.h"
         "private/triangle_output.h"
-        "private/vtk_input.h"
-        "private/vtk_mesh_input.h"
-        "private/vtk_mesh_output.h"
-        "private/vti_grid_input.h"
-        "private/vti_grid_output.h"
-        "private/vti_light_regular_grid_input.h"
-        "private/vti_light_regular_grid_output.h"
-        "private/vti_regular_grid_input.h"
-        "private/vti_regular_grid_output.h"
-        "private/vtp_edged_curve_output.h"
-        "private/vtp_input.h"
-        "private/vtp_point_set_output.h"
-        "private/vtp_polygonal_output.h"
-        "private/vtp_surface_output_impl.h"
-        "private/vtp_triangulated_output.h"
-        "private/vtu_hybrid_output.h"
-        "private/vtu_input_impl.h"
-        "private/vtu_output_impl.h"
-        "private/vtu_hybrid_input.h"
-        "private/vtu_polyhedral_input.h"
-        "private/vtu_polyhedral_output.h"
-        "private/vtu_tetrahedral_input.h"
-        "private/vtu_tetrahedral_output.h"
+    PUBLIC_DEPENDENCIES
+        OpenGeode::image
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
-        OpenGeode::image
         OpenGeode::mesh
         assimp::assimp
         pugixml::pugixml

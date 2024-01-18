@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_polyhedral_input.h>
+#include <geode/io/mesh/detail/vtu_polyhedral_input.h>
 
 #include <geode/mesh/builder/polyhedral_solid_builder.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 
-#include <geode/io/mesh/private/vtu_input_impl.h>
+#include <geode/io/mesh/detail/vtu_input_impl.h>
 
 namespace
 {
