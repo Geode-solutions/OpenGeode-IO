@@ -111,7 +111,7 @@ namespace
                     {
                         throw geode::OpenGeodeException(
                             "[Blocks::save_blocks] Cannot find the explicit "
-                            "SolidMesh type" );
+                            "SolidMesh type." );
                     }
                 } );
             }
