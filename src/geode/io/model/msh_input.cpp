@@ -1113,7 +1113,8 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 filter_duplicated_surface_vertices( surface, brep_ );
-                auto surface_builder = builder_.surface_mesh_builder( s.id() );
+                auto surface_builder =
+                    builder_.surface_mesh_builder( surface.id() );
                 const auto& mesh = surface.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
@@ -1136,13 +1137,13 @@ namespace
                         const auto cmvs1 =
                             brep_.component_mesh_vertices( brep_.unique_vertex(
                                 { line.component_id(), e1 } ) );
-                        for( const auto cmv0 : cmvs0 )
+                        for( const auto& cmv0 : cmvs0 )
                         {
                             if( cmv0.component_id.id() != surface.id() )
                             {
                                 continue;
                             }
-                            for( const auto cmv1 : cmvs1 )
+                            for( const auto& cmv1 : cmvs1 )
                             {
                                 if( cmv1.component_id.id() != surface.id() )
                                 {
