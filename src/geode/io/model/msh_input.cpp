@@ -1110,45 +1110,53 @@ namespace
 
         void build_surfaces()
         {
-            for( const auto& s : brep_.surfaces() )
+            for( const auto& surface : brep_.surfaces() )
             {
-                filter_duplicated_surface_vertices( s, brep_ );
+                filter_duplicated_surface_vertices( surface, brep_ );
                 auto surface_builder = builder_.surface_mesh_builder( s.id() );
-                const auto& mesh = s.mesh();
+                const auto& mesh = surface.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
                     surface_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
-                               { s.component_id(), v } )] );
+                               { surface.component_id(), v } )] );
                 }
                 surface_builder->compute_polygon_adjacencies();
                 std::vector< geode::PolygonEdge > polygon_edges;
-                for( const auto& line : brep_.internal_lines( s ) )
+                for( const auto& line : brep_.internal_lines( surface ) )
                 {
                     const auto& edges = line.mesh();
-                    for( const auto e : geode::Range{ edges.nb_edges() } )
+                    for( const auto edge_id : geode::Range{ edges.nb_edges() } )
                     {
-                        const auto e0 = edges.edge_vertex( { e, 0 } );
-                        const auto e1 = edges.edge_vertex( { e, 1 } );
-                        const auto surface0 = brep_.component_mesh_vertices(
-                            brep_.unique_vertex( { line.component_id(), e0 } ),
-                            s.id() );
-                        const auto surface1 = brep_.component_mesh_vertices(
-                            brep_.unique_vertex( { line.component_id(), e1 } ),
-                            s.id() );
-                        for( const auto v0 : surface0 )
+                        const auto e0 = edges.edge_vertex( { edge_id, 0 } );
+                        const auto e1 = edges.edge_vertex( { edge_id, 1 } );
+                        const auto cmvs0 =
+                            brep_.component_mesh_vertices( brep_.unique_vertex(
+                                { line.component_id(), e0 } ) );
+                        const auto cmvs1 =
+                            brep_.component_mesh_vertices( brep_.unique_vertex(
+                                { line.component_id(), e1 } ) );
+                        for( const auto cmv0 : cmvs0 )
                         {
-                            for( const auto v1 : surface1 )
+                            if( cmv0.component_id.id() != surface.id() )
                             {
+                                continue;
+                            }
+                            for( const auto cmv1 : cmvs1 )
+                            {
+                                if( cmv1.component_id.id() != surface.id() )
+                                {
+                                    continue;
+                                }
                                 if( const auto edge0 =
                                         mesh.polygon_edge_from_vertices(
-                                            v0, v1 ) )
+                                            cmv0.vertex, cmv1.vertex ) )
                                 {
                                     polygon_edges.emplace_back( edge0.value() );
                                 }
                                 if( const auto edge1 =
                                         mesh.polygon_edge_from_vertices(
-                                            v1, v0 ) )
+                                            cmv1.vertex, cmv0.vertex ) )
                                 {
                                     polygon_edges.emplace_back( edge1.value() );
                                 }
