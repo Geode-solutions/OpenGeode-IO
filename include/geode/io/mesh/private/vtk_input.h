@@ -72,7 +72,7 @@ namespace geode
                 root_ = document_.child( "VTKFile" );
             }
 
-            void initialize_mesh( std::unique_ptr< Mesh > mesh )
+            void initialize_mesh( std::unique_ptr< Mesh >&& mesh )
             {
                 mesh_ = std::move( mesh );
             }
