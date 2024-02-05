@@ -21,6 +21,8 @@
  *
  */
 
+#include <geode/basic/uuid.h>
+
 #include <geode/io/model/private/vtm_brep_output.h>
 
 #include <string>
@@ -43,6 +45,9 @@
 #include <geode/model/representation/core/brep.h>
 
 #include <geode/io/model/private/vtm_output.h>
+
+#include <algorithm>
+#include <vector>
 
 namespace
 {
@@ -71,8 +76,15 @@ namespace
             const auto level = geode::Logger::level();
             geode::Logger::set_level( geode::Logger::Level::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
+            std::vector< geode::uuid > ids;
             for( const auto& block : mesh().blocks() )
             {
+                ids.emplace_back( block.id() );
+            }
+            std::sort( ids.begin(), ids.end() );
+            for( const auto &id : ids )
+            {
+                const auto& block = mesh().block( id );
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
                 const auto filename = absl::StrCat(

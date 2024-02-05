@@ -34,6 +34,7 @@
 #include <ghc/filesystem.hpp>
 
 #include <geode/basic/filename.h>
+#include <geode/basic/uuid.h>
 
 #include <geode/mesh/core/edged_curve.h>
 #include <geode/mesh/core/point_set.h>
@@ -51,6 +52,9 @@
 #include <geode/model/mixin/core/surface.h>
 
 #include <geode/io/image/private/vtk_output.h>
+
+#include <algorithm>
+#include <vector>
 
 namespace geode
 {
@@ -128,8 +132,15 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_corners() );
+                std::vector< uuid > ids;
                 for( const auto& corner : this->mesh().corners() )
                 {
+                    ids.emplace_back( corner.id() );
+                }
+                std::sort( ids.begin(), ids.end() );
+                for( const auto &id : ids )
+                {
+                    const auto& corner = this->mesh().corner( id );
                     auto dataset = corner_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(
@@ -160,8 +171,15 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_lines() );
+                std::vector< uuid > ids;
                 for( const auto& line : this->mesh().lines() )
                 {
+                    ids.emplace_back( line.id() );
+                }
+                std::sort( ids.begin(), ids.end() );
+                for( const auto &id : ids )
+                {
+                    const auto& line = this->mesh().line( id );
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(
@@ -192,8 +210,15 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_surfaces() );
+                std::vector< uuid > ids;
                 for( const auto& surface : this->mesh().surfaces() )
                 {
+                    ids.emplace_back( surface.id() );
+                }
+                std::sort( ids.begin(), ids.end() );
+                for( const auto &id : ids )
+                {
+                    const auto& surface = this->mesh().surface( id );
                     auto dataset = surface_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(
