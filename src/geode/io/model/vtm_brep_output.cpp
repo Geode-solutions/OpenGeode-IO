@@ -23,12 +23,15 @@
 
 #include <geode/io/model/private/vtm_brep_output.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
 #include <async++.h>
 
 #include <absl/strings/str_cat.h>
+
+#include <geode/basic/uuid.h>
 
 #include <geode/mesh/core/hybrid_solid.h>
 #include <geode/mesh/core/polyhedral_solid.h>
@@ -71,8 +74,15 @@ namespace
             const auto level = geode::Logger::level();
             geode::Logger::set_level( geode::Logger::Level::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
+            std::vector< geode::uuid > block_ids;
             for( const auto& block : mesh().blocks() )
             {
+                block_ids.emplace_back( block.id() );
+            }
+            absl::c_sort( block_ids );
+            for( const auto& id : block_ids )
+            {
+                const auto& block = mesh().block( id );
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
                 const auto filename = absl::StrCat(
