@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <async++.h>
 
+#include <absl/container/fixed_array.h>
 #include <absl/strings/string_view.h>
 
 #include <ghc/filesystem.hpp>
@@ -130,10 +130,12 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_corners() );
-                std::vector< uuid > corner_ids;
+                absl::FixedArray< uuid > corner_ids(
+                    this->mesh().nb_corners() );
+                index_t corner_count{ 0 };
                 for( const auto& corner : this->mesh().corners() )
                 {
-                    corner_ids.emplace_back( corner.id() );
+                    corner_ids[corner_count++] = corner.id();
                 }
                 absl::c_sort( corner_ids );
                 for( const auto& id : corner_ids )
@@ -169,10 +171,11 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_lines() );
-                std::vector< uuid > line_ids;
+                absl::FixedArray< uuid > line_ids( this->mesh().nb_lines() );
+                index_t line_count{ 0 };
                 for( const auto& line : this->mesh().lines() )
                 {
-                    line_ids.emplace_back( line.id() );
+                    line_ids[line_count++] = line.id();
                 }
                 absl::c_sort( line_ids );
                 for( const auto& id : line_ids )
@@ -208,10 +211,12 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_surfaces() );
-                std::vector< uuid > surface_ids;
+                absl::FixedArray< uuid > surface_ids(
+                    this->mesh().nb_surfaces() );
+                index_t surface_count{ 0 };
                 for( const auto& surface : this->mesh().surfaces() )
                 {
-                    surface_ids.emplace_back( surface.id() );
+                    surface_ids[surface_count++] = surface.id();
                 }
                 absl::c_sort( surface_ids );
                 for( const auto& id : surface_ids )

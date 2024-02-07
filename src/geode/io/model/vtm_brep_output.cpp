@@ -23,7 +23,6 @@
 
 #include <geode/io/model/private/vtm_brep_output.h>
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -74,10 +73,12 @@ namespace
             const auto level = geode::Logger::level();
             geode::Logger::set_level( geode::Logger::Level::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
-            std::vector< geode::uuid > block_ids;
+            absl::FixedArray< geode::uuid > block_ids(
+                this->mesh().nb_blocks() );
+            geode::index_t block_count{ 0 };
             for( const auto& block : mesh().blocks() )
             {
-                block_ids.emplace_back( block.id() );
+                block_ids[block_count++] = block.id();
             }
             absl::c_sort( block_ids );
             for( const auto& id : block_ids )
