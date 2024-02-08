@@ -21,6 +21,8 @@
  *
  */
 
+#pragma once
+
 #include <array>
 #include <fstream>
 
