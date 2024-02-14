@@ -43,28 +43,13 @@
 #include <geode/model/mixin/core/surface.h>
 #include <geode/model/representation/core/brep.h>
 
+#include <geode/io/model/private/msh_common.h>
+
 namespace
 {
-    static constexpr geode::index_t OFFSET_START{ 1 };
     static constexpr char EOL{ '\n' };
     static constexpr char SPACE{ ' ' };
     static constexpr geode::index_t DEFAULT_PHYSICAL_TAG{ 0 };
-
-    struct GmshElementID
-    {
-        GmshElementID() = default;
-        GmshElementID( geode::ComponentType gmsh_type, geode::index_t gmsh_id )
-            : type( std::move( gmsh_type ) ), id( gmsh_id )
-        {
-        }
-
-        bool operator==( const GmshElementID& other ) const
-        {
-            return type == other.type && id == other.id;
-        }
-        geode::ComponentType type{ "undefined" };
-        geode::index_t id{ geode::NO_ID };
-    };
 
     class MSHOutputImpl
     {
@@ -131,7 +116,8 @@ namespace
             }
             file_ << EOL;
             uuid2gmsh_[component.id()] =
-                GmshElementID{ component.component_type(), gmsh_id };
+                geode::detail::GmshElementID{ component.component_type(),
+                    gmsh_id };
         }
 
         void write_corners()
@@ -143,7 +129,8 @@ namespace
                 file_ << count << SPACE << point.string() << SPACE
                       << DEFAULT_PHYSICAL_TAG << EOL;
                 uuid2gmsh_[corner.id()] =
-                    GmshElementID{ corner.component_type(), count++ };
+                    geode::detail::GmshElementID{ corner.component_type(),
+                        count++ };
             }
         }
 
@@ -178,7 +165,8 @@ namespace
                 }
                 file_ << EOL;
                 uuid2gmsh_[surface.id()] =
-                    GmshElementID{ surface.component_type(), count };
+                    geode::detail::GmshElementID{ surface.component_type(),
+                        count };
                 count++;
             }
         }
@@ -205,7 +193,8 @@ namespace
                 }
                 file_ << EOL;
                 uuid2gmsh_[block.id()] =
-                    GmshElementID{ block.component_type(), count };
+                    geode::detail::GmshElementID{ block.component_type(),
+                        count };
                 count++;
             }
         }
@@ -232,7 +221,8 @@ namespace
                   << SPACE << nodes_to_export.size() << EOL;
             for( const auto& vertex_pair : nodes_to_export )
             {
-                file_ << OFFSET_START + vertex_pair.second << EOL;
+                file_ << geode::detail::GMSH_OFFSET_START + vertex_pair.second
+                      << EOL;
                 node_exported[vertex_pair.second] = true;
             }
             for( const auto& vertex_pair : nodes_to_export )
@@ -248,7 +238,8 @@ namespace
             file_ << brep_.nb_corners() + brep_.nb_lines() + brep_.nb_surfaces()
                          + brep_.nb_blocks()
                   << SPACE << brep_.nb_unique_vertices() << SPACE
-                  << OFFSET_START << SPACE << brep_.nb_unique_vertices() << EOL;
+                  << geode::detail::GMSH_OFFSET_START << SPACE
+                  << brep_.nb_unique_vertices() << EOL;
             absl::FixedArray< bool > node_exported(
                 brep_.nb_unique_vertices(), false );
 
@@ -307,7 +298,8 @@ namespace
                 {
                     const auto uid =
                         brep_.unique_vertex( { corner.component_id(), v } );
-                    file_ << cur++ << SPACE << OFFSET_START + uid << EOL;
+                    file_ << cur++ << SPACE
+                          << geode::detail::GMSH_OFFSET_START + uid << EOL;
                 }
             }
             return cur;
@@ -331,7 +323,8 @@ namespace
                             line.mesh().edge_vertex( { e, v } );
                         const auto uid = brep_.unique_vertex(
                             { line.component_id(), edge_vertex } );
-                        file_ << SPACE << OFFSET_START + uid;
+                        file_ << SPACE
+                              << geode::detail::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -359,7 +352,8 @@ namespace
                             surface.mesh().polygon_vertex( { p, v } );
                         const auto uid = brep_.unique_vertex(
                             { surface.component_id(), facet_vertex } );
-                        file_ << SPACE << OFFSET_START + uid;
+                        file_ << SPACE
+                              << geode::detail::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -387,7 +381,8 @@ namespace
                             block.mesh().polyhedron_vertex( { p, v } );
                         const auto uid = brep_.unique_vertex(
                             { block.component_id(), facet_vertex } );
-                        file_ << SPACE << OFFSET_START + uid;
+                        file_ << SPACE
+                              << geode::detail::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -403,10 +398,11 @@ namespace
                          + brep_.nb_blocks()
                   << SPACE;
             const auto nb_total_elements = count_elements();
-            file_ << nb_total_elements << SPACE << OFFSET_START << SPACE
+            file_ << nb_total_elements << SPACE
+                  << geode::detail::GMSH_OFFSET_START << SPACE
                   << nb_total_elements << EOL;
 
-            geode::index_t element_count{ OFFSET_START };
+            geode::index_t element_count{ geode::detail::GMSH_OFFSET_START };
             element_count = write_corner_elements( element_count );
             element_count = write_line_elements( element_count );
             element_count = write_surface_elements( element_count );
@@ -419,7 +415,8 @@ namespace
         const geode::BRep& brep_;
         bool binary_{ true };
         double version_{ 4 };
-        absl::flat_hash_map< geode::uuid, GmshElementID > uuid2gmsh_;
+        absl::flat_hash_map< geode::uuid, geode::detail::GmshElementID >
+            uuid2gmsh_;
         absl::flat_hash_map< geode::ComponentType, geode::index_t >
             component_type2dimension = {
                 { geode::Corner3D::component_type_static(), 0 },
