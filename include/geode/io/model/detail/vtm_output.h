@@ -29,11 +29,13 @@
 
 #include <async++.h>
 
+#include <absl/container/fixed_array.h>
 #include <absl/strings/string_view.h>
 
 #include <ghc/filesystem.hpp>
 
 #include <geode/basic/filename.h>
+#include <geode/basic/uuid.h>
 
 #include <geode/mesh/core/edged_curve.h>
 #include <geode/mesh/core/point_set.h>
@@ -128,8 +130,17 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_corners() );
+                absl::FixedArray< uuid > corner_ids(
+                    this->mesh().nb_corners() );
+                index_t corner_count{ 0 };
                 for( const auto& corner : this->mesh().corners() )
                 {
+                    corner_ids[corner_count++] = corner.id();
+                }
+                absl::c_sort( corner_ids );
+                for( const auto& id : corner_ids )
+                {
+                    const auto& corner = this->mesh().corner( id );
                     auto dataset = corner_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(
@@ -160,8 +171,16 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_lines() );
+                absl::FixedArray< uuid > line_ids( this->mesh().nb_lines() );
+                index_t line_count{ 0 };
                 for( const auto& line : this->mesh().lines() )
                 {
+                    line_ids[line_count++] = line.id();
+                }
+                absl::c_sort( line_ids );
+                for( const auto& id : line_ids )
+                {
+                    const auto& line = this->mesh().line( id );
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(
@@ -192,8 +211,17 @@ namespace geode
                 Logger::set_level( Logger::Level::warn );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_surfaces() );
+                absl::FixedArray< uuid > surface_ids(
+                    this->mesh().nb_surfaces() );
+                index_t surface_count{ 0 };
                 for( const auto& surface : this->mesh().surfaces() )
                 {
+                    surface_ids[surface_count++] = surface.id();
+                }
+                absl::c_sort( surface_ids );
+                for( const auto& id : surface_ids )
+                {
+                    const auto& surface = this->mesh().surface( id );
                     auto dataset = surface_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     const auto filename = absl::StrCat(

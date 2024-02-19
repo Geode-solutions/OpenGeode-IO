@@ -30,6 +30,8 @@
 
 #include <absl/strings/str_cat.h>
 
+#include <geode/basic/uuid.h>
+
 #include <geode/mesh/core/hybrid_solid.h>
 #include <geode/mesh/core/polyhedral_solid.h>
 #include <geode/mesh/core/regular_grid_solid.h>
@@ -71,8 +73,17 @@ namespace
             const auto level = geode::Logger::level();
             geode::Logger::set_level( geode::Logger::Level::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
+            absl::FixedArray< geode::uuid > block_ids(
+                this->mesh().nb_blocks() );
+            geode::index_t block_count{ 0 };
             for( const auto& block : mesh().blocks() )
             {
+                block_ids[block_count++] = block.id();
+            }
+            absl::c_sort( block_ids );
+            for( const auto& id : block_ids )
+            {
+                const auto& block = mesh().block( id );
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
                 const auto filename = absl::StrCat(
@@ -117,7 +128,7 @@ namespace
                     {
                         throw geode::OpenGeodeException(
                             "[Blocks::save_blocks] Cannot find the explicit "
-                            "SolidMesh type" );
+                            "SolidMesh type." );
                     }
                 } );
             }

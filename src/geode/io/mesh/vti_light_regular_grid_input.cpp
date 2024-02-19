@@ -49,12 +49,13 @@ namespace
     private:
         void build_grid( const pugi::xml_node& vtk_object ) final
         {
-            const auto grid_attributes =
-                this->read_grid_attributes( vtk_object );
-            this->initialize_mesh(
+            auto grid_attributes = this->read_grid_attributes( vtk_object );
+            auto grid =
                 absl::make_unique< geode::LightRegularGrid< dimension > >(
-                    grid_attributes.origin, grid_attributes.cells_number,
-                    grid_attributes.cells_length ) );
+                    std::move( grid_attributes.origin ),
+                    std::move( grid_attributes.cells_number ),
+                    std::move( grid_attributes.cells_length ) );
+            this->initialize_mesh( std::move( grid ) );
         }
     };
 } // namespace
@@ -70,7 +71,7 @@ namespace geode
             VTILightRegularGridInputImpl< dimension > reader{
                 this->filename()
             };
-            return std::move( *reader.read_file().release() );
+            return std::move( *reader.read_file() );
         }
 
         template < index_t dimension >

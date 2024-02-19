@@ -57,458 +57,10 @@
 #include <geode/model/representation/builder/brep_builder.h>
 #include <geode/model/representation/core/brep.h>
 
-namespace
-{
-    bool string_starts_with(
-        const std::string& string, const std::string& check )
-    {
-        return !string.compare( 0, check.length(), check );
-    }
-
-    struct GmshElementID
-    {
-        GmshElementID( geode::ComponentType gmsh_type, geode::index_t gmsh_id )
-            : type( std::move( gmsh_type ) ), id( gmsh_id )
-        {
-        }
-
-        bool operator==( const GmshElementID& other ) const
-        {
-            return type == other.type && id == other.id;
-        }
-        geode::ComponentType type;
-        geode::index_t id;
-    };
-} // namespace
-
-namespace std
-{
-    template <>
-    struct hash< GmshElementID >
-    {
-        std::size_t operator()( const GmshElementID& gmsh_id ) const
-        {
-            return absl::Hash< std::string >()( gmsh_id.type.get() )
-                   ^ absl::Hash< geode::index_t >()( gmsh_id.id );
-        }
-    };
-} // namespace std
+#include <geode/io/model/private/msh_common.h>
 
 namespace
 {
-    static constexpr geode::index_t OFFSET_START{ 1 };
-    static std::once_flag once_flag;
-
-    struct GmshId2Uuids
-    {
-        GmshId2Uuids() = default;
-
-        bool contains_elementary_id( const GmshElementID& elementary_id ) const
-        {
-            return elementary_ids.find( elementary_id ) != elementary_ids.end();
-        }
-
-        bool contains_physical_id( const GmshElementID& physical_id ) const
-        {
-            return physical_ids.find( physical_id ) != physical_ids.end();
-        }
-        absl::flat_hash_map< GmshElementID, geode::uuid > elementary_ids;
-        absl::flat_hash_map< GmshElementID, geode::uuid > physical_ids;
-    };
-
-    class GMSHElement
-    {
-    public:
-        GMSHElement( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            geode::index_t nb_vertices,
-            absl::Span< const absl::string_view > vertex_ids )
-            : physical_entity_id_( std::move( physical_entity_id ) ),
-              elementary_entity_id_( std::move( elementary_entity_id ) ),
-              nb_vertices_( nb_vertices ),
-              vertex_ids_str_( vertex_ids )
-        {
-            OPENGEODE_EXCEPTION( elementary_entity_id > 0,
-                "[GMSHElement] GMSH tag for elementary entity "
-                "(second tag) should not be null" );
-            try
-            {
-                read_vertex_ids();
-            }
-            catch( ... )
-            {
-                geode::Logger::error( "Wrong GMSH element number of vertices" );
-            }
-        }
-
-        virtual ~GMSHElement() = default;
-
-        virtual void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) = 0;
-
-        geode::index_t physical_entity_id()
-        {
-            return physical_entity_id_;
-        }
-
-        geode::index_t elementary_entity_id()
-        {
-            return elementary_entity_id_;
-        }
-
-    protected:
-        geode::index_t& nb_vertices()
-        {
-            return nb_vertices_;
-        }
-
-        std::vector< geode::index_t >& vertex_ids()
-        {
-            return vertex_ids_;
-        }
-
-        void read_vertex_ids()
-        {
-            vertex_ids().resize( nb_vertices() );
-            for( const auto n : geode::Range{ nb_vertices() } )
-            {
-                vertex_ids()[n] = geode::string_to_index( vertex_ids_str_[n] );
-            }
-        }
-
-    private:
-        geode::index_t physical_entity_id_;
-        geode::index_t elementary_entity_id_;
-        geode::index_t nb_vertices_;
-        absl::Span< const absl::string_view > vertex_ids_str_;
-        std::vector< geode::index_t > vertex_ids_;
-    };
-
-    using GMSHElementFactory = geode::Factory< geode::index_t,
-        GMSHElement,
-        geode::index_t,
-        geode::index_t,
-        absl::Span< const absl::string_view > >;
-
-    class GMSHPoint : public GMSHElement
-    {
-    public:
-        GMSHPoint( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHElement{ physical_entity_id, elementary_entity_id, 1,
-                  vertex_ids }
-        {
-        }
-        void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
-        {
-            const GmshElementID cur_gmsh_id{
-                geode::Corner3D::component_type_static(), elementary_entity_id()
-            };
-            const auto existing_id =
-                id_map.contains_elementary_id( cur_gmsh_id );
-            geode::uuid corner_uuid;
-            geode::BRepBuilder builder{ brep };
-            if( existing_id )
-            {
-                corner_uuid = id_map.elementary_ids.at( cur_gmsh_id );
-            }
-            else
-            {
-                corner_uuid = builder.add_corner();
-                id_map.elementary_ids.insert( { cur_gmsh_id, corner_uuid } );
-            }
-
-            const auto v_id =
-                builder.corner_mesh_builder( corner_uuid )->create_vertex();
-            builder.set_unique_vertex(
-                { brep.corner( corner_uuid ).component_id(), v_id },
-                vertex_ids()[0] - OFFSET_START );
-        }
-    };
-
-    class GMSHEdge : public GMSHElement
-    {
-    public:
-        GMSHEdge( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHElement{ physical_entity_id, elementary_entity_id, 2,
-                  vertex_ids }
-        {
-        }
-
-        void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
-        {
-            const GmshElementID cur_gmsh_id(
-                geode::Line3D::component_type_static(),
-                elementary_entity_id() );
-            const auto existing_id =
-                id_map.contains_elementary_id( cur_gmsh_id );
-            geode::BRepBuilder builder{ brep };
-            geode::uuid line_uuid;
-            if( existing_id )
-            {
-                line_uuid = id_map.elementary_ids.at( cur_gmsh_id );
-            }
-            else
-            {
-                line_uuid = builder.add_line();
-                id_map.elementary_ids.insert( { cur_gmsh_id, line_uuid } );
-            }
-            const auto first_v_id =
-                builder.line_mesh_builder( line_uuid )
-                    ->create_vertices( vertex_ids().size() );
-            const auto edge_id =
-                builder.line_mesh_builder( line_uuid )
-                    ->create_edge( first_v_id, first_v_id + 1 );
-
-            const auto& line = brep.line( line_uuid );
-            for( const auto v_id : geode::LIndices{ vertex_ids() } )
-            {
-                builder.set_unique_vertex(
-                    { line.component_id(),
-                        line.mesh().edge_vertex( { edge_id, v_id } ) },
-                    vertex_ids()[v_id] - OFFSET_START );
-            }
-        }
-    };
-
-    class GMSHSurfacePolygon : public GMSHElement
-    {
-    public:
-        GMSHSurfacePolygon( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            geode::index_t nb_vertices,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHElement{ physical_entity_id, elementary_entity_id,
-                  nb_vertices, vertex_ids }
-        {
-        }
-
-        void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
-        {
-            const GmshElementID cur_gmsh_id(
-                geode::Surface3D::component_type_static(),
-                elementary_entity_id() );
-            const auto existing_id =
-                id_map.contains_elementary_id( cur_gmsh_id );
-            geode::BRepBuilder builder{ brep };
-            geode::uuid surface_uuid;
-            if( existing_id )
-            {
-                surface_uuid = id_map.elementary_ids.at( cur_gmsh_id );
-            }
-            else
-            {
-                surface_uuid = builder.add_surface();
-                id_map.elementary_ids.insert( { cur_gmsh_id, surface_uuid } );
-            }
-            const auto first_v_id =
-                builder.surface_mesh_builder( surface_uuid )
-                    ->create_vertices( vertex_ids().size() );
-            std::vector< geode::index_t > v_ids( vertex_ids().size() );
-            std::iota( v_ids.begin(), v_ids.end(), first_v_id );
-            const auto polygon_id =
-                builder.surface_mesh_builder( surface_uuid )
-                    ->create_polygon( v_ids );
-
-            const auto& surface = brep.surface( surface_uuid );
-            for( const auto v_id : geode::LIndices{ vertex_ids() } )
-            {
-                builder.set_unique_vertex(
-                    { surface.component_id(),
-                        surface.mesh().polygon_vertex( { polygon_id, v_id } ) },
-                    vertex_ids()[v_id] - OFFSET_START );
-            }
-        }
-    };
-
-    class GMSHTriangle : public GMSHSurfacePolygon
-    {
-    public:
-        GMSHTriangle( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id, 3,
-                  vertex_ids }
-        {
-        }
-    };
-
-    class GMSHQuadrangle : public GMSHSurfacePolygon
-    {
-    public:
-        GMSHQuadrangle( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id, 4,
-                  vertex_ids }
-        {
-        }
-    };
-
-    class GMSHSolidPolyhedron : public GMSHElement
-    {
-    public:
-        GMSHSolidPolyhedron( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            geode::index_t nb_vertices,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHElement{ physical_entity_id, elementary_entity_id,
-                  nb_vertices, vertex_ids }
-        {
-        }
-
-        virtual geode::index_t create_gmsh_polyhedron(
-            geode::BRepBuilder& builder,
-            const geode::uuid& block_uuid,
-            const std::vector< geode::index_t >& v_ids ) = 0;
-
-        void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
-        {
-            const GmshElementID cur_gmsh_id(
-                geode::Block3D::component_type_static(),
-                elementary_entity_id() );
-            const auto existing_id =
-                id_map.contains_elementary_id( cur_gmsh_id );
-            geode::BRepBuilder builder{ brep };
-            geode::uuid block_uuid;
-            if( existing_id )
-            {
-                block_uuid = id_map.elementary_ids.at( cur_gmsh_id );
-            }
-            else
-            {
-                block_uuid =
-                    builder.add_block( geode::MeshFactory::default_impl(
-                        geode::HybridSolid3D::type_name_static() ) );
-                id_map.elementary_ids.insert( { cur_gmsh_id, block_uuid } );
-            }
-
-            const auto first_v_id =
-                builder.block_mesh_builder( block_uuid )
-                    ->create_vertices( vertex_ids().size() );
-            std::vector< geode::index_t > v_ids( vertex_ids().size() );
-            std::iota( v_ids.begin(), v_ids.end(), first_v_id );
-            const auto polyhedron_id =
-                create_gmsh_polyhedron( builder, block_uuid, v_ids );
-
-            const auto& block = brep.block( block_uuid );
-            for( const auto v_id : geode::LIndices{ vertex_ids() } )
-            {
-                builder.set_unique_vertex(
-                    { block.component_id(), block.mesh().polyhedron_vertex(
-                                                { polyhedron_id, v_id } ) },
-                    vertex_ids()[v_id] - OFFSET_START );
-            }
-        }
-    };
-
-    class GMSHTetrahedron : public GMSHSolidPolyhedron
-    {
-    public:
-        GMSHTetrahedron( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 4,
-                  vertex_ids }
-        {
-        }
-
-        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-            const geode::uuid& block_uuid,
-            const std::vector< geode::index_t >& v_ids ) override final
-        {
-            static const std::array< std::vector< geode::local_index_t >, 4 >
-                gmsh_tetrahedron_faces{ { { 0, 1, 2 }, { 0, 2, 3 }, { 1, 3, 2 },
-                    { 0, 3, 1 } } };
-            return builder.block_mesh_builder( block_uuid )
-                ->create_polyhedron( v_ids, gmsh_tetrahedron_faces );
-        }
-    };
-
-    class GMSHHexahedron : public GMSHSolidPolyhedron
-    {
-    public:
-        GMSHHexahedron( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 8,
-                  vertex_ids }
-        {
-        }
-
-        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-            const geode::uuid& block_uuid,
-            const std::vector< geode::index_t >& v_ids ) override final
-        {
-            static const std::array< std::vector< geode::local_index_t >, 6 >
-                gmsh_hexahedron_faces{ { { 0, 1, 2, 3 }, { 7, 6, 5, 4 },
-                    { 0, 3, 7, 4 }, { 1, 5, 6, 2 }, { 2, 6, 7, 3 },
-                    { 0, 4, 5, 1 } } };
-            return builder.block_mesh_builder( block_uuid )
-                ->create_polyhedron( v_ids, gmsh_hexahedron_faces );
-        }
-    };
-
-    class GMSHPrism : public GMSHSolidPolyhedron
-    {
-    public:
-        GMSHPrism( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 6,
-                  vertex_ids }
-        {
-        }
-
-        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-            const geode::uuid& block_uuid,
-            const std::vector< geode::index_t >& v_ids ) override final
-        {
-            static const std::array< std::vector< geode::local_index_t >, 5 >
-                gmsh_prism_faces{ { { 0, 1, 2 }, { 5, 4, 3 }, { 0, 2, 5, 3 },
-                    { 0, 3, 4, 1 }, { 1, 4, 5, 2 } } };
-            return builder.block_mesh_builder( block_uuid )
-                ->create_polyhedron( v_ids, gmsh_prism_faces );
-        }
-    };
-
-    class GMSHPyramid : public GMSHSolidPolyhedron
-    {
-    public:
-        GMSHPyramid( geode::index_t physical_entity_id,
-            geode::index_t elementary_entity_id,
-            absl::Span< const absl::string_view > vertex_ids )
-            : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id, 5,
-                  vertex_ids }
-        {
-        }
-
-        geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-            const geode::uuid& block_uuid,
-            const std::vector< geode::index_t >& v_ids ) override final
-        {
-            static const std::array< std::vector< geode::local_index_t >, 5 >
-                gmsh_pyramid_faces{ { { 0, 3, 4 }, { 0, 4, 1 }, { 4, 3, 2 },
-                    { 1, 4, 2 }, { 0, 1, 2, 3 } } };
-            return builder.block_mesh_builder( block_uuid )
-                ->create_polyhedron( v_ids, gmsh_pyramid_faces );
-        }
-    };
-
-    void initialize_gmsh_factory()
-    {
-        GMSHElementFactory::register_creator< GMSHPoint >( 15 );
-        GMSHElementFactory::register_creator< GMSHEdge >( 1 );
-        GMSHElementFactory::register_creator< GMSHTriangle >( 2 );
-        GMSHElementFactory::register_creator< GMSHQuadrangle >( 3 );
-        GMSHElementFactory::register_creator< GMSHTetrahedron >( 4 );
-        GMSHElementFactory::register_creator< GMSHHexahedron >( 5 );
-        GMSHElementFactory::register_creator< GMSHPrism >( 6 );
-        GMSHElementFactory::register_creator< GMSHPyramid >( 7 );
-    }
-
     class MSHInputImpl
     {
     public:
@@ -519,7 +71,6 @@ namespace
         {
             OPENGEODE_EXCEPTION( file_.good(),
                 "[MSHInput] Error while opening file: ", filename );
-            std::call_once( once_flag, initialize_gmsh_factory );
             first_read( filename );
         }
 
@@ -657,7 +208,7 @@ namespace
         {
             std::string line;
             std::getline( reader, line );
-            OPENGEODE_EXCEPTION( string_starts_with( line, keyword ),
+            OPENGEODE_EXCEPTION( geode::string_starts_with( line, keyword ),
                 "[MSHInput::check_keyword] Line should starts with \"", keyword,
                 "\"" );
         }
@@ -667,7 +218,7 @@ namespace
             std::string line;
             while( std::getline( file_, line ) )
             {
-                if( string_starts_with( line, section_header ) )
+                if( geode::string_starts_with( line, section_header ) )
                 {
                     return;
                 }
@@ -711,8 +262,8 @@ namespace
             std::string line;
             while( std::getline( reader, line ) )
             {
-                if( string_starts_with( line, "$" )
-                    && !string_starts_with( line, "$End" ) )
+                if( geode::string_starts_with( line, "$" )
+                    && !geode::string_starts_with( line, "$End" ) )
                 {
                     absl::RemoveExtraAsciiWhitespace( &line );
                     sections_.push_back( line );
@@ -920,7 +471,7 @@ namespace
                 geode::index_t node_id;
                 geode::Point3D node;
                 std::tie( node_id, node ) = read_node( line );
-                nodes_[node_id - OFFSET_START] = node;
+                nodes_[node_id - geode::detail::GMSH_OFFSET_START] = node;
             }
             check_keyword( "$EndNodes" );
             builder_.create_unique_vertices( nb_nodes );
@@ -980,7 +531,7 @@ namespace
             {
                 std::getline( file_, line );
                 const auto node_tokens = geode::string_split( line );
-                nodes_[node_id - OFFSET_START] =
+                nodes_[node_id - geode::detail::GMSH_OFFSET_START] =
                     read_node_coordinates( node_tokens.at( 0 ),
                         node_tokens.at( 1 ), node_tokens.at( 2 ) );
             }
@@ -996,7 +547,7 @@ namespace
             for( auto e_id : geode::Range{ nb_elements } )
             {
                 std::getline( file_, line );
-                read_element( e_id + OFFSET_START, line );
+                read_element( e_id + geode::detail::GMSH_OFFSET_START, line );
             }
             check_keyword( "$EndElements" );
         }
@@ -1030,7 +581,7 @@ namespace
                 &tokens[t], tokens.size() - t );
 
             const auto element =
-                GMSHElementFactory::create( mesh_element_type_id,
+                geode::detail::GMSHElementFactory::create( mesh_element_type_id,
                     physical_entity, elementary_entity, vertex_ids );
             element->add_element( brep_, gmsh_id2uuids_ );
         }
@@ -1077,9 +628,9 @@ namespace
                 absl::Span< const absl::string_view > vertex_ids(
                     &line_tokens[1], line_tokens.size() - 1 );
                 constexpr geode::index_t physical_entity{ 0 };
-                const auto element =
-                    GMSHElementFactory::create( mesh_element_type_id,
-                        physical_entity, entity_id, vertex_ids );
+                const auto element = geode::detail::GMSHElementFactory::create(
+                    mesh_element_type_id, physical_entity, entity_id,
+                    vertex_ids );
                 element->add_element( brep_, gmsh_id2uuids_ );
             }
         }
@@ -1110,45 +661,54 @@ namespace
 
         void build_surfaces()
         {
-            for( const auto& s : brep_.surfaces() )
+            for( const auto& surface : brep_.surfaces() )
             {
-                filter_duplicated_surface_vertices( s, brep_ );
-                auto surface_builder = builder_.surface_mesh_builder( s.id() );
-                const auto& mesh = s.mesh();
+                filter_duplicated_surface_vertices( surface, brep_ );
+                auto surface_builder =
+                    builder_.surface_mesh_builder( surface.id() );
+                const auto& mesh = surface.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
                     surface_builder->set_point(
                         v, nodes_[brep_.unique_vertex(
-                               { s.component_id(), v } )] );
+                               { surface.component_id(), v } )] );
                 }
                 surface_builder->compute_polygon_adjacencies();
                 std::vector< geode::PolygonEdge > polygon_edges;
-                for( const auto& line : brep_.internal_lines( s ) )
+                for( const auto& line : brep_.internal_lines( surface ) )
                 {
                     const auto& edges = line.mesh();
-                    for( const auto e : geode::Range{ edges.nb_edges() } )
+                    for( const auto edge_id : geode::Range{ edges.nb_edges() } )
                     {
-                        const auto e0 = edges.edge_vertex( { e, 0 } );
-                        const auto e1 = edges.edge_vertex( { e, 1 } );
-                        const auto surface0 = brep_.component_mesh_vertices(
-                            brep_.unique_vertex( { line.component_id(), e0 } ),
-                            s.id() );
-                        const auto surface1 = brep_.component_mesh_vertices(
-                            brep_.unique_vertex( { line.component_id(), e1 } ),
-                            s.id() );
-                        for( const auto v0 : surface0 )
+                        const auto e0 = edges.edge_vertex( { edge_id, 0 } );
+                        const auto e1 = edges.edge_vertex( { edge_id, 1 } );
+                        const auto cmvs0 =
+                            brep_.component_mesh_vertices( brep_.unique_vertex(
+                                { line.component_id(), e0 } ) );
+                        const auto cmvs1 =
+                            brep_.component_mesh_vertices( brep_.unique_vertex(
+                                { line.component_id(), e1 } ) );
+                        for( const auto& cmv0 : cmvs0 )
                         {
-                            for( const auto v1 : surface1 )
+                            if( cmv0.component_id.id() != surface.id() )
                             {
+                                continue;
+                            }
+                            for( const auto& cmv1 : cmvs1 )
+                            {
+                                if( cmv1.component_id.id() != surface.id() )
+                                {
+                                    continue;
+                                }
                                 if( const auto edge0 =
                                         mesh.polygon_edge_from_vertices(
-                                            v0, v1 ) )
+                                            cmv0.vertex, cmv1.vertex ) )
                                 {
                                     polygon_edges.emplace_back( edge0.value() );
                                 }
                                 if( const auto edge1 =
                                         mesh.polygon_edge_from_vertices(
-                                            v1, v0 ) )
+                                            cmv1.vertex, cmv0.vertex ) )
                                 {
                                     polygon_edges.emplace_back( edge1.value() );
                                 }
@@ -1332,7 +892,7 @@ namespace
         double version_{ 2 };
         std::vector< std::string > sections_;
         std::vector< geode::Point3D > nodes_;
-        GmshId2Uuids gmsh_id2uuids_;
+        geode::detail::GmshId2Uuids gmsh_id2uuids_;
     };
 } // namespace
 
