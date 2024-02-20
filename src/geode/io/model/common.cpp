@@ -27,6 +27,8 @@
 
 #include <geode/io/mesh/common.h>
 
+#include <geode/io/model/detail/vtm_brep_output.h>
+#include <geode/io/model/detail/vtm_section_output.h>
 #include <geode/io/model/private/msh_common.h>
 #include <geode/io/model/private/msh_input.h>
 #include <geode/io/model/private/msh_output.h>
