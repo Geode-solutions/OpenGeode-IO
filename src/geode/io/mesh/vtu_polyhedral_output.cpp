@@ -26,6 +26,7 @@
 #include <string>
 
 #include <geode/mesh/core/polyhedral_solid.h>
+#include <geode/mesh/helpers/detail/element_identifier.h>
 
 #include <geode/io/mesh/detail/vtu_output_impl.h>
 
@@ -49,7 +50,7 @@ namespace
             std::string& cell_face_offsets,
             geode::index_t& face_offset ) const override
         {
-            absl::StrAppend( &cell_types, "42 " );
+            add_cell_type( p, cell_types );
             const auto nb_faces = this->mesh().nb_polyhedron_facets( p );
             absl::StrAppend( &cell_faces, nb_faces, " " );
             geode::index_t offset{ 1 };
@@ -69,6 +70,40 @@ namespace
             }
             face_offset += offset;
             absl::StrAppend( &cell_face_offsets, face_offset, " " );
+        }
+
+        void add_cell_type(
+            geode::index_t polyhedron_id, std::string& cell_types ) const
+        {
+            if( geode::detail::solid_polyhedron_is_a_tetrahedron(
+                    this->mesh(), polyhedron_id ) )
+            {
+                absl::StrAppend(
+                    &cell_types, geode::detail::VTK_TETRAHEDRON_TYPE, " " );
+                return;
+            }
+            if( geode::detail::solid_polyhedron_is_a_prism(
+                    this->mesh(), polyhedron_id ) )
+            {
+                absl::StrAppend(
+                    &cell_types, geode::detail::VTK_PRISM_TYPE, " " );
+                return;
+            }
+            if( geode::detail::solid_polyhedron_is_a_pyramid(
+                    this->mesh(), polyhedron_id ) )
+            {
+                absl::StrAppend(
+                    &cell_types, geode::detail::VTK_PYRAMID_TYPE, " " );
+                return;
+            }
+            if( geode::detail::solid_polyhedron_is_a_hexaedron(
+                    this->mesh(), polyhedron_id ) )
+            {
+                absl::StrAppend(
+                    &cell_types, geode::detail::VTK_HEXAHEDRON_TYPE, " " );
+                return;
+            }
+            absl::StrAppend( &cell_types, "42 " );
         }
     };
 } // namespace

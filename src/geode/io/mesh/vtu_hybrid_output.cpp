@@ -30,13 +30,6 @@
 #include <geode/io/mesh/detail/vtu_output_impl.h>
 namespace
 {
-    static constexpr auto TETRAHEDRON = 10u;
-    static constexpr auto HEXAHEDRON = 12u;
-    static constexpr auto PRISM = 13u;
-    static constexpr auto PYRAMID = 14u;
-    static constexpr std::array< geode::index_t, 9 > VTK_CELL_TYPE{ 0, 0, 0, 0,
-        TETRAHEDRON, PYRAMID, PRISM, 0, HEXAHEDRON };
-
     class VTUHybridOutputImpl
         : public geode::detail::VTUOutputImpl< geode::HybridSolid >
     {
@@ -56,7 +49,8 @@ namespace
             geode::index_t& /*unused*/ ) const override
         {
             const auto nb_vertices = this->mesh().nb_polyhedron_vertices( p );
-            const auto vtk_type = VTK_CELL_TYPE[nb_vertices];
+            const auto vtk_type =
+                geode::detail::VTK_NB_VERTICES_TO_CELL_TYPE[nb_vertices];
             OPENGEODE_EXCEPTION( vtk_type != 0,
                 "[VTUHybridOutputImpl::write_vtk_cell] Polyhedron with ",
                 nb_vertices, " vertices not supported" );
