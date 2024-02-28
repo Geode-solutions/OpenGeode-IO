@@ -27,6 +27,22 @@
 
 #include <geode/io/image/common.h>
 
+#include <geode/io/mesh/detail/vti_light_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_output.h>
+#include <geode/io/mesh/detail/vti_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_regular_grid_output.h>
+#include <geode/io/mesh/detail/vtp_edged_curve_output.h>
+#include <geode/io/mesh/detail/vtp_input.h>
+#include <geode/io/mesh/detail/vtp_point_set_output.h>
+#include <geode/io/mesh/detail/vtp_polygonal_output.h>
+#include <geode/io/mesh/detail/vtp_triangulated_output.h>
+#include <geode/io/mesh/detail/vtu_hybrid_input.h>
+#include <geode/io/mesh/detail/vtu_hybrid_output.h>
+#include <geode/io/mesh/detail/vtu_polyhedral_input.h>
+#include <geode/io/mesh/detail/vtu_polyhedral_output.h>
+#include <geode/io/mesh/detail/vtu_tetrahedral_input.h>
+#include <geode/io/mesh/detail/vtu_tetrahedral_output.h>
+
 #include <geode/io/mesh/private/dxf_input.h>
 #include <geode/io/mesh/private/obj_input.h>
 #include <geode/io/mesh/private/obj_polygonal_output.h>
@@ -38,21 +54,6 @@
 #include <geode/io/mesh/private/stl_input.h>
 #include <geode/io/mesh/private/stl_output.h>
 #include <geode/io/mesh/private/triangle_output.h>
-#include <geode/io/mesh/private/vti_light_regular_grid_input.h>
-#include <geode/io/mesh/private/vti_light_regular_grid_output.h>
-#include <geode/io/mesh/private/vti_regular_grid_input.h>
-#include <geode/io/mesh/private/vti_regular_grid_output.h>
-#include <geode/io/mesh/private/vtp_edged_curve_output.h>
-#include <geode/io/mesh/private/vtp_input.h>
-#include <geode/io/mesh/private/vtp_point_set_output.h>
-#include <geode/io/mesh/private/vtp_polygonal_output.h>
-#include <geode/io/mesh/private/vtp_triangulated_output.h>
-#include <geode/io/mesh/private/vtu_hybrid_input.h>
-#include <geode/io/mesh/private/vtu_hybrid_output.h>
-#include <geode/io/mesh/private/vtu_polyhedral_input.h>
-#include <geode/io/mesh/private/vtu_polyhedral_output.h>
-#include <geode/io/mesh/private/vtu_tetrahedral_input.h>
-#include <geode/io/mesh/private/vtu_tetrahedral_output.h>
 
 namespace
 {

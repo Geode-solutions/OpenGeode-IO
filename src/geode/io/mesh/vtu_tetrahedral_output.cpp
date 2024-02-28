@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/private/vtu_tetrahedral_output.h>
+#include <geode/io/mesh/detail/vtu_tetrahedral_output.h>
 
 #include <string>
 
 #include <geode/mesh/core/tetrahedral_solid.h>
 
-#include <geode/io/mesh/private/vtu_output_impl.h>
+#include <geode/io/mesh/detail/vtu_output_impl.h>
 
 namespace
 {

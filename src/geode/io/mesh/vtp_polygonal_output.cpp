@@ -21,11 +21,11 @@
  *
  */
 
-#include <geode/io/mesh/private/vtp_polygonal_output.h>
+#include <geode/io/mesh/detail/vtp_polygonal_output.h>
 
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/vtp_surface_output_impl.h>
+#include <geode/io/mesh/detail/vtp_surface_output_impl.h>
 
 namespace geode
 {

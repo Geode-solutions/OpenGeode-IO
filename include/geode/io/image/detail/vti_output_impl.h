@@ -25,7 +25,7 @@
 
 #include <geode/geometry/point.h>
 
-#include <geode/io/image/private/vtk_output.h>
+#include <geode/io/image/detail/vtk_output.h>
 
 namespace geode
 {

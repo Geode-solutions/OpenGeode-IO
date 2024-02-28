@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/vtm_brep_output.h>
+#include <geode/io/model/detail/vtm_brep_output.h>
 
 #include <string>
 #include <vector>
@@ -44,7 +44,7 @@
 #include <geode/model/mixin/core/block.h>
 #include <geode/model/representation/core/brep.h>
 
-#include <geode/io/model/private/vtm_output.h>
+#include <geode/io/model/detail/vtm_output.h>
 
 namespace
 {
@@ -93,30 +93,34 @@ namespace
 
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
-                    const auto file = absl::StrCat( files_directory(),
-                        "/Block_", block.id().string(), ".vtu" );
+                    const auto file = absl::StrCat(
+                        files_directory(), "/Block_", block.id().string() );
                     if( const auto* tetra =
                             dynamic_cast< const geode::TetrahedralSolid3D* >(
                                 &mesh ) )
                     {
-                        save_tetrahedral_solid( *tetra, file );
+                        geode::save_tetrahedral_solid(
+                            *tetra, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* hybrid =
                                  dynamic_cast< const geode::HybridSolid3D* >(
                                      &mesh ) )
                     {
-                        save_hybrid_solid( *hybrid, file );
+                        geode::save_hybrid_solid(
+                            *hybrid, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* poly = dynamic_cast<
                                  const geode::PolyhedralSolid3D* >( &mesh ) )
                     {
-                        save_polyhedral_solid( *poly, file );
+                        geode::save_polyhedral_solid(
+                            *poly, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* grid =
                                  dynamic_cast< const geode::RegularGrid3D* >(
                                      &mesh ) )
                     {
-                        geode::save_regular_grid( *grid, file );
+                        geode::save_regular_grid(
+                            *grid, absl::StrCat( file, ".vti" ) );
                     }
                     else
                     {

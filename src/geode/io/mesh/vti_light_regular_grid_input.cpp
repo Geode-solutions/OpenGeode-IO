@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/vti_light_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_input.h>
 
 #include <array>
 #include <fstream>
@@ -30,7 +30,7 @@
 
 #include <geode/mesh/core/light_regular_grid.h>
 
-#include <geode/io/mesh/private/vti_grid_input.h>
+#include <geode/io/mesh/detail/vti_grid_input.h>
 
 namespace
 {

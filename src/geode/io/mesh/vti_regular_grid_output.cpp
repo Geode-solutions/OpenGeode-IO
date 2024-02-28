@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/vti_regular_grid_output.h>
+#include <geode/io/mesh/detail/vti_regular_grid_output.h>
 
 #include <string>
 
@@ -30,7 +30,7 @@
 #include <geode/mesh/core/regular_grid_solid.h>
 #include <geode/mesh/core/regular_grid_surface.h>
 
-#include <geode/io/mesh/private/vti_grid_output.h>
+#include <geode/io/mesh/detail/vti_grid_output.h>
 
 namespace geode
 {

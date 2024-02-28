@@ -27,10 +27,11 @@
 
 #include <geode/image/common.h>
 
+#include <geode/io/image/detail/vti_raster_image_output.h>
+
 #include <geode/io/image/private/bmp_input.h>
 #include <geode/io/image/private/jpg_input.h>
 #include <geode/io/image/private/png_input.h>
-#include <geode/io/image/private/vti_raster_image_output.h>
 
 namespace
 {

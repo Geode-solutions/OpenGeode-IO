@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/io/mesh/private/vtk_mesh_output.h>
+#include <geode/io/mesh/detail/vtk_mesh_output.h>
 
 #include <absl/strings/str_split.h>
 
@@ -31,6 +31,14 @@ namespace geode
 {
     namespace detail
     {
+        static constexpr auto VTK_TETRAHEDRON_TYPE = 10u;
+        static constexpr auto VTK_HEXAHEDRON_TYPE = 12u;
+        static constexpr auto VTK_PRISM_TYPE = 13u;
+        static constexpr auto VTK_PYRAMID_TYPE = 14u;
+        static constexpr std::array< geode::index_t, 9 >
+            VTK_NB_VERTICES_TO_CELL_TYPE{ 0, 0, 0, 0, VTK_TETRAHEDRON_TYPE,
+                VTK_PYRAMID_TYPE, VTK_PRISM_TYPE, 0, VTK_HEXAHEDRON_TYPE };
+
         template < template < index_t > class Mesh >
         class VTUOutputImpl : public VTKMeshOutputImpl< Mesh, 3 >
         {

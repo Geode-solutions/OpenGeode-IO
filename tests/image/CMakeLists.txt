@@ -22,7 +22,6 @@ add_geode_test(
     SOURCE "test-raster-image.cpp"
     DEPENDENCIES
         OpenGeode::basic
-        OpenGeode::image
         OpenGeode::mesh
         ${PROJECT_NAME}::image
     ESSENTIAL

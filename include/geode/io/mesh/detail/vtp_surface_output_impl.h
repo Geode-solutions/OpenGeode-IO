@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/io/mesh/private/vtk_mesh_output.h>
+#include <geode/io/mesh/detail/vtk_mesh_output.h>
 
 #include <geode/basic/filename.h>
 

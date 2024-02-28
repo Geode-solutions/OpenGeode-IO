@@ -30,18 +30,20 @@ add_geode_library(
         "vti_raster_image_output.cpp"
     PUBLIC_HEADERS
         "common.h"
+    ADVANCED_HEADERS
+        "detail/vti_output_impl.h"
+        "detail/vti_raster_image_output.h"
+        "detail/vtk_output.h"
     PRIVATE_HEADERS
         "private/bmp_input.h"
         "private/jpg_input.h"
         "private/png_input.h"
         "private/raster_image_input.h"
-        "private/vti_output_impl.h"
-        "private/vti_raster_image_output.h"
-        "private/vtk_output.h"
+    PUBLIC_DEPENDENCIES
+        OpenGeode::image
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
-        OpenGeode::image
         pugixml::pugixml
         GDAL::GDAL
 )
