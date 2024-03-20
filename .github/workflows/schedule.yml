@@ -12,7 +12,7 @@ jobs:
     with:
       name: OPENGEODE_IO
       directory: opengeode-io
-      repos: OpenGeode
+      repos: ${{ vars.REPOS }}
       branch: next
     secrets:
       TOKEN: ${{ secrets.TOKEN }}
@@ -24,7 +24,7 @@ jobs:
     with:
       name: OPENGEODE_IO
       directory: opengeode-io
-      repos: OpenGeode
+      repos: ${{ vars.REPOS }}
       branch: master
     secrets:
       TOKEN: ${{ secrets.TOKEN }}

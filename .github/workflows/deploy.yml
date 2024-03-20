@@ -9,5 +9,5 @@ jobs:
     with:
       name: OPENGEODE_IO
       directory: opengeode-io
-      repos: OpenGeode
+      repos: ${{ vars.REPOS }}
     secrets: inherit
