@@ -26,7 +26,8 @@ ExternalProject_Add(zlib
     BINARY_DIR ${ZLIB_PATH}/build
     STAMP_DIR ${ZLIB_PATH}/stamp
     GIT_REPOSITORY https://github.com/Geode-solutions/zlib-ng
-    GIT_TAG 07996372dcc133b3c06aac2acd7fd2ee2c3a59b8
+    GIT_TAG 20240622
+    GIT_SHALLOW ON
     GIT_PROGRESS ON
     CMAKE_GENERATOR ${CMAKE_GENERATOR}
     CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
