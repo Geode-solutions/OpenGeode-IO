@@ -57,7 +57,8 @@ namespace
             async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
             [&assimp_mesh, &builder]( geode::index_t v ) {
                 const auto& vertex = assimp_mesh.mVertices[v];
-                builder->set_point( v, { { vertex.x, vertex.y, vertex.z } } );
+                builder->set_point(
+                    v, geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
             } );
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
@@ -117,7 +118,7 @@ namespace geode
                         const auto& coord =
                             assimp_mesh.mTextureCoords[0][mesh_vertex];
                         texture.set_texture_coordinates(
-                            { p, v }, { { coord.x, coord.y } } );
+                            { p, v }, Point2D{ { coord.x, coord.y } } );
                     }
                 }
                 if( !material.second.empty() )

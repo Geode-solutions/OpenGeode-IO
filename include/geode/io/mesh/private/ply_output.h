@@ -41,7 +41,7 @@ namespace geode
         class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            PLYOutput( absl::string_view filename )
+            explicit PLYOutput( absl::string_view filename )
                 : PolygonalSurfaceOutput< 3 >( filename )
             {
             }

@@ -36,7 +36,7 @@ namespace geode
         class VTPPointSetOutput final : public PointSetOutput< dimension >
         {
         public:
-            VTPPointSetOutput( absl::string_view filename )
+            explicit VTPPointSetOutput( absl::string_view filename )
                 : PointSetOutput< dimension >( filename )
             {
             }

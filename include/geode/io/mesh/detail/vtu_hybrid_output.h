@@ -41,7 +41,7 @@ namespace geode
         class VTUHybridOutput final : public HybridSolidOutput< 3 >
         {
         public:
-            VTUHybridOutput( absl::string_view filename )
+            explicit VTUHybridOutput( absl::string_view filename )
                 : HybridSolidOutput< 3 >( filename )
             {
             }

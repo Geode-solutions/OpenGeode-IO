@@ -37,9 +37,7 @@ namespace geode
             : public TriangulatedSurfaceOutput< dimension >
         {
         public:
-            VTPTriangulatedOutput(
-
-                absl::string_view filename )
+            explicit VTPTriangulatedOutput( absl::string_view filename )
                 : TriangulatedSurfaceOutput< dimension >( filename )
             {
             }

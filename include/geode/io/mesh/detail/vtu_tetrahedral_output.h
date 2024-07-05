@@ -41,7 +41,7 @@ namespace geode
         class VTUTetrahedralOutput final : public TetrahedralSolidOutput< 3 >
         {
         public:
-            VTUTetrahedralOutput( absl::string_view filename )
+            explicit VTUTetrahedralOutput( absl::string_view filename )
                 : TetrahedralSolidOutput< 3 >( filename )
             {
             }

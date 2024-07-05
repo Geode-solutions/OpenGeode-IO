@@ -40,7 +40,8 @@ namespace geode
         class VTMBRepOutput final : public BRepOutput
         {
         public:
-            VTMBRepOutput( absl::string_view filename ) : BRepOutput( filename )
+            explicit VTMBRepOutput( absl::string_view filename )
+                : BRepOutput( filename )
             {
             }
 

@@ -38,7 +38,7 @@ namespace geode
         class OBJInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            OBJInput( absl::string_view filename )
+            explicit OBJInput( absl::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }
