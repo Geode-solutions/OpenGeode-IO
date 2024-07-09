@@ -38,12 +38,12 @@ namespace geode
         class VTUPolyhedralInput final : public PolyhedralSolidInput< 3 >
         {
         public:
-            VTUPolyhedralInput( absl::string_view filename )
+            VTUPolyhedralInput( std::string_view filename )
                 : PolyhedralSolidInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtu";
                 return ext;

@@ -51,7 +51,7 @@ namespace
     }
 
     template < typename SpecificRange >
-    geode::RasterImage2D read_file( absl::string_view filename )
+    geode::RasterImage2D read_file( std::string_view filename )
     {
         GDALDatasetUniquePtr gdal_data{ GDALDataset::Open(
             geode::to_string( filename ).c_str(), GDAL_OF_RASTER ) };
@@ -107,7 +107,7 @@ namespace geode
 {
     namespace detail
     {
-        ImageInputImpl::ImageInputImpl( absl::string_view filename )
+        ImageInputImpl::ImageInputImpl( std::string_view filename )
             : filename_( filename )
         {
         }

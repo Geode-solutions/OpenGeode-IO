@@ -41,12 +41,12 @@ namespace geode
         class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            PLYOutput( absl::string_view filename )
+            PLYOutput( std::string_view filename )
                 : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "ply";
                 return ext;

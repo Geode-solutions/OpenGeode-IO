@@ -36,12 +36,12 @@ namespace geode
         class VTPPointSetOutput final : public PointSetOutput< dimension >
         {
         public:
-            VTPPointSetOutput( absl::string_view filename )
+            VTPPointSetOutput( std::string_view filename )
                 : PointSetOutput< dimension >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtp";
                 return ext;

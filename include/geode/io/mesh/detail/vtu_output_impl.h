@@ -43,9 +43,9 @@ namespace geode
         class VTUOutputImpl : public VTKMeshOutputImpl< Mesh, 3 >
         {
         protected:
-            VTUOutputImpl( absl::string_view filename, const Mesh< 3 >& solid )
+            VTUOutputImpl( std::string_view filename, const Mesh< 3 >& solid )
                 : VTKMeshOutputImpl< Mesh, 3 >(
-                    filename, solid, "UnstructuredGrid" )
+                      filename, solid, "UnstructuredGrid" )
             {
             }
 
@@ -135,7 +135,7 @@ namespace geode
                     face_offsets.append_attribute( "format" )
                         .set_value( "ascii" );
                     face_offsets.append_attribute( "RangeMin" ).set_value( -1 );
-                    const std::vector< absl::string_view > tokens =
+                    const std::vector< std::string_view > tokens =
                         absl::StrSplit( cell_faces, " " );
                     face_offsets.append_attribute( "RangeMax" )
                         .set_value( tokens.size() );

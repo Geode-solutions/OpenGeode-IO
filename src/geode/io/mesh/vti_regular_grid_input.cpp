@@ -43,9 +43,9 @@ namespace
     {
     public:
         VTIRegularGridInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
+            std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTIGridInputImpl<
-                geode::RegularGrid< dimension > >{ filename }
+                  geode::RegularGrid< dimension > >{ filename }
         {
             this->initialize_mesh(
                 geode::RegularGrid< dimension >::create( impl ) );

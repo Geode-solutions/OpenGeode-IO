@@ -37,7 +37,7 @@ namespace
     {
     public:
         VTUPolyhedralOutputImpl(
-            absl::string_view filename, const geode::PolyhedralSolid3D& solid )
+            std::string_view filename, const geode::PolyhedralSolid3D& solid )
             : geode::detail::VTUOutputImpl< geode::PolyhedralSolid >{ filename,
                   solid }
         {

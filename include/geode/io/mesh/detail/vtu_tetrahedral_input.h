@@ -38,12 +38,12 @@ namespace geode
         class VTUTetrahedralInput final : public TetrahedralSolidInput< 3 >
         {
         public:
-            VTUTetrahedralInput( absl::string_view filename )
+            VTUTetrahedralInput( std::string_view filename )
                 : TetrahedralSolidInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtu";
                 return ext;

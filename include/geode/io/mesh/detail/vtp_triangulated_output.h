@@ -39,12 +39,12 @@ namespace geode
         public:
             VTPTriangulatedOutput(
 
-                absl::string_view filename )
+                std::string_view filename )
                 : TriangulatedSurfaceOutput< dimension >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtp";
                 return ext;

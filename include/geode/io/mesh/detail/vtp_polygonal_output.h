@@ -37,12 +37,12 @@ namespace geode
             : public PolygonalSurfaceOutput< dimension >
         {
         public:
-            VTPPolygonalOutput( absl::string_view filename )
+            VTPPolygonalOutput( std::string_view filename )
                 : PolygonalSurfaceOutput< dimension >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtp";
                 return ext;

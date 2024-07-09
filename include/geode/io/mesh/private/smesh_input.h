@@ -39,7 +39,7 @@ namespace geode
         class SMESHInputImpl
         {
         public:
-            SMESHInputImpl( absl::string_view filename, Mesh& mesh )
+            SMESHInputImpl( std::string_view filename, Mesh& mesh )
                 : mesh_( mesh ),
                   builder_{ Builder::create( mesh ) },
                   file_{ to_string( filename ) }
@@ -118,7 +118,7 @@ namespace geode
             virtual void create_element(
                 const std::array< index_t, element >& vertices ) = 0;
 
-            std::vector< absl::string_view > tokens()
+            std::vector< std::string_view > tokens()
             {
                 std::getline( file_, line_ );
                 return absl::StrSplit(

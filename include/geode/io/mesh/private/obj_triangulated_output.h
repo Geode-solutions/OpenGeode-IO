@@ -42,12 +42,12 @@ namespace geode
             : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            OBJTriangulatedOutput( absl::string_view filename )
+            OBJTriangulatedOutput( std::string_view filename )
                 : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "obj";
                 return ext;

@@ -38,14 +38,14 @@ namespace geode
         class ImageInputImpl final
         {
         public:
-            ImageInputImpl( absl::string_view filename );
+            ImageInputImpl( std::string_view filename );
 
             RasterImage2D read_file();
 
             RasterImage2D read_reversed_y_axis_file();
 
         private:
-            absl::string_view filename_;
+            std::string_view filename_;
         };
     } // namespace detail
 } // namespace geode

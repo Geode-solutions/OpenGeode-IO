@@ -36,12 +36,12 @@ namespace geode
         class VTIRasterImageOutput final : public RasterImageOutput< dimension >
         {
         public:
-            VTIRasterImageOutput( absl::string_view filename )
+            VTIRasterImageOutput( std::string_view filename )
                 : RasterImageOutput< dimension >{ filename }
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vti";
                 return ext;

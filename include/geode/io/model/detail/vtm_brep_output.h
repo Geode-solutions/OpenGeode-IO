@@ -40,11 +40,11 @@ namespace geode
         class VTMBRepOutput final : public BRepOutput
         {
         public:
-            VTMBRepOutput( absl::string_view filename ) : BRepOutput( filename )
+            VTMBRepOutput( std::string_view filename ) : BRepOutput( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtm";
                 return ext;

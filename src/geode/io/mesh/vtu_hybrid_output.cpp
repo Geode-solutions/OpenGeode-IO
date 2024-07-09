@@ -35,7 +35,7 @@ namespace
     {
     public:
         VTUHybridOutputImpl(
-            absl::string_view filename, const geode::HybridSolid3D& solid )
+            std::string_view filename, const geode::HybridSolid3D& solid )
             : geode::detail::VTUOutputImpl< geode::HybridSolid >{ filename,
                   solid }
         {

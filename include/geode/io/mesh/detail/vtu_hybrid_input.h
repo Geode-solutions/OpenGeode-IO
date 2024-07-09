@@ -38,12 +38,12 @@ namespace geode
         class VTUHybridInput final : public HybridSolidInput< 3 >
         {
         public:
-            VTUHybridInput( absl::string_view filename )
+            VTUHybridInput( std::string_view filename )
                 : HybridSolidInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtu";
                 return ext;

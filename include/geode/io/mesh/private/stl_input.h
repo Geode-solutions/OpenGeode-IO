@@ -38,12 +38,12 @@ namespace geode
         class STLInput final : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            STLInput( absl::string_view filename )
+            STLInput( std::string_view filename )
                 : TriangulatedSurfaceInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "stl";
                 return ext;

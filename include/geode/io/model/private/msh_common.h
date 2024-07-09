@@ -125,7 +125,7 @@ namespace geode
             GMSHElement( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
                 geode::index_t nb_vertices,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : physical_entity_id_( std::move( physical_entity_id ) ),
                   elementary_entity_id_( std::move( elementary_entity_id ) ),
                   nb_vertices_( nb_vertices ),
@@ -185,7 +185,7 @@ namespace geode
             geode::index_t physical_entity_id_;
             geode::index_t elementary_entity_id_;
             geode::index_t nb_vertices_;
-            absl::Span< const absl::string_view > vertex_ids_str_;
+            absl::Span< const std::string_view > vertex_ids_str_;
             std::vector< geode::index_t > vertex_ids_;
         };
 
@@ -193,14 +193,14 @@ namespace geode
             GMSHElement,
             geode::index_t,
             geode::index_t,
-            absl::Span< const absl::string_view > >;
+            absl::Span< const std::string_view > >;
 
         class GMSHPoint : public GMSHElement
         {
         public:
             GMSHPoint( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHElement{ physical_entity_id, elementary_entity_id, 1,
                       vertex_ids }
             {
@@ -239,7 +239,7 @@ namespace geode
         public:
             GMSHEdge( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHElement{ physical_entity_id, elementary_entity_id, 2,
                       vertex_ids }
             {
@@ -287,7 +287,7 @@ namespace geode
             GMSHSurfacePolygon( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
                 geode::index_t nb_vertices,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHElement{ physical_entity_id, elementary_entity_id,
                       nb_vertices, vertex_ids }
             {
@@ -337,7 +337,7 @@ namespace geode
         public:
             GMSHTriangle( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id,
                       3, vertex_ids }
             {
@@ -349,7 +349,7 @@ namespace geode
         public:
             GMSHQuadrangle( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSurfacePolygon{ physical_entity_id, elementary_entity_id,
                       4, vertex_ids }
             {
@@ -362,7 +362,7 @@ namespace geode
             GMSHSolidPolyhedron( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
                 geode::index_t nb_vertices,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHElement{ physical_entity_id, elementary_entity_id,
                       nb_vertices, vertex_ids }
             {
@@ -418,7 +418,7 @@ namespace geode
         public:
             GMSHTetrahedron( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id,
                       4, vertex_ids }
             {
@@ -442,7 +442,7 @@ namespace geode
         public:
             GMSHHexahedron( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id,
                       8, vertex_ids }
             {
@@ -467,7 +467,7 @@ namespace geode
         public:
             GMSHPrism( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id,
                       6, vertex_ids }
             {
@@ -491,7 +491,7 @@ namespace geode
         public:
             GMSHPyramid( geode::index_t physical_entity_id,
                 geode::index_t elementary_entity_id,
-                absl::Span< const absl::string_view > vertex_ids )
+                absl::Span< const std::string_view > vertex_ids )
                 : GMSHSolidPolyhedron{ physical_entity_id, elementary_entity_id,
                       5, vertex_ids }
             {

@@ -37,9 +37,9 @@ namespace
 
     public:
         VTUTetrahedralInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
+            std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::TetrahedralSolid3D >(
-                filename, impl )
+                  filename, impl )
         {
             enable_tetrahedron();
         }

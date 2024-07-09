@@ -53,7 +53,7 @@ namespace geode
         class VTKMeshOutputImpl : public VTKOutputImpl< Mesh< dimension > >
         {
         protected:
-            VTKMeshOutputImpl( absl::string_view filename,
+            VTKMeshOutputImpl( std::string_view filename,
                 const Mesh< dimension >& mesh,
                 const char* type )
                 : VTKOutputImpl< Mesh< dimension > >{ filename, mesh, type }
@@ -120,7 +120,7 @@ namespace geode
 
             virtual void append_number_elements( pugi::xml_node& piece ) = 0;
 
-            virtual void write_vtk_textures( pugi::xml_node& /*unused*/ ){};
+            virtual void write_vtk_textures( pugi::xml_node& /*unused*/ ) {};
 
             virtual pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) = 0;
 

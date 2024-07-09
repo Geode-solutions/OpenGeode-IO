@@ -44,11 +44,11 @@ namespace
               3 >
     {
     public:
-        SMESHTriangulatedInputImpl( absl::string_view filename,
+        SMESHTriangulatedInputImpl( std::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
             : geode::detail::SMESHInputImpl< geode::TriangulatedSurface3D,
-                geode::TriangulatedSurfaceBuilder3D,
-                3 >( filename, triangulated_surface )
+                  geode::TriangulatedSurfaceBuilder3D,
+                  3 >( filename, triangulated_surface )
         {
         }
 

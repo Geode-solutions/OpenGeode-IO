@@ -41,12 +41,12 @@ namespace geode
         class VTUHybridOutput final : public HybridSolidOutput< 3 >
         {
         public:
-            VTUHybridOutput( absl::string_view filename )
+            VTUHybridOutput( std::string_view filename )
                 : HybridSolidOutput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtu";
                 return ext;

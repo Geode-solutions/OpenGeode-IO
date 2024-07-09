@@ -40,12 +40,12 @@ namespace geode
         class VTMSectionOutput final : public SectionOutput
         {
         public:
-            VTMSectionOutput( absl::string_view filename )
+            VTMSectionOutput( std::string_view filename )
                 : SectionOutput( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtm";
                 return ext;

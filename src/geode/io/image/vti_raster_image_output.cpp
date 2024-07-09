@@ -38,7 +38,7 @@ namespace
     {
     public:
         VTIOutputImpl( const geode::RasterImage< dimension >& raster,
-            absl::string_view filename )
+            std::string_view filename )
             : geode::detail::VTIOutputImpl< geode::RasterImage< dimension > >{
                   raster, filename
               }
