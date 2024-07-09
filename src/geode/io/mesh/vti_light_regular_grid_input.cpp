@@ -42,7 +42,7 @@ namespace
     public:
         VTILightRegularGridInputImpl( std::string_view filename )
             : geode::detail::VTIGridInputImpl<
-                  geode::LightRegularGrid< dimension > >{ filename }
+                geode::LightRegularGrid< dimension > >{ filename }
         {
         }
 

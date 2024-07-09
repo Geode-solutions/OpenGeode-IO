@@ -45,7 +45,7 @@ namespace geode
         protected:
             VTUOutputImpl( std::string_view filename, const Mesh< 3 >& solid )
                 : VTKMeshOutputImpl< Mesh, 3 >(
-                      filename, solid, "UnstructuredGrid" )
+                    filename, solid, "UnstructuredGrid" )
             {
             }
 

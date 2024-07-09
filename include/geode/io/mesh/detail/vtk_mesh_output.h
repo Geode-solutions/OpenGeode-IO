@@ -120,7 +120,7 @@ namespace geode
 
             virtual void append_number_elements( pugi::xml_node& piece ) = 0;
 
-            virtual void write_vtk_textures( pugi::xml_node& /*unused*/ ) {};
+            virtual void write_vtk_textures( pugi::xml_node& /*unused*/ ){};
 
             virtual pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) = 0;
 
