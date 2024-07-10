@@ -42,7 +42,7 @@ namespace geode
             : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            OBJTriangulatedOutput( absl::string_view filename )
+            explicit OBJTriangulatedOutput( absl::string_view filename )
                 : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }

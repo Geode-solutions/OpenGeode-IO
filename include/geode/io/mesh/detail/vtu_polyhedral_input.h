@@ -38,7 +38,7 @@ namespace geode
         class VTUPolyhedralInput final : public PolyhedralSolidInput< 3 >
         {
         public:
-            VTUPolyhedralInput( absl::string_view filename )
+            explicit VTUPolyhedralInput( absl::string_view filename )
                 : PolyhedralSolidInput< 3 >( filename )
             {
             }

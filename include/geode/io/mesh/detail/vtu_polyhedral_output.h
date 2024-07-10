@@ -41,7 +41,7 @@ namespace geode
         class VTUPolyhedralOutput final : public PolyhedralSolidOutput< 3 >
         {
         public:
-            VTUPolyhedralOutput( absl::string_view filename )
+            explicit VTUPolyhedralOutput( absl::string_view filename )
                 : PolyhedralSolidOutput< 3 >( filename )
             {
             }

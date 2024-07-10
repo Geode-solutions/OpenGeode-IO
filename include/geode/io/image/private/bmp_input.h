@@ -38,7 +38,7 @@ namespace geode
         class BMPInput final : public RasterImageInput< 2 >
         {
         public:
-            BMPInput( absl::string_view filename )
+            explicit BMPInput( absl::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }

@@ -40,7 +40,7 @@ namespace geode
         class VTMSectionOutput final : public SectionOutput
         {
         public:
-            VTMSectionOutput( absl::string_view filename )
+            explicit VTMSectionOutput( absl::string_view filename )
                 : SectionOutput( filename )
             {
             }
