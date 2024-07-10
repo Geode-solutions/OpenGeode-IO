@@ -38,7 +38,7 @@ namespace geode
         class VTUHybridInput final : public HybridSolidInput< 3 >
         {
         public:
-            VTUHybridInput( absl::string_view filename )
+            explicit VTUHybridInput( absl::string_view filename )
                 : HybridSolidInput< 3 >( filename )
             {
             }

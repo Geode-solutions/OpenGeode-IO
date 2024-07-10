@@ -36,7 +36,7 @@ namespace geode
         class VTIRasterImageOutput final : public RasterImageOutput< dimension >
         {
         public:
-            VTIRasterImageOutput( absl::string_view filename )
+            explicit VTIRasterImageOutput( absl::string_view filename )
                 : RasterImageOutput< dimension >{ filename }
             {
             }

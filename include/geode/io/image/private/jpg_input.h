@@ -38,7 +38,7 @@ namespace geode
         class JPGInput final : public RasterImageInput< 2 >
         {
         public:
-            JPGInput( absl::string_view filename )
+            explicit JPGInput( absl::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }
