@@ -34,7 +34,7 @@ add_geode_library(
         "detail/vti_output_impl.h"
         "detail/vti_raster_image_output.h"
         "detail/vtk_output.h"
-    PRIVATE_HEADERS
+    INTERNAL_HEADERS
         "internal/bmp_input.h"
         "internal/jpg_input.h"
         "internal/png_input.h"

@@ -76,7 +76,7 @@ add_geode_library(
         "detail/vtu_polyhedral_output.h"
         "detail/vtu_tetrahedral_input.h"
         "detail/vtu_tetrahedral_output.h"
-    PRIVATE_HEADERS
+    INTERNAL_HEADERS
         "internal/assimp_input.h"
         "internal/assimp_output.h"
         "internal/dxf_input.h"
