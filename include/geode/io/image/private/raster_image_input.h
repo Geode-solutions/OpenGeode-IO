@@ -38,7 +38,7 @@ namespace geode
         class ImageInputImpl final
         {
         public:
-            ImageInputImpl( absl::string_view filename );
+            explicit ImageInputImpl( absl::string_view filename );
 
             RasterImage2D read_file();
 

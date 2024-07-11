@@ -36,7 +36,7 @@ namespace geode
         class VTPEdgedCurveOutput final : public EdgedCurveOutput< dimension >
         {
         public:
-            VTPEdgedCurveOutput( absl::string_view filename )
+            explicit VTPEdgedCurveOutput( absl::string_view filename )
                 : EdgedCurveOutput< dimension >( filename )
             {
             }
