@@ -21,23 +21,23 @@
  *
  */
 
-#include <geode/io/mesh/private/stl_input.h>
+#include <geode/io/mesh/internal/stl_input.h>
 
 #include <geode/mesh/builder/triangulated_surface_builder.h>
 #include <geode/mesh/core/triangulated_surface.h>
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.h>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::unique_ptr< TriangulatedSurface3D > STLInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::detail::AssimpMeshInput< geode::TriangulatedSurface3D >
+            geode::internal::AssimpMeshInput< geode::TriangulatedSurface3D >
                 reader{ filename() };
             return reader.read_file();
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

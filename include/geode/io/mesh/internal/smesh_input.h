@@ -33,7 +33,7 @@
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         template < typename Mesh, typename Builder, index_t element >
         class SMESHInputImpl
@@ -132,5 +132,5 @@ namespace geode
             std::string line_;
             absl::flat_hash_map< index_t, index_t > vertices_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

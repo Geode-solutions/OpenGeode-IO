@@ -23,33 +23,44 @@
 
 #pragma once
 
-#include <geode/image/io/raster_image_input.h>
+#include <fstream>
+
+#include <assimp/scene.h>
+
+#include <geode/io/mesh/common.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
-    ALIAS_2D( RasterImage );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    namespace internal
     {
-        class PNGInput final : public RasterImageInput< 2 >
+        template < typename Mesh >
+        class AssimpMeshInput
         {
         public:
-            explicit PNGInput( std::string_view filename )
-                : RasterImageInput< 2 >( filename )
+            explicit AssimpMeshInput( std::string_view filename )
+                : file_( filename )
             {
+                OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
+                    "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
-            static std::string_view extension()
-            {
-                static constexpr auto ext = "png";
-                return ext;
-            }
+            virtual ~AssimpMeshInput() = default;
 
-            RasterImage2D read() final;
+            std::unique_ptr< Mesh > read_file();
+
+        private:
+            void read_materials( const aiScene* assimp_scene );
+
+            void read_meshes( const aiScene* assimp_scene );
+
+            void read_textures( const aiScene* assimp_scene );
+
+            std::unique_ptr< Mesh > merge_meshes();
+
+        private:
+            std::vector< std::unique_ptr< Mesh > > surfaces_;
+            std::string_view file_;
+            std::vector< std::pair< std::string, std::string > > materials_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

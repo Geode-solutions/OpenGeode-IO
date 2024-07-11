@@ -23,37 +23,33 @@
 
 #pragma once
 
-#include <geode/mesh/io/polygonal_surface_input.h>
+#include <geode/mesh/io/edged_curve_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
-    ALIAS_3D( PolygonalSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( EdgedCurve );
+    ALIAS_3D( EdgedCurve );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class OBJInput final : public PolygonalSurfaceInput< 3 >
+        class SMESHCurveInput final : public EdgedCurveInput< 3 >
         {
         public:
-            explicit OBJInput( std::string_view filename )
-                : PolygonalSurfaceInput< 3 >( filename )
+            explicit SMESHCurveInput( std::string_view filename )
+                : EdgedCurveInput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "obj";
+                static constexpr auto ext = "smesh";
                 return ext;
             }
 
-            std::unique_ptr< PolygonalSurface3D > read(
-                const MeshImpl& impl ) final;
-
-            PolygonalSurfaceInput< 3 >::MissingFiles
-                check_missing_files() const final;
+            std::unique_ptr< EdgedCurve3D > read( const MeshImpl& impl ) final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.h>
 
 #include <assimp/Importer.hpp>
 
@@ -78,7 +78,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         template < typename Mesh >
         std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
@@ -232,5 +232,5 @@ namespace geode
 
         template class AssimpMeshInput< PolygonalSurface3D >;
         template class AssimpMeshInput< TriangulatedSurface3D >;
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

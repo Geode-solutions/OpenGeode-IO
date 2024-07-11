@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/msh_output.h>
+#include <geode/io/model/internal/msh_output.h>
 
 #include <fstream>
 #include <string>
@@ -43,7 +43,7 @@
 #include <geode/model/mixin/core/surface.h>
 #include <geode/model/representation/core/brep.h>
 
-#include <geode/io/model/private/msh_common.h>
+#include <geode/io/model/internal/msh_common.h>
 
 namespace
 {
@@ -116,7 +116,7 @@ namespace
             }
             file_ << EOL;
             uuid2gmsh_[component.id()] =
-                geode::detail::GmshElementID{ component.component_type(),
+                geode::internal::GmshElementID{ component.component_type(),
                     gmsh_id };
         }
 
@@ -129,7 +129,7 @@ namespace
                 file_ << count << SPACE << point.string() << SPACE
                       << DEFAULT_PHYSICAL_TAG << EOL;
                 uuid2gmsh_[corner.id()] =
-                    geode::detail::GmshElementID{ corner.component_type(),
+                    geode::internal::GmshElementID{ corner.component_type(),
                         count++ };
             }
         }
@@ -165,7 +165,7 @@ namespace
                 }
                 file_ << EOL;
                 uuid2gmsh_[surface.id()] =
-                    geode::detail::GmshElementID{ surface.component_type(),
+                    geode::internal::GmshElementID{ surface.component_type(),
                         count };
                 count++;
             }
@@ -193,7 +193,7 @@ namespace
                 }
                 file_ << EOL;
                 uuid2gmsh_[block.id()] =
-                    geode::detail::GmshElementID{ block.component_type(),
+                    geode::internal::GmshElementID{ block.component_type(),
                         count };
                 count++;
             }
@@ -221,7 +221,7 @@ namespace
                   << SPACE << nodes_to_export.size() << EOL;
             for( const auto& vertex_pair : nodes_to_export )
             {
-                file_ << geode::detail::GMSH_OFFSET_START + vertex_pair.second
+                file_ << geode::internal::GMSH_OFFSET_START + vertex_pair.second
                       << EOL;
                 node_exported[vertex_pair.second] = true;
             }
@@ -238,7 +238,7 @@ namespace
             file_ << brep_.nb_corners() + brep_.nb_lines() + brep_.nb_surfaces()
                          + brep_.nb_blocks()
                   << SPACE << brep_.nb_unique_vertices() << SPACE
-                  << geode::detail::GMSH_OFFSET_START << SPACE
+                  << geode::internal::GMSH_OFFSET_START << SPACE
                   << brep_.nb_unique_vertices() << EOL;
             absl::FixedArray< bool > node_exported(
                 brep_.nb_unique_vertices(), false );
@@ -299,7 +299,7 @@ namespace
                     const auto uid =
                         brep_.unique_vertex( { corner.component_id(), v } );
                     file_ << cur++ << SPACE
-                          << geode::detail::GMSH_OFFSET_START + uid << EOL;
+                          << geode::internal::GMSH_OFFSET_START + uid << EOL;
                 }
             }
             return cur;
@@ -324,7 +324,7 @@ namespace
                         const auto uid = brep_.unique_vertex(
                             { line.component_id(), edge_vertex } );
                         file_ << SPACE
-                              << geode::detail::GMSH_OFFSET_START + uid;
+                              << geode::internal::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -353,7 +353,7 @@ namespace
                         const auto uid = brep_.unique_vertex(
                             { surface.component_id(), facet_vertex } );
                         file_ << SPACE
-                              << geode::detail::GMSH_OFFSET_START + uid;
+                              << geode::internal::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -382,7 +382,7 @@ namespace
                         const auto uid = brep_.unique_vertex(
                             { block.component_id(), facet_vertex } );
                         file_ << SPACE
-                              << geode::detail::GMSH_OFFSET_START + uid;
+                              << geode::internal::GMSH_OFFSET_START + uid;
                     }
                     file_ << EOL;
                 }
@@ -399,10 +399,10 @@ namespace
                   << SPACE;
             const auto nb_total_elements = count_elements();
             file_ << nb_total_elements << SPACE
-                  << geode::detail::GMSH_OFFSET_START << SPACE
+                  << geode::internal::GMSH_OFFSET_START << SPACE
                   << nb_total_elements << EOL;
 
-            geode::index_t element_count{ geode::detail::GMSH_OFFSET_START };
+            geode::index_t element_count{ geode::internal::GMSH_OFFSET_START };
             element_count = write_corner_elements( element_count );
             element_count = write_line_elements( element_count );
             element_count = write_surface_elements( element_count );
@@ -415,7 +415,7 @@ namespace
         const geode::BRep& brep_;
         bool binary_{ true };
         double version_{ 4 };
-        absl::flat_hash_map< geode::uuid, geode::detail::GmshElementID >
+        absl::flat_hash_map< geode::uuid, geode::internal::GmshElementID >
             uuid2gmsh_;
         absl::flat_hash_map< geode::ComponentType, geode::index_t >
             component_type2dimension = {
@@ -435,7 +435,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::vector< std::string > MSHOutput::write( const BRep& brep ) const
         {
@@ -464,5 +464,5 @@ namespace geode
             }
             return true;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,27 +23,33 @@
 
 #pragma once
 
-#include <geode/model/representation/io/brep_input.h>
+#include <geode/image/io/raster_image_input.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        class MSHInput final : public BRepInput
+        class JPGInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit MSHInput( std::string_view filename )
-                : BRepInput( filename )
+            explicit JPGInput( std::string_view filename )
+                : RasterImageInput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "msh";
+                static constexpr auto ext = "jpg";
                 return ext;
             }
 
-            BRep read() final;
+            RasterImage2D read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

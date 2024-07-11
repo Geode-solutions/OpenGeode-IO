@@ -31,30 +31,29 @@
 namespace geode
 {
     FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
-    ALIAS_3D( TriangulatedSurface );
+    ALIAS_2D( TriangulatedSurface );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class OBJTriangulatedOutput final
-            : public TriangulatedSurfaceOutput< 3 >
+        class TriangleOutput final : public TriangulatedSurfaceOutput< 2 >
         {
         public:
-            explicit OBJTriangulatedOutput( std::string_view filename )
-                : TriangulatedSurfaceOutput< 3 >( filename )
+            explicit TriangleOutput( std::string_view filename )
+                : TriangulatedSurfaceOutput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "obj";
+                static constexpr auto ext = "triangle";
                 return ext;
             }
 
             std::vector< std::string > write(
-                const TriangulatedSurface3D &surface ) const final;
+                const TriangulatedSurface2D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

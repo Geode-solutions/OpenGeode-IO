@@ -34,7 +34,7 @@
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         template < typename SurfaceMesh >
         class AssimpMeshOutput
@@ -130,5 +130,5 @@ namespace geode
             std::string_view export_id_;
             aiScene assimp_scene_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

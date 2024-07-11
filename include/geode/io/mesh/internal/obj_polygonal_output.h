@@ -26,29 +26,34 @@
 #include <string>
 #include <vector>
 
-#include <geode/model/representation/io/brep_output.h>
+#include <geode/mesh/io/polygonal_surface_output.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        class MSHOutput final : public BRepOutput
+        class OBJPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            explicit MSHOutput( std::string_view filename )
-                : BRepOutput( filename )
+            explicit OBJPolygonalOutput( std::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "msh";
+                static constexpr auto ext = "obj";
                 return ext;
             }
 
-            std::vector< std::string > write( const BRep& brep ) const final;
-
-            bool is_saveable( const BRep& brep ) const final;
+            std::vector< std::string > write(
+                const PolygonalSurface3D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

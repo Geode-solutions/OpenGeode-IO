@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/image/private/raster_image_input.h>
+#include <geode/io/image/internal/raster_image_input.h>
 
 #include <gdal_priv.h>
 
@@ -105,7 +105,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         ImageInputImpl::ImageInputImpl( std::string_view filename )
             : filename_( filename )
@@ -121,5 +121,5 @@ namespace geode
         {
             return ::read_file< ReverseRange >( filename_ );
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode
