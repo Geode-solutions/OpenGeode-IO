@@ -47,8 +47,8 @@ namespace
         SMESHTriangulatedInputImpl( std::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
             : geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
-                  geode::TriangulatedSurfaceBuilder3D,
-                  3 >( filename, triangulated_surface )
+                geode::TriangulatedSurfaceBuilder3D,
+                3 >( filename, triangulated_surface )
         {
         }
 
