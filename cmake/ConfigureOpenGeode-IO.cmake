@@ -64,6 +64,6 @@ add_custom_target(post_install
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${OpenGeode-IO_PATH_INSTALL}/cmake ${PROJECT_BINARY_DIR}/cmake
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${OpenGeode-IO_PATH_INSTALL}/include ${PROJECT_BINARY_DIR}/include
     DEPENDS
-        opengeode)
+        opengeode-io)
 
 install(DIRECTORY ${OpenGeode-IO_PATH_INSTALL}/ DESTINATION .)
