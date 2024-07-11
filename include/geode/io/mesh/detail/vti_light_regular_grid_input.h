@@ -34,12 +34,12 @@ namespace geode
             : public LightRegularGridInput< dimension >
         {
         public:
-            explicit VTILightRegularGridInput( absl::string_view filename )
+            explicit VTILightRegularGridInput( std::string_view filename )
                 : LightRegularGridInput< dimension >{ filename }
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "vti";
                 return EXT;

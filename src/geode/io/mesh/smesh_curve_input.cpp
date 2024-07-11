@@ -45,7 +45,7 @@ namespace
     {
     public:
         SMESHCurveInputImpl(
-            absl::string_view filename, geode::EdgedCurve3D& curve )
+            std::string_view filename, geode::EdgedCurve3D& curve )
             : geode::detail::SMESHInputImpl< geode::EdgedCurve3D,
                 geode::EdgedCurveBuilder3D,
                 2 >( filename, curve )

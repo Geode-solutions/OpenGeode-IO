@@ -38,12 +38,12 @@ namespace geode
         class OBJInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            explicit OBJInput( absl::string_view filename )
+            explicit OBJInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "obj";
                 return ext;

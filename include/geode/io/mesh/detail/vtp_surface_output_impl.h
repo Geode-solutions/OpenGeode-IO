@@ -42,7 +42,7 @@ namespace geode
         class VTPSurfaceOutputImpl : public VTKMeshOutputImpl< Mesh, dimension >
         {
         public:
-            VTPSurfaceOutputImpl( absl::string_view filename,
+            VTPSurfaceOutputImpl( std::string_view filename,
                 const Mesh< dimension >& polygonal_surface )
                 : VTKMeshOutputImpl< Mesh, dimension >(
                     filename, polygonal_surface, "PolyData" )
@@ -218,7 +218,7 @@ namespace geode
             }
 
         private:
-            std::vector< std::pair< absl::string_view,
+            std::vector< std::pair< std::string_view,
                 std::reference_wrapper< const Texture2D > > >
                 textures_info_;
             std::vector< absl::flat_hash_map< index_t, index_t > >

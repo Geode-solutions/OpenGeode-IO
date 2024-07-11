@@ -38,12 +38,12 @@ namespace geode
         class SMESHCurveInput final : public EdgedCurveInput< 3 >
         {
         public:
-            explicit SMESHCurveInput( absl::string_view filename )
+            explicit SMESHCurveInput( std::string_view filename )
                 : EdgedCurveInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "smesh";
                 return ext;

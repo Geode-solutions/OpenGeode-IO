@@ -34,7 +34,7 @@ namespace
         : public geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >
     {
     public:
-        VTPInputImpl( absl::string_view filename, const geode::MeshImpl& impl )
+        VTPInputImpl( std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTKMeshInputImpl< geode::PolygonalSurface3D >(
                 filename, impl, "PolyData" )
         {
