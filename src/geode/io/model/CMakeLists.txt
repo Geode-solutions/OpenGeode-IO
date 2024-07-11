@@ -46,6 +46,5 @@ add_geode_library(
         OpenGeode::model
         pugixml::pugixml
         ZLIB::ZLIB
-        ghcFilesystem::ghc_filesystem
         ${PROJECT_NAME}::mesh
 )
