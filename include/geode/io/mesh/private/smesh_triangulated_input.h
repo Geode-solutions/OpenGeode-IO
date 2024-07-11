@@ -39,7 +39,7 @@ namespace geode
             : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            SMESHTriangulatedInput( std::string_view filename )
+            explicit SMESHTriangulatedInput( std::string_view filename )
                 : TriangulatedSurfaceInput< 3 >( filename )
             {
             }

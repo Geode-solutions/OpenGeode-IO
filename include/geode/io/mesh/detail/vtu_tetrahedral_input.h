@@ -38,7 +38,7 @@ namespace geode
         class VTUTetrahedralInput final : public TetrahedralSolidInput< 3 >
         {
         public:
-            VTUTetrahedralInput( std::string_view filename )
+            explicit VTUTetrahedralInput( std::string_view filename )
                 : TetrahedralSolidInput< 3 >( filename )
             {
             }

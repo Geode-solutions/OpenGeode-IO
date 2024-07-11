@@ -38,7 +38,7 @@ namespace geode
         class STLInput final : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            STLInput( std::string_view filename )
+            explicit STLInput( std::string_view filename )
                 : TriangulatedSurfaceInput< 3 >( filename )
             {
             }

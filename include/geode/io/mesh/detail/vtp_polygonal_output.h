@@ -37,7 +37,7 @@ namespace geode
             : public PolygonalSurfaceOutput< dimension >
         {
         public:
-            VTPPolygonalOutput( std::string_view filename )
+            explicit VTPPolygonalOutput( std::string_view filename )
                 : PolygonalSurfaceOutput< dimension >( filename )
             {
             }

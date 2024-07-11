@@ -41,7 +41,7 @@ namespace geode
         class OBJPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            OBJPolygonalOutput( std::string_view filename )
+            explicit OBJPolygonalOutput( std::string_view filename )
                 : PolygonalSurfaceOutput< 3 >( filename )
             {
             }

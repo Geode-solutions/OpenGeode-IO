@@ -34,7 +34,6 @@ namespace geode
 {
     namespace detail
     {
-
         template < index_t dimension >
         inline void write_point(
             std::string& string, const Point< dimension >& point )

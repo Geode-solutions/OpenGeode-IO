@@ -38,7 +38,7 @@ namespace geode
         class DXFInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            DXFInput( std::string_view filename )
+            explicit DXFInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }

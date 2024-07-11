@@ -42,7 +42,7 @@ namespace geode
             : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            OBJTriangulatedOutput( std::string_view filename )
+            explicit OBJTriangulatedOutput( std::string_view filename )
                 : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }

@@ -38,7 +38,7 @@ namespace geode
         class PLYInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            PLYInput( std::string_view filename )
+            explicit PLYInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }

@@ -32,7 +32,10 @@ namespace geode
         class SVGInput final : public SectionInput
         {
         public:
-            SVGInput( std::string_view filename ) : SectionInput( filename ) {}
+            explicit SVGInput( std::string_view filename )
+                : SectionInput( filename )
+            {
+            }
 
             static std::string_view extension()
             {

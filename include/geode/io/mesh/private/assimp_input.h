@@ -37,7 +37,8 @@ namespace geode
         class AssimpMeshInput
         {
         public:
-            AssimpMeshInput( std::string_view filename ) : file_( filename )
+            explicit AssimpMeshInput( std::string_view filename )
+                : file_( filename )
             {
                 OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
                     "[AssimpMeshInput] Error while opening file: ", file_ );

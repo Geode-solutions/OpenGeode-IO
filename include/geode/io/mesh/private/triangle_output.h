@@ -41,7 +41,7 @@ namespace geode
         class TriangleOutput final : public TriangulatedSurfaceOutput< 2 >
         {
         public:
-            TriangleOutput( std::string_view filename )
+            explicit TriangleOutput( std::string_view filename )
                 : TriangulatedSurfaceOutput< 2 >( filename )
             {
             }

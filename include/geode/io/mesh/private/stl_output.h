@@ -41,7 +41,7 @@ namespace geode
         class STLOutput final : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            STLOutput( std::string_view filename )
+            explicit STLOutput( std::string_view filename )
                 : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }

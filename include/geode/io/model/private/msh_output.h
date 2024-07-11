@@ -35,7 +35,10 @@ namespace geode
         class MSHOutput final : public BRepOutput
         {
         public:
-            MSHOutput( std::string_view filename ) : BRepOutput( filename ) {}
+            explicit MSHOutput( std::string_view filename )
+                : BRepOutput( filename )
+            {
+            }
 
             static std::string_view extension()
             {

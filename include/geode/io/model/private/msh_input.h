@@ -32,7 +32,10 @@ namespace geode
         class MSHInput final : public BRepInput
         {
         public:
-            MSHInput( std::string_view filename ) : BRepInput( filename ) {}
+            explicit MSHInput( std::string_view filename )
+                : BRepInput( filename )
+            {
+            }
 
             static std::string_view extension()
             {

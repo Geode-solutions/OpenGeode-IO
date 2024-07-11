@@ -38,7 +38,7 @@ namespace geode
         class SMESHCurveInput final : public EdgedCurveInput< 3 >
         {
         public:
-            SMESHCurveInput( std::string_view filename )
+            explicit SMESHCurveInput( std::string_view filename )
                 : EdgedCurveInput< 3 >( filename )
             {
             }

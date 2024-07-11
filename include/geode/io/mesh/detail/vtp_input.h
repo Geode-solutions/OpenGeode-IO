@@ -38,7 +38,7 @@ namespace geode
         class VTPInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            VTPInput( std::string_view filename )
+            explicit VTPInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }

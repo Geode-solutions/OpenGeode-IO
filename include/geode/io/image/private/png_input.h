@@ -38,7 +38,7 @@ namespace geode
         class PNGInput final : public RasterImageInput< 2 >
         {
         public:
-            PNGInput( std::string_view filename )
+            explicit PNGInput( std::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }
