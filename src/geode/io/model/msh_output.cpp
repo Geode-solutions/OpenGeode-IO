@@ -70,7 +70,7 @@ namespace
         }
 
     private:
-        enum struct GmshElement
+        enum struct GMSH_ELEMENT
         {
             POINT,
             EDGE,
@@ -291,7 +291,7 @@ namespace
             {
                 file_ << component_type2dimension[corner.component_type()]
                       << SPACE << uuid2gmsh_[corner.id()].id << SPACE
-                      << element2type[GmshElement::POINT] << SPACE
+                      << element2type[GMSH_ELEMENT::POINT] << SPACE
                       << corner.mesh().nb_vertices() << EOL;
                 for( const auto v :
                     geode::Range{ corner.mesh().nb_vertices() } )
@@ -312,7 +312,7 @@ namespace
             {
                 file_ << component_type2dimension[line.component_type()]
                       << SPACE << uuid2gmsh_[line.id()].id << SPACE
-                      << element2type[GmshElement::EDGE] << SPACE
+                      << element2type[GMSH_ELEMENT::EDGE] << SPACE
                       << line.mesh().nb_edges() << EOL;
                 for( const auto e : geode::Range{ line.mesh().nb_edges() } )
                 {
@@ -340,7 +340,7 @@ namespace
             {
                 file_ << component_type2dimension[surface.component_type()]
                       << SPACE << uuid2gmsh_[surface.id()].id << SPACE
-                      << element2type[GmshElement::TRIANGLE] << SPACE
+                      << element2type[GMSH_ELEMENT::TRIANGLE] << SPACE
                       << surface.mesh().nb_polygons() << EOL;
                 for( const auto p :
                     geode::Range{ surface.mesh().nb_polygons() } )
@@ -369,7 +369,7 @@ namespace
             {
                 file_ << component_type2dimension[block.component_type()]
                       << SPACE << uuid2gmsh_[block.id()].id << SPACE
-                      << element2type[GmshElement::TETRAHEDRON] << SPACE
+                      << element2type[GMSH_ELEMENT::TETRAHEDRON] << SPACE
                       << block.mesh().nb_polyhedra() << EOL;
                 for( const auto p :
                     geode::Range{ block.mesh().nb_polyhedra() } )
@@ -424,11 +424,11 @@ namespace
                 { geode::Surface3D::component_type_static(), 2 },
                 { geode::Block3D::component_type_static(), 3 }
             };
-        absl::flat_hash_map< GmshElement, geode::index_t > element2type = {
-            { GmshElement::POINT, 15 }, { GmshElement::EDGE, 1 },
-            { GmshElement::TRIANGLE, 2 }, { GmshElement::QUADRANGLE, 3 },
-            { GmshElement::TETRAHEDRON, 4 }, { GmshElement::HEXAHEDRON, 5 },
-            { GmshElement::PRISM, 6 }, { GmshElement::PYRAMID, 7 }
+        absl::flat_hash_map< GMSH_ELEMENT, geode::index_t > element2type = {
+            { GMSH_ELEMENT::POINT, 15 }, { GMSH_ELEMENT::EDGE, 1 },
+            { GMSH_ELEMENT::TRIANGLE, 2 }, { GMSH_ELEMENT::QUADRANGLE, 3 },
+            { GMSH_ELEMENT::TETRAHEDRON, 4 }, { GMSH_ELEMENT::HEXAHEDRON, 5 },
+            { GMSH_ELEMENT::PRISM, 6 }, { GMSH_ELEMENT::PYRAMID, 7 }
         };
     };
 } // namespace
