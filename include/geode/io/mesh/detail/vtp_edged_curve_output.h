@@ -36,12 +36,12 @@ namespace geode
         class VTPEdgedCurveOutput final : public EdgedCurveOutput< dimension >
         {
         public:
-            explicit VTPEdgedCurveOutput( absl::string_view filename )
+            explicit VTPEdgedCurveOutput( std::string_view filename )
                 : EdgedCurveOutput< dimension >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vtp";
                 return ext;

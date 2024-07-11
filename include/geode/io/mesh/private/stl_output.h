@@ -41,12 +41,12 @@ namespace geode
         class STLOutput final : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            explicit STLOutput( absl::string_view filename )
+            explicit STLOutput( std::string_view filename )
                 : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "stl";
                 return ext;

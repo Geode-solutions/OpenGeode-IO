@@ -48,7 +48,7 @@ namespace geode
 
         protected:
             VTKOutputImpl(
-                absl::string_view filename, const Mesh& mesh, const char* type )
+                std::string_view filename, const Mesh& mesh, const char* type )
                 : filename_{ filename },
                   file_{ to_string( filename ) },
                   mesh_( mesh ),
@@ -65,7 +65,7 @@ namespace geode
                 return mesh_;
             }
 
-            absl::string_view filename() const
+            std::string_view filename() const
             {
                 return filename_;
             }
@@ -114,7 +114,7 @@ namespace geode
 
             pugi::xml_node write_attribute_header(
                 pugi::xml_node& attribute_node,
-                absl::string_view name,
+                std::string_view name,
                 local_index_t nb_components ) const
             {
                 auto data_array = attribute_node.append_child( "DataArray" );
@@ -150,7 +150,7 @@ namespace geode
             virtual void write_piece( pugi::xml_node& object ) = 0;
 
         private:
-            absl::string_view filename_;
+            std::string_view filename_;
             std::ofstream file_;
             const Mesh& mesh_;
             pugi::xml_document document_;

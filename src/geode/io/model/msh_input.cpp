@@ -64,7 +64,7 @@ namespace
     class MSHInputImpl
     {
     public:
-        MSHInputImpl( absl::string_view filename, geode::BRep& brep )
+        MSHInputImpl( std::string_view filename, geode::BRep& brep )
             : file_{ geode::to_string( filename ) },
               brep_( brep ),
               builder_{ brep }
@@ -193,7 +193,7 @@ namespace
             return static_cast< geode::index_t >( std::floor( version_ ) );
         }
 
-        void first_read( absl::string_view filename )
+        void first_read( std::string_view filename )
         {
             std::ifstream reader{ geode::to_string( filename ) };
             read_header( reader );
@@ -439,9 +439,9 @@ namespace
             }
         }
 
-        geode::Point3D read_node_coordinates( absl::string_view x_str,
-            absl::string_view y_str,
-            absl::string_view z_str )
+        geode::Point3D read_node_coordinates( std::string_view x_str,
+            std::string_view y_str,
+            std::string_view z_str )
         {
             double x, y, z;
             auto ok = absl::SimpleAtod( x_str, &x );
@@ -577,7 +577,7 @@ namespace
                 geode::string_to_index( tokens.at( t++ ) );
             t += nb_tags - 2;
             // TODO: create relation to the parent
-            absl::Span< const absl::string_view > vertex_ids(
+            absl::Span< const std::string_view > vertex_ids(
                 &tokens[t], tokens.size() - t );
 
             const auto element =
@@ -625,7 +625,7 @@ namespace
                 geode_unused( unused );
                 std::getline( file_, line );
                 const auto line_tokens = geode::string_split( line );
-                absl::Span< const absl::string_view > vertex_ids(
+                absl::Span< const std::string_view > vertex_ids(
                     &line_tokens[1], line_tokens.size() - 1 );
                 constexpr geode::index_t physical_entity{ 0 };
                 const auto element = geode::detail::GMSHElementFactory::create(

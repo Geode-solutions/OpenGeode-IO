@@ -60,7 +60,7 @@ namespace geode
             }
 
         protected:
-            VTKInputImpl( absl::string_view filename, const char* type )
+            VTKInputImpl( std::string_view filename, const char* type )
                 : file_{ to_string( filename ) }, type_{ type }
             {
                 OPENGEODE_EXCEPTION( file_.good(),
@@ -82,14 +82,14 @@ namespace geode
                 return *mesh_;
             }
 
-            bool match( absl::string_view query, absl::string_view ref ) const
+            bool match( std::string_view query, std::string_view ref ) const
             {
                 return absl::StartsWith( query, ref )
                        && absl::EndsWith( query, ref );
             }
 
             index_t read_attribute(
-                const pugi::xml_node& piece, absl::string_view attribute ) const
+                const pugi::xml_node& piece, std::string_view attribute ) const
             {
                 index_t value;
                 const auto ok = absl::SimpleAtoi(
@@ -180,7 +180,7 @@ namespace geode
 
             template < typename T >
             void build_attribute( AttributeManager& manager,
-                absl::string_view name,
+                std::string_view name,
                 absl::Span< const T > values,
                 index_t nb_components,
                 index_t offset )
@@ -304,14 +304,14 @@ namespace geode
                 }
             }
 
-            absl::string_view read_appended_data( const pugi::xml_node& data )
+            std::string_view read_appended_data( const pugi::xml_node& data )
             {
                 const auto offset = data.attribute( "offset" ).as_uint();
                 return appended_data_.substr( offset );
             }
 
             template < typename T >
-            std::vector< T > decode( absl::string_view input )
+            std::vector< T > decode( std::string_view input )
             {
                 if( !compressed_ )
                 {
@@ -336,7 +336,7 @@ namespace geode
                 const Container& default_value,
                 absl::Span< const T > values,
                 index_t nb_components,
-                absl::string_view name,
+                std::string_view name,
                 index_t offset )
             {
                 auto attribute =
@@ -368,11 +368,11 @@ namespace geode
                     "Endian not supported" );
                 const auto compressor = root_.attribute( "compressor" ).value();
                 OPENGEODE_EXCEPTION(
-                    absl::string_view( compressor ).empty()
+                    std::string_view( compressor ).empty()
                         || match( compressor, "vtkZLibDataCompressor" ),
                     "[VTKInput::read_root_attributes] Only "
                     "vtkZLibDataCompressor is supported for now" );
-                compressed_ = !absl::string_view( compressor ).empty();
+                compressed_ = !std::string_view( compressor ).empty();
 
                 if( const auto header_type = root_.attribute( "header_type" ) )
                 {
@@ -409,7 +409,7 @@ namespace geode
 
             template < typename T, typename UInt >
             std::vector< T > templated_decode_uncompressed(
-                absl::string_view input )
+                std::string_view input )
             {
                 const auto nb_chars = nb_char_needed< UInt >( 1 );
                 const auto nb_bytes_input = input.substr( 0, nb_chars );
@@ -447,7 +447,7 @@ namespace geode
             }
 
             template < typename T, typename UInt >
-            std::vector< T > templated_decode( absl::string_view input )
+            std::vector< T > templated_decode( std::string_view input )
             {
                 const auto fixed_header_length = nb_char_needed< UInt >( 3 );
                 auto fixed_header = input.substr( 0, fixed_header_length );
@@ -528,7 +528,7 @@ namespace geode
                 return result;
             }
 
-            std::string decode_base64( absl::string_view input ) const
+            std::string decode_base64( std::string_view input ) const
             {
                 std::string bytes;
                 auto decode_status = absl::Base64Unescape( input, &bytes );
@@ -538,8 +538,8 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > read_ascii_data_array( absl::string_view data,
-                bool ( *string_convert )( absl::string_view, T* ) )
+            std::vector< T > read_ascii_data_array( std::string_view data,
+                bool ( *string_convert )( std::string_view, T* ) )
             {
                 std::vector< T > results;
                 for( auto string : absl::StrSplit( data, ' ' ) )
@@ -555,14 +555,14 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_integer_data_array(
-                absl::string_view data )
+                std::string_view data )
             {
                 return read_ascii_data_array< T >( data, absl::SimpleAtoi );
             }
 
             template < typename T >
             std::vector< T > read_ascii_uint8_data_array(
-                absl::string_view data )
+                std::string_view data )
             {
                 std::vector< T > results;
                 for( auto string : absl::StrSplit( data, ' ' ) )
@@ -575,7 +575,7 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_float_data_array(
-                absl::string_view data )
+                std::string_view data )
             {
                 return read_ascii_data_array< T >( data, absl::SimpleAtod );
             }
@@ -589,7 +589,7 @@ namespace geode
             bool little_endian_{ true };
             bool compressed_{ false };
             bool is_uint64_{ false };
-            absl::string_view appended_data_;
+            std::string_view appended_data_;
         }; // namespace detail
     } // namespace detail
 } // namespace geode

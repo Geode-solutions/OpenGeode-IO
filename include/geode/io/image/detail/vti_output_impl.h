@@ -37,7 +37,7 @@ namespace geode
             static constexpr auto dimension = CellArray::dim;
 
         protected:
-            VTIOutputImpl( const CellArray& array, absl::string_view filename )
+            VTIOutputImpl( const CellArray& array, std::string_view filename )
                 : detail::VTKOutputImpl< CellArray >{ filename, array,
                       "ImageData" }
             {

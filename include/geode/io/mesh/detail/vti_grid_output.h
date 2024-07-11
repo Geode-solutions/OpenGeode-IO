@@ -36,7 +36,7 @@ namespace geode
         {
         public:
             VTIGridOutputImpl(
-                const Grid< dimension >& grid, absl::string_view filename )
+                const Grid< dimension >& grid, std::string_view filename )
                 : VTIOutputImpl< Grid< dimension > >{ grid, filename }
             {
             }

@@ -38,12 +38,12 @@ namespace geode
         class BMPInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit BMPInput( absl::string_view filename )
+            explicit BMPInput( std::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "bmp";
                 return ext;

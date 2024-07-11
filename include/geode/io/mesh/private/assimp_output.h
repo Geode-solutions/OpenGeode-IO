@@ -40,9 +40,9 @@ namespace geode
         class AssimpMeshOutput
         {
         public:
-            AssimpMeshOutput( absl::string_view filename,
+            AssimpMeshOutput( std::string_view filename,
                 const SurfaceMesh& surface_mesh,
-                absl::string_view assimp_export_id )
+                std::string_view assimp_export_id )
                 : file_{ filename },
                   surface_mesh_( surface_mesh ),
                   export_id_{ assimp_export_id }
@@ -125,9 +125,9 @@ namespace geode
             }
 
         private:
-            absl::string_view file_;
+            std::string_view file_;
             const SurfaceMesh& surface_mesh_;
-            absl::string_view export_id_;
+            std::string_view export_id_;
             aiScene assimp_scene_;
         };
     } // namespace detail

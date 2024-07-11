@@ -37,7 +37,7 @@ namespace
     {
     public:
         VTMSectionOutputImpl(
-            absl::string_view filename, const geode::Section& section )
+            std::string_view filename, const geode::Section& section )
             : geode::detail::VTMOutputImpl< geode::Section, 2 >{ filename,
                   section }
         {

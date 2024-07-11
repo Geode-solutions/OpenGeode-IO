@@ -33,12 +33,12 @@ namespace geode
         class VTIRegularGridInput final : public RegularGridInput< dimension >
         {
         public:
-            explicit VTIRegularGridInput( absl::string_view filename )
+            explicit VTIRegularGridInput( std::string_view filename )
                 : RegularGridInput< dimension >{ filename }
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto ext = "vti";
                 return ext;

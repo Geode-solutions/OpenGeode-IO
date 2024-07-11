@@ -36,7 +36,7 @@ namespace
         : public geode::detail::VTKMeshOutputImpl< geode::PointSet, dimension >
     {
     public:
-        VTPPointOutputImpl( absl::string_view filename,
+        VTPPointOutputImpl( std::string_view filename,
             const geode::PointSet< dimension >& point_set )
             : geode::detail::VTKMeshOutputImpl< geode::PointSet, dimension >(
                 filename, point_set, "PolyData" )
