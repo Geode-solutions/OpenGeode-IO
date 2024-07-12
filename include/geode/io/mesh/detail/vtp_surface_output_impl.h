@@ -45,7 +45,7 @@ namespace geode
             VTPSurfaceOutputImpl( std::string_view filename,
                 const Mesh< dimension >& polygonal_surface )
                 : VTKMeshOutputImpl< Mesh, dimension >(
-                      filename, polygonal_surface, "PolyData" )
+                    filename, polygonal_surface, "PolyData" )
             {
                 const auto manager = this->mesh().texture_manager();
                 const auto texture_names = manager.texture_names();
