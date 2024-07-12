@@ -67,7 +67,7 @@ namespace geode
                   files_directory_{
                       filepath_without_extension( filename ).string()
                   },
-                  prefix_{ filename_without_extension( filename ) }
+                  prefix_{ filename_without_extension( filename ).string() }
             {
                 if( std::filesystem::path{ to_string( filename ) }
                         .is_relative() )
