@@ -69,7 +69,7 @@ void run_test( absl::string_view filename,
 {
     // Load file
     auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::data_path, filename ) );
+        absl::StrCat( geode::DATA_PATH, filename ) );
     check( *surface, test_answers, vertex_attributes, polygon_attributes );
 
     // Save file

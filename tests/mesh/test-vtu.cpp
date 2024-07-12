@@ -54,7 +54,7 @@ void run_test( absl::string_view filename,
 {
     // Load file
     auto solid = geode::load_tetrahedral_solid< 3 >(
-        absl::StrCat( geode::data_path, filename ) );
+        absl::StrCat( geode::DATA_PATH, filename ) );
     check( *solid, test_answers );
 
     // Save file

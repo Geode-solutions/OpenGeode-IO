@@ -46,8 +46,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "smesh";
-                return ext;
+                static constexpr auto EXT = "smesh";
+                return EXT;
             }
 
             std::unique_ptr< TriangulatedSurface3D > read(

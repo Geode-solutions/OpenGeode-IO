@@ -45,8 +45,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vtu";
-                return ext;
+                static constexpr auto EXT = "vtu";
+                return EXT;
             }
 
             std::unique_ptr< PolyhedralSolid3D > read(

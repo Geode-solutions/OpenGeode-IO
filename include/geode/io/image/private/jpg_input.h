@@ -45,8 +45,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "jpg";
-                return ext;
+                static constexpr auto EXT = "jpg";
+                return EXT;
             }
 
             RasterImage2D read() final;

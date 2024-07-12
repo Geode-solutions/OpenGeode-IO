@@ -38,7 +38,7 @@ int main()
         geode::IOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_triangulated_surface< 3 >(
-            absl::StrCat( geode::data_path, "triangulated.smesh" ) );
+            absl::StrCat( geode::DATA_PATH, "triangulated.smesh" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 111,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 186,

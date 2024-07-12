@@ -45,8 +45,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vtu";
-                return ext;
+                static constexpr auto EXT = "vtu";
+                return EXT;
             }
 
             std::unique_ptr< HybridSolid3D > read( const MeshImpl& impl ) final;

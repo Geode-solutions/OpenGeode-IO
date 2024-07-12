@@ -39,8 +39,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "msh";
-                return ext;
+                static constexpr auto EXT = "msh";
+                return EXT;
             }
 
             BRep read() final;

@@ -223,7 +223,7 @@ void run_test( absl::string_view short_filename, test_function test )
 {
     // Load file
     auto brep = geode::load_brep(
-        absl::StrCat( geode::data_path, short_filename, ".msh" ) );
+        absl::StrCat( geode::DATA_PATH, short_filename, ".msh" ) );
     test( brep );
 
     // Save and reload

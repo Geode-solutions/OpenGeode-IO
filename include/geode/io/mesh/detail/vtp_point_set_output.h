@@ -43,8 +43,8 @@ namespace geode
 
             static absl::string_view extension()
             {
-                static constexpr auto ext = "vtp";
-                return ext;
+                static constexpr auto EXT = "vtp";
+                return EXT;
             }
 
             std::vector< std::string > write(
