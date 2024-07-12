@@ -225,7 +225,8 @@ namespace geode
                     == AI_SUCCESS )
                 {
                     materials_[i].second = absl::StrCat(
-                        filepath_without_filename( file_ ), Path.C_Str() );
+                        filepath_without_filename( file_ ).string(),
+                        Path.C_Str() );
                 }
             }
         }

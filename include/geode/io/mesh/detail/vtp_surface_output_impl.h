@@ -45,7 +45,7 @@ namespace geode
             VTPSurfaceOutputImpl( std::string_view filename,
                 const Mesh< dimension >& polygonal_surface )
                 : VTKMeshOutputImpl< Mesh, dimension >(
-                    filename, polygonal_surface, "PolyData" )
+                      filename, polygonal_surface, "PolyData" )
             {
                 const auto manager = this->mesh().texture_manager();
                 const auto texture_names = manager.texture_names();
@@ -71,7 +71,7 @@ namespace geode
             void save_images() const
             {
                 const auto path =
-                    filepath_without_extension( this->filename() );
+                    filepath_without_extension( this->filename() ).string();
                 for( const auto& texture : textures_info_ )
                 {
                     const auto& image = texture.second.get().image();
