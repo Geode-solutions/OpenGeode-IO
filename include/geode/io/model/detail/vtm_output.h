@@ -64,7 +64,9 @@ namespace geode
             VTMOutputImpl( std::string_view filename, const Model& brep )
                 : VTKOutputImpl< Model >{ filename, brep,
                       "vtkMultiBlockDataSet" },
-                  files_directory_{ filepath_without_extension( filename ) },
+                  files_directory_{
+                      filepath_without_extension( filename ).string()
+                  },
                   prefix_{ filename_without_extension( filename ) }
             {
                 if( std::filesystem::path{ to_string( filename ) }
