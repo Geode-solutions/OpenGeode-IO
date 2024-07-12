@@ -38,12 +38,12 @@ namespace geode
         class PNGInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit PNGInput( absl::string_view filename )
+            explicit PNGInput( std::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "png";
                 return EXT;

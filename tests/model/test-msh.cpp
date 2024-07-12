@@ -219,7 +219,7 @@ void test_brep_internal( const geode::BRep& brep )
 
 using test_function = void ( * )( const geode::BRep& );
 
-void run_test( absl::string_view short_filename, test_function test )
+void run_test( std::string_view short_filename, test_function test )
 {
     // Load file
     auto brep = geode::load_brep(

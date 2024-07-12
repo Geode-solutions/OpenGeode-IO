@@ -52,7 +52,7 @@ namespace geode
         class VTKMeshOutputImpl : public VTKOutputImpl< Mesh< dimension > >
         {
         protected:
-            VTKMeshOutputImpl( absl::string_view filename,
+            VTKMeshOutputImpl( std::string_view filename,
                 const Mesh< dimension >& mesh,
                 const char* type )
                 : VTKOutputImpl< Mesh< dimension > >{ filename, mesh, type }

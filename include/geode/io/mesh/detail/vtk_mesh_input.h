@@ -50,7 +50,7 @@ namespace geode
             using MeshBuilder = typename Mesh::Builder;
 
         protected:
-            VTKMeshInputImpl( absl::string_view filename,
+            VTKMeshInputImpl( std::string_view filename,
                 const MeshImpl& impl,
                 const char* type )
                 : VTKInputImpl< Mesh >{ filename, type }
@@ -191,7 +191,7 @@ namespace geode
 
             template < typename T >
             absl::FixedArray< Point3D > decode_points(
-                absl::string_view coords_string, index_t nb_points )
+                std::string_view coords_string, index_t nb_points )
             {
                 const auto coords = this->template decode< T >( coords_string );
                 geode_unused( nb_points );
@@ -201,7 +201,7 @@ namespace geode
             }
 
             std::vector< double > read_ascii_coordinates(
-                absl::string_view coords, index_t nb_points )
+                std::string_view coords, index_t nb_points )
             {
                 std::vector< double > results;
                 results.reserve( 3 * nb_points );

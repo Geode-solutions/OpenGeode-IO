@@ -39,8 +39,6 @@ include(${PROJECT_SOURCE_DIR}/cmake/ConfigureZlib.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigurePugixml.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureOpenGeode-IO.cmake)
 
-install(DIRECTORY ${OpenGeode-IO_PATH_INSTALL}/ DESTINATION .)
-
 #------------------------------------------------------------------------------------------------
 # Configure CPack
 set(CPACK_PACKAGE_NAME OpenGeode-IO)

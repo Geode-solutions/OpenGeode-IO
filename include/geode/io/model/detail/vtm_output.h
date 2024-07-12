@@ -24,13 +24,13 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include <async++.h>
 
 #include <absl/container/fixed_array.h>
-#include <absl/strings/string_view.h>
 
 #include <ghc/filesystem.hpp>
 
@@ -62,7 +62,7 @@ namespace geode
         class VTMOutputImpl : public VTKOutputImpl< Model >
         {
         public:
-            VTMOutputImpl( absl::string_view filename, const Model& brep )
+            VTMOutputImpl( std::string_view filename, const Model& brep )
                 : VTKOutputImpl< Model >{ filename, brep,
                       "vtkMultiBlockDataSet" },
                   files_directory_{ filepath_without_extension( filename ) },
@@ -107,12 +107,12 @@ namespace geode
                 return counter;
             }
 
-            absl::string_view prefix() const
+            std::string_view prefix() const
             {
                 return prefix_;
             }
 
-            absl::string_view files_directory() const
+            std::string_view files_directory() const
             {
                 return files_directory_;
             }

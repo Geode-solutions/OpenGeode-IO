@@ -99,7 +99,7 @@ add_geode_library(
         OpenGeode::mesh
         assimp::assimp
         pugixml::pugixml
-        zlib::zlib
+        ZLIB::ZLIB
         Async++
         ${PROJECT_NAME}::image
 )

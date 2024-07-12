@@ -39,12 +39,12 @@ namespace geode
             : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            explicit SMESHTriangulatedInput( absl::string_view filename )
+            explicit SMESHTriangulatedInput( std::string_view filename )
                 : TriangulatedSurfaceInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "smesh";
                 return EXT;

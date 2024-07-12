@@ -49,7 +49,7 @@ namespace
     class SVGInputImpl
     {
     public:
-        SVGInputImpl( absl::string_view filename, geode::Section& section )
+        SVGInputImpl( std::string_view filename, geode::Section& section )
             : file_{ geode::to_string( filename ) },
               section_( section ),
               builder_{ section }

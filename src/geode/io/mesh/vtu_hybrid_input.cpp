@@ -37,7 +37,7 @@ namespace
 
     public:
         VTUHybridInputImpl(
-            absl::string_view filename, const geode::MeshImpl& impl )
+            std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::HybridSolid3D >(
                 filename, impl )
         {

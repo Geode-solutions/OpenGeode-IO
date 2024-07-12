@@ -44,7 +44,7 @@ namespace geode
         public:
             static constexpr auto dimension = Mesh::dim;
 
-            explicit VTIGridInputImpl( absl::string_view filename )
+            explicit VTIGridInputImpl( std::string_view filename )
                 : VTKInputImpl< Mesh >{ filename, "ImageData" }
             {
             }
@@ -67,7 +67,7 @@ namespace geode
                 std::array< Vector< dimension >, dimension > cell_directions;
             };
 
-            static bool is_loadable( absl::string_view filename )
+            static bool is_loadable( std::string_view filename )
             {
                 std::ifstream file{ to_string( filename ) };
                 OPENGEODE_EXCEPTION( file.good(),

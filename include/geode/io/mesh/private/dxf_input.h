@@ -38,12 +38,12 @@ namespace geode
         class DXFInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            explicit DXFInput( absl::string_view filename )
+            explicit DXFInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "dxf";
                 return EXT;

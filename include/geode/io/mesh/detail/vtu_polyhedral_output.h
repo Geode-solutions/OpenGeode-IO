@@ -41,12 +41,12 @@ namespace geode
         class VTUPolyhedralOutput final : public PolyhedralSolidOutput< 3 >
         {
         public:
-            explicit VTUPolyhedralOutput( absl::string_view filename )
+            explicit VTUPolyhedralOutput( std::string_view filename )
                 : PolyhedralSolidOutput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "vtu";
                 return EXT;

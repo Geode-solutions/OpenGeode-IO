@@ -49,7 +49,7 @@ void check( const geode::SolidMesh< 3 >& solid,
         test_answers[1], ", get ", solid.nb_polyhedra() );
 }
 
-void run_test( absl::string_view filename,
+void run_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
@@ -58,7 +58,7 @@ void run_test( absl::string_view filename,
     check( *solid, test_answers );
 
     // Save file
-    absl::string_view filename_without_ext{ filename };
+    std::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
     const auto output_filename =
         absl::StrCat( filename_without_ext, ".", solid->native_extension() );

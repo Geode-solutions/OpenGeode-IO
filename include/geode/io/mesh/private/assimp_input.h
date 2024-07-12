@@ -37,7 +37,7 @@ namespace geode
         class AssimpMeshInput
         {
         public:
-            explicit AssimpMeshInput( absl::string_view filename )
+            explicit AssimpMeshInput( std::string_view filename )
                 : file_( filename )
             {
                 OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
@@ -59,7 +59,7 @@ namespace geode
 
         private:
             std::vector< std::unique_ptr< Mesh > > surfaces_;
-            absl::string_view file_;
+            std::string_view file_;
             std::vector< std::pair< std::string, std::string > > materials_;
         };
     } // namespace detail

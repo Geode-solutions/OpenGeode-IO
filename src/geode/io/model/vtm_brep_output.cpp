@@ -52,7 +52,7 @@ namespace
         : public geode::detail::VTMOutputImpl< geode::BRep, 3 >
     {
     public:
-        VTMBRepOutputImpl( absl::string_view filename, const geode::BRep& brep )
+        VTMBRepOutputImpl( std::string_view filename, const geode::BRep& brep )
             : geode::detail::VTMOutputImpl< geode::BRep, 3 >{ filename, brep }
         {
         }

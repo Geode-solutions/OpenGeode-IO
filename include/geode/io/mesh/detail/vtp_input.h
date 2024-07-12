@@ -38,12 +38,12 @@ namespace geode
         class VTPInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            explicit VTPInput( absl::string_view filename )
+            explicit VTPInput( std::string_view filename )
                 : PolygonalSurfaceInput< 3 >( filename )
             {
             }
 
-            static absl::string_view extension()
+            static std::string_view extension()
             {
                 static constexpr auto EXT = "vtp";
                 return EXT;
