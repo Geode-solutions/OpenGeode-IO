@@ -45,8 +45,8 @@ namespace geode
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "ply";
-                return ext;
+                static constexpr auto EXT = "ply";
+                return EXT;
             }
 
             std::unique_ptr< PolygonalSurface3D > read(

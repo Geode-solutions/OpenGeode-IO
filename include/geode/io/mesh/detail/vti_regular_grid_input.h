@@ -40,8 +40,8 @@ namespace geode
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "vti";
-                return ext;
+                static constexpr auto EXT = "vti";
+                return EXT;
             }
 
             std::unique_ptr< RegularGrid< dimension > > read(

@@ -39,8 +39,8 @@ namespace geode
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "svg";
-                return ext;
+                static constexpr auto EXT = "svg";
+                return EXT;
             }
 
             Section read() final;

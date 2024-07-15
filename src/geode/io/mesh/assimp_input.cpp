@@ -166,7 +166,9 @@ namespace geode
             {
                 ref_surfaces.emplace_back( *surface );
             }
-            detail::SurfaceMeshMerger3D merger{ ref_surfaces, global_epsilon };
+
+            detail::SurfaceMeshMerger3D merger{ ref_surfaces, GLOBAL_EPSILON };
+
             std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
                 merger.merge().release() ) };
             Mesh::Builder::create( *merged )->compute_polygon_adjacencies();

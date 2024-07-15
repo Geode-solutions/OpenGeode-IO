@@ -39,7 +39,7 @@ int main()
         geode::IOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::data_path, "3D_faces.dxf" ) );
+            absl::StrCat( geode::DATA_PATH, "3D_faces.dxf" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 49323,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 97966,

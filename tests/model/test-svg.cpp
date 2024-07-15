@@ -80,7 +80,7 @@ int main()
 
         // Load file
         auto section = geode::load_section(
-            absl::StrCat( geode::data_path, "/logo.svg" ) );
+            absl::StrCat( geode::DATA_PATH, "/logo.svg" ) );
         test_section( section );
 
         // Save and reload

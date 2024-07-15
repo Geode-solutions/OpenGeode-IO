@@ -38,7 +38,7 @@ int main()
         geode::IOMeshLibrary::initialize();
         // Load file
         auto curve = geode::load_edged_curve< 3 >(
-            absl::StrCat( geode::data_path, "curve.smesh" ) );
+            absl::StrCat( geode::DATA_PATH, "curve.smesh" ) );
         OPENGEODE_EXCEPTION( curve->nb_vertices() == 1023,
             "[Test] Number of vertices in the "
             "loaded EdgedCurve is not correct" );
