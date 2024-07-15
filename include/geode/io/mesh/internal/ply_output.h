@@ -23,27 +23,37 @@
 
 #pragma once
 
-#include <geode/model/representation/io/section_input.h>
+#include <string>
+#include <vector>
+
+#include <geode/mesh/io/polygonal_surface_output.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        class SVGInput final : public SectionInput
+        class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            explicit SVGInput( std::string_view filename )
-                : SectionInput( filename )
+            explicit PLYOutput( std::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "svg";
+                static constexpr auto ext = "ply";
                 return ext;
             }
 
-            Section read() final;
+            std::vector< std::string > write(
+                const PolygonalSurface3D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

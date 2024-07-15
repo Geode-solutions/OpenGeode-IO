@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/obj_input.h>
+#include <geode/io/mesh/internal/obj_input.h>
 
 #include <fstream>
 
@@ -31,18 +31,17 @@
 
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.h>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::unique_ptr< PolygonalSurface3D > OBJInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::detail::AssimpMeshInput< geode::PolygonalSurface3D > reader{
-                filename()
-            };
+            geode::internal::AssimpMeshInput< geode::PolygonalSurface3D >
+                reader{ filename() };
             return reader.read_file();
         }
 
@@ -91,5 +90,5 @@ namespace geode
             }
             return missing;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

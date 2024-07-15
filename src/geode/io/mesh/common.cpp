@@ -43,31 +43,31 @@
 #include <geode/io/mesh/detail/vtu_tetrahedral_input.h>
 #include <geode/io/mesh/detail/vtu_tetrahedral_output.h>
 
-#include <geode/io/mesh/private/dxf_input.h>
-#include <geode/io/mesh/private/obj_input.h>
-#include <geode/io/mesh/private/obj_polygonal_output.h>
-#include <geode/io/mesh/private/obj_triangulated_output.h>
-#include <geode/io/mesh/private/ply_input.h>
-#include <geode/io/mesh/private/ply_output.h>
-#include <geode/io/mesh/private/smesh_curve_input.h>
-#include <geode/io/mesh/private/smesh_triangulated_input.h>
-#include <geode/io/mesh/private/stl_input.h>
-#include <geode/io/mesh/private/stl_output.h>
-#include <geode/io/mesh/private/triangle_output.h>
+#include <geode/io/mesh/internal/dxf_input.h>
+#include <geode/io/mesh/internal/obj_input.h>
+#include <geode/io/mesh/internal/obj_polygonal_output.h>
+#include <geode/io/mesh/internal/obj_triangulated_output.h>
+#include <geode/io/mesh/internal/ply_input.h>
+#include <geode/io/mesh/internal/ply_output.h>
+#include <geode/io/mesh/internal/smesh_curve_input.h>
+#include <geode/io/mesh/internal/smesh_triangulated_input.h>
+#include <geode/io/mesh/internal/stl_input.h>
+#include <geode/io/mesh/internal/stl_output.h>
+#include <geode/io/mesh/internal/triangle_output.h>
 
 namespace
 {
     void register_polygonal_surface_input()
     {
         geode::PolygonalSurfaceInputFactory3D::register_creator<
-            geode::detail::DXFInput >(
-            geode::detail::DXFInput::extension().data() );
+            geode::internal::DXFInput >(
+            geode::internal::DXFInput::extension().data() );
         geode::PolygonalSurfaceInputFactory3D::register_creator<
-            geode::detail::PLYInput >(
-            geode::detail::PLYInput::extension().data() );
+            geode::internal::PLYInput >(
+            geode::internal::PLYInput::extension().data() );
         geode::PolygonalSurfaceInputFactory3D::register_creator<
-            geode::detail::OBJInput >(
-            geode::detail::OBJInput::extension().data() );
+            geode::internal::OBJInput >(
+            geode::internal::OBJInput::extension().data() );
         geode::PolygonalSurfaceInputFactory3D::register_creator<
             geode::detail::VTPInput >(
             geode::detail::VTPInput::extension().data() );
@@ -97,21 +97,21 @@ namespace
     void register_triangulated_surface_input()
     {
         geode::TriangulatedSurfaceInputFactory3D::register_creator<
-            geode::detail::STLInput >(
-            geode::detail::STLInput::extension().data() );
+            geode::internal::STLInput >(
+            geode::internal::STLInput::extension().data() );
         geode::TriangulatedSurfaceInputFactory3D::register_creator<
-            geode::detail::SMESHTriangulatedInput >(
-            geode::detail::SMESHTriangulatedInput::extension().data() );
+            geode::internal::SMESHTriangulatedInput >(
+            geode::internal::SMESHTriangulatedInput::extension().data() );
     }
 
     void register_polygonal_surface_output()
     {
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::detail::PLYOutput >(
-            geode::detail::PLYOutput::extension().data() );
+            geode::internal::PLYOutput >(
+            geode::internal::PLYOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
-            geode::detail::OBJPolygonalOutput >(
-            geode::detail::OBJPolygonalOutput::extension().data() );
+            geode::internal::OBJPolygonalOutput >(
+            geode::internal::OBJPolygonalOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory2D::register_creator<
             geode::detail::VTPPolygonalOutput< 2 > >(
             geode::detail::VTPPolygonalOutput< 2 >::extension().data() );
@@ -123,11 +123,11 @@ namespace
     void register_triangulated_surface_output()
     {
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
-            geode::detail::STLOutput >(
-            geode::detail::STLOutput::extension().data() );
+            geode::internal::STLOutput >(
+            geode::internal::STLOutput::extension().data() );
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
-            geode::detail::OBJTriangulatedOutput >(
-            geode::detail::OBJTriangulatedOutput::extension().data() );
+            geode::internal::OBJTriangulatedOutput >(
+            geode::internal::OBJTriangulatedOutput::extension().data() );
         geode::TriangulatedSurfaceOutputFactory2D::register_creator<
             geode::detail::VTPTriangulatedOutput< 2 > >(
             geode::detail::VTPTriangulatedOutput< 2 >::extension().data() );
@@ -136,8 +136,8 @@ namespace
             geode::detail::VTPTriangulatedOutput< 3 >::extension().data() );
 
         geode::TriangulatedSurfaceOutputFactory2D::register_creator<
-            geode::detail::TriangleOutput >(
-            geode::detail::TriangleOutput::extension().data() );
+            geode::internal::TriangleOutput >(
+            geode::internal::TriangleOutput::extension().data() );
     }
 
     void register_polyhedral_solid_output()
@@ -184,8 +184,8 @@ namespace
     void register_edged_curve_input()
     {
         geode::EdgedCurveInputFactory3D::register_creator<
-            geode::detail::SMESHCurveInput >(
-            geode::detail::SMESHCurveInput::extension().data() );
+            geode::internal::SMESHCurveInput >(
+            geode::internal::SMESHCurveInput::extension().data() );
     }
 
     void register_regular_grid_output()

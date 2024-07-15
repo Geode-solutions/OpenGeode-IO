@@ -33,23 +33,23 @@ namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class JPGInput final : public RasterImageInput< 2 >
+        class PNGInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit JPGInput( std::string_view filename )
+            explicit PNGInput( std::string_view filename )
                 : RasterImageInput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "jpg";
+                static constexpr auto ext = "png";
                 return ext;
             }
 
             RasterImage2D read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

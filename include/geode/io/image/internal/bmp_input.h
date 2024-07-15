@@ -33,7 +33,7 @@ namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         class BMPInput final : public RasterImageInput< 2 >
         {
@@ -51,5 +51,5 @@ namespace geode
 
             RasterImage2D read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

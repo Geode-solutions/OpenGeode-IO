@@ -23,33 +23,27 @@
 
 #pragma once
 
-#include <geode/mesh/io/edged_curve_input.h>
+#include <geode/model/representation/io/section_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( EdgedCurve );
-    ALIAS_3D( EdgedCurve );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    namespace internal
     {
-        class SMESHCurveInput final : public EdgedCurveInput< 3 >
+        class SVGInput final : public SectionInput
         {
         public:
-            explicit SMESHCurveInput( std::string_view filename )
-                : EdgedCurveInput< 3 >( filename )
+            explicit SVGInput( std::string_view filename )
+                : SectionInput( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "smesh";
+                static constexpr auto ext = "svg";
                 return ext;
             }
 
-            std::unique_ptr< EdgedCurve3D > read( const MeshImpl& impl ) final;
+            Section read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

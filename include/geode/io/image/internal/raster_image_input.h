@@ -23,35 +23,29 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/io/image/common.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
-    ALIAS_3D( TriangulatedSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class SMESHTriangulatedInput final
-            : public TriangulatedSurfaceInput< 3 >
+        class ImageInputImpl final
         {
         public:
-            explicit SMESHTriangulatedInput( std::string_view filename )
-                : TriangulatedSurfaceInput< 3 >( filename )
-            {
-            }
+            explicit ImageInputImpl( std::string_view filename );
 
-            static std::string_view extension()
-            {
-                static constexpr auto ext = "smesh";
-                return ext;
-            }
+            RasterImage2D read_file();
 
-            std::unique_ptr< TriangulatedSurface3D > read(
-                const MeshImpl& impl ) final;
+            RasterImage2D read_reversed_y_axis_file();
+
+        private:
+            std::string_view filename_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode
