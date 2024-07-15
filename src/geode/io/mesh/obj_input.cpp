@@ -61,7 +61,8 @@ namespace geode
             PolygonalSurfaceInput< 3 >::MissingFiles missing;
             const auto mtl_tokens = string_split( mtllib_line.value() );
             const auto& mtl_filename = mtl_tokens.at( 1 );
-            const auto file_path = filepath_without_filename( filename() );
+            const auto file_path =
+                filepath_without_filename( filename() ).string();
             const auto mtl_file_path =
                 absl::StrCat( file_path, "/", mtl_filename );
             if( !file_exists( mtl_file_path ) )
