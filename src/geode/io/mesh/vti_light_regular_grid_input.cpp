@@ -51,7 +51,7 @@ namespace
         {
             auto grid_attributes = this->read_grid_attributes( vtk_object );
             auto grid =
-                absl::make_unique< geode::LightRegularGrid< dimension > >(
+                std::make_unique< geode::LightRegularGrid< dimension > >(
                     std::move( grid_attributes.origin ),
                     std::move( grid_attributes.cells_number ),
                     std::move( grid_attributes.cells_length ) );
