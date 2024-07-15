@@ -23,35 +23,37 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <string>
+#include <vector>
+
+#include <geode/mesh/io/polygonal_surface_output.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
-    ALIAS_3D( TriangulatedSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class SMESHTriangulatedInput final
-            : public TriangulatedSurfaceInput< 3 >
+        class PLYOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            explicit SMESHTriangulatedInput( std::string_view filename )
-                : TriangulatedSurfaceInput< 3 >( filename )
+            explicit PLYOutput( std::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "smesh";
+                static constexpr auto EXT = "ply";
                 return EXT;
             }
 
-            std::unique_ptr< TriangulatedSurface3D > read(
-                const MeshImpl& impl ) final;
+            std::vector< std::string > write(
+                const PolygonalSurface3D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

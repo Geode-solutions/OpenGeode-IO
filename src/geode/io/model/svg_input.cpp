@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/svg_input.h>
+#include <geode/io/model/internal/svg_input.h>
 
 #include <cctype>
 #include <fstream>
@@ -424,7 +424,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         Section SVGInput::read()
         {
@@ -435,5 +435,5 @@ namespace geode
             impl.build_topology();
             return section;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

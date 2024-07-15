@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.h>
 
 #include <assimp/Importer.hpp>
 
@@ -78,7 +78,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         template < typename Mesh >
         std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
@@ -166,7 +166,9 @@ namespace geode
             {
                 ref_surfaces.emplace_back( *surface );
             }
-            SurfaceMeshMerger3D merger{ ref_surfaces, GLOBAL_EPSILON };
+
+            detail::SurfaceMeshMerger3D merger{ ref_surfaces, GLOBAL_EPSILON };
+
             std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
                 merger.merge().release() ) };
             Mesh::Builder::create( *merged )->compute_polygon_adjacencies();
@@ -233,5 +235,5 @@ namespace geode
 
         template class AssimpMeshInput< PolygonalSurface3D >;
         template class AssimpMeshInput< TriangulatedSurface3D >;
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,34 +23,33 @@
 
 #pragma once
 
-#include <geode/mesh/io/polygonal_surface_input.h>
+#include <geode/image/io/raster_image_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
-    ALIAS_3D( PolygonalSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class DXFInput final : public PolygonalSurfaceInput< 3 >
+        class BMPInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit DXFInput( std::string_view filename )
-                : PolygonalSurfaceInput< 3 >( filename )
+            explicit BMPInput( std::string_view filename )
+                : RasterImageInput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "dxf";
+                static constexpr auto EXT = "bmp";
                 return EXT;
             }
 
-            std::unique_ptr< PolygonalSurface3D > read(
-                const MeshImpl& impl ) final;
+            RasterImage2D read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

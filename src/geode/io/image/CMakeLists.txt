@@ -34,11 +34,11 @@ add_geode_library(
         "detail/vti_output_impl.h"
         "detail/vti_raster_image_output.h"
         "detail/vtk_output.h"
-    PRIVATE_HEADERS
-        "private/bmp_input.h"
-        "private/jpg_input.h"
-        "private/png_input.h"
-        "private/raster_image_input.h"
+    INTERNAL_HEADERS
+        "internal/bmp_input.h"
+        "internal/jpg_input.h"
+        "internal/png_input.h"
+        "internal/raster_image_input.h"
     PUBLIC_DEPENDENCIES
         OpenGeode::image
     PRIVATE_DEPENDENCIES

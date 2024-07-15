@@ -23,27 +23,29 @@
 
 #pragma once
 
-#include <geode/model/representation/io/section_input.h>
+#include <geode/io/image/common.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        class SVGInput final : public SectionInput
+        class ImageInputImpl final
         {
         public:
-            explicit SVGInput( std::string_view filename )
-                : SectionInput( filename )
-            {
-            }
+            explicit ImageInputImpl( std::string_view filename );
 
-            static std::string_view extension()
-            {
-                static constexpr auto EXT = "svg";
-                return EXT;
-            }
+            RasterImage2D read_file();
 
-            Section read() final;
+            RasterImage2D read_reversed_y_axis_file();
+
+        private:
+            std::string_view filename_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,34 +23,27 @@
 
 #pragma once
 
-#include <geode/mesh/io/polygonal_surface_input.h>
+#include <geode/model/representation/io/brep_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
-    ALIAS_3D( PolygonalSurface );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    namespace internal
     {
-        class PLYInput final : public PolygonalSurfaceInput< 3 >
+        class MSHInput final : public BRepInput
         {
         public:
-            explicit PLYInput( std::string_view filename )
-                : PolygonalSurfaceInput< 3 >( filename )
+            explicit MSHInput( std::string_view filename )
+                : BRepInput( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "ply";
+                static constexpr auto EXT = "msh";
                 return EXT;
             }
 
-            std::unique_ptr< PolygonalSurface3D > read(
-                const MeshImpl& impl ) final;
+            BRep read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

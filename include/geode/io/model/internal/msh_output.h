@@ -26,34 +26,29 @@
 #include <string>
 #include <vector>
 
-#include <geode/mesh/io/triangulated_surface_output.h>
+#include <geode/model/representation/io/brep_output.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
-    ALIAS_2D( TriangulatedSurface );
-} // namespace geode
-
-namespace geode
-{
-    namespace detail
+    namespace internal
     {
-        class TriangleOutput final : public TriangulatedSurfaceOutput< 2 >
+        class MSHOutput final : public BRepOutput
         {
         public:
-            explicit TriangleOutput( std::string_view filename )
-                : TriangulatedSurfaceOutput< 2 >( filename )
+            explicit MSHOutput( std::string_view filename )
+                : BRepOutput( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "triangle";
+                static constexpr auto EXT = "msh";
                 return EXT;
             }
 
-            std::vector< std::string > write(
-                const TriangulatedSurface2D &surface ) const final;
+            std::vector< std::string > write( const BRep& brep ) const final;
+
+            bool is_saveable( const BRep& brep ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

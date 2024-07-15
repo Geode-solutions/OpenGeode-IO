@@ -23,44 +23,34 @@
 
 #pragma once
 
-#include <fstream>
-
-#include <assimp/scene.h>
-
-#include <geode/io/mesh/common.h>
+#include <geode/mesh/io/polygonal_surface_input.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        template < typename Mesh >
-        class AssimpMeshInput
+        class DXFInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            explicit AssimpMeshInput( std::string_view filename )
-                : file_( filename )
+            explicit DXFInput( std::string_view filename )
+                : PolygonalSurfaceInput< 3 >( filename )
             {
-                OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
-                    "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
-            virtual ~AssimpMeshInput() = default;
+            static std::string_view extension()
+            {
+                static constexpr auto EXT = "dxf";
+                return EXT;
+            }
 
-            std::unique_ptr< Mesh > read_file();
-
-        private:
-            void read_materials( const aiScene* assimp_scene );
-
-            void read_meshes( const aiScene* assimp_scene );
-
-            void read_textures( const aiScene* assimp_scene );
-
-            std::unique_ptr< Mesh > merge_meshes();
-
-        private:
-            std::vector< std::unique_ptr< Mesh > > surfaces_;
-            std::string_view file_;
-            std::vector< std::pair< std::string, std::string > > materials_;
+            std::unique_ptr< PolygonalSurface3D > read(
+                const MeshImpl& impl ) final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/msh_input.h>
+#include <geode/io/model/internal/msh_input.h>
 
 #include <fstream>
 #include <mutex>
@@ -57,7 +57,7 @@
 #include <geode/model/representation/builder/brep_builder.h>
 #include <geode/model/representation/core/brep.h>
 
-#include <geode/io/model/private/msh_common.h>
+#include <geode/io/model/internal/msh_common.h>
 
 namespace
 {
@@ -471,7 +471,7 @@ namespace
                 geode::index_t node_id;
                 geode::Point3D node;
                 std::tie( node_id, node ) = read_node( line );
-                nodes_[node_id - geode::detail::GMSH_OFFSET_START] = node;
+                nodes_[node_id - geode::internal::GMSH_OFFSET_START] = node;
             }
             check_keyword( "$EndNodes" );
             builder_.create_unique_vertices( nb_nodes );
@@ -531,7 +531,7 @@ namespace
             {
                 std::getline( file_, line );
                 const auto node_tokens = geode::string_split( line );
-                nodes_[node_id - geode::detail::GMSH_OFFSET_START] =
+                nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
                     read_node_coordinates( node_tokens.at( 0 ),
                         node_tokens.at( 1 ), node_tokens.at( 2 ) );
             }
@@ -547,7 +547,7 @@ namespace
             for( auto e_id : geode::Range{ nb_elements } )
             {
                 std::getline( file_, line );
-                read_element( e_id + geode::detail::GMSH_OFFSET_START, line );
+                read_element( e_id + geode::internal::GMSH_OFFSET_START, line );
             }
             check_keyword( "$EndElements" );
         }
@@ -580,9 +580,9 @@ namespace
             absl::Span< const std::string_view > vertex_ids(
                 &tokens[t], tokens.size() - t );
 
-            const auto element =
-                geode::detail::GMSHElementFactory::create( mesh_element_type_id,
-                    physical_entity, elementary_entity, vertex_ids );
+            const auto element = geode::internal::GMSHElementFactory::create(
+                mesh_element_type_id, physical_entity, elementary_entity,
+                vertex_ids );
             element->add_element( brep_, gmsh_id2uuids_ );
         }
 
@@ -628,9 +628,10 @@ namespace
                 absl::Span< const std::string_view > vertex_ids(
                     &line_tokens[1], line_tokens.size() - 1 );
                 constexpr geode::index_t physical_entity{ 0 };
-                const auto element = geode::detail::GMSHElementFactory::create(
-                    mesh_element_type_id, physical_entity, entity_id,
-                    vertex_ids );
+                const auto element =
+                    geode::internal::GMSHElementFactory::create(
+                        mesh_element_type_id, physical_entity, entity_id,
+                        vertex_ids );
                 element->add_element( brep_, gmsh_id2uuids_ );
             }
         }
@@ -892,13 +893,13 @@ namespace
         double version_{ 2 };
         std::vector< std::string > sections_;
         std::vector< geode::Point3D > nodes_;
-        geode::detail::GmshId2Uuids gmsh_id2uuids_;
+        geode::internal::GmshId2Uuids gmsh_id2uuids_;
     };
 } // namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         BRep MSHInput::read()
         {
@@ -909,5 +910,5 @@ namespace geode
             impl.build_topology();
             return brep;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

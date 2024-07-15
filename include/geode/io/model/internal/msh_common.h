@@ -59,7 +59,7 @@
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         struct GmshElementID
         {
@@ -77,16 +77,16 @@ namespace geode
             geode::ComponentType type;
             geode::index_t id;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode
 
 namespace std
 {
     template <>
-    struct hash< geode::detail::GmshElementID >
+    struct hash< geode::internal::GmshElementID >
     {
         std::size_t operator()(
-            const geode::detail::GmshElementID& gmsh_id ) const
+            const geode::internal::GmshElementID& gmsh_id ) const
         {
             return absl::Hash< std::string >()( gmsh_id.type.get() )
                    ^ absl::Hash< geode::index_t >()( gmsh_id.id );
@@ -96,7 +96,7 @@ namespace std
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         static constexpr geode::index_t GMSH_OFFSET_START{ 1 };
 
@@ -521,5 +521,5 @@ namespace geode
             GMSHElementFactory::register_creator< GMSHPrism >( 6 );
             GMSHElementFactory::register_creator< GMSHPyramid >( 7 );
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

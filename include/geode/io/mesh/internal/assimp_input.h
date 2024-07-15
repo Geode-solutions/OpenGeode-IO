@@ -23,27 +23,44 @@
 
 #pragma once
 
-#include <geode/model/representation/io/brep_input.h>
+#include <fstream>
+
+#include <assimp/scene.h>
+
+#include <geode/io/mesh/common.h>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class MSHInput final : public BRepInput
+        template < typename Mesh >
+        class AssimpMeshInput
         {
         public:
-            explicit MSHInput( std::string_view filename )
-                : BRepInput( filename )
+            explicit AssimpMeshInput( std::string_view filename )
+                : file_( filename )
             {
+                OPENGEODE_EXCEPTION( std::ifstream{ to_string( file_ ) }.good(),
+                    "[AssimpMeshInput] Error while opening file: ", file_ );
             }
 
-            static std::string_view extension()
-            {
-                static constexpr auto EXT = "msh";
-                return EXT;
-            }
+            virtual ~AssimpMeshInput() = default;
 
-            BRep read() final;
+            std::unique_ptr< Mesh > read_file();
+
+        private:
+            void read_materials( const aiScene* assimp_scene );
+
+            void read_meshes( const aiScene* assimp_scene );
+
+            void read_textures( const aiScene* assimp_scene );
+
+            std::unique_ptr< Mesh > merge_meshes();
+
+        private:
+            std::vector< std::unique_ptr< Mesh > > surfaces_;
+            std::string_view file_;
+            std::vector< std::pair< std::string, std::string > > materials_;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

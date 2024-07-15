@@ -23,10 +23,7 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/io/polygonal_surface_input.h>
 
 namespace geode
 {
@@ -36,24 +33,24 @@ namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class OBJPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
+        class PLYInput final : public PolygonalSurfaceInput< 3 >
         {
         public:
-            explicit OBJPolygonalOutput( std::string_view filename )
-                : PolygonalSurfaceOutput< 3 >( filename )
+            explicit PLYInput( std::string_view filename )
+                : PolygonalSurfaceInput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "obj";
+                static constexpr auto EXT = "ply";
                 return EXT;
             }
 
-            std::vector< std::string > write(
-                const PolygonalSurface3D &surface ) const final;
+            std::unique_ptr< PolygonalSurface3D > read(
+                const MeshImpl& impl ) final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

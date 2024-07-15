@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/io/image/private/jpg_input.h>
+#include <geode/io/image/internal/jpg_input.h>
 
 #include <geode/image/core/raster_image.h>
 
-#include <geode/io/image/private/raster_image_input.h>
+#include <geode/io/image/internal/raster_image_input.h>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         RasterImage2D JPGInput::read()
         {
             ImageInputImpl reader{ filename() };
             return reader.read_reversed_y_axis_file();
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

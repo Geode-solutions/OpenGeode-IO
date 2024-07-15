@@ -23,33 +23,33 @@
 
 #pragma once
 
-#include <geode/image/io/raster_image_input.h>
+#include <geode/mesh/io/edged_curve_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
-    ALIAS_2D( RasterImage );
+    FORWARD_DECLARATION_DIMENSION_CLASS( EdgedCurve );
+    ALIAS_3D( EdgedCurve );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class BMPInput final : public RasterImageInput< 2 >
+        class SMESHCurveInput final : public EdgedCurveInput< 3 >
         {
         public:
-            explicit BMPInput( std::string_view filename )
-                : RasterImageInput< 2 >( filename )
+            explicit SMESHCurveInput( std::string_view filename )
+                : EdgedCurveInput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "bmp";
+                static constexpr auto EXT = "smesh";
                 return EXT;
             }
 
-            RasterImage2D read() final;
+            std::unique_ptr< EdgedCurve3D > read( const MeshImpl& impl ) final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -21,27 +21,27 @@
  *
  */
 
-#include <geode/io/mesh/private/obj_polygonal_output.h>
+#include <geode/io/mesh/internal/obj_polygonal_output.h>
 
 #include <string>
 #include <vector>
 
 #include <geode/mesh/core/polygonal_surface.h>
 
-#include <geode/io/mesh/private/assimp_output.h>
+#include <geode/io/mesh/internal/assimp_output.h>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::vector< std::string > OBJPolygonalOutput::write(
             const PolygonalSurface3D &surface ) const
         {
-            detail::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
+            internal::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
                 surface, "obj" };
             impl.build_assimp_scene();
             impl.write_file();
             return { to_string( filename() ) };
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,32 +23,34 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include <geode/model/representation/io/brep_output.h>
+#include <geode/mesh/io/triangulated_surface_input.h>
 
 namespace geode
 {
-    namespace detail
+    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
+    ALIAS_3D( TriangulatedSurface );
+} // namespace geode
+
+namespace geode
+{
+    namespace internal
     {
-        class MSHOutput final : public BRepOutput
+        class STLInput final : public TriangulatedSurfaceInput< 3 >
         {
         public:
-            explicit MSHOutput( std::string_view filename )
-                : BRepOutput( filename )
+            explicit STLInput( std::string_view filename )
+                : TriangulatedSurfaceInput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "msh";
+                static constexpr auto EXT = "stl";
                 return EXT;
             }
 
-            std::vector< std::string > write( const BRep& brep ) const final;
-
-            bool is_saveable( const BRep& brep ) const final;
+            std::unique_ptr< TriangulatedSurface3D > read(
+                const MeshImpl& impl ) final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

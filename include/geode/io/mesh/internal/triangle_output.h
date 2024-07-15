@@ -26,34 +26,34 @@
 #include <string>
 #include <vector>
 
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/io/triangulated_surface_output.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
-    ALIAS_3D( PolygonalSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
+    ALIAS_2D( TriangulatedSurface );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class PLYOutput final : public PolygonalSurfaceOutput< 3 >
+        class TriangleOutput final : public TriangulatedSurfaceOutput< 2 >
         {
         public:
-            explicit PLYOutput( std::string_view filename )
-                : PolygonalSurfaceOutput< 3 >( filename )
+            explicit TriangleOutput( std::string_view filename )
+                : TriangulatedSurfaceOutput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "ply";
+                static constexpr auto EXT = "triangle";
                 return EXT;
             }
 
             std::vector< std::string > write(
-                const PolygonalSurface3D &surface ) const final;
+                const TriangulatedSurface2D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,33 +23,37 @@
 
 #pragma once
 
-#include <geode/image/io/raster_image_input.h>
+#include <string>
+#include <vector>
+
+#include <geode/mesh/io/polygonal_surface_output.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
-    ALIAS_2D( RasterImage );
+    FORWARD_DECLARATION_DIMENSION_CLASS( PolygonalSurface );
+    ALIAS_3D( PolygonalSurface );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class PNGInput final : public RasterImageInput< 2 >
+        class OBJPolygonalOutput final : public PolygonalSurfaceOutput< 3 >
         {
         public:
-            explicit PNGInput( std::string_view filename )
-                : RasterImageInput< 2 >( filename )
+            explicit OBJPolygonalOutput( std::string_view filename )
+                : PolygonalSurfaceOutput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "png";
+                static constexpr auto EXT = "obj";
                 return EXT;
             }
 
-            RasterImage2D read() final;
+            std::vector< std::string > write(
+                const PolygonalSurface3D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

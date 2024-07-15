@@ -23,33 +23,37 @@
 
 #pragma once
 
-#include <geode/mesh/io/edged_curve_input.h>
+#include <string>
+#include <vector>
+
+#include <geode/mesh/io/triangulated_surface_output.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( EdgedCurve );
-    ALIAS_3D( EdgedCurve );
+    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
+    ALIAS_3D( TriangulatedSurface );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class SMESHCurveInput final : public EdgedCurveInput< 3 >
+        class STLOutput final : public TriangulatedSurfaceOutput< 3 >
         {
         public:
-            explicit SMESHCurveInput( std::string_view filename )
-                : EdgedCurveInput< 3 >( filename )
+            explicit STLOutput( std::string_view filename )
+                : TriangulatedSurfaceOutput< 3 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "smesh";
+                static constexpr auto EXT = "stl";
                 return EXT;
             }
 
-            std::unique_ptr< EdgedCurve3D > read( const MeshImpl& impl ) final;
+            std::vector< std::string > write(
+                const TriangulatedSurface3D &surface ) const final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -23,34 +23,33 @@
 
 #pragma once
 
-#include <geode/mesh/io/triangulated_surface_input.h>
+#include <geode/image/io/raster_image_input.h>
 
 namespace geode
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( TriangulatedSurface );
-    ALIAS_3D( TriangulatedSurface );
+    FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
+    ALIAS_2D( RasterImage );
 } // namespace geode
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        class STLInput final : public TriangulatedSurfaceInput< 3 >
+        class JPGInput final : public RasterImageInput< 2 >
         {
         public:
-            explicit STLInput( std::string_view filename )
-                : TriangulatedSurfaceInput< 3 >( filename )
+            explicit JPGInput( std::string_view filename )
+                : RasterImageInput< 2 >( filename )
             {
             }
 
             static std::string_view extension()
             {
-                static constexpr auto EXT = "stl";
+                static constexpr auto EXT = "jpg";
                 return EXT;
             }
 
-            std::unique_ptr< TriangulatedSurface3D > read(
-                const MeshImpl& impl ) final;
+            RasterImage2D read() final;
         };
-    } // namespace detail
+    } // namespace internal
 } // namespace geode
