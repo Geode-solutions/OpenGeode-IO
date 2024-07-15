@@ -71,7 +71,7 @@ namespace geode
             void save_images() const
             {
                 const auto path =
-                    filepath_without_extension( this->filename() );
+                    filepath_without_extension( this->filename() ).string();
                 for( const auto& texture : textures_info_ )
                 {
                     const auto& image = texture.second.get().image();
