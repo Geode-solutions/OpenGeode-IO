@@ -122,36 +122,50 @@ namespace
             boundary_incidences_relations corner_line_relations;
             boundary_incidences_relations line_surface_relations;
             boundary_incidences_relations surface_block_relations;
-
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Block3D::component_type_static() );
-
-                add_potential_relationships(
-                    corners_vertices, lines_vertices, corner_line_relations );
-                add_potential_relationships(
-                    lines_vertices, surfaces_vertices, line_surface_relations );
-                add_potential_relationships( surfaces_vertices, blocks_vertices,
-                    surface_block_relations );
+                const auto cmv = get_component_mesh_vertices( uv );
+                add_potential_relationships( std::get< 0 >( cmv ),
+                    std::get< 1 >( cmv ), corner_line_relations );
+                add_potential_relationships( std::get< 1 >( cmv ),
+                    std::get< 2 >( cmv ), line_surface_relations );
+                add_potential_relationships( std::get< 2 >( cmv ),
+                    std::get< 3 >( cmv ), surface_block_relations );
             }
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Block3D::component_type_static() );
-
+                std::vector< geode::ComponentMeshVertex > corners_vertices;
+                std::vector< geode::ComponentMeshVertex > lines_vertices;
+                std::vector< geode::ComponentMeshVertex > surfaces_vertices;
+                std::vector< geode::ComponentMeshVertex > blocks_vertices;
+                const auto cmv = brep_.component_mesh_vertices( uv );
+                for( const auto v : cmv )
+                {
+                    if( v.component_id.type()
+                        == geode::Corner3D::component_type_static() )
+                    {
+                        corners_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Line3D::component_type_static() )
+                    {
+                        lines_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Surface3D::component_type_static() )
+                    {
+                        surfaces_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Block3D::component_type_static() )
+                    {
+                        blocks_vertices.push_back( v );
+                        continue;
+                    }
+                }
                 filter_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
                 filter_potential_relationships(
@@ -883,6 +897,48 @@ namespace
                     }
                 }
             }
+        }
+
+        std::tuple< std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex > >
+            get_component_mesh_vertices( geode::index_t uv )
+        {
+            std::vector< geode::ComponentMeshVertex > corners_vertices;
+            std::vector< geode::ComponentMeshVertex > lines_vertices;
+            std::vector< geode::ComponentMeshVertex > surfaces_vertices;
+            std::vector< geode::ComponentMeshVertex > blocks_vertices;
+            const auto cmv = brep_.component_mesh_vertices( uv );
+            for( const auto v : cmv )
+            {
+                if( v.component_id.type()
+                    == geode::Corner3D::component_type_static() )
+                {
+                    corners_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Line3D::component_type_static() )
+                {
+                    lines_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Surface3D::component_type_static() )
+                {
+                    surfaces_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Block3D::component_type_static() )
+                {
+                    blocks_vertices.push_back( v );
+                    continue;
+                }
+            }
+            return { corners_vertices, lines_vertices, surfaces_vertices,
+                blocks_vertices };
         }
 
     private:
