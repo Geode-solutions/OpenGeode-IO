@@ -45,8 +45,8 @@ namespace geode
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "vtu";
-                return ext;
+                static constexpr auto EXT = "vtu";
+                return EXT;
             }
 
             std::unique_ptr< TetrahedralSolid3D > read(

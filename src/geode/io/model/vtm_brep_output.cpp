@@ -71,7 +71,7 @@ namespace
         {
             geode::index_t counter{ 0 };
             const auto level = geode::Logger::level();
-            geode::Logger::set_level( geode::Logger::Level::warn );
+            geode::Logger::set_level( geode::Logger::LEVEL::warn );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
             absl::FixedArray< geode::uuid > block_ids(
                 this->mesh().nb_blocks() );

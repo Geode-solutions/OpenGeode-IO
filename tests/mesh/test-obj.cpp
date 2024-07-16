@@ -41,7 +41,7 @@ int main()
         geode::IOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::data_path, "TopHat.obj" ) );
+            absl::StrCat( geode::DATA_PATH, "TopHat.obj" ) );
         OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
             "[Test] Number of vertices in the loaded Surface is not correct" );
         OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,

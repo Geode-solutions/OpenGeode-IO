@@ -44,12 +44,12 @@ int main()
         geode::IOModelLibrary::initialize();
 
         auto brep =
-            geode::load_brep( absl::StrCat( geode::data_path, "mss.og_brep" ) );
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
         const auto filename = absl::StrCat( "mss.vtm" );
         geode::save_brep( brep, filename );
 
         auto section = geode::load_section(
-            absl::StrCat( geode::data_path, "mss_cut_section.og_sctn" ) );
+            absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
         geode::save_section( section, filename2 );
 

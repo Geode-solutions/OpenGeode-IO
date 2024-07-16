@@ -45,8 +45,8 @@ namespace geode
 
             static std::string_view extension()
             {
-                static constexpr auto ext = "bmp";
-                return ext;
+                static constexpr auto EXT = "bmp";
+                return EXT;
             }
 
             RasterImage2D read() final;
