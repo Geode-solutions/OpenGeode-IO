@@ -21,16 +21,16 @@
  *
  */
 
-#include <geode/io/mesh/detail/vti_light_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_input.hpp>
 
 #include <array>
 #include <fstream>
 
-#include <geode/basic/string.h>
+#include <geode/basic/string.hpp>
 
-#include <geode/mesh/core/light_regular_grid.h>
+#include <geode/mesh/core/light_regular_grid.hpp>
 
-#include <geode/io/mesh/detail/vti_grid_input.h>
+#include <geode/io/mesh/detail/vti_grid_input.hpp>
 
 namespace
 {
@@ -42,7 +42,7 @@ namespace
     public:
         VTILightRegularGridInputImpl( std::string_view filename )
             : geode::detail::VTIGridInputImpl<
-                geode::LightRegularGrid< dimension > >{ filename }
+                  geode::LightRegularGrid< dimension > >{ filename }
         {
         }
 

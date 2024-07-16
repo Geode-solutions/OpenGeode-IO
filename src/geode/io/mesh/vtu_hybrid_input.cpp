@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_hybrid_input.h>
+#include <geode/io/mesh/detail/vtu_hybrid_input.hpp>
 
-#include <geode/mesh/builder/hybrid_solid_builder.h>
-#include <geode/mesh/core/hybrid_solid.h>
+#include <geode/mesh/builder/hybrid_solid_builder.hpp>
+#include <geode/mesh/core/hybrid_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_input_impl.h>
+#include <geode/io/mesh/detail/vtu_input_impl.hpp>
 
 namespace
 {
@@ -39,7 +39,7 @@ namespace
         VTUHybridInputImpl(
             std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::HybridSolid3D >(
-                filename, impl )
+                  filename, impl )
         {
             enable_tetrahedron();
             enable_hexahedron();

@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/internal/stl_input.h>
+#include <geode/io/mesh/internal/stl_input.hpp>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/internal/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 namespace geode
 {

@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/detail/vtm_brep_output.h>
+#include <geode/io/model/detail/vtm_brep_output.hpp>
 
 #include <string>
 #include <vector>
@@ -30,21 +30,21 @@
 
 #include <absl/strings/str_cat.h>
 
-#include <geode/basic/uuid.h>
+#include <geode/basic/uuid.hpp>
 
-#include <geode/mesh/core/hybrid_solid.h>
-#include <geode/mesh/core/polyhedral_solid.h>
-#include <geode/mesh/core/regular_grid_solid.h>
-#include <geode/mesh/core/tetrahedral_solid.h>
-#include <geode/mesh/io/hybrid_solid_output.h>
-#include <geode/mesh/io/polyhedral_solid_output.h>
-#include <geode/mesh/io/regular_grid_output.h>
-#include <geode/mesh/io/tetrahedral_solid_output.h>
+#include <geode/mesh/core/hybrid_solid.hpp>
+#include <geode/mesh/core/polyhedral_solid.hpp>
+#include <geode/mesh/core/regular_grid_solid.hpp>
+#include <geode/mesh/core/tetrahedral_solid.hpp>
+#include <geode/mesh/io/hybrid_solid_output.hpp>
+#include <geode/mesh/io/polyhedral_solid_output.hpp>
+#include <geode/mesh/io/regular_grid_output.hpp>
+#include <geode/mesh/io/tetrahedral_solid_output.hpp>
 
-#include <geode/model/mixin/core/block.h>
-#include <geode/model/representation/core/brep.h>
+#include <geode/model/mixin/core/block.hpp>
+#include <geode/model/representation/core/brep.hpp>
 
-#include <geode/io/model/detail/vtm_output.h>
+#include <geode/io/model/detail/vtm_output.hpp>
 
 namespace
 {

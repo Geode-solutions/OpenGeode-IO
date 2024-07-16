@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/image/detail/vti_raster_image_output.h>
+#include <geode/io/image/detail/vti_raster_image_output.hpp>
 
 #include <string>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/core/rgb_color.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/core/rgb_color.hpp>
 
-#include <geode/io/image/detail/vti_output_impl.h>
+#include <geode/io/image/detail/vti_output_impl.hpp>
 
 namespace
 {

@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtp_edged_curve_output.h>
+#include <geode/io/mesh/detail/vtp_edged_curve_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/core/edged_curve.hpp>
 
-#include <geode/io/mesh/detail/vtk_mesh_output.h>
+#include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
 namespace
 {
@@ -40,7 +40,7 @@ namespace
         VTPCurveOutputImpl( std::string_view filename,
             const geode::EdgedCurve< dimension >& curve )
             : geode::detail::VTKMeshOutputImpl< geode::EdgedCurve, dimension >(
-                filename, curve, "PolyData" )
+                  filename, curve, "PolyData" )
         {
         }
 

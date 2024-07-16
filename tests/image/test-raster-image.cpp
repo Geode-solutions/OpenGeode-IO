@@ -21,23 +21,23 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/attribute_manager.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/core/rgb_color.h>
-#include <geode/image/io/raster_image_input.h>
-#include <geode/image/io/raster_image_output.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/core/rgb_color.hpp>
+#include <geode/image/io/raster_image_input.hpp>
+#include <geode/image/io/raster_image_output.hpp>
 
-#include <geode/mesh/core/regular_grid_surface.h>
-#include <geode/mesh/io/regular_grid_input.h>
-#include <geode/mesh/io/regular_grid_output.h>
+#include <geode/mesh/core/regular_grid_surface.hpp>
+#include <geode/mesh/io/regular_grid_input.hpp>
+#include <geode/mesh/io/regular_grid_output.hpp>
 
-#include <geode/io/image/common.h>
-#include <geode/io/mesh/common.h>
+#include <geode/io/image/common.hpp>
+#include <geode/io/mesh/common.hpp>
 
 void test_jpg_from_gimp_input()
 {

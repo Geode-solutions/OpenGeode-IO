@@ -21,24 +21,24 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/logger.h>
-#include <geode/basic/range.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/logger.hpp>
+#include <geode/basic/range.hpp>
 
-#include <geode/mesh/core/edged_curve.h>
-#include <geode/mesh/core/point_set.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/point_set.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/model/mixin/core/corner.h>
-#include <geode/model/mixin/core/line.h>
-#include <geode/model/mixin/core/surface.h>
-#include <geode/model/representation/core/section.h>
-#include <geode/model/representation/io/section_input.h>
-#include <geode/model/representation/io/section_output.h>
+#include <geode/model/mixin/core/corner.hpp>
+#include <geode/model/mixin/core/line.hpp>
+#include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/core/section.hpp>
+#include <geode/model/representation/io/section_input.hpp>
+#include <geode/model/representation/io/section_output.hpp>
 
-#include <geode/io/model/common.h>
+#include <geode/io/model/common.hpp>
 
 geode::index_t nb_closed_lines( const geode::Section& section )
 {

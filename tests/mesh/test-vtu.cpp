@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/mesh/core/hybrid_solid.h>
-#include <geode/mesh/core/polyhedral_solid.h>
-#include <geode/mesh/core/tetrahedral_solid.h>
-#include <geode/mesh/io/hybrid_solid_input.h>
-#include <geode/mesh/io/polyhedral_solid_input.h>
-#include <geode/mesh/io/tetrahedral_solid_input.h>
-#include <geode/mesh/io/tetrahedral_solid_output.h>
+#include <geode/mesh/core/hybrid_solid.hpp>
+#include <geode/mesh/core/polyhedral_solid.hpp>
+#include <geode/mesh/core/tetrahedral_solid.hpp>
+#include <geode/mesh/io/hybrid_solid_input.hpp>
+#include <geode/mesh/io/polyhedral_solid_input.hpp>
+#include <geode/mesh/io/tetrahedral_solid_input.hpp>
+#include <geode/mesh/io/tetrahedral_solid_output.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
 void check( const geode::SolidMesh< 3 >& solid,
     const std::array< geode::index_t, 2 >& test_answers )

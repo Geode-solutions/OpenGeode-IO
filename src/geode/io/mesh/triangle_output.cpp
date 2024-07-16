@@ -21,16 +21,16 @@
  *
  */
 
-#include <geode/io/mesh/internal/triangle_output.h>
+#include <geode/io/mesh/internal/triangle_output.hpp>
 
 #include <fstream>
 #include <string>
 
 #include <absl/strings/str_cat.h>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
 namespace
 {

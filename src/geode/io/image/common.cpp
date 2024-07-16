@@ -21,17 +21,17 @@
  *
  */
 
-#include <geode/io/image/common.h>
+#include <geode/io/image/common.hpp>
 
 #include <gdal_priv.h>
 
-#include <geode/image/common.h>
+#include <geode/image/common.hpp>
 
-#include <geode/io/image/detail/vti_raster_image_output.h>
+#include <geode/io/image/detail/vti_raster_image_output.hpp>
 
-#include <geode/io/image/internal/bmp_input.h>
-#include <geode/io/image/internal/jpg_input.h>
-#include <geode/io/image/internal/png_input.h>
+#include <geode/io/image/internal/bmp_input.hpp>
+#include <geode/io/image/internal/jpg_input.hpp>
+#include <geode/io/image/internal/png_input.hpp>
 
 namespace
 {

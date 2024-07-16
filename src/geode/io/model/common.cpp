@@ -21,18 +21,18 @@
  *
  */
 
-#include <geode/io/model/common.h>
+#include <geode/io/model/common.hpp>
 
-#include <geode/model/common.h>
+#include <geode/model/common.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
-#include <geode/io/model/detail/vtm_brep_output.h>
-#include <geode/io/model/detail/vtm_section_output.h>
-#include <geode/io/model/internal/msh_common.h>
-#include <geode/io/model/internal/msh_input.h>
-#include <geode/io/model/internal/msh_output.h>
-#include <geode/io/model/internal/svg_input.h>
+#include <geode/io/model/detail/vtm_brep_output.hpp>
+#include <geode/io/model/detail/vtm_section_output.hpp>
+#include <geode/io/model/internal/msh_common.hpp>
+#include <geode/io/model/internal/msh_input.hpp>
+#include <geode/io/model/internal/msh_output.hpp>
+#include <geode/io/model/internal/svg_input.hpp>
 
 namespace
 {

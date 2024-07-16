@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_polyhedral_input.h>
+#include <geode/io/mesh/detail/vtu_polyhedral_input.hpp>
 
-#include <geode/mesh/builder/polyhedral_solid_builder.h>
-#include <geode/mesh/core/polyhedral_solid.h>
+#include <geode/mesh/builder/polyhedral_solid_builder.hpp>
+#include <geode/mesh/core/polyhedral_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_input_impl.h>
+#include <geode/io/mesh/detail/vtu_input_impl.hpp>
 
 namespace
 {
@@ -39,7 +39,7 @@ namespace
         VTUPolyhedralInputImpl(
             std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
-                filename, impl )
+                  filename, impl )
         {
             enable_tetrahedron();
             enable_hexahedron();

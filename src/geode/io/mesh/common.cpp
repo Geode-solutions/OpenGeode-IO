@@ -21,39 +21,39 @@
  *
  */
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
-#include <geode/mesh/common.h>
+#include <geode/mesh/common.hpp>
 
-#include <geode/io/image/common.h>
+#include <geode/io/image/common.hpp>
 
-#include <geode/io/mesh/detail/vti_light_regular_grid_input.h>
-#include <geode/io/mesh/detail/vti_light_regular_grid_output.h>
-#include <geode/io/mesh/detail/vti_regular_grid_input.h>
-#include <geode/io/mesh/detail/vti_regular_grid_output.h>
-#include <geode/io/mesh/detail/vtp_edged_curve_output.h>
-#include <geode/io/mesh/detail/vtp_input.h>
-#include <geode/io/mesh/detail/vtp_point_set_output.h>
-#include <geode/io/mesh/detail/vtp_polygonal_output.h>
-#include <geode/io/mesh/detail/vtp_triangulated_output.h>
-#include <geode/io/mesh/detail/vtu_hybrid_input.h>
-#include <geode/io/mesh/detail/vtu_hybrid_output.h>
-#include <geode/io/mesh/detail/vtu_polyhedral_input.h>
-#include <geode/io/mesh/detail/vtu_polyhedral_output.h>
-#include <geode/io/mesh/detail/vtu_tetrahedral_input.h>
-#include <geode/io/mesh/detail/vtu_tetrahedral_output.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_input.hpp>
+#include <geode/io/mesh/detail/vti_light_regular_grid_output.hpp>
+#include <geode/io/mesh/detail/vti_regular_grid_input.hpp>
+#include <geode/io/mesh/detail/vti_regular_grid_output.hpp>
+#include <geode/io/mesh/detail/vtp_edged_curve_output.hpp>
+#include <geode/io/mesh/detail/vtp_input.hpp>
+#include <geode/io/mesh/detail/vtp_point_set_output.hpp>
+#include <geode/io/mesh/detail/vtp_polygonal_output.hpp>
+#include <geode/io/mesh/detail/vtp_triangulated_output.hpp>
+#include <geode/io/mesh/detail/vtu_hybrid_input.hpp>
+#include <geode/io/mesh/detail/vtu_hybrid_output.hpp>
+#include <geode/io/mesh/detail/vtu_polyhedral_input.hpp>
+#include <geode/io/mesh/detail/vtu_polyhedral_output.hpp>
+#include <geode/io/mesh/detail/vtu_tetrahedral_input.hpp>
+#include <geode/io/mesh/detail/vtu_tetrahedral_output.hpp>
 
-#include <geode/io/mesh/internal/dxf_input.h>
-#include <geode/io/mesh/internal/obj_input.h>
-#include <geode/io/mesh/internal/obj_polygonal_output.h>
-#include <geode/io/mesh/internal/obj_triangulated_output.h>
-#include <geode/io/mesh/internal/ply_input.h>
-#include <geode/io/mesh/internal/ply_output.h>
-#include <geode/io/mesh/internal/smesh_curve_input.h>
-#include <geode/io/mesh/internal/smesh_triangulated_input.h>
-#include <geode/io/mesh/internal/stl_input.h>
-#include <geode/io/mesh/internal/stl_output.h>
-#include <geode/io/mesh/internal/triangle_output.h>
+#include <geode/io/mesh/internal/dxf_input.hpp>
+#include <geode/io/mesh/internal/obj_input.hpp>
+#include <geode/io/mesh/internal/obj_polygonal_output.hpp>
+#include <geode/io/mesh/internal/obj_triangulated_output.hpp>
+#include <geode/io/mesh/internal/ply_input.hpp>
+#include <geode/io/mesh/internal/ply_output.hpp>
+#include <geode/io/mesh/internal/smesh_curve_input.hpp>
+#include <geode/io/mesh/internal/smesh_triangulated_input.hpp>
+#include <geode/io/mesh/internal/stl_input.hpp>
+#include <geode/io/mesh/internal/stl_output.hpp>
+#include <geode/io/mesh/internal/triangle_output.hpp>
 
 namespace
 {

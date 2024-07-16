@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/io/mesh/internal/smesh_triangulated_input.h>
+#include <geode/io/mesh/internal/smesh_triangulated_input.hpp>
 
 #include <fstream>
 
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/filename.h>
+#include <geode/basic/filename.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/internal/smesh_input.h>
+#include <geode/io/mesh/internal/smesh_input.hpp>
 
 namespace
 {
@@ -47,8 +47,8 @@ namespace
         SMESHTriangulatedInputImpl( std::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
             : geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
-                geode::TriangulatedSurfaceBuilder3D,
-                3 >( filename, triangulated_surface )
+                  geode::TriangulatedSurfaceBuilder3D,
+                  3 >( filename, triangulated_surface )
         {
         }
 

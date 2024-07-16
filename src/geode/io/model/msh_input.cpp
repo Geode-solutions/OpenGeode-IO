@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/internal/msh_input.h>
+#include <geode/io/model/internal/msh_input.hpp>
 
 #include <fstream>
 #include <mutex>
@@ -30,34 +30,34 @@
 #include <absl/container/flat_hash_set.h>
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/algorithm.h>
-#include <geode/basic/common.h>
-#include <geode/basic/factory.h>
-#include <geode/basic/logger.h>
-#include <geode/basic/string.h>
-#include <geode/basic/uuid.h>
+#include <geode/basic/algorithm.hpp>
+#include <geode/basic/common.hpp>
+#include <geode/basic/factory.hpp>
+#include <geode/basic/logger.hpp>
+#include <geode/basic/string.hpp>
+#include <geode/basic/uuid.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/edged_curve_builder.h>
-#include <geode/mesh/builder/point_set_builder.h>
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/builder/polyhedral_solid_builder.h>
-#include <geode/mesh/core/edged_curve.h>
-#include <geode/mesh/core/hybrid_solid.h>
-#include <geode/mesh/core/mesh_factory.h>
-#include <geode/mesh/core/point_set.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/builder/point_set_builder.hpp>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/builder/polyhedral_solid_builder.hpp>
+#include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/hybrid_solid.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
+#include <geode/mesh/core/point_set.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/model/helpers/detail/build_model_boundaries.h>
-#include <geode/model/mixin/core/block.h>
-#include <geode/model/mixin/core/corner.h>
-#include <geode/model/mixin/core/line.h>
-#include <geode/model/mixin/core/surface.h>
-#include <geode/model/representation/builder/brep_builder.h>
-#include <geode/model/representation/core/brep.h>
+#include <geode/model/helpers/detail/build_model_boundaries.hpp>
+#include <geode/model/mixin/core/block.hpp>
+#include <geode/model/mixin/core/corner.hpp>
+#include <geode/model/mixin/core/line.hpp>
+#include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
+#include <geode/model/representation/core/brep.hpp>
 
-#include <geode/io/model/internal/msh_common.h>
+#include <geode/io/model/internal/msh_common.hpp>
 
 namespace
 {

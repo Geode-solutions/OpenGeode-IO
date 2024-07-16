@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/mesh/internal/stl_output.h>
+#include <geode/io/mesh/internal/stl_output.hpp>
 
 #include <string>
 #include <vector>
 
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/internal/assimp_output.h>
+#include <geode/io/mesh/internal/assimp_output.hpp>
 
 namespace geode
 {

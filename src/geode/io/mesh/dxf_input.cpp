@@ -21,15 +21,15 @@
  *
  */
 
-#include <geode/io/mesh/internal/dxf_input.h>
+#include <geode/io/mesh/internal/dxf_input.hpp>
 
-#include <geode/geometry/nn_search.h>
-#include <geode/geometry/point.h>
+#include <geode/geometry/nn_search.hpp>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/internal/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 namespace geode
 {
