@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtp_edged_curve_output.h>
+#include <geode/io/mesh/detail/vtp_edged_curve_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/core/edged_curve.hpp>
 
-#include <geode/io/mesh/detail/vtk_mesh_output.h>
+#include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
 namespace
 {

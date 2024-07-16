@@ -29,15 +29,15 @@ add_geode_library(
         "vtm_section_output.cpp"
         "vtm_brep_output.cpp"
     PUBLIC_HEADERS
-        "common.h"
+        "common.hpp"
     ADVANCED_HEADERS
-        "detail/vtm_output.h"
-        "detail/vtm_section_output.h"
-        "detail/vtm_brep_output.h"
+        "detail/vtm_output.hpp"
+        "detail/vtm_section_output.hpp"
+        "detail/vtm_brep_output.hpp"
     INTERNAL_HEADERS
-        "internal/msh_input.h"
-        "internal/msh_output.h"
-        "internal/svg_input.h"
+        "internal/msh_input.hpp"
+        "internal/msh_output.hpp"
+        "internal/svg_input.hpp"
     PRIVATE_DEPENDENCIES
         Async++
         OpenGeode::basic

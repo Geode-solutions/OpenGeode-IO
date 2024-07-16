@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtp_point_set_output.h>
+#include <geode/io/mesh/detail/vtp_point_set_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/point_set.h>
+#include <geode/mesh/core/point_set.hpp>
 
-#include <geode/io/mesh/detail/vtk_mesh_output.h>
+#include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
 namespace
 {

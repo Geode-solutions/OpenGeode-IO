@@ -21,15 +21,15 @@
  *
  */
 
-#include <geode/io/mesh/detail/vti_light_regular_grid_output.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_output.hpp>
 
 #include <string>
 
-#include <geode/geometry/coordinate_system.h>
+#include <geode/geometry/coordinate_system.hpp>
 
-#include <geode/mesh/core/light_regular_grid.h>
+#include <geode/mesh/core/light_regular_grid.hpp>
 
-#include <geode/io/mesh/detail/vti_grid_output.h>
+#include <geode/io/mesh/detail/vti_grid_output.hpp>
 
 namespace geode
 {

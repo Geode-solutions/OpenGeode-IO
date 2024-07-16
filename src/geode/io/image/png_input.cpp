@@ -21,11 +21,11 @@
  *
  */
 
-#include <geode/io/image/internal/png_input.h>
+#include <geode/io/image/internal/png_input.hpp>
 
-#include <geode/image/core/raster_image.h>
+#include <geode/image/core/raster_image.hpp>
 
-#include <geode/io/image/internal/raster_image_input.h>
+#include <geode/io/image/internal/raster_image_input.hpp>
 
 namespace geode
 {

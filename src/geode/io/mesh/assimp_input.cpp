@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/internal/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 #include <assimp/Importer.hpp>
 
@@ -29,21 +29,21 @@
 
 #include <absl/algorithm/container.h>
 
-#include <geode/basic/common.h>
-#include <geode/basic/filename.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/common.hpp>
+#include <geode/basic/filename.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/io/raster_image_input.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/io/raster_image_input.hpp>
 
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/core/texture2d.h>
-#include <geode/mesh/core/triangulated_surface.h>
-#include <geode/mesh/helpers/detail/surface_merger.h>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/texture2d.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
+#include <geode/mesh/helpers/detail/surface_merger.hpp>
 
 namespace
 {

@@ -21,17 +21,17 @@
  *
  */
 
-#include <geode/io/mesh/internal/obj_input.h>
+#include <geode/io/mesh/internal/obj_input.hpp>
 
 #include <fstream>
 
-#include <geode/basic/file.h>
-#include <geode/basic/filename.h>
-#include <geode/basic/string.h>
+#include <geode/basic/file.hpp>
+#include <geode/basic/filename.hpp>
+#include <geode/basic/string.hpp>
 
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/internal/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 namespace geode
 {

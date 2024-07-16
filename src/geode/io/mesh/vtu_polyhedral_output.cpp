@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_polyhedral_output.h>
+#include <geode/io/mesh/detail/vtu_polyhedral_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/polyhedral_solid.h>
-#include <geode/mesh/helpers/detail/element_identifier.h>
+#include <geode/mesh/core/polyhedral_solid.hpp>
+#include <geode/mesh/helpers/detail/element_identifier.hpp>
 
-#include <geode/io/mesh/detail/vtu_output_impl.h>
+#include <geode/io/mesh/detail/vtu_output_impl.hpp>
 
 namespace
 {

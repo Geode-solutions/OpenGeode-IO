@@ -21,19 +21,19 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/io/polygonal_surface_input.h>
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/io/polygonal_surface_input.hpp>
+#include <geode/mesh/io/polygonal_surface_output.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/mesh/core/texture2d.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/mesh/core/texture2d.hpp>
 int main()
 {
     try

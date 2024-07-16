@@ -29,16 +29,16 @@ add_geode_library(
         "raster_image_input.cpp"
         "vti_raster_image_output.cpp"
     PUBLIC_HEADERS
-        "common.h"
+        "common.hpp"
     ADVANCED_HEADERS
-        "detail/vti_output_impl.h"
-        "detail/vti_raster_image_output.h"
-        "detail/vtk_output.h"
+        "detail/vti_output_impl.hpp"
+        "detail/vti_raster_image_output.hpp"
+        "detail/vtk_output.hpp"
     INTERNAL_HEADERS
-        "internal/bmp_input.h"
-        "internal/jpg_input.h"
-        "internal/png_input.h"
-        "internal/raster_image_input.h"
+        "internal/bmp_input.hpp"
+        "internal/jpg_input.hpp"
+        "internal/png_input.hpp"
+        "internal/raster_image_input.hpp"
     PUBLIC_DEPENDENCIES
         OpenGeode::image
     PRIVATE_DEPENDENCIES

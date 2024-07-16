@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtp_input.h>
+#include <geode/io/mesh/detail/vtp_input.hpp>
 
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/detail/vtk_mesh_input.h>
+#include <geode/io/mesh/detail/vtk_mesh_input.hpp>
 
 namespace
 {

@@ -21,12 +21,12 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_tetrahedral_input.h>
+#include <geode/io/mesh/detail/vtu_tetrahedral_input.hpp>
 
-#include <geode/mesh/builder/tetrahedral_solid_builder.h>
-#include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/mesh/builder/tetrahedral_solid_builder.hpp>
+#include <geode/mesh/core/tetrahedral_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_input_impl.h>
+#include <geode/io/mesh/detail/vtu_input_impl.hpp>
 
 namespace
 {

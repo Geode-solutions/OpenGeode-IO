@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/mesh/internal/obj_polygonal_output.h>
+#include <geode/io/mesh/internal/obj_polygonal_output.hpp>
 
 #include <string>
 #include <vector>
 
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/internal/assimp_output.h>
+#include <geode/io/mesh/internal/assimp_output.hpp>
 
 namespace geode
 {

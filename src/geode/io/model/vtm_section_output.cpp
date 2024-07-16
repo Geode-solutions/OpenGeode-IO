@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/model/detail/vtm_section_output.h>
+#include <geode/io/model/detail/vtm_section_output.hpp>
 
 #include <string>
 #include <vector>
 
-#include <geode/model/representation/core/section.h>
+#include <geode/model/representation/core/section.hpp>
 
-#include <geode/io/model/detail/vtm_output.h>
+#include <geode/io/model/detail/vtm_output.hpp>
 
 namespace
 {

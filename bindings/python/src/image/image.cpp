@@ -23,7 +23,7 @@
 
 #include <pybind11/pybind11.h>
 
-#include <geode/io/image/common.h>
+#include <geode/io/image/common.hpp>
 
 PYBIND11_MODULE( opengeode_io_py_image, module )
 {

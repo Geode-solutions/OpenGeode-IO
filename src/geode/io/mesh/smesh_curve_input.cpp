@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/io/mesh/internal/smesh_curve_input.h>
+#include <geode/io/mesh/internal/smesh_curve_input.hpp>
 
 #include <fstream>
 
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/filename.h>
+#include <geode/basic/filename.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/edged_curve_builder.h>
-#include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/core/edged_curve.hpp>
 
-#include <geode/io/mesh/internal/smesh_input.h>
+#include <geode/io/mesh/internal/smesh_input.hpp>
 
 namespace
 {

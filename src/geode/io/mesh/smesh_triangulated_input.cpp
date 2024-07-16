@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/io/mesh/internal/smesh_triangulated_input.h>
+#include <geode/io/mesh/internal/smesh_triangulated_input.hpp>
 
 #include <fstream>
 
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/filename.h>
+#include <geode/basic/filename.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/internal/smesh_input.h>
+#include <geode/io/mesh/internal/smesh_input.hpp>
 
 namespace
 {

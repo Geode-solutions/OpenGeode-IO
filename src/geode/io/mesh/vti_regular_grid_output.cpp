@@ -21,16 +21,16 @@
  *
  */
 
-#include <geode/io/mesh/detail/vti_regular_grid_output.h>
+#include <geode/io/mesh/detail/vti_regular_grid_output.hpp>
 
 #include <string>
 
-#include <geode/geometry/coordinate_system.h>
+#include <geode/geometry/coordinate_system.hpp>
 
-#include <geode/mesh/core/regular_grid_solid.h>
-#include <geode/mesh/core/regular_grid_surface.h>
+#include <geode/mesh/core/regular_grid_solid.hpp>
+#include <geode/mesh/core/regular_grid_surface.hpp>
 
-#include <geode/io/mesh/detail/vti_grid_output.h>
+#include <geode/io/mesh/detail/vti_grid_output.hpp>
 
 namespace geode
 {

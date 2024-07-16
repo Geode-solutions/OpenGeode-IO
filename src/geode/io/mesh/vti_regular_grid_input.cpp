@@ -21,19 +21,19 @@
  *
  */
 
-#include <geode/io/mesh/detail/vti_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_regular_grid_input.hpp>
 
 #include <array>
 #include <fstream>
 
-#include <geode/basic/string.h>
+#include <geode/basic/string.hpp>
 
-#include <geode/mesh/builder/regular_grid_solid_builder.h>
-#include <geode/mesh/builder/regular_grid_surface_builder.h>
-#include <geode/mesh/core/regular_grid_solid.h>
-#include <geode/mesh/core/regular_grid_surface.h>
+#include <geode/mesh/builder/regular_grid_solid_builder.hpp>
+#include <geode/mesh/builder/regular_grid_surface_builder.hpp>
+#include <geode/mesh/core/regular_grid_solid.hpp>
+#include <geode/mesh/core/regular_grid_surface.hpp>
 
-#include <geode/io/mesh/detail/vti_grid_input.h>
+#include <geode/io/mesh/detail/vti_grid_input.hpp>
 
 namespace
 {
