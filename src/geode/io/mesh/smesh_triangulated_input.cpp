@@ -21,32 +21,32 @@
  *
  */
 
-#include <geode/io/mesh/private/smesh_triangulated_input.h>
+#include <geode/io/mesh/internal/smesh_triangulated_input.hpp>
 
 #include <fstream>
 
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/filename.h>
+#include <geode/basic/filename.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/private/smesh_input.h>
+#include <geode/io/mesh/internal/smesh_input.hpp>
 
 namespace
 {
     class SMESHTriangulatedInputImpl
-        : public geode::detail::SMESHInputImpl< geode::TriangulatedSurface3D,
+        : public geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
               geode::TriangulatedSurfaceBuilder3D,
               3 >
     {
     public:
-        SMESHTriangulatedInputImpl( absl::string_view filename,
+        SMESHTriangulatedInputImpl( std::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
-            : geode::detail::SMESHInputImpl< geode::TriangulatedSurface3D,
+            : geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
                 geode::TriangulatedSurfaceBuilder3D,
                 3 >( filename, triangulated_surface )
         {
@@ -63,7 +63,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::unique_ptr< TriangulatedSurface3D > SMESHTriangulatedInput::read(
             const MeshImpl& impl )
@@ -73,5 +73,5 @@ namespace geode
             reader.read_file();
             return surface;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

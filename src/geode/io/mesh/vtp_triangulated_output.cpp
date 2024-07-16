@@ -21,11 +21,11 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtp_triangulated_output.h>
+#include <geode/io/mesh/detail/vtp_triangulated_output.hpp>
 
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/detail/vtp_surface_output_impl.h>
+#include <geode/io/mesh/detail/vtp_surface_output_impl.hpp>
 
 namespace geode
 {

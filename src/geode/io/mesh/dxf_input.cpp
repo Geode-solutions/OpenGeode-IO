@@ -21,27 +21,26 @@
  *
  */
 
-#include <geode/io/mesh/private/dxf_input.h>
+#include <geode/io/mesh/internal/dxf_input.hpp>
 
-#include <geode/geometry/nn_search.h>
-#include <geode/geometry/point.h>
+#include <geode/geometry/nn_search.hpp>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::unique_ptr< PolygonalSurface3D > DXFInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::detail::AssimpMeshInput< geode::PolygonalSurface3D > reader{
-                filename()
-            };
+            geode::internal::AssimpMeshInput< geode::PolygonalSurface3D >
+                reader{ filename() };
             return reader.read_file();
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -21,28 +21,27 @@
  *
  */
 
-#include <geode/io/mesh/private/obj_input.h>
+#include <geode/io/mesh/internal/obj_input.hpp>
 
 #include <fstream>
 
-#include <geode/basic/file.h>
-#include <geode/basic/filename.h>
-#include <geode/basic/string.h>
+#include <geode/basic/file.hpp>
+#include <geode/basic/filename.hpp>
+#include <geode/basic/string.hpp>
 
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::unique_ptr< PolygonalSurface3D > OBJInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::detail::AssimpMeshInput< geode::PolygonalSurface3D > reader{
-                filename()
-            };
+            geode::internal::AssimpMeshInput< geode::PolygonalSurface3D >
+                reader{ filename() };
             return reader.read_file();
         }
 
@@ -62,7 +61,8 @@ namespace geode
             PolygonalSurfaceInput< 3 >::MissingFiles missing;
             const auto mtl_tokens = string_split( mtllib_line.value() );
             const auto& mtl_filename = mtl_tokens.at( 1 );
-            const auto file_path = filepath_without_filename( filename() );
+            const auto file_path =
+                filepath_without_filename( filename() ).string();
             const auto mtl_file_path =
                 absl::StrCat( file_path, "/", mtl_filename );
             if( !file_exists( mtl_file_path ) )
@@ -90,5 +90,5 @@ namespace geode
             }
             return missing;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

@@ -21,27 +21,28 @@
  *
  */
 
-#include <geode/io/mesh/private/stl_output.h>
+#include <geode/io/mesh/internal/stl_output.hpp>
 
 #include <string>
 #include <vector>
 
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
-#include <geode/io/mesh/private/assimp_output.h>
+#include <geode/io/mesh/internal/assimp_output.hpp>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::vector< std::string > STLOutput::write(
             const TriangulatedSurface3D &surface ) const
         {
-            detail::AssimpMeshOutput< TriangulatedSurface3D > impl{ filename(),
-                surface, "stlb" };
+            internal::AssimpMeshOutput< TriangulatedSurface3D > impl{
+                filename(), surface, "stlb"
+            };
             impl.build_assimp_scene();
             impl.write_file();
             return { to_string( filename() ) };
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

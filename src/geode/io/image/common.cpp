@@ -21,33 +21,33 @@
  *
  */
 
-#include <geode/io/image/common.h>
+#include <geode/io/image/common.hpp>
 
 #include <gdal_priv.h>
 
-#include <geode/image/common.h>
+#include <geode/image/common.hpp>
 
-#include <geode/io/image/detail/vti_raster_image_output.h>
+#include <geode/io/image/detail/vti_raster_image_output.hpp>
 
-#include <geode/io/image/private/bmp_input.h>
-#include <geode/io/image/private/jpg_input.h>
-#include <geode/io/image/private/png_input.h>
+#include <geode/io/image/internal/bmp_input.hpp>
+#include <geode/io/image/internal/jpg_input.hpp>
+#include <geode/io/image/internal/png_input.hpp>
 
 namespace
 {
     void register_raster_input()
     {
         geode::RasterImageInputFactory2D::register_creator<
-            geode::detail::JPGInput >(
-            geode::detail::JPGInput::extension().data() );
+            geode::internal::JPGInput >(
+            geode::internal::JPGInput::extension().data() );
 
         geode::RasterImageInputFactory2D::register_creator<
-            geode::detail::PNGInput >(
-            geode::detail::PNGInput::extension().data() );
+            geode::internal::PNGInput >(
+            geode::internal::PNGInput::extension().data() );
 
         geode::RasterImageInputFactory2D::register_creator<
-            geode::detail::BMPInput >(
-            geode::detail::BMPInput::extension().data() );
+            geode::internal::BMPInput >(
+            geode::internal::BMPInput::extension().data() );
     }
 
     void register_raster_output()

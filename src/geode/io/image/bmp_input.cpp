@@ -21,20 +21,20 @@
  *
  */
 
-#include <geode/io/image/private/bmp_input.h>
+#include <geode/io/image/internal/bmp_input.hpp>
 
-#include <geode/image/core/raster_image.h>
+#include <geode/image/core/raster_image.hpp>
 
-#include <geode/io/image/private/raster_image_input.h>
+#include <geode/io/image/internal/raster_image_input.hpp>
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         RasterImage2D BMPInput::read()
         {
             ImageInputImpl reader{ filename() };
             return reader.read_file();
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

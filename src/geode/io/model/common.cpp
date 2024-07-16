@@ -21,31 +21,32 @@
  *
  */
 
-#include <geode/io/model/common.h>
+#include <geode/io/model/common.hpp>
 
-#include <geode/model/common.h>
+#include <geode/model/common.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
-#include <geode/io/model/detail/vtm_brep_output.h>
-#include <geode/io/model/detail/vtm_section_output.h>
-#include <geode/io/model/private/msh_common.h>
-#include <geode/io/model/private/msh_input.h>
-#include <geode/io/model/private/msh_output.h>
-#include <geode/io/model/private/svg_input.h>
+#include <geode/io/model/detail/vtm_brep_output.hpp>
+#include <geode/io/model/detail/vtm_section_output.hpp>
+#include <geode/io/model/internal/msh_common.hpp>
+#include <geode/io/model/internal/msh_input.hpp>
+#include <geode/io/model/internal/msh_output.hpp>
+#include <geode/io/model/internal/svg_input.hpp>
 
 namespace
 {
     void register_brep_input()
     {
-        geode::BRepInputFactory::register_creator< geode::detail::MSHInput >(
-            geode::detail::MSHInput::extension().data() );
+        geode::BRepInputFactory::register_creator< geode::internal::MSHInput >(
+            geode::internal::MSHInput::extension().data() );
     }
 
     void register_brep_output()
     {
-        geode::BRepOutputFactory::register_creator< geode::detail::MSHOutput >(
-            geode::detail::MSHOutput::extension().data() );
+        geode::BRepOutputFactory::register_creator<
+            geode::internal::MSHOutput >(
+            geode::internal::MSHOutput::extension().data() );
         geode::BRepOutputFactory::register_creator<
             geode::detail::VTMBRepOutput >(
             geode::detail::VTMBRepOutput::extension().data() );
@@ -53,8 +54,9 @@ namespace
 
     void register_section_input()
     {
-        geode::SectionInputFactory::register_creator< geode::detail::SVGInput >(
-            geode::detail::SVGInput::extension().data() );
+        geode::SectionInputFactory::register_creator<
+            geode::internal::SVGInput >(
+            geode::internal::SVGInput::extension().data() );
     }
 
     void register_section_output()
@@ -78,6 +80,6 @@ namespace geode
         register_brep_output();
         register_section_output();
 
-        detail::initialize_gmsh_factory();
+        internal::initialize_gmsh_factory();
     }
 } // namespace geode

@@ -21,15 +21,15 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/mesh/core/edged_curve.h>
-#include <geode/mesh/io/edged_curve_input.h>
+#include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/io/edged_curve_input.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
 int main()
 {
@@ -38,7 +38,7 @@ int main()
         geode::IOMeshLibrary::initialize();
         // Load file
         auto curve = geode::load_edged_curve< 3 >(
-            absl::StrCat( geode::data_path, "curve.smesh" ) );
+            absl::StrCat( geode::DATA_PATH, "curve.smesh" ) );
         OPENGEODE_EXCEPTION( curve->nb_vertices() == 1023,
             "[Test] Number of vertices in the "
             "loaded EdgedCurve is not correct" );

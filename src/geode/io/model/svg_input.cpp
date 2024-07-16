@@ -21,26 +21,26 @@
  *
  */
 
-#include <geode/io/model/private/svg_input.h>
+#include <geode/io/model/internal/svg_input.hpp>
 
 #include <cctype>
 #include <fstream>
 
 #include <pugixml.hpp>
 
-#include <geode/geometry/bounding_box.h>
-#include <geode/geometry/nn_search.h>
-#include <geode/geometry/point.h>
-#include <geode/geometry/vector.h>
+#include <geode/geometry/bounding_box.hpp>
+#include <geode/geometry/nn_search.hpp>
+#include <geode/geometry/point.hpp>
+#include <geode/geometry/vector.hpp>
 
-#include <geode/mesh/builder/edged_curve_builder.h>
-#include <geode/mesh/builder/point_set_builder.h>
-#include <geode/mesh/core/edged_curve.h>
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/builder/point_set_builder.hpp>
+#include <geode/mesh/core/edged_curve.hpp>
 
-#include <geode/model/mixin/core/corner.h>
-#include <geode/model/mixin/core/line.h>
-#include <geode/model/representation/builder/section_builder.h>
-#include <geode/model/representation/core/section.h>
+#include <geode/model/mixin/core/corner.hpp>
+#include <geode/model/mixin/core/line.hpp>
+#include <geode/model/representation/builder/section_builder.hpp>
+#include <geode/model/representation/core/section.hpp>
 
 namespace
 {
@@ -49,7 +49,7 @@ namespace
     class SVGInputImpl
     {
     public:
-        SVGInputImpl( absl::string_view filename, geode::Section& section )
+        SVGInputImpl( std::string_view filename, geode::Section& section )
             : file_{ geode::to_string( filename ) },
               section_( section ),
               builder_{ section }
@@ -424,7 +424,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         Section SVGInput::read()
         {
@@ -435,5 +435,5 @@ namespace geode
             impl.build_topology();
             return section;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

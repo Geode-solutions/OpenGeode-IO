@@ -21,22 +21,22 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/attribute_manager.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/io/polygonal_surface_input.h>
-#include <geode/mesh/io/polygonal_surface_output.h>
+#include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/io/polygonal_surface_input.hpp>
+#include <geode/mesh/io/polygonal_surface_output.hpp>
 
-#include <geode/io/mesh/common.h>
+#include <geode/io/mesh/common.hpp>
 
 void check( const geode::PolygonalSurface3D& surface,
     const std::array< geode::index_t, 2 >& test_answers,
-    absl::Span< const absl::string_view > vertex_attributes,
-    absl::Span< const absl::string_view > polygon_attributes )
+    absl::Span< const std::string_view > vertex_attributes,
+    absl::Span< const std::string_view > polygon_attributes )
 {
     OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
         "[Test] Number of vertices in the loaded Surface is not correct: "
@@ -62,18 +62,18 @@ void check( const geode::PolygonalSurface3D& surface,
     }
 }
 
-void run_test( absl::string_view filename,
+void run_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers,
-    absl::Span< const absl::string_view > vertex_attributes,
-    absl::Span< const absl::string_view > polygon_attributes )
+    absl::Span< const std::string_view > vertex_attributes,
+    absl::Span< const std::string_view > polygon_attributes )
 {
     // Load file
     auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::data_path, filename ) );
+        absl::StrCat( geode::DATA_PATH, filename ) );
     check( *surface, test_answers, vertex_attributes, polygon_attributes );
 
     // Save file
-    absl::string_view filename_without_ext{ filename };
+    std::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
     const auto output_filename_default =
         absl::StrCat( filename_without_ext, ".", surface->native_extension() );

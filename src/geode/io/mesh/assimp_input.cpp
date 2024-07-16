@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/mesh/private/assimp_input.h>
+#include <geode/io/mesh/internal/assimp_input.hpp>
 
 #include <assimp/Importer.hpp>
 
@@ -29,21 +29,21 @@
 
 #include <absl/algorithm/container.h>
 
-#include <geode/basic/common.h>
-#include <geode/basic/filename.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/common.hpp>
+#include <geode/basic/filename.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/io/raster_image_input.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/io/raster_image_input.hpp>
 
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/builder/triangulated_surface_builder.h>
-#include <geode/mesh/core/polygonal_surface.h>
-#include <geode/mesh/core/texture2d.h>
-#include <geode/mesh/core/triangulated_surface.h>
-#include <geode/mesh/helpers/detail/surface_merger.h>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/texture2d.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
+#include <geode/mesh/helpers/detail/surface_merger.hpp>
 
 namespace
 {
@@ -57,7 +57,8 @@ namespace
             async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
             [&assimp_mesh, &builder]( geode::index_t v ) {
                 const auto& vertex = assimp_mesh.mVertices[v];
-                builder->set_point( v, { { vertex.x, vertex.y, vertex.z } } );
+                builder->set_point(
+                    v, geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
             } );
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
@@ -77,7 +78,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         template < typename Mesh >
         std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
@@ -117,7 +118,7 @@ namespace geode
                         const auto& coord =
                             assimp_mesh.mTextureCoords[0][mesh_vertex];
                         texture.set_texture_coordinates(
-                            { p, v }, { { coord.x, coord.y } } );
+                            { p, v }, Point2D{ { coord.x, coord.y } } );
                     }
                 }
                 if( !material.second.empty() )
@@ -165,7 +166,9 @@ namespace geode
             {
                 ref_surfaces.emplace_back( *surface );
             }
-            SurfaceMeshMerger3D merger{ ref_surfaces, global_epsilon };
+
+            detail::SurfaceMeshMerger3D merger{ ref_surfaces, GLOBAL_EPSILON };
+
             std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
                 merger.merge().release() ) };
             Mesh::Builder::create( *merged )->compute_polygon_adjacencies();
@@ -224,12 +227,13 @@ namespace geode
                     == AI_SUCCESS )
                 {
                     materials_[i].second = absl::StrCat(
-                        filepath_without_filename( file_ ), Path.C_Str() );
+                        filepath_without_filename( file_ ).string(),
+                        Path.C_Str() );
                 }
             }
         }
 
         template class AssimpMeshInput< PolygonalSurface3D >;
         template class AssimpMeshInput< TriangulatedSurface3D >;
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

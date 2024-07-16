@@ -21,30 +21,30 @@
  *
  */
 
-#include <geode/tests_config.h>
+#include <geode/tests_config.hpp>
 
-#include <geode/basic/assert.h>
-#include <geode/basic/attribute_manager.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/core/rgb_color.h>
-#include <geode/image/io/raster_image_input.h>
-#include <geode/image/io/raster_image_output.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/core/rgb_color.hpp>
+#include <geode/image/io/raster_image_input.hpp>
+#include <geode/image/io/raster_image_output.hpp>
 
-#include <geode/mesh/core/regular_grid_surface.h>
-#include <geode/mesh/io/regular_grid_input.h>
-#include <geode/mesh/io/regular_grid_output.h>
+#include <geode/mesh/core/regular_grid_surface.hpp>
+#include <geode/mesh/io/regular_grid_input.hpp>
+#include <geode/mesh/io/regular_grid_output.hpp>
 
-#include <geode/io/image/common.h>
-#include <geode/io/mesh/common.h>
+#include <geode/io/image/common.hpp>
+#include <geode/io/mesh/common.hpp>
 
 void test_jpg_from_gimp_input()
 {
     auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::data_path, "grid_image_from_gimp.jpg" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_image_from_gimp.jpg" ) );
     auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::data_path, "grid_from_gimp_image.og_rgd2d" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_from_gimp_image.og_rgd2d" ) );
     OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =
@@ -64,9 +64,9 @@ void test_jpg_from_gimp_input()
 void test_jpg_from_paraview_input()
 {
     auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::data_path, "grid_image_from_paraview.jpg" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_image_from_paraview.jpg" ) );
     auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::data_path, "grid_from_paraview_image.og_rgd2d" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_from_paraview_image.og_rgd2d" ) );
     OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =
@@ -87,9 +87,9 @@ void test_jpg_from_paraview_input()
 void test_png_input()
 {
     auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::data_path, "grid_image.png" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_image.png" ) );
     auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::data_path, "grid_from_image.og_rgd2d" ) );
+        absl::StrCat( geode::DATA_PATH, "grid_from_image.og_rgd2d" ) );
     OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =

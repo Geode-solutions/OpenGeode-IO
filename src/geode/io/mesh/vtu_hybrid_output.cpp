@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_hybrid_output.h>
+#include <geode/io/mesh/detail/vtu_hybrid_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/hybrid_solid.h>
+#include <geode/mesh/core/hybrid_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_output_impl.h>
+#include <geode/io/mesh/detail/vtu_output_impl.hpp>
 namespace
 {
     class VTUHybridOutputImpl
@@ -35,7 +35,7 @@ namespace
     {
     public:
         VTUHybridOutputImpl(
-            absl::string_view filename, const geode::HybridSolid3D& solid )
+            std::string_view filename, const geode::HybridSolid3D& solid )
             : geode::detail::VTUOutputImpl< geode::HybridSolid >{ filename,
                   solid }
         {

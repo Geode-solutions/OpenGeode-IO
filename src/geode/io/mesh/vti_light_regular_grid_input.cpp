@@ -21,16 +21,16 @@
  *
  */
 
-#include <geode/io/mesh/detail/vti_light_regular_grid_input.h>
+#include <geode/io/mesh/detail/vti_light_regular_grid_input.hpp>
 
 #include <array>
 #include <fstream>
 
-#include <geode/basic/string.h>
+#include <geode/basic/string.hpp>
 
-#include <geode/mesh/core/light_regular_grid.h>
+#include <geode/mesh/core/light_regular_grid.hpp>
 
-#include <geode/io/mesh/detail/vti_grid_input.h>
+#include <geode/io/mesh/detail/vti_grid_input.hpp>
 
 namespace
 {
@@ -40,7 +40,7 @@ namespace
               geode::LightRegularGrid< dimension > >
     {
     public:
-        VTILightRegularGridInputImpl( absl::string_view filename )
+        VTILightRegularGridInputImpl( std::string_view filename )
             : geode::detail::VTIGridInputImpl<
                 geode::LightRegularGrid< dimension > >{ filename }
         {
@@ -51,7 +51,7 @@ namespace
         {
             auto grid_attributes = this->read_grid_attributes( vtk_object );
             auto grid =
-                absl::make_unique< geode::LightRegularGrid< dimension > >(
+                std::make_unique< geode::LightRegularGrid< dimension > >(
                     std::move( grid_attributes.origin ),
                     std::move( grid_attributes.cells_number ),
                     std::move( grid_attributes.cells_length ) );

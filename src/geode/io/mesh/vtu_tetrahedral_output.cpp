@@ -21,13 +21,13 @@
  *
  */
 
-#include <geode/io/mesh/detail/vtu_tetrahedral_output.h>
+#include <geode/io/mesh/detail/vtu_tetrahedral_output.hpp>
 
 #include <string>
 
-#include <geode/mesh/core/tetrahedral_solid.h>
+#include <geode/mesh/core/tetrahedral_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_output_impl.h>
+#include <geode/io/mesh/detail/vtu_output_impl.hpp>
 
 namespace
 {
@@ -36,7 +36,7 @@ namespace
     {
     public:
         VTUTetrahedralOutputImpl(
-            absl::string_view filename, const geode::TetrahedralSolid3D& solid )
+            std::string_view filename, const geode::TetrahedralSolid3D& solid )
             : geode::detail::VTUOutputImpl< geode::TetrahedralSolid >{ filename,
                   solid }
         {

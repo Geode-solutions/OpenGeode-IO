@@ -21,14 +21,14 @@
  *
  */
 
-#include <geode/io/model/detail/vtm_section_output.h>
+#include <geode/io/model/detail/vtm_section_output.hpp>
 
 #include <string>
 #include <vector>
 
-#include <geode/model/representation/core/section.h>
+#include <geode/model/representation/core/section.hpp>
 
-#include <geode/io/model/detail/vtm_output.h>
+#include <geode/io/model/detail/vtm_output.hpp>
 
 namespace
 {
@@ -37,7 +37,7 @@ namespace
     {
     public:
         VTMSectionOutputImpl(
-            absl::string_view filename, const geode::Section& section )
+            std::string_view filename, const geode::Section& section )
             : geode::detail::VTMOutputImpl< geode::Section, 2 >{ filename,
                   section }
         {

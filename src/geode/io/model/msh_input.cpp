@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/model/private/msh_input.h>
+#include <geode/io/model/internal/msh_input.hpp>
 
 #include <fstream>
 #include <mutex>
@@ -30,41 +30,41 @@
 #include <absl/container/flat_hash_set.h>
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/algorithm.h>
-#include <geode/basic/common.h>
-#include <geode/basic/factory.h>
-#include <geode/basic/logger.h>
-#include <geode/basic/string.h>
-#include <geode/basic/uuid.h>
+#include <geode/basic/algorithm.hpp>
+#include <geode/basic/common.hpp>
+#include <geode/basic/factory.hpp>
+#include <geode/basic/logger.hpp>
+#include <geode/basic/string.hpp>
+#include <geode/basic/uuid.hpp>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/builder/edged_curve_builder.h>
-#include <geode/mesh/builder/point_set_builder.h>
-#include <geode/mesh/builder/polygonal_surface_builder.h>
-#include <geode/mesh/builder/polyhedral_solid_builder.h>
-#include <geode/mesh/core/edged_curve.h>
-#include <geode/mesh/core/hybrid_solid.h>
-#include <geode/mesh/core/mesh_factory.h>
-#include <geode/mesh/core/point_set.h>
-#include <geode/mesh/core/polygonal_surface.h>
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/builder/point_set_builder.hpp>
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/builder/polyhedral_solid_builder.hpp>
+#include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/hybrid_solid.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
+#include <geode/mesh/core/point_set.hpp>
+#include <geode/mesh/core/polygonal_surface.hpp>
 
-#include <geode/model/helpers/detail/build_model_boundaries.h>
-#include <geode/model/mixin/core/block.h>
-#include <geode/model/mixin/core/corner.h>
-#include <geode/model/mixin/core/line.h>
-#include <geode/model/mixin/core/surface.h>
-#include <geode/model/representation/builder/brep_builder.h>
-#include <geode/model/representation/core/brep.h>
+#include <geode/model/helpers/detail/build_model_boundaries.hpp>
+#include <geode/model/mixin/core/block.hpp>
+#include <geode/model/mixin/core/corner.hpp>
+#include <geode/model/mixin/core/line.hpp>
+#include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
+#include <geode/model/representation/core/brep.hpp>
 
-#include <geode/io/model/private/msh_common.h>
+#include <geode/io/model/internal/msh_common.hpp>
 
 namespace
 {
     class MSHInputImpl
     {
     public:
-        MSHInputImpl( absl::string_view filename, geode::BRep& brep )
+        MSHInputImpl( std::string_view filename, geode::BRep& brep )
             : file_{ geode::to_string( filename ) },
               brep_( brep ),
               builder_{ brep }
@@ -122,36 +122,50 @@ namespace
             boundary_incidences_relations corner_line_relations;
             boundary_incidences_relations line_surface_relations;
             boundary_incidences_relations surface_block_relations;
-
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Block3D::component_type_static() );
-
-                add_potential_relationships(
-                    corners_vertices, lines_vertices, corner_line_relations );
-                add_potential_relationships(
-                    lines_vertices, surfaces_vertices, line_surface_relations );
-                add_potential_relationships( surfaces_vertices, blocks_vertices,
-                    surface_block_relations );
+                const auto cmv = get_component_mesh_vertices( uv );
+                add_potential_relationships( std::get< 0 >( cmv ),
+                    std::get< 1 >( cmv ), corner_line_relations );
+                add_potential_relationships( std::get< 1 >( cmv ),
+                    std::get< 2 >( cmv ), line_surface_relations );
+                add_potential_relationships( std::get< 2 >( cmv ),
+                    std::get< 3 >( cmv ), surface_block_relations );
             }
             for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
             {
-                const auto corners_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Corner3D::component_type_static() );
-                const auto lines_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Line3D::component_type_static() );
-                const auto surfaces_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Surface3D::component_type_static() );
-                const auto blocks_vertices = brep_.component_mesh_vertices(
-                    uv, geode::Block3D::component_type_static() );
-
+                std::vector< geode::ComponentMeshVertex > corners_vertices;
+                std::vector< geode::ComponentMeshVertex > lines_vertices;
+                std::vector< geode::ComponentMeshVertex > surfaces_vertices;
+                std::vector< geode::ComponentMeshVertex > blocks_vertices;
+                const auto cmv = brep_.component_mesh_vertices( uv );
+                for( const auto v : cmv )
+                {
+                    if( v.component_id.type()
+                        == geode::Corner3D::component_type_static() )
+                    {
+                        corners_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Line3D::component_type_static() )
+                    {
+                        lines_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Surface3D::component_type_static() )
+                    {
+                        surfaces_vertices.push_back( v );
+                        continue;
+                    }
+                    if( v.component_id.type()
+                        == geode::Block3D::component_type_static() )
+                    {
+                        blocks_vertices.push_back( v );
+                        continue;
+                    }
+                }
                 filter_potential_relationships(
                     corners_vertices, lines_vertices, corner_line_relations );
                 filter_potential_relationships(
@@ -193,7 +207,7 @@ namespace
             return static_cast< geode::index_t >( std::floor( version_ ) );
         }
 
-        void first_read( absl::string_view filename )
+        void first_read( std::string_view filename )
         {
             std::ifstream reader{ geode::to_string( filename ) };
             read_header( reader );
@@ -439,9 +453,9 @@ namespace
             }
         }
 
-        geode::Point3D read_node_coordinates( absl::string_view x_str,
-            absl::string_view y_str,
-            absl::string_view z_str )
+        geode::Point3D read_node_coordinates( std::string_view x_str,
+            std::string_view y_str,
+            std::string_view z_str )
         {
             double x, y, z;
             auto ok = absl::SimpleAtod( x_str, &x );
@@ -471,7 +485,7 @@ namespace
                 geode::index_t node_id;
                 geode::Point3D node;
                 std::tie( node_id, node ) = read_node( line );
-                nodes_[node_id - geode::detail::GMSH_OFFSET_START] = node;
+                nodes_[node_id - geode::internal::GMSH_OFFSET_START] = node;
             }
             check_keyword( "$EndNodes" );
             builder_.create_unique_vertices( nb_nodes );
@@ -531,7 +545,7 @@ namespace
             {
                 std::getline( file_, line );
                 const auto node_tokens = geode::string_split( line );
-                nodes_[node_id - geode::detail::GMSH_OFFSET_START] =
+                nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
                     read_node_coordinates( node_tokens.at( 0 ),
                         node_tokens.at( 1 ), node_tokens.at( 2 ) );
             }
@@ -547,7 +561,7 @@ namespace
             for( auto e_id : geode::Range{ nb_elements } )
             {
                 std::getline( file_, line );
-                read_element( e_id + geode::detail::GMSH_OFFSET_START, line );
+                read_element( e_id + geode::internal::GMSH_OFFSET_START, line );
             }
             check_keyword( "$EndElements" );
         }
@@ -577,12 +591,12 @@ namespace
                 geode::string_to_index( tokens.at( t++ ) );
             t += nb_tags - 2;
             // TODO: create relation to the parent
-            absl::Span< const absl::string_view > vertex_ids(
+            absl::Span< const std::string_view > vertex_ids(
                 &tokens[t], tokens.size() - t );
 
-            const auto element =
-                geode::detail::GMSHElementFactory::create( mesh_element_type_id,
-                    physical_entity, elementary_entity, vertex_ids );
+            const auto element = geode::internal::GMSHElementFactory::create(
+                mesh_element_type_id, physical_entity, elementary_entity,
+                vertex_ids );
             element->add_element( brep_, gmsh_id2uuids_ );
         }
 
@@ -625,12 +639,13 @@ namespace
                 geode_unused( unused );
                 std::getline( file_, line );
                 const auto line_tokens = geode::string_split( line );
-                absl::Span< const absl::string_view > vertex_ids(
+                absl::Span< const std::string_view > vertex_ids(
                     &line_tokens[1], line_tokens.size() - 1 );
                 constexpr geode::index_t physical_entity{ 0 };
-                const auto element = geode::detail::GMSHElementFactory::create(
-                    mesh_element_type_id, physical_entity, entity_id,
-                    vertex_ids );
+                const auto element =
+                    geode::internal::GMSHElementFactory::create(
+                        mesh_element_type_id, physical_entity, entity_id,
+                        vertex_ids );
                 element->add_element( brep_, gmsh_id2uuids_ );
             }
         }
@@ -884,6 +899,48 @@ namespace
             }
         }
 
+        std::tuple< std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex >,
+            std::vector< geode::ComponentMeshVertex > >
+            get_component_mesh_vertices( geode::index_t uv )
+        {
+            std::vector< geode::ComponentMeshVertex > corners_vertices;
+            std::vector< geode::ComponentMeshVertex > lines_vertices;
+            std::vector< geode::ComponentMeshVertex > surfaces_vertices;
+            std::vector< geode::ComponentMeshVertex > blocks_vertices;
+            const auto cmv = brep_.component_mesh_vertices( uv );
+            for( const auto v : cmv )
+            {
+                if( v.component_id.type()
+                    == geode::Corner3D::component_type_static() )
+                {
+                    corners_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Line3D::component_type_static() )
+                {
+                    lines_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Surface3D::component_type_static() )
+                {
+                    surfaces_vertices.push_back( v );
+                    continue;
+                }
+                if( v.component_id.type()
+                    == geode::Block3D::component_type_static() )
+                {
+                    blocks_vertices.push_back( v );
+                    continue;
+                }
+            }
+            return { corners_vertices, lines_vertices, surfaces_vertices,
+                blocks_vertices };
+        }
+
     private:
         std::ifstream file_;
         geode::BRep& brep_;
@@ -892,13 +949,13 @@ namespace
         double version_{ 2 };
         std::vector< std::string > sections_;
         std::vector< geode::Point3D > nodes_;
-        geode::detail::GmshId2Uuids gmsh_id2uuids_;
+        geode::internal::GmshId2Uuids gmsh_id2uuids_;
     };
 } // namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         BRep MSHInput::read()
         {
@@ -909,5 +966,5 @@ namespace geode
             impl.build_topology();
             return brep;
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

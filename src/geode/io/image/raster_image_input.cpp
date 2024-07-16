@@ -21,15 +21,15 @@
  *
  */
 
-#include <geode/io/image/private/raster_image_input.h>
+#include <geode/io/image/internal/raster_image_input.hpp>
 
 #include <gdal_priv.h>
 
-#include <geode/basic/attribute_manager.h>
-#include <geode/basic/logger.h>
+#include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
-#include <geode/image/core/raster_image.h>
-#include <geode/image/core/rgb_color.h>
+#include <geode/image/core/raster_image.hpp>
+#include <geode/image/core/rgb_color.hpp>
 
 namespace
 {
@@ -51,7 +51,7 @@ namespace
     }
 
     template < typename SpecificRange >
-    geode::RasterImage2D read_file( absl::string_view filename )
+    geode::RasterImage2D read_file( std::string_view filename )
     {
         GDALDatasetUniquePtr gdal_data{ GDALDataset::Open(
             geode::to_string( filename ).c_str(), GDAL_OF_RASTER ) };
@@ -105,9 +105,9 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
-        ImageInputImpl::ImageInputImpl( absl::string_view filename )
+        ImageInputImpl::ImageInputImpl( std::string_view filename )
             : filename_( filename )
         {
         }
@@ -121,5 +121,5 @@ namespace geode
         {
             return ::read_file< ReverseRange >( filename_ );
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode

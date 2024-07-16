@@ -21,16 +21,16 @@
  *
  */
 
-#include <geode/io/mesh/private/triangle_output.h>
+#include <geode/io/mesh/internal/triangle_output.hpp>
 
 #include <fstream>
 #include <string>
 
 #include <absl/strings/str_cat.h>
 
-#include <geode/geometry/point.h>
+#include <geode/geometry/point.hpp>
 
-#include <geode/mesh/core/triangulated_surface.h>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
 namespace
 {
@@ -94,7 +94,7 @@ namespace
 
 namespace geode
 {
-    namespace detail
+    namespace internal
     {
         std::vector< std::string > TriangleOutput::write(
             const TriangulatedSurface2D& surface ) const
@@ -110,5 +110,5 @@ namespace geode
             return { std::move( node_file ), std::move( ele_file ),
                 std::move( neigh_file ) };
         }
-    } // namespace detail
+    } // namespace internal
 } // namespace geode
