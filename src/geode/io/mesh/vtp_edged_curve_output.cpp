@@ -40,7 +40,7 @@ namespace
         VTPCurveOutputImpl( std::string_view filename,
             const geode::EdgedCurve< dimension >& curve )
             : geode::detail::VTKMeshOutputImpl< geode::EdgedCurve, dimension >(
-                filename, curve, "PolyData" )
+                  filename, curve, "PolyData" )
         {
         }
 
