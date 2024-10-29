@@ -19,9 +19,9 @@
 # SOFTWARE.
 
 add_geode_python_binding(
-    NAME "py_model"
+    NAME "py_image"
     SOURCES
-        "model.cpp"
+        "image_io.cpp"
     DEPENDENCIES
-        ${PROJECT_NAME}::model
+        ${PROJECT_NAME}::image
 )
