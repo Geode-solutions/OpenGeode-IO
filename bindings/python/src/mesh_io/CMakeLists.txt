@@ -21,7 +21,7 @@
 add_geode_python_binding(
     NAME "py_mesh"
     SOURCES
-        "mesh.cpp"
+        "mesh_io.cpp"
     DEPENDENCIES
         ${PROJECT_NAME}::mesh
 )
