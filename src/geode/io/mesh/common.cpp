@@ -44,6 +44,7 @@
 #include <geode/io/mesh/detail/vtu_tetrahedral_output.hpp>
 
 #include <geode/io/mesh/internal/dxf_input.hpp>
+#include <geode/io/mesh/internal/gexf_output.hpp>
 #include <geode/io/mesh/internal/obj_input.hpp>
 #include <geode/io/mesh/internal/obj_polygonal_output.hpp>
 #include <geode/io/mesh/internal/obj_triangulated_output.hpp>
@@ -231,6 +232,13 @@ namespace
             geode::detail::VTILightRegularGridInput< 3 > >(
             geode::detail::VTILightRegularGridInput< 3 >::extension().data() );
     }
+
+    void register_graph_output()
+    {
+        geode::GraphOutputFactory::register_creator<
+            geode::internal::GEXFOutput >(
+            geode::internal::GEXFOutput::extension().data() );
+    }
 } // namespace
 
 namespace geode
@@ -258,5 +266,6 @@ namespace geode
         register_light_regular_grid_output();
         register_regular_grid_output();
         register_hybrid_solid_output();
+        register_graph_output();
     }
 } // namespace geode
