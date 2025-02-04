@@ -32,6 +32,7 @@
 #include <geode/io/image/internal/bmp_input.hpp>
 #include <geode/io/image/internal/jpg_input.hpp>
 #include <geode/io/image/internal/png_input.hpp>
+#include <geode/io/image/internal/tiff_input.hpp>
 
 namespace
 {
@@ -48,6 +49,12 @@ namespace
         geode::RasterImageInputFactory2D::register_creator<
             geode::internal::BMPInput >(
             geode::internal::BMPInput::extension().data() );
+
+        for( const auto& tif_ext : geode::internal::TIFFInput::extensions() )
+        {
+            geode::RasterImageInputFactory2D::register_creator<
+                geode::internal::TIFFInput >( tif_ext );
+        }
     }
 
     void register_raster_output()

@@ -49,6 +49,32 @@ namespace
             "[ImageInputImpl] Failed to read color component" );
         return values;
     }
+    std::array< geode::index_t, 3 > get_rgb_indices(
+        GDALDatasetUniquePtr& gdal_data )
+    {
+        std::array< geode::index_t, 3 > rgb_indices{ 0, 0, 0 };
+        const auto nb_color_components =
+            static_cast< geode::index_t >( gdal_data->GetRasterCount() );
+        for( const auto id : geode::Range( nb_color_components ) )
+        {
+            const auto band_id = id + 1;
+            GDALColorInterp colorInterp =
+                gdal_data->GetRasterBand( band_id )->GetColorInterpretation();
+            if( colorInterp == GCI_RedBand )
+            {
+                rgb_indices[0] = band_id;
+            }
+            else if( colorInterp == GCI_GreenBand )
+            {
+                rgb_indices[1] = band_id;
+            }
+            else if( colorInterp == GCI_BlueBand )
+            {
+                rgb_indices[2] = band_id;
+            }
+        }
+        return rgb_indices;
+    }
 
     template < typename SpecificRange >
     geode::RasterImage2D read_file( std::string_view filename )
@@ -64,6 +90,7 @@ namespace
             static_cast< geode::index_t >( height ) } };
         const auto nb_color_components =
             static_cast< geode::index_t >( gdal_data->GetRasterCount() );
+        std::cout << " nb color = " << nb_color_components << std::endl;
         if( nb_color_components <= 2 )
         {
             const auto grey_scale =
@@ -83,9 +110,13 @@ namespace
         }
         else if( nb_color_components <= 4 )
         {
-            const auto red = read_color_component( raster, gdal_data, 1 );
-            const auto green = read_color_component( raster, gdal_data, 2 );
-            const auto blue = read_color_component( raster, gdal_data, 3 );
+            const auto rgb_indices = get_rgb_indices( gdal_data );
+            const auto red =
+                read_color_component( raster, gdal_data, rgb_indices[0] );
+            const auto green =
+                read_color_component( raster, gdal_data, rgb_indices[1] );
+            const auto blue =
+                read_color_component( raster, gdal_data, rgb_indices[2] );
             geode::index_t cell{ 0 };
             for( const auto image_j :
                 SpecificRange{ raster.nb_cells_in_direction( 1 ) } )
