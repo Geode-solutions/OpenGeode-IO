@@ -106,6 +106,25 @@ void test_png_input()
     geode::save_raster_image( raster, "test_grid_output_from_png.vti" );
 }
 
+void test_tiff_input()
+{
+    auto raster = geode::load_raster_image< 2 >(
+        absl::StrCat( geode::DATA_PATH, "cea.tiff" ) );
+    auto ref_raster = geode::load_raster_image< 2 >(
+        absl::StrCat( geode::DATA_PATH, "cea.og_img2d" ) );
+    OPENGEODE_EXCEPTION( raster.nb_cells() == ref_raster.nb_cells(),
+        "[TEST] Wrong number of cells." );
+    for( const auto cell_id : geode::Range{ ref_raster.nb_cells() } )
+    {
+        OPENGEODE_EXCEPTION(
+            raster.color( cell_id ) == ref_raster.color( cell_id ),
+            "[TEST] Wrong color value for pixel ", cell_id,
+            " on image loaded from reference pixel." );
+    }
+
+    geode::save_raster_image( raster, "cea.vti" );
+}
+
 int main()
 {
     try
@@ -116,7 +135,7 @@ int main()
         test_jpg_from_gimp_input();
         test_jpg_from_paraview_input();
         test_png_input();
-
+        test_tiff_input();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

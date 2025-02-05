@@ -27,6 +27,7 @@ add_geode_library(
         "jpg_input.cpp"
         "png_input.cpp"
         "raster_image_input.cpp"
+        "tiff_input.cpp"
         "vti_raster_image_output.cpp"
     PUBLIC_HEADERS
         "common.hpp"
@@ -39,6 +40,7 @@ add_geode_library(
         "internal/jpg_input.hpp"
         "internal/png_input.hpp"
         "internal/raster_image_input.hpp"
+        "internal/tiff_input.hpp"
     PUBLIC_DEPENDENCIES
         OpenGeode::image
     PRIVATE_DEPENDENCIES
