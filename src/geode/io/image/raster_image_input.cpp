@@ -90,7 +90,6 @@ namespace
             static_cast< geode::index_t >( height ) } };
         const auto nb_color_components =
             static_cast< geode::index_t >( gdal_data->GetRasterCount() );
-        std::cout << " nb color = " << nb_color_components << std::endl;
         if( nb_color_components <= 2 )
         {
             const auto grey_scale =
