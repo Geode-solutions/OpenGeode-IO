@@ -21,6 +21,8 @@
  *
  */
 
+#pragma once
+
 #include <string>
 
 #include <geode/mesh/core/grid.hpp>
