@@ -27,6 +27,8 @@
 
 #include <geode/io/image/common.hpp>
 
+#include <geode/io/mesh/detail/dot_polygonal_output.hpp>
+#include <geode/io/mesh/detail/dot_triangulated_output.hpp>
 #include <geode/io/mesh/detail/vti_light_regular_grid_input.hpp>
 #include <geode/io/mesh/detail/vti_light_regular_grid_output.hpp>
 #include <geode/io/mesh/detail/vti_regular_grid_input.hpp>
@@ -119,6 +121,12 @@ namespace
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
             geode::detail::VTPPolygonalOutput< 3 > >(
             geode::detail::VTPPolygonalOutput< 3 >::extension().data() );
+        geode::PolygonalSurfaceOutputFactory3D::register_creator<
+            geode::detail::DotPolygonalOutput3D >(
+            geode::detail::DotPolygonalOutput3D::extension().data() );
+        geode::PolygonalSurfaceOutputFactory2D::register_creator<
+            geode::detail::DotPolygonalOutput2D >(
+            geode::detail::DotPolygonalOutput2D::extension().data() );
     }
 
     void register_triangulated_surface_output()
@@ -135,7 +143,12 @@ namespace
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::detail::VTPTriangulatedOutput< 3 > >(
             geode::detail::VTPTriangulatedOutput< 3 >::extension().data() );
-
+        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
+            geode::detail::DotTriangulatedOutput3D >(
+            geode::detail::DotTriangulatedOutput3D::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory2D::register_creator<
+            geode::detail::DotTriangulatedOutput2D >(
+            geode::detail::DotTriangulatedOutput2D::extension().data() );
         geode::TriangulatedSurfaceOutputFactory2D::register_creator<
             geode::internal::TriangleOutput >(
             geode::internal::TriangleOutput::extension().data() );

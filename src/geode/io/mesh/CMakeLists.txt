@@ -24,6 +24,8 @@ add_geode_library(
     SOURCES
         "assimp_input.cpp"
         "common.cpp"
+        "dot_polygonal_output.cpp"
+        "dot_triangulated_output.cpp"
         "dxf_input.cpp"
         "gexf_output.cpp"
         "obj_input.cpp"
@@ -54,6 +56,9 @@ add_geode_library(
     PUBLIC_HEADERS
         "common.hpp"
     ADVANCED_HEADERS
+        "detail/dot_polygonal_output.hpp"
+        "detail/dot_surface_output_impl.hpp"
+        "detail/dot_triangulated_output.hpp"
         "detail/vtk_input.hpp"
         "detail/vtk_mesh_input.hpp"
         "detail/vtk_mesh_output.hpp"
