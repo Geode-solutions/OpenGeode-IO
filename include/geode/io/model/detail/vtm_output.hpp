@@ -144,6 +144,10 @@ namespace geode
                     const auto& corner = this->mesh().corner( id );
                     auto dataset = corner_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
+                    dataset.append_attribute( "name" ).set_value(
+                        std::string( corner.name() ).c_str() );
+                    dataset.append_attribute( "uuid" ).set_value(
+                        corner.id().string().c_str() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Corner_", corner.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
@@ -184,6 +188,10 @@ namespace geode
                     const auto& line = this->mesh().line( id );
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
+                    dataset.append_attribute( "name" ).set_value(
+                        std::string( line.name() ).c_str() );
+                    dataset.append_attribute( "uuid" ).set_value(
+                        line.id().string().c_str() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Line_", line.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
@@ -225,6 +233,10 @@ namespace geode
                     const auto& surface = this->mesh().surface( id );
                     auto dataset = surface_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
+                    dataset.append_attribute( "name" ).set_value(
+                        std::string( surface.name() ).c_str() );
+                    dataset.append_attribute( "uuid" ).set_value(
+                        surface.id().string().c_str() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Surface_", surface.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
