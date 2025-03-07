@@ -146,6 +146,7 @@ namespace geode
                     dataset.append_attribute( "index" ).set_value( counter );
                     dataset.append_attribute( "name" ).set_value(
                         corner.name() );
+                    dataset.append_attribute( "uuid" ).set_value( corner.id() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Corner_", corner.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
@@ -187,6 +188,7 @@ namespace geode
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
                     dataset.append_attribute( "name" ).set_value( line.name() );
+                    dataset.append_attribute( "uuid" ).set_value( line.id() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Line_", line.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
@@ -230,6 +232,8 @@ namespace geode
                     dataset.append_attribute( "index" ).set_value( counter );
                     dataset.append_attribute( "name" ).set_value(
                         surface.name() );
+                    dataset.append_attribute( "uuid" ).set_value(
+                        surface.id() );
                     const auto filename = absl::StrCat(
                         prefix_, "/Surface_", surface.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(

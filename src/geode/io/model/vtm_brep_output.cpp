@@ -91,6 +91,7 @@ namespace
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
                 dataset.append_attribute( "name" ).set_value( block.name() );
+                dataset.append_attribute( "uuid" ).set_value( block.id() );
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
                     const auto file = absl::StrCat(
