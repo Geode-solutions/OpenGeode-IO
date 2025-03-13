@@ -167,10 +167,10 @@ namespace geode
                 ref_surfaces.emplace_back( *surface );
             }
 
-            detail::SurfaceMeshMerger3D merger{ ref_surfaces, GLOBAL_EPSILON };
+            detail::SurfaceMeshMerger3D merger{ ref_surfaces };
 
             std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
-                merger.merge().release() ) };
+                merger.merge( GLOBAL_EPSILON ).release() ) };
             Mesh::Builder::create( *merged )->compute_polygon_adjacencies();
             auto merged_manager = merged->texture_manager();
             for( const auto s : Indices{ surfaces_ } )
