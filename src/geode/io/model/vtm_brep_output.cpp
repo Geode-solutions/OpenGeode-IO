@@ -81,7 +81,7 @@ namespace
                 block_ids[block_count++] = block.id();
             }
             absl::c_sort( block_ids );
-            absl::flat_hash_map< geode::uuid, geode::index_t >
+            absl::flat_hash_map< std::string, geode::index_t >
                 block_name_counter;
             for( const auto& id : block_ids )
             {
@@ -92,17 +92,17 @@ namespace
                     prefix(), "/Block_", block.id().string(), ".vtu" );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
-                if( !block_name_counter.contains( block.id() ) )
+                if( !block_name_counter.contains( block.name() ) )
                 {
                     dataset.append_attribute( "name" ).set_value(
                         std::string( block.name() ).c_str() );
-                    block_name_counter.emplace( block.id(), 1 );
+                    block_name_counter.emplace( block.name(), 1 );
                 }
                 else
                 {
                     dataset.append_attribute( "name" ).set_value(
                         absl::StrCat( block.name(), "_", counter ).c_str() );
-                    block_name_counter[block.id()]++;
+                    block_name_counter[block.name()]++;
                 }
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
