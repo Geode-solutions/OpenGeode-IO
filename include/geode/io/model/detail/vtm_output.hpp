@@ -139,13 +139,25 @@ namespace geode
                     corner_ids[corner_count++] = corner.id();
                 }
                 absl::c_sort( corner_ids );
+                absl::flat_hash_map< uuid, index_t > corner_name_counter;
                 for( const auto& id : corner_ids )
                 {
                     const auto& corner = this->mesh().corner( id );
                     auto dataset = corner_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    dataset.append_attribute( "name" ).set_value(
-                        std::string( corner.name() ).c_str() );
+                    if( !corner_name_counter.contains( corner.id() ) )
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            std::string( corner.name() ).c_str() );
+                        corner_name_counter.emplace( corner.id(), 1 );
+                    }
+                    else
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            absl::StrCat( corner.name(), "_", counter )
+                                .c_str() );
+                        corner_name_counter[corner.id()]++;
+                    }
                     dataset.append_attribute( "uuid" ).set_value(
                         corner.id().string().c_str() );
                     const auto filename = absl::StrCat(
@@ -183,13 +195,24 @@ namespace geode
                     line_ids[line_count++] = line.id();
                 }
                 absl::c_sort( line_ids );
+                absl::flat_hash_map< uuid, index_t > line_name_counter;
                 for( const auto& id : line_ids )
                 {
                     const auto& line = this->mesh().line( id );
                     auto dataset = line_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    dataset.append_attribute( "name" ).set_value(
-                        std::string( line.name() ).c_str() );
+                    if( !line_name_counter.contains( line.id() ) )
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            std::string( line.name() ).c_str() );
+                        line_name_counter.emplace( line.id(), 1 );
+                    }
+                    else
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            absl::StrCat( line.name(), "_", counter ).c_str() );
+                        line_name_counter[line.id()]++;
+                    }
                     dataset.append_attribute( "uuid" ).set_value(
                         line.id().string().c_str() );
                     const auto filename = absl::StrCat(
@@ -228,13 +251,25 @@ namespace geode
                     surface_ids[surface_count++] = surface.id();
                 }
                 absl::c_sort( surface_ids );
+                absl::flat_hash_map< uuid, index_t > surface_name_counter;
                 for( const auto& id : surface_ids )
                 {
                     const auto& surface = this->mesh().surface( id );
                     auto dataset = surface_block.append_child( "DataSet" );
                     dataset.append_attribute( "index" ).set_value( counter );
-                    dataset.append_attribute( "name" ).set_value(
-                        std::string( surface.name() ).c_str() );
+                    if( !surface_name_counter.contains( surface.id() ) )
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            std::string( surface.name() ).c_str() );
+                        surface_name_counter.emplace( surface.id(), 1 );
+                    }
+                    else
+                    {
+                        dataset.append_attribute( "name" ).set_value(
+                            absl::StrCat( surface.name(), "_", counter )
+                                .c_str() );
+                        surface_name_counter[surface.id()]++;
+                    }
                     dataset.append_attribute( "uuid" ).set_value(
                         surface.id().string().c_str() );
                     const auto filename = absl::StrCat(

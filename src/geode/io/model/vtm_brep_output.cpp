@@ -81,6 +81,8 @@ namespace
                 block_ids[block_count++] = block.id();
             }
             absl::c_sort( block_ids );
+            absl::flat_hash_map< geode::uuid, geode::index_t >
+                block_name_counter;
             for( const auto& id : block_ids )
             {
                 const auto& block = mesh().block( id );
@@ -90,8 +92,18 @@ namespace
                     prefix(), "/Block_", block.id().string(), ".vtu" );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
-                dataset.append_attribute( "name" ).set_value(
-                    std::string( block.name() ).c_str() );
+                if( !block_name_counter.contains( block.id() ) )
+                {
+                    dataset.append_attribute( "name" ).set_value(
+                        std::string( block.name() ).c_str() );
+                    block_name_counter.emplace( block.id(), 1 );
+                }
+                else
+                {
+                    dataset.append_attribute( "name" ).set_value(
+                        absl::StrCat( block.name(), "_", counter ).c_str() );
+                    block_name_counter[block.id()]++;
+                }
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
                 tasks[counter++] = async::spawn( [&block, this] {
