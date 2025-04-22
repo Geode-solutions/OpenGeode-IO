@@ -40,12 +40,12 @@ namespace geode
             }
 
             std::tuple< absl::FixedArray< std::vector< index_t > >,
-                std::vector< int8_t > >
+                std::vector< uint8_t > >
                 read_cells( const pugi::xml_node& piece, index_t nb_cells )
             {
                 std::vector< int64_t > offsets_values;
                 std::vector< int64_t > connectivity_values;
-                std::vector< int8_t > types_values;
+                std::vector< uint8_t > types_values;
                 for( const auto& data :
                     piece.child( "Cells" ).children( "DataArray" ) )
                 {
@@ -83,7 +83,7 @@ namespace geode
                                 data.attribute( "type" ).value(), "UInt8" ) )
                         {
                             types_values =
-                                this->template read_uint8_data_array< int8_t >(
+                                this->template read_uint8_data_array< uint8_t >(
                                     data );
                         }
                         else if( this->match( data.attribute( "type" ).value(),
@@ -95,7 +95,7 @@ namespace geode
                                     int32_t >( data ) )
                             {
                                 types_values.push_back(
-                                    static_cast< int8_t >( type ) );
+                                    static_cast< uint8_t >( type ) );
                             }
                         }
                         else
