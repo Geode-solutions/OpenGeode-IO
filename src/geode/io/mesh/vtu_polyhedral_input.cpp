@@ -26,19 +26,19 @@
 #include <geode/mesh/builder/polyhedral_solid_builder.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_input_impl.hpp>
+#include <geode/io/mesh/detail/vtu_solid_input.hpp>
 
 namespace
 {
     class VTUPolyhedralInputImpl
-        : public geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >
+        : public geode::detail::VTUSolidInput< geode::PolyhedralSolid3D >
     {
         using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
 
     public:
         VTUPolyhedralInputImpl(
             std::string_view filename, const geode::MeshImpl& impl )
-            : geode::detail::VTUInputImpl< geode::PolyhedralSolid3D >(
+            : geode::detail::VTUSolidInput< geode::PolyhedralSolid3D >(
                   filename, impl )
         {
             enable_tetrahedron();

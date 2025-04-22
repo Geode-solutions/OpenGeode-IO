@@ -29,10 +29,13 @@
 #include <geode/mesh/core/hybrid_solid.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/core/tetrahedral_solid.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 #include <geode/mesh/io/hybrid_solid_input.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
 #include <geode/mesh/io/tetrahedral_solid_input.hpp>
 #include <geode/mesh/io/tetrahedral_solid_output.hpp>
+#include <geode/mesh/io/triangulated_surface_input.hpp>
+#include <geode/mesh/io/triangulated_surface_output.hpp>
 
 #include <geode/io/mesh/common.hpp>
 
@@ -49,7 +52,20 @@ void check( const geode::SolidMesh< 3 >& solid,
         test_answers[1], ", get ", solid.nb_polyhedra() );
 }
 
-void run_test( std::string_view filename,
+void check( const geode::SurfaceMesh< 3 >& surface,
+    const std::array< geode::index_t, 2 >& test_answers )
+{
+    OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
+        "[Test] Number of vertices in the loaded Surface is not correct: "
+        "should be ",
+        test_answers[0], ", get ", surface.nb_vertices() );
+    OPENGEODE_EXCEPTION( surface.nb_polygons() == test_answers[1],
+        "[Test] Number of polygons in the loaded Surface is not correct: "
+        "should be ",
+        test_answers[1], ", get ", surface.nb_polygons() );
+}
+
+void run_solid_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
@@ -78,14 +94,30 @@ void run_test( std::string_view filename,
     check( *reload_vtu, test_answers );
 }
 
+void run_surface_test( std::string_view filename,
+    const std::array< geode::index_t, 2 >& test_answers )
+{
+    // Load file
+    auto surface = geode::load_triangulated_surface< 3 >(
+        absl::StrCat( geode::DATA_PATH, filename ) );
+    check( *surface, test_answers );
+
+    std::string_view filename_without_ext{ filename };
+    filename_without_ext.remove_suffix( 4 );
+    geode::save_triangulated_surface(
+        *surface, absl::StrCat( filename_without_ext, ".og_tsf3d" ) );
+}
+
 int main()
 {
     try
     {
         geode::IOMeshLibrary::initialize();
+        geode::Logger::set_level( geode::Logger::LEVEL::debug );
 
-        run_test( "cone.vtu", { 580, 2197 } );
-        run_test( "cone_append_encoded.vtu", { 580, 2197 } );
+        run_solid_test( "cone.vtu", { 580, 2197 } );
+        run_solid_test( "cone_append_encoded.vtu", { 580, 2197 } );
+        run_surface_test( "mymesh.vtu", { 283308, 564408 } );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
