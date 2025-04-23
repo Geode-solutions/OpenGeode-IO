@@ -35,6 +35,7 @@
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/variable_attribute.hpp>
 
 #include <geode/geometry/point.hpp>
 
