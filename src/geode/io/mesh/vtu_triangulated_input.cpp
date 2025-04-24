@@ -42,7 +42,6 @@ namespace
                   filename, impl )
         {
             enable_triangle();
-            enable_quad();
         }
     };
 } // namespace

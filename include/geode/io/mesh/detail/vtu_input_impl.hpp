@@ -55,7 +55,8 @@ namespace geode
                         OPENGEODE_EXCEPTION(
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
-                            "[VTUInputImpl::read_cells] Wrong offset type" );
+                            "[VTUInputImpl::read_cells] Wrong offset type, "
+                            "supports only Int64" );
                         offsets_values =
                             this->template read_integer_data_array< int64_t >(
                                 data );
@@ -71,7 +72,7 @@ namespace geode
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
                             "[VTUInputImpl::read_cells] Wrong connectivity "
-                            "type" );
+                            "type, supports only Int64" );
                         connectivity_values =
                             this->template read_integer_data_array< int64_t >(
                                 data );
