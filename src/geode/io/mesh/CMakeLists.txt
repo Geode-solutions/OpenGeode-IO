@@ -49,10 +49,12 @@ add_geode_library(
         "vtp_triangulated_output.cpp"
         "vtu_hybrid_input.cpp"
         "vtu_hybrid_output.cpp"
+        "vtu_polygonal_input.cpp"
         "vtu_polyhedral_input.cpp"
         "vtu_polyhedral_output.cpp"
         "vtu_tetrahedral_input.cpp"
         "vtu_tetrahedral_output.cpp"
+        "vtu_triangulated_input.cpp"
     PUBLIC_HEADERS
         "common.hpp"
     ADVANCED_HEADERS
@@ -76,6 +78,10 @@ add_geode_library(
         "detail/vtp_triangulated_output.hpp"
         "detail/vtu_hybrid_output.hpp"
         "detail/vtu_input_impl.hpp"
+        "detail/vtu_polygonal_input.hpp"
+        "detail/vtu_surface_input.hpp"
+        "detail/vtu_solid_input.hpp"
+        "detail/vtu_triangulated_input.hpp"
         "detail/vtu_output_impl.hpp"
         "detail/vtu_hybrid_input.hpp"
         "detail/vtu_polyhedral_input.hpp"

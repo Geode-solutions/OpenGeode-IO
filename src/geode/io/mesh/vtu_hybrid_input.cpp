@@ -26,19 +26,19 @@
 #include <geode/mesh/builder/hybrid_solid_builder.hpp>
 #include <geode/mesh/core/hybrid_solid.hpp>
 
-#include <geode/io/mesh/detail/vtu_input_impl.hpp>
+#include <geode/io/mesh/detail/vtu_solid_input.hpp>
 
 namespace
 {
     class VTUHybridInputImpl
-        : public geode::detail::VTUInputImpl< geode::HybridSolid3D >
+        : public geode::detail::VTUSolidInput< geode::HybridSolid3D >
     {
         using VTKElement = absl::FixedArray< std::vector< geode::index_t > >;
 
     public:
         VTUHybridInputImpl(
             std::string_view filename, const geode::MeshImpl& impl )
-            : geode::detail::VTUInputImpl< geode::HybridSolid3D >(
+            : geode::detail::VTUSolidInput< geode::HybridSolid3D >(
                   filename, impl )
         {
             enable_tetrahedron();
