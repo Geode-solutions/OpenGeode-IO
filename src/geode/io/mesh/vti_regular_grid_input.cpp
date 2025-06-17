@@ -30,6 +30,7 @@
 
 #include <geode/mesh/builder/regular_grid_solid_builder.hpp>
 #include <geode/mesh/builder/regular_grid_surface_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/regular_grid_solid.hpp>
 #include <geode/mesh/core/regular_grid_surface.hpp>
 
@@ -80,8 +81,10 @@ namespace geode
         template < index_t dimension >
         bool VTIRegularGridInput< dimension >::is_loadable() const
         {
-            return VTIGridInputImpl< RegularGrid< dimension > >::is_loadable(
-                this->filename() );
+            VTIRegularGridInputImpl< dimension > reader{ this->filename(),
+                MeshFactory::default_impl(
+                    RegularGrid< dimension >::type_name_static() ) };
+            return reader.is_loadable();
         }
 
         template class VTIRegularGridInput< 2 >;

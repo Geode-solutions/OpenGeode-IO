@@ -24,6 +24,7 @@
 #include <geode/io/mesh/detail/vtu_triangulated_input.hpp>
 
 #include <geode/mesh/builder/triangulated_surface_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/triangulated_surface.hpp>
 
 #include <geode/io/mesh/detail/vtu_surface_input.hpp>
@@ -55,6 +56,14 @@ namespace geode
         {
             VTUTriangulatedInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        bool VTUTriangulatedInput::is_loadable() const
+        {
+            VTUTriangulatedInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    TriangulatedSurface3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

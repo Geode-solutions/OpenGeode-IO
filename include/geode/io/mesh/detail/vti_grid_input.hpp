@@ -67,25 +67,6 @@ namespace geode
                 std::array< Vector< dimension >, dimension > cell_directions;
             };
 
-            static bool is_loadable( std::string_view filename )
-            {
-                std::ifstream file{ to_string( filename ) };
-                OPENGEODE_EXCEPTION( file.good(),
-                    "[VTIGridInput::is_loadable] Error while opening file: ",
-                    filename );
-                pugi::xml_document document;
-                const auto status =
-                    document.load_file( to_string( filename ).c_str() );
-                OPENGEODE_EXCEPTION( status,
-                    "[VTIGridInput::is_loadable] Error ", status.description(),
-                    " while parsing file: ", filename );
-                const auto node =
-                    document.child( "VTKFile" ).child( "ImageData" );
-                const auto grid_attributes = read_grid_attributes( node );
-                const auto nb_cells_3d = grid_attributes.cells_number[2];
-                return dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0;
-            }
-
         protected:
             static GridAttributes read_grid_attributes(
                 const pugi::xml_node& vtk_object )
@@ -156,6 +137,14 @@ namespace geode
                     this->read_data( piece.child( "CellData" ), 0,
                         this->mesh().cell_attribute_manager() );
                 }
+            }
+
+            bool is_vtk_object_loadable(
+                const pugi::xml_node& vtk_object ) const final
+            {
+                const auto grid_attributes = read_grid_attributes( vtk_object );
+                const auto nb_cells_3d = grid_attributes.cells_number[2];
+                return dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0;
             }
 
         protected:

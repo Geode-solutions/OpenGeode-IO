@@ -24,6 +24,7 @@
 #include <geode/io/mesh/detail/vtu_tetrahedral_input.hpp>
 
 #include <geode/mesh/builder/tetrahedral_solid_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/tetrahedral_solid.hpp>
 
 #include <geode/io/mesh/detail/vtu_solid_input.hpp>
@@ -55,6 +56,14 @@ namespace geode
         {
             VTUTetrahedralInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        bool VTUTetrahedralInput::is_loadable() const
+        {
+            VTUTetrahedralInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    TetrahedralSolid3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

@@ -66,7 +66,7 @@ namespace geode
 
             absl::FixedArray< std::vector< index_t > > get_cell_vertices(
                 absl::Span< const int64_t > connectivity,
-                absl::Span< const int64_t > offsets )
+                absl::Span< const int64_t > offsets ) const
             {
                 absl::FixedArray< std::vector< index_t > > cell_vertices(
                     offsets.size() );
@@ -96,6 +96,19 @@ namespace geode
                 }
             }
 
+            bool is_vtk_object_loadable(
+                const pugi::xml_node& vtk_object ) const final
+            {
+                for( const auto& piece : vtk_object.children( "Piece" ) )
+                {
+                    if( is_vtk_cells_loadable( piece ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             void read_vtk_points( const pugi::xml_node& piece )
             {
                 const auto nb_points =
@@ -106,6 +119,9 @@ namespace geode
             }
 
             virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
+
+            virtual bool is_vtk_cells_loadable(
+                const pugi::xml_node& piece ) const = 0;
 
             index_t build_points(
                 const pugi::xml_node& piece, index_t nb_points )

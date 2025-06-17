@@ -24,6 +24,7 @@
 #include <geode/io/mesh/detail/vtu_polygonal_input.hpp>
 
 #include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 
 #include <geode/io/mesh/detail/vtu_surface_input.hpp>
@@ -56,6 +57,14 @@ namespace geode
         {
             VTUPolygonalInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        bool VTUPolygonalInput::is_loadable() const
+        {
+            VTUPolygonalInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    PolygonalSurface3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

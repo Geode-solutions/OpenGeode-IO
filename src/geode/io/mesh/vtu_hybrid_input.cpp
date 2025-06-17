@@ -25,6 +25,7 @@
 
 #include <geode/mesh/builder/hybrid_solid_builder.hpp>
 #include <geode/mesh/core/hybrid_solid.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 
 #include <geode/io/mesh/detail/vtu_solid_input.hpp>
 
@@ -58,6 +59,14 @@ namespace geode
         {
             VTUHybridInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        bool VTUHybridInput::is_loadable() const
+        {
+            VTUHybridInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    HybridSolid3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

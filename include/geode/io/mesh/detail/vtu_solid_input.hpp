@@ -98,6 +98,22 @@ namespace geode
                     this->mesh().polyhedron_attribute_manager() );
             }
 
+            bool is_vtk_cells_loadable(
+                const pugi::xml_node& piece ) const override
+            {
+                const auto nb_polyhedra =
+                    this->read_attribute( piece, "NumberOfCells" );
+                const auto [_, types] = this->read_cells( piece, nb_polyhedra );
+                for( const auto& type : types )
+                {
+                    if( elements_.contains( type ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             index_t build_polyhedra(
                 const pugi::xml_node& piece, index_t nb_polyhedra )
             {
