@@ -77,8 +77,10 @@ namespace geode
         template < index_t dimension >
         bool VTILightRegularGridInput< dimension >::is_loadable() const
         {
-            return VTIGridInputImpl< LightRegularGrid< dimension > >::
-                is_loadable( this->filename() );
+            VTILightRegularGridInputImpl< dimension > reader{
+                this->filename()
+            };
+            return reader.is_loadable();
         }
 
         template class VTILightRegularGridInput< 2 >;

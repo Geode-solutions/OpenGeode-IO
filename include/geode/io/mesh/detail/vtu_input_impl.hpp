@@ -41,7 +41,8 @@ namespace geode
 
             std::tuple< absl::FixedArray< std::vector< index_t > >,
                 std::vector< uint8_t > >
-                read_cells( const pugi::xml_node& piece, index_t nb_cells )
+                read_cells(
+                    const pugi::xml_node& piece, index_t nb_cells ) const
             {
                 std::vector< int64_t > offsets_values;
                 std::vector< int64_t > connectivity_values;

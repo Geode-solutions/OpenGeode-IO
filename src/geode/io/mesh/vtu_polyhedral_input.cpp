@@ -24,6 +24,7 @@
 #include <geode/io/mesh/detail/vtu_polyhedral_input.hpp>
 
 #include <geode/mesh/builder/polyhedral_solid_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 
 #include <geode/io/mesh/detail/vtu_solid_input.hpp>
@@ -58,6 +59,14 @@ namespace geode
         {
             VTUPolyhedralInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        bool VTUPolyhedralInput::is_loadable() const
+        {
+            VTUPolyhedralInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    PolyhedralSolid3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

@@ -61,6 +61,22 @@ namespace geode
                     this->mesh().polygon_attribute_manager() );
             }
 
+            bool is_vtk_cells_loadable(
+                const pugi::xml_node& piece ) const override
+            {
+                const auto nb_polygons =
+                    this->read_attribute( piece, "NumberOfCells" );
+                const auto [_, types] = this->read_cells( piece, nb_polygons );
+                for( const auto& type : types )
+                {
+                    if( elements_.contains( type ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             index_t build_polygons(
                 const pugi::xml_node& piece, index_t nb_polygons )
             {

@@ -51,13 +51,25 @@ namespace geode
 
             std::unique_ptr< Mesh > read_file()
             {
-                read_root_attributes();
-                read_appended_data();
+                read_common_data();
                 for( const auto& vtk_object : root_.children( type_ ) )
                 {
                     read_vtk_object( vtk_object );
                 }
                 return std::move( mesh_ );
+            }
+
+            bool is_loadable()
+            {
+                read_common_data();
+                for( const auto& vtk_object : root_.children( type_ ) )
+                {
+                    if( is_vtk_object_loadable( vtk_object ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
 
         protected:
@@ -71,6 +83,15 @@ namespace geode
                 OPENGEODE_EXCEPTION( status, "[VTKInput] Error ",
                     status.description(), " while parsing file: ", filename );
                 root_ = document_.child( "VTKFile" );
+            }
+
+            virtual bool is_vtk_object_loadable(
+                const pugi::xml_node& vtk_object ) const = 0;
+
+            void read_common_data()
+            {
+                read_root_attributes();
+                read_appended_data();
             }
 
             void initialize_mesh( std::unique_ptr< Mesh >&& mesh )
@@ -103,7 +124,7 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_integer_data_array(
-                const pugi::xml_node& data )
+                const pugi::xml_node& data ) const
             {
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
@@ -125,7 +146,8 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > read_uint8_data_array( const pugi::xml_node& data )
+            std::vector< T > read_uint8_data_array(
+                const pugi::xml_node& data ) const
             {
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
@@ -147,7 +169,8 @@ namespace geode
             }
 
             template < typename T >
-            std::vector< T > read_float_data_array( const pugi::xml_node& data )
+            std::vector< T > read_float_data_array(
+                const pugi::xml_node& data ) const
             {
                 const auto format = data.attribute( "format" ).value();
                 if( match( format, "appended" ) )
@@ -305,14 +328,15 @@ namespace geode
                 }
             }
 
-            std::string_view read_appended_data( const pugi::xml_node& data )
+            std::string_view read_appended_data(
+                const pugi::xml_node& data ) const
             {
                 const auto offset = data.attribute( "offset" ).as_uint();
                 return appended_data_.substr( offset );
             }
 
             template < typename T >
-            std::vector< T > decode( std::string_view input )
+            std::vector< T > decode( std::string_view input ) const
             {
                 if( !compressed_ )
                 {
@@ -410,7 +434,7 @@ namespace geode
 
             template < typename T, typename UInt >
             std::vector< T > templated_decode_uncompressed(
-                std::string_view input )
+                std::string_view input ) const
             {
                 const auto nb_chars = nb_char_needed< UInt >( 1 );
                 const auto nb_bytes_input = input.substr( 0, nb_chars );
@@ -448,7 +472,7 @@ namespace geode
             }
 
             template < typename T, typename UInt >
-            std::vector< T > templated_decode( std::string_view input )
+            std::vector< T > templated_decode( std::string_view input ) const
             {
                 const auto fixed_header_length = nb_char_needed< UInt >( 3 );
                 auto fixed_header = input.substr( 0, fixed_header_length );
@@ -540,7 +564,7 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_data_array( std::string_view data,
-                bool ( *string_convert )( std::string_view, T* ) )
+                bool ( *string_convert )( std::string_view, T* ) ) const
             {
                 std::vector< T > results;
                 for( auto string : absl::StrSplit( data, ' ' ) )
@@ -556,14 +580,14 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_integer_data_array(
-                std::string_view data )
+                std::string_view data ) const
             {
                 return read_ascii_data_array< T >( data, absl::SimpleAtoi );
             }
 
             template < typename T >
             std::vector< T > read_ascii_uint8_data_array(
-                std::string_view data )
+                std::string_view data ) const
             {
                 std::vector< T > results;
                 for( auto string : absl::StrSplit( data, ' ' ) )
@@ -576,7 +600,7 @@ namespace geode
 
             template < typename T >
             std::vector< T > read_ascii_float_data_array(
-                std::string_view data )
+                std::string_view data ) const
             {
                 return read_ascii_data_array< T >( data, absl::SimpleAtod );
             }

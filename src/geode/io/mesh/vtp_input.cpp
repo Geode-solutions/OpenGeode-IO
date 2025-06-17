@@ -50,8 +50,15 @@ namespace
                 this->mesh().polygon_attribute_manager() );
         }
 
+        bool is_vtk_cells_loadable( const pugi::xml_node& piece ) const override
+        {
+            const auto nb_polygons = read_attribute( piece, "NumberOfPolys" );
+            read_polygons( piece, nb_polygons );
+            return true;
+        }
+
         absl::FixedArray< std::vector< geode::index_t > > read_polygons(
-            const pugi::xml_node& piece, geode::index_t nb_polygons )
+            const pugi::xml_node& piece, geode::index_t nb_polygons ) const
         {
             std::vector< int64_t > offsets_values;
             std::vector< int64_t > connectivity_values;

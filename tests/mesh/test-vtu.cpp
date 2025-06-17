@@ -69,8 +69,8 @@ void run_solid_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
-    auto solid = geode::load_tetrahedral_solid< 3 >(
-        absl::StrCat( geode::DATA_PATH, filename ) );
+    const auto file = absl::StrCat( geode::DATA_PATH, filename );
+    auto solid = geode::load_tetrahedral_solid< 3 >( file );
     check( *solid, test_answers );
 
     // Save file
@@ -92,20 +92,26 @@ void run_solid_test( std::string_view filename,
     // Reload file
     auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
     check( *reload_vtu, test_answers );
+
+    OPENGEODE_EXCEPTION( geode::is_tetrahedral_solid_loadable< 3 >( file ),
+        "[Test] File should be loadable" );
 }
 
 void run_surface_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers )
 {
     // Load file
-    auto surface = geode::load_triangulated_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, filename ) );
+    const auto file = absl::StrCat( geode::DATA_PATH, filename );
+    auto surface = geode::load_triangulated_surface< 3 >( file );
     check( *surface, test_answers );
 
     std::string_view filename_without_ext{ filename };
     filename_without_ext.remove_suffix( 4 );
     geode::save_triangulated_surface(
         *surface, absl::StrCat( filename_without_ext, ".og_tsf3d" ) );
+
+    OPENGEODE_EXCEPTION( geode::is_triangulated_surface_loadable< 3 >( file ),
+        "[Test] File should be loadable" );
 }
 
 int main()
@@ -117,6 +123,7 @@ int main()
 
         run_solid_test( "cone.vtu", { 580, 2197 } );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 } );
+        run_surface_test( "cone.vtu", { 580, 1182 } );
         run_surface_test( "mymesh.vtu", { 283308, 564408 } );
 
         geode::Logger::info( "TEST SUCCESS" );
