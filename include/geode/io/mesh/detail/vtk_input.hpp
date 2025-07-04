@@ -268,6 +268,7 @@ namespace geode
                         offset );
                 }
                 else if( match( data_array_type, "Int64" )
+                         || match( data_array_type, "UInt32" )
                          || match( data_array_type, "Int32" )
                          || match( data_array_type, "UInt64" ) )
                 {
