@@ -413,8 +413,6 @@ namespace
     private:
         std::ofstream file_;
         const geode::BRep& brep_;
-        bool binary_{ true };
-        double version_{ 4 };
         absl::flat_hash_map< geode::uuid, geode::internal::GmshElementID >
             uuid2gmsh_;
         absl::flat_hash_map< geode::ComponentType, geode::index_t >
