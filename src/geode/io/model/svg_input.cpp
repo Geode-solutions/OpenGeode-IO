@@ -139,8 +139,8 @@ namespace
                         position.value( 1 ) + params[0] } };
                 }
                 throw geode::OpenGeodeException(
-                    "[SVGInput::Command::apply] Command not supported: "
-                    + letter );
+                    "[SVGInput::Command::apply] Command not supported: ",
+                    std::string{ letter } );
                 return position;
             }
 
