@@ -24,6 +24,7 @@
 #pragma once
 
 #include <geode/io/image/common.hpp>
+#include <geode/io/image/detail/gdal_file.hpp>
 
 namespace geode
 {
@@ -35,7 +36,7 @@ namespace geode
 {
     namespace internal
     {
-        class ImageInputImpl final
+        class ImageInputImpl : public detail::GDALFile
         {
         public:
             explicit ImageInputImpl( std::string_view filename );
@@ -43,9 +44,6 @@ namespace geode
             RasterImage2D read_file();
 
             RasterImage2D read_reversed_y_axis_file();
-
-        private:
-            std::string_view filename_;
         };
     } // namespace internal
 } // namespace geode

@@ -21,26 +21,52 @@
  *
  */
 
-#include <geode/io/image/internal/tiff_input.hpp>
+#pragma once
 
-#include <geode/image/core/raster_image.hpp>
+#include <geode/basic/pimpl.hpp>
 
-#include <geode/io/image/internal/raster_image_input.hpp>
+#include <geode/io/image/common.hpp>
+
+class GDALDataset;
 
 namespace geode
 {
-    namespace internal
-    {
-        RasterImage2D TIFFInput::read()
-        {
-            ImageInputImpl reader{ filename() };
-            return reader.read_reversed_y_axis_file();
-        }
+    FORWARD_DECLARATION_DIMENSION_CLASS( CoordinateSystem );
+    ALIAS_2D( CoordinateSystem );
+} // namespace geode
 
-        auto TIFFInput::additional_files() const -> AdditionalFiles
+namespace geode
+{
+    namespace detail
+    {
+        class opengeode_io_image_api GDALFile
         {
-            ImageInputImpl reader{ filename() };
-            return reader.additional_files< AdditionalFiles >();
-        }
-    } // namespace internal
+        public:
+            GDALFile( std::string_view filename );
+            ~GDALFile();
+
+            CoordinateSystem2D read_coordinate_system();
+
+            template < typename AdditionalFiles >
+            AdditionalFiles additional_files()
+            {
+                AdditionalFiles files;
+                for( auto& file : associated_files() )
+                {
+                    files.optional_files.emplace_back(
+                        std::move( file ), true );
+                }
+                return files;
+            }
+
+        protected:
+            GDALDataset& dataset();
+
+        private:
+            std::vector< std::string > associated_files();
+
+        private:
+            IMPLEMENTATION_MEMBER( impl_ );
+        };
+    } // namespace detail
 } // namespace geode

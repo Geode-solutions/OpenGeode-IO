@@ -23,6 +23,8 @@
 
 #include <geode/io/mesh/common.hpp>
 
+#include <gdal_priv.h>
+
 #include <geode/mesh/common.hpp>
 
 #include <geode/io/image/common.hpp>
@@ -268,7 +270,8 @@ namespace geode
     {
         OpenGeodeMeshLibrary::initialize();
         IOImageLibrary::initialize();
-
+        GDALAllRegister();
+        
         register_edged_curve_input();
         register_polygonal_surface_input();
         register_triangulated_surface_input();

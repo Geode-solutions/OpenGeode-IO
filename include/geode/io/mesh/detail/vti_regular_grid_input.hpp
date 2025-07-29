@@ -48,6 +48,12 @@ namespace geode
                 const MeshImpl& impl ) final;
 
             bool is_loadable() const final;
+
+            typename RegularGridInput< dimension >::AdditionalFiles
+                additional_files() const final
+            {
+                return {};
+            }
         };
     } // namespace detail
 } // namespace geode

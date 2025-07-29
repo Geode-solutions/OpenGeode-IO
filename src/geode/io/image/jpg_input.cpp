@@ -36,5 +36,11 @@ namespace geode
             ImageInputImpl reader{ filename() };
             return reader.read_reversed_y_axis_file();
         }
+
+        auto JPGInput::additional_files() const -> AdditionalFiles
+        {
+            ImageInputImpl reader{ filename() };
+            return reader.additional_files< AdditionalFiles >();
+        }
     } // namespace internal
 } // namespace geode

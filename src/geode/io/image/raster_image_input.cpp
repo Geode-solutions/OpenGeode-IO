@@ -35,31 +35,30 @@ namespace
 {
     absl::FixedArray< GByte > read_color_component(
         const geode::RasterImage2D& raster,
-        GDALDatasetUniquePtr& gdal_data,
+        GDALDataset& gdal_data,
         int component )
     {
         const auto width = raster.nb_cells_in_direction( 0 );
         const auto height = raster.nb_cells_in_direction( 1 );
         absl::FixedArray< GByte > values( raster.nb_cells() );
         const auto status =
-            gdal_data->GetRasterBand( component )
+            gdal_data.GetRasterBand( component )
                 ->RasterIO( GF_Read, 0, 0, width, height, values.data(), width,
                     height, GDT_Byte, 0, 0 );
         OPENGEODE_EXCEPTION( status == CE_None,
             "[ImageInputImpl] Failed to read color component" );
         return values;
     }
-    std::array< geode::index_t, 3 > get_rgb_indices(
-        GDALDatasetUniquePtr& gdal_data )
+    std::array< geode::index_t, 3 > get_rgb_indices( GDALDataset& gdal_data )
     {
         std::array< geode::index_t, 3 > rgb_indices{ 0, 0, 0 };
         const auto nb_color_components =
-            static_cast< geode::index_t >( gdal_data->GetRasterCount() );
+            static_cast< geode::index_t >( gdal_data.GetRasterCount() );
         for( const auto id : geode::Range( nb_color_components ) )
         {
             const auto band_id = id + 1;
             GDALColorInterp colorInterp =
-                gdal_data->GetRasterBand( band_id )->GetColorInterpretation();
+                gdal_data.GetRasterBand( band_id )->GetColorInterpretation();
             if( colorInterp == GCI_RedBand )
             {
                 rgb_indices[0] = band_id;
@@ -77,19 +76,14 @@ namespace
     }
 
     template < typename SpecificRange >
-    geode::RasterImage2D read_file( std::string_view filename )
+    geode::RasterImage2D read_file( GDALDataset& gdal_data )
     {
-        GDALDatasetUniquePtr gdal_data{ GDALDataset::Open(
-            geode::to_string( filename ).c_str(), GDAL_OF_RASTER ) };
-        OPENGEODE_EXCEPTION(
-            gdal_data, "[ImageInputImpl] Failed to load ", filename );
-
-        const auto width = gdal_data->GetRasterXSize();
-        const auto height = gdal_data->GetRasterYSize();
+        const auto width = gdal_data.GetRasterXSize();
+        const auto height = gdal_data.GetRasterYSize();
         geode::RasterImage2D raster{ { static_cast< geode::index_t >( width ),
             static_cast< geode::index_t >( height ) } };
         const auto nb_color_components =
-            static_cast< geode::index_t >( gdal_data->GetRasterCount() );
+            static_cast< geode::index_t >( gdal_data.GetRasterCount() );
         if( nb_color_components <= 2 )
         {
             const auto grey_scale =
@@ -138,18 +132,18 @@ namespace geode
     namespace internal
     {
         ImageInputImpl::ImageInputImpl( std::string_view filename )
-            : filename_( filename )
+            : detail::GDALFile{ filename }
         {
         }
 
         RasterImage2D ImageInputImpl::read_file()
         {
-            return ::read_file< Range >( filename_ );
+            return ::read_file< Range >( dataset() );
         }
 
         RasterImage2D ImageInputImpl::read_reversed_y_axis_file()
         {
-            return ::read_file< ReverseRange >( filename_ );
+            return ::read_file< ReverseRange >( dataset() );
         }
     } // namespace internal
 } // namespace geode

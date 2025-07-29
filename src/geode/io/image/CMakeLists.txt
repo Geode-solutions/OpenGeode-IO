@@ -24,6 +24,7 @@ add_geode_library(
     SOURCES
         "bmp_input.cpp"
         "common.cpp"
+        "gdal_file.cpp"
         "jpg_input.cpp"
         "png_input.cpp"
         "raster_image_input.cpp"
@@ -32,6 +33,7 @@ add_geode_library(
     PUBLIC_HEADERS
         "common.hpp"
     ADVANCED_HEADERS
+        "detail/gdal_file.hpp"
         "detail/vti_output_impl.hpp"
         "detail/vti_raster_image_output.hpp"
         "detail/vtk_output.hpp"
