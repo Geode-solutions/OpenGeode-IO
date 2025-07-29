@@ -271,7 +271,7 @@ namespace geode
         OpenGeodeMeshLibrary::initialize();
         IOImageLibrary::initialize();
         GDALAllRegister();
-        
+
         register_edged_curve_input();
         register_polygonal_surface_input();
         register_triangulated_surface_input();
