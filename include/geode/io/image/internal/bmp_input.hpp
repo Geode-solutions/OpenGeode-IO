@@ -50,6 +50,8 @@ namespace geode
             }
 
             RasterImage2D read() final;
+
+            AdditionalFiles additional_files() const final;
         };
     } // namespace internal
 } // namespace geode

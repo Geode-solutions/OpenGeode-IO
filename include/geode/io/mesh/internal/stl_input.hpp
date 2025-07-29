@@ -51,6 +51,11 @@ namespace geode
 
             std::unique_ptr< TriangulatedSurface3D > read(
                 const MeshImpl& impl ) final;
+
+            AdditionalFiles additional_files() const final
+            {
+                return {};
+            }
         };
     } // namespace internal
 } // namespace geode

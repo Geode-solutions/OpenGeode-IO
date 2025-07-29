@@ -44,6 +44,11 @@ namespace geode
             }
 
             BRep read() final;
+
+            AdditionalFiles additional_files() const final
+            {
+                return {};
+            }
         };
     } // namespace internal
 } // namespace geode

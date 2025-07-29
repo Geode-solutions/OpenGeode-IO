@@ -45,12 +45,11 @@ namespace geode
             return reader.read_file();
         }
 
-        PolygonalSurfaceInput< 3 >::MissingFiles
-            OBJInput::check_missing_files() const
+        auto OBJInput::additional_files() const -> AdditionalFiles
         {
             std::ifstream obj_file{ to_string( filename() ) };
             OPENGEODE_EXCEPTION( obj_file,
-                "[OBJInput::check_missing_files] Failed to open file: ",
+                "[OBJInput::additional_files] Failed to open file: ",
                 filename() );
             const auto mtllib_line =
                 goto_keyword_if_it_exists( obj_file, "mtllib" );
@@ -58,22 +57,24 @@ namespace geode
             {
                 return {};
             }
-            PolygonalSurfaceInput< 3 >::MissingFiles missing;
+            AdditionalFiles files;
             const auto mtl_tokens = string_split( mtllib_line.value() );
             const auto& mtl_filename = mtl_tokens.at( 1 );
             const auto file_path =
                 filepath_without_filename( filename() ).string();
             const auto mtl_file_path =
                 absl::StrCat( file_path, "/", mtl_filename );
-            if( !file_exists( mtl_file_path ) )
+            const auto mtl_is_missing = !file_exists( mtl_file_path );
+            files.optional_files.emplace_back(
+                to_string( mtl_filename ), mtl_is_missing );
+            if( mtl_is_missing )
             {
-                missing.additional_files.emplace_back( mtl_filename );
-                return missing;
+                return files;
             }
 
             std::ifstream mtl_file{ mtl_file_path };
             OPENGEODE_EXCEPTION( mtl_file,
-                "[OBJInput::check_missing_files] Failed to open file: ",
+                "[OBJInput::additional_files] Failed to open file: ",
                 mtl_file_path );
             while( const auto texture_line =
                        goto_keyword_if_it_exists( mtl_file, "map_Kd" ) )
@@ -83,12 +84,12 @@ namespace geode
                 const auto& texture_filename = texture_tokens.at( 1 );
                 const auto texture_file_path =
                     absl::StrCat( file_path, "/", texture_filename );
-                if( !file_exists( texture_file_path ) )
-                {
-                    missing.additional_files.emplace_back( texture_filename );
-                }
+                const auto texture_is_missing =
+                    !file_exists( texture_file_path );
+                files.optional_files.emplace_back(
+                    to_string( texture_filename ), texture_is_missing );
             }
-            return missing;
+            return files;
         }
     } // namespace internal
 } // namespace geode

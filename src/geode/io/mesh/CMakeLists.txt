@@ -114,5 +114,6 @@ add_geode_library(
         pugixml::pugixml
         ZLIB::ZLIB
         Async++
+        GDAL::GDAL
         ${PROJECT_NAME}::image
 )
