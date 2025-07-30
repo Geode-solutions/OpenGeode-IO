@@ -31,7 +31,6 @@
 
 #include <geode/io/mesh/common.hpp>
 
-
 namespace geode
 {
     namespace internal
