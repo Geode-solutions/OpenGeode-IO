@@ -55,6 +55,11 @@ namespace geode
             {
                 return {};
             }
+
+            index_t object_priority() const final
+            {
+                return 0;
+            }
         };
     } // namespace internal
 } // namespace geode

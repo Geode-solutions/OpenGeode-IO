@@ -54,6 +54,11 @@ namespace geode
             {
                 return {};
             }
+
+            index_t object_priority() const final
+            {
+                return 1;
+            }
         };
         ALIAS_2D_AND_3D( VTILightRegularGridInput );
     } // namespace detail
