@@ -79,7 +79,7 @@ namespace geode
         }
 
         template < index_t dimension >
-        bool VTIRegularGridInput< dimension >::is_loadable() const
+        Percentage VTIRegularGridInput< dimension >::is_loadable() const
         {
             VTIRegularGridInputImpl< dimension > reader{ this->filename(),
                 MeshFactory::default_impl(

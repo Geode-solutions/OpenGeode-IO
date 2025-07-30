@@ -24,6 +24,7 @@
 #include <geode/io/mesh/detail/vtp_input.hpp>
 
 #include <geode/mesh/builder/polygonal_surface_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 
 #include <geode/io/mesh/detail/vtk_mesh_input.hpp>
@@ -50,11 +51,12 @@ namespace
                 this->mesh().polygon_attribute_manager() );
         }
 
-        bool is_vtk_cells_loadable( const pugi::xml_node& piece ) const override
+        geode::Percentage is_vtk_cells_loadable(
+            const pugi::xml_node& piece ) const override
         {
             const auto nb_polygons = read_attribute( piece, "NumberOfPolys" );
             read_polygons( piece, nb_polygons );
-            return true;
+            return geode::Percentage{ 1 };
         }
 
         absl::FixedArray< std::vector< geode::index_t > > read_polygons(
@@ -108,6 +110,14 @@ namespace geode
         {
             VTPInputImpl reader{ filename(), impl };
             return reader.read_file();
+        }
+
+        Percentage VTPInput::is_loadable() const
+        {
+            VTPInputImpl reader{ filename(),
+                MeshFactory::default_impl(
+                    PolygonalSurface3D::type_name_static() ) };
+            return reader.is_loadable();
         }
     } // namespace detail
 } // namespace geode

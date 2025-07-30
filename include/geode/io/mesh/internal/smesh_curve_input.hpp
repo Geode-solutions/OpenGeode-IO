@@ -60,6 +60,8 @@ namespace geode
             {
                 return 0;
             }
+
+            Percentage is_loadable() const final;
         };
     } // namespace internal
 } // namespace geode

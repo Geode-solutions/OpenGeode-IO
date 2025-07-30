@@ -51,7 +51,7 @@ namespace geode
 
             std::unique_ptr< HybridSolid3D > read( const MeshImpl& impl ) final;
 
-            bool is_loadable() const final;
+            Percentage is_loadable() const final;
 
             AdditionalFiles additional_files() const final
             {

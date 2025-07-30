@@ -66,7 +66,8 @@ void check( const geode::SurfaceMesh< 3 >& surface,
 }
 
 void run_solid_test( std::string_view filename,
-    const std::array< geode::index_t, 2 >& test_answers )
+    const std::array< geode::index_t, 2 >& test_answers,
+    double loadability )
 {
     // Load file
     const auto file = absl::StrCat( geode::DATA_PATH, filename );
@@ -93,12 +94,16 @@ void run_solid_test( std::string_view filename,
     auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
     check( *reload_vtu, test_answers );
 
-    OPENGEODE_EXCEPTION( geode::is_tetrahedral_solid_loadable< 3 >( file ),
+    OPENGEODE_EXCEPTION(
+        std::fabs( geode::is_tetrahedral_solid_loadable< 3 >( file ).value()
+                   - loadability )
+            < geode::GLOBAL_EPSILON,
         "[Test] File should be loadable" );
 }
 
 void run_surface_test( std::string_view filename,
-    const std::array< geode::index_t, 2 >& test_answers )
+    const std::array< geode::index_t, 2 >& test_answers,
+    double loadability )
 {
     // Load file
     const auto file = absl::StrCat( geode::DATA_PATH, filename );
@@ -110,7 +115,10 @@ void run_surface_test( std::string_view filename,
     geode::save_triangulated_surface(
         *surface, absl::StrCat( filename_without_ext, ".og_tsf3d" ) );
 
-    OPENGEODE_EXCEPTION( geode::is_triangulated_surface_loadable< 3 >( file ),
+    OPENGEODE_EXCEPTION(
+        std::fabs( geode::is_triangulated_surface_loadable< 3 >( file ).value()
+                   - loadability )
+            < geode::GLOBAL_EPSILON,
         "[Test] File should be loadable" );
 }
 
@@ -121,10 +129,10 @@ int main()
         geode::IOMeshLibrary::initialize();
         geode::Logger::set_level( geode::Logger::LEVEL::debug );
 
-        run_solid_test( "cone.vtu", { 580, 2197 } );
-        run_solid_test( "cone_append_encoded.vtu", { 580, 2197 } );
-        run_surface_test( "cone.vtu", { 580, 1182 } );
-        run_surface_test( "mymesh.vtu", { 283308, 564408 } );
+        run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
+        run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
+        run_surface_test( "cone.vtu", { 580, 1182 }, 0.336177 );
+        run_surface_test( "mymesh.vtu", { 283308, 564408 }, 1 );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

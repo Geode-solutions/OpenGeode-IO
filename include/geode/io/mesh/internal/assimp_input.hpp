@@ -27,7 +27,10 @@
 
 #include <assimp/scene.h>
 
+#include <geode/basic/percentage.hpp>
+
 #include <geode/io/mesh/common.hpp>
+
 
 namespace geode
 {
@@ -47,6 +50,8 @@ namespace geode
             virtual ~AssimpMeshInput() = default;
 
             std::unique_ptr< Mesh > read_file();
+
+            Percentage is_loadable();
 
         private:
             void read_materials( const aiScene* assimp_scene );

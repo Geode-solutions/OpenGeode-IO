@@ -47,7 +47,7 @@ namespace geode
             std::unique_ptr< RegularGrid< dimension > > read(
                 const MeshImpl& impl ) final;
 
-            bool is_loadable() const final;
+            Percentage is_loadable() const final;
 
             typename RegularGridInput< dimension >::AdditionalFiles
                 additional_files() const final

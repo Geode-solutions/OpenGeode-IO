@@ -934,5 +934,12 @@ namespace geode
             impl.build_topology();
             return brep;
         }
+
+        Percentage MSHInput::is_loadable() const
+        {
+            BRep brep;
+            MSHInputImpl impl( filename(), brep );
+            return Percentage{ 1 };
+        }
     } // namespace internal
 } // namespace geode

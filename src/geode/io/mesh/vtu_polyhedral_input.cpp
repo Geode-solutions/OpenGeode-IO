@@ -61,7 +61,7 @@ namespace geode
             return reader.read_file();
         }
 
-        bool VTUPolyhedralInput::is_loadable() const
+        Percentage VTUPolyhedralInput::is_loadable() const
         {
             VTUPolyhedralInputImpl reader{ filename(),
                 MeshFactory::default_impl(

@@ -47,7 +47,7 @@ namespace geode
 
             LightRegularGrid< dimension > read() final;
 
-            bool is_loadable() const final;
+            Percentage is_loadable() const final;
 
             typename LightRegularGridInput< dimension >::AdditionalFiles
                 additional_files() const final

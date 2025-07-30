@@ -58,7 +58,7 @@ namespace geode
             return reader.read_file();
         }
 
-        bool VTUTriangulatedInput::is_loadable() const
+        Percentage VTUTriangulatedInput::is_loadable() const
         {
             VTUTriangulatedInputImpl reader{ filename(),
                 MeshFactory::default_impl(

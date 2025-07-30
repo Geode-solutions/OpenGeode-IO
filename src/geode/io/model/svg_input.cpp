@@ -435,5 +435,12 @@ namespace geode
             impl.build_topology();
             return section;
         }
+
+        Percentage SVGInput::is_loadable() const
+        {
+            Section section;
+            SVGInputImpl impl( filename(), section );
+            return Percentage{ 1 };
+        }
     } // namespace internal
 } // namespace geode

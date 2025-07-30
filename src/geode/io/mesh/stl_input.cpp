@@ -35,9 +35,14 @@ namespace geode
         std::unique_ptr< TriangulatedSurface3D > STLInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::internal::AssimpMeshInput< geode::TriangulatedSurface3D >
-                reader{ filename() };
+            AssimpMeshInput< TriangulatedSurface3D > reader{ filename() };
             return reader.read_file();
+        }
+
+        Percentage STLInput::is_loadable() const
+        {
+            AssimpMeshInput< TriangulatedSurface3D > reader{ filename() };
+            return reader.is_loadable();
         }
     } // namespace internal
 } // namespace geode

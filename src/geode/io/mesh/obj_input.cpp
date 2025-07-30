@@ -40,8 +40,7 @@ namespace geode
         std::unique_ptr< PolygonalSurface3D > OBJInput::read(
             const MeshImpl& /*unused*/ )
         {
-            geode::internal::AssimpMeshInput< geode::PolygonalSurface3D >
-                reader{ filename() };
+            AssimpMeshInput< PolygonalSurface3D > reader{ filename() };
             return reader.read_file();
         }
 
@@ -90,6 +89,12 @@ namespace geode
                     to_string( texture_filename ), texture_is_missing );
             }
             return files;
+        }
+
+        Percentage OBJInput::is_loadable() const
+        {
+            AssimpMeshInput< PolygonalSurface3D > reader{ filename() };
+            return reader.is_loadable();
         }
     } // namespace internal
 } // namespace geode

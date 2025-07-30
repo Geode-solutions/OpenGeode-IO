@@ -139,12 +139,13 @@ namespace geode
                 }
             }
 
-            bool is_vtk_object_loadable(
-                const pugi::xml_node& vtk_object ) const final
+            void is_vtk_object_loadable( const pugi::xml_node& vtk_object,
+                std::vector< Percentage >& percentages ) const final
             {
                 const auto grid_attributes = read_grid_attributes( vtk_object );
                 const auto nb_cells_3d = grid_attributes.cells_number[2];
-                return dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0;
+                percentages.emplace_back(
+                    dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0 );
             }
 
         protected:
