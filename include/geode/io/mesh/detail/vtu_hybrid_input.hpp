@@ -57,6 +57,11 @@ namespace geode
             {
                 return {};
             }
+
+            index_t object_priority() const final
+            {
+                return 1;
+            }
         };
     } // namespace detail
 } // namespace geode
