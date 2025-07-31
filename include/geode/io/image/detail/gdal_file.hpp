@@ -47,6 +47,8 @@ namespace geode
 
             CoordinateSystem2D read_coordinate_system();
 
+            bool is_coordinate_system_loadable();
+
             template < typename AdditionalFiles >
             AdditionalFiles additional_files()
             {
@@ -59,7 +61,6 @@ namespace geode
                 return files;
             }
 
-        protected:
             GDALDataset& dataset();
 
         private:
