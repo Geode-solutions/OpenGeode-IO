@@ -59,17 +59,25 @@ namespace geode
                 return std::move( mesh_ );
             }
 
-            bool is_loadable()
+            Percentage is_loadable()
             {
                 read_common_data();
+                std::vector< Percentage > percentages;
                 for( const auto& vtk_object : root_.children( type_ ) )
                 {
-                    if( is_vtk_object_loadable( vtk_object ) )
-                    {
-                        return true;
-                    }
+                    is_vtk_object_loadable( vtk_object, percentages );
                 }
-                return false;
+                if( percentages.empty() )
+                {
+                    return Percentage{ 0 };
+                }
+                const auto nb_percentages = percentages.size();
+                double value{ 0 };
+                for( const auto& percentage : percentages )
+                {
+                    value += percentage.value();
+                }
+                return Percentage{ value / nb_percentages };
             }
 
         protected:
@@ -85,8 +93,9 @@ namespace geode
                 root_ = document_.child( "VTKFile" );
             }
 
-            virtual bool is_vtk_object_loadable(
-                const pugi::xml_node& vtk_object ) const = 0;
+            virtual void is_vtk_object_loadable(
+                const pugi::xml_node& vtk_object,
+                std::vector< Percentage >& percentages ) const = 0;
 
             void read_common_data()
             {

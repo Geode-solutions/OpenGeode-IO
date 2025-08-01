@@ -40,14 +40,12 @@ namespace
 {
     class SMESHTriangulatedInputImpl
         : public geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
-              geode::TriangulatedSurfaceBuilder3D,
               3 >
     {
     public:
         SMESHTriangulatedInputImpl( std::string_view filename,
             geode::TriangulatedSurface3D& triangulated_surface )
             : geode::internal::SMESHInputImpl< geode::TriangulatedSurface3D,
-                  geode::TriangulatedSurfaceBuilder3D,
                   3 >( filename, triangulated_surface )
         {
         }
@@ -72,6 +70,13 @@ namespace geode
             SMESHTriangulatedInputImpl reader{ filename(), *surface };
             reader.read_file();
             return surface;
+        }
+
+        Percentage SMESHTriangulatedInput::is_loadable() const
+        {
+            auto curve = EdgedCurve3D::create();
+            SMESHCurveInputImpl reader{ filename(), *curve };
+            return reader.is_loadable();
         }
     } // namespace internal
 } // namespace geode

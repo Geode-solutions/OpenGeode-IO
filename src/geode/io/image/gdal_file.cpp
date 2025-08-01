@@ -68,6 +68,14 @@ namespace geode
                 return { origin, { x_direction, y_direction } };
             }
 
+            bool is_coordinate_system_loadable()
+            {
+                std::array< double, 6 > geo_transform;
+                const auto status =
+                    dataset_->GetGeoTransform( geo_transform.data() );
+                return status == CE_None;
+            }
+
             std::vector< std::string > associated_files()
             {
                 char** papszFileList = dataset_->GetFileList();
@@ -105,6 +113,11 @@ namespace geode
         CoordinateSystem2D GDALFile::read_coordinate_system()
         {
             return impl_->read_coordinate_system();
+        }
+
+        bool GDALFile::is_coordinate_system_loadable()
+        {
+            return impl_->is_coordinate_system_loadable();
         }
     } // namespace detail
 } // namespace geode

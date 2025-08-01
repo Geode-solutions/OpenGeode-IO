@@ -81,6 +81,15 @@ namespace geode
     namespace internal
     {
         template < typename Mesh >
+        Percentage AssimpMeshInput< Mesh >::is_loadable()
+        {
+            Assimp::Importer importer;
+            const auto* assimp_scene =
+                importer.ReadFile( to_string( file_ ), 0 );
+            return Percentage{ assimp_scene ? 1. : 0. };
+        }
+
+        template < typename Mesh >
         std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
         {
             Assimp::Importer importer;

@@ -61,20 +61,22 @@ namespace geode
                     this->mesh().polygon_attribute_manager() );
             }
 
-            bool is_vtk_cells_loadable(
+            Percentage is_vtk_cells_loadable(
                 const pugi::xml_node& piece ) const override
             {
                 const auto nb_polygons =
                     this->read_attribute( piece, "NumberOfCells" );
                 const auto [_, types] = this->read_cells( piece, nb_polygons );
+                index_t nb_loadable_polygons{ 0 };
                 for( const auto& type : types )
                 {
                     if( elements_.contains( type ) )
                     {
-                        return true;
+                        nb_loadable_polygons++;
                     }
                 }
-                return false;
+                return Percentage{ static_cast< double >( nb_loadable_polygons )
+                                   / nb_polygons };
             }
 
             index_t build_polygons(

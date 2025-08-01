@@ -39,16 +39,13 @@
 namespace
 {
     class SMESHCurveInputImpl
-        : public geode::internal::SMESHInputImpl< geode::EdgedCurve3D,
-              geode::EdgedCurveBuilder3D,
-              2 >
+        : public geode::internal::SMESHInputImpl< geode::EdgedCurve3D, 2 >
     {
     public:
         SMESHCurveInputImpl(
             std::string_view filename, geode::EdgedCurve3D& curve )
-            : geode::internal::SMESHInputImpl< geode::EdgedCurve3D,
-                  geode::EdgedCurveBuilder3D,
-                  2 >( filename, curve )
+            : geode::internal::SMESHInputImpl< geode::EdgedCurve3D, 2 >(
+                  filename, curve )
         {
         }
 
@@ -72,6 +69,13 @@ namespace geode
             SMESHCurveInputImpl reader{ filename(), *curve };
             reader.read_file();
             return curve;
+        }
+
+        Percentage SMESHCurveInput::is_loadable() const
+        {
+            auto curve = EdgedCurve3D::create();
+            SMESHCurveInputImpl reader{ filename(), *curve };
+            return reader.is_loadable();
         }
     } // namespace internal
 } // namespace geode

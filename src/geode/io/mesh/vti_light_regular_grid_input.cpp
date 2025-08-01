@@ -75,7 +75,7 @@ namespace geode
         }
 
         template < index_t dimension >
-        bool VTILightRegularGridInput< dimension >::is_loadable() const
+        Percentage VTILightRegularGridInput< dimension >::is_loadable() const
         {
             VTILightRegularGridInputImpl< dimension > reader{
                 this->filename()

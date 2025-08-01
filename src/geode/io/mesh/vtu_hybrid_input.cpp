@@ -61,7 +61,7 @@ namespace geode
             return reader.read_file();
         }
 
-        bool VTUHybridInput::is_loadable() const
+        Percentage VTUHybridInput::is_loadable() const
         {
             VTUHybridInputImpl reader{ filename(),
                 MeshFactory::default_impl(

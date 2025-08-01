@@ -96,17 +96,13 @@ namespace geode
                 }
             }
 
-            bool is_vtk_object_loadable(
-                const pugi::xml_node& vtk_object ) const final
+            void is_vtk_object_loadable( const pugi::xml_node& vtk_object,
+                std::vector< Percentage >& percentages ) const final
             {
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
-                    if( is_vtk_cells_loadable( piece ) )
-                    {
-                        return true;
-                    }
+                    percentages.emplace_back( is_vtk_cells_loadable( piece ) );
                 }
-                return false;
             }
 
             void read_vtk_points( const pugi::xml_node& piece )
@@ -120,7 +116,7 @@ namespace geode
 
             virtual void read_vtk_cells( const pugi::xml_node& piece ) = 0;
 
-            virtual bool is_vtk_cells_loadable(
+            virtual Percentage is_vtk_cells_loadable(
                 const pugi::xml_node& piece ) const = 0;
 
             index_t build_points(

@@ -27,6 +27,7 @@
 
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
+#include <geode/basic/percentage.hpp>
 
 #include <geode/image/core/raster_image.hpp>
 #include <geode/image/core/rgb_color.hpp>
@@ -144,6 +145,15 @@ namespace geode
         RasterImage2D ImageInputImpl::read_reversed_y_axis_file()
         {
             return ::read_file< ReverseRange >( dataset() );
+        }
+
+        Percentage ImageInputImpl::is_loadable()
+        {
+            if( dataset().GetRasterCount() < 2 )
+            {
+                return Percentage{ 0 };
+            }
+            return Percentage{ 1 };
         }
     } // namespace internal
 } // namespace geode

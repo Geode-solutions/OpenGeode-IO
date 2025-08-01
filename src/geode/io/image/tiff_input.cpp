@@ -42,5 +42,11 @@ namespace geode
             ImageInputImpl reader{ filename() };
             return reader.additional_files< AdditionalFiles >();
         }
+
+        Percentage TIFFInput::is_loadable() const
+        {
+            ImageInputImpl reader{ filename() };
+            return reader.is_loadable();
+        }
     } // namespace internal
 } // namespace geode

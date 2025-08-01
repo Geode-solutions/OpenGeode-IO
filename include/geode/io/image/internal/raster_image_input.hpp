@@ -30,6 +30,7 @@ namespace geode
 {
     FORWARD_DECLARATION_DIMENSION_CLASS( RasterImage );
     ALIAS_2D( RasterImage );
+    class Percentage;
 } // namespace geode
 
 namespace geode
@@ -44,6 +45,8 @@ namespace geode
             RasterImage2D read_file();
 
             RasterImage2D read_reversed_y_axis_file();
+
+            Percentage is_loadable();
         };
     } // namespace internal
 } // namespace geode

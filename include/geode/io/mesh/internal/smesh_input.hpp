@@ -28,6 +28,7 @@
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/filename.hpp>
+#include <geode/basic/string.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -35,10 +36,12 @@ namespace geode
 {
     namespace internal
     {
-        template < typename Mesh, typename Builder, index_t element >
+        template < typename Mesh, index_t element >
         class SMESHInputImpl
         {
         public:
+            using Builder = typename Mesh::Builder;
+
             SMESHInputImpl( std::string_view filename, Mesh& mesh )
                 : mesh_( mesh ),
                   builder_{ Builder::create( mesh ) },
@@ -47,6 +50,32 @@ namespace geode
             }
 
             virtual ~SMESHInputImpl() = default;
+
+            Percentage is_loadable()
+            {
+                const auto nb_points = string_to_index( tokens().front() );
+                for( const auto p : Range{ nb_points } )
+                {
+                    geode_unused( p );
+                    std::getline( file_, line_ );
+                }
+                absl::flat_hash_map< index_t, index_t > elements;
+                const auto nb_elements = string_to_index( tokens().front() );
+                for( const auto e : Range{ nb_elements } )
+                {
+                    geode_unused( e );
+                    const auto values = tokens();
+                    elements[string_to_index( values[0] )]++;
+                }
+                const auto element_it = elements.find( element );
+                if( element_it == elements.end() )
+                {
+                    return geode::Percentage{ 0 };
+                }
+                return geode::Percentage{
+                    static_cast< double >( element_it->second ) / nb_elements
+                };
+            }
 
             void read_file()
             {
@@ -64,27 +93,16 @@ namespace geode
             void read_points()
             {
                 const auto header = tokens();
-                index_t nb_points;
-                auto ok = absl::SimpleAtoi( header.front(), &nb_points );
-                OPENGEODE_EXCEPTION( ok, "[SMESHInput::read_points] "
-                                         "Cannot read number of points" );
+                const auto nb_points = string_to_index( header.front() );
                 builder_->create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
                     const auto values = tokens();
-                    index_t index;
-                    ok = absl::SimpleAtoi( values[0], &index );
-                    OPENGEODE_EXCEPTION( ok, "[SMESHInput::read_points] "
-                                             "Cannot read vertex index" );
-                    vertices_.emplace( index, p );
+                    vertices_.emplace( string_to_index( values[0] ), p );
                     Point3D point;
                     for( const auto d : LRange{ 3 } )
                     {
-                        double coord;
-                        ok = absl::SimpleAtod( values[d + 1], &coord );
-                        OPENGEODE_EXCEPTION( ok, "[SMESHInput::read_points] "
-                                                 "Cannot read coordinate" );
-                        point.set_value( d, coord );
+                        point.set_value( d, string_to_double( values[d + 1] ) );
                     }
                     builder_->set_point( p, point );
                 }
@@ -93,23 +111,16 @@ namespace geode
             void read_elements()
             {
                 const auto header = tokens();
-                index_t nb_edges;
-                auto ok = absl::SimpleAtoi( header.front(), &nb_edges );
-                OPENGEODE_EXCEPTION( ok, "[SMESHInput::read_elements] "
-                                         "Cannot read number of edges" );
-                for( const auto e : Range{ nb_edges } )
+                const auto nb_elements = string_to_index( header.front() );
+                for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
                     std::array< index_t, element > vertices;
                     for( const auto d : LRange{ element } )
                     {
-                        index_t index;
-                        ok = absl::SimpleAtoi( values[d + 1], &index );
-                        OPENGEODE_EXCEPTION( ok,
-                            "[SMESHInput::read_elements] "
-                            "Cannot read edge vertex index" );
-                        vertices[d] = vertices_.at( index );
+                        vertices[d] =
+                            vertices_.at( string_to_index( values[d + 1] ) );
                     }
                     create_element( vertices );
                 }
