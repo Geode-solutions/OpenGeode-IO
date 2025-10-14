@@ -87,6 +87,10 @@ namespace geode
                 absl::Span< const index_t > vertices ) const
             {
                 auto points = piece.append_child( "Points" );
+                if( vertices.size() == 0 )
+                {
+                    return points;
+                }
                 auto data_array =
                     this->write_attribute_header( points, "Points", 3 );
                 const auto bbox = this->mesh().bounding_box();
