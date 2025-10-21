@@ -36,6 +36,7 @@ ExternalProject_Add(assimp
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_INSTALL_MESSAGE=LAZY
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DASSIMP_INSTALL_PDB=OFF # deactivated because assimp install look for pdb at the wrong place
     CMAKE_CACHE_ARGS
         -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DASSIMP_INJECT_DEBUG_POSTFIX:BOOL=OFF
