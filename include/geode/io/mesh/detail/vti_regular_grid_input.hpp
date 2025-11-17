@@ -49,8 +49,7 @@ namespace geode
 
             Percentage is_loadable() const final;
 
-            typename RegularGridInput< dimension >::AdditionalFiles
-                additional_files() const final
+            AdditionalFiles additional_files() const final
             {
                 return {};
             }
