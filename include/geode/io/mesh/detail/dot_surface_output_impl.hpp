@@ -26,6 +26,7 @@
 #include <fstream>
 
 #include <geode/basic/filename.hpp>
+#include <geode/basic/uuid.hpp>
 
 #include <geode/mesh/core/surface_edges.hpp>
 
@@ -48,7 +49,9 @@ namespace geode
 
             void write_file()
             {
-                file_ << "graph " << surface_.name() << " {\n";
+                file_ << "graph "
+                      << surface_.name().value_or( surface_.id().string() )
+                      << " {\n";
                 const auto& edges = surface_.edges();
                 for( const auto edge : Range{ edges.nb_edges() } )
                 {

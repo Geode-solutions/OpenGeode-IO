@@ -28,6 +28,7 @@
 
 #include <async++.h>
 
+#include <absl/container/flat_hash_set.h>
 #include <absl/strings/str_cat.h>
 
 #include <geode/basic/uuid.hpp>
@@ -81,8 +82,7 @@ namespace
                 block_ids[block_count++] = block.id();
             }
             absl::c_sort( block_ids );
-            absl::flat_hash_map< std::string, geode::index_t >
-                block_name_counter;
+            absl::flat_hash_set< std::string > block_name_counter;
             for( const auto& id : block_ids )
             {
                 const auto& block = mesh().block( id );
@@ -92,17 +92,17 @@ namespace
                     prefix(), "/Block_", block.id().string(), ".vtu" );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
-                if( !block_name_counter.contains( block.name() ) )
+                const auto name = block.name().value_or( block.id().string() );
+                const auto [_, is_new] = block_name_counter.emplace( name );
+                if( is_new )
                 {
                     dataset.append_attribute( "name" ).set_value(
-                        std::string( block.name() ).c_str() );
-                    block_name_counter.emplace( block.name(), 1 );
+                        name.c_str() );
                 }
                 else
                 {
                     dataset.append_attribute( "name" ).set_value(
-                        absl::StrCat( block.name(), "_", counter ).c_str() );
-                    block_name_counter[block.name()]++;
+                        absl::StrCat( name, "_", counter ).c_str() );
                 }
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
