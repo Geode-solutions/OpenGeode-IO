@@ -25,6 +25,7 @@ add_geode_library(
         "common.cpp"
         "msh_input.cpp"
         "msh_output.cpp"
+        "gid_output.cpp"
         "svg_input.cpp"
         "vtm_section_output.cpp"
         "vtm_brep_output.cpp"
@@ -37,6 +38,7 @@ add_geode_library(
     INTERNAL_HEADERS
         "internal/msh_input.hpp"
         "internal/msh_output.hpp"
+        "internal/gid_output.hpp"
         "internal/svg_input.hpp"
     PRIVATE_DEPENDENCIES
         Async++
