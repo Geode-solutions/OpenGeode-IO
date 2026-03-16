@@ -122,9 +122,10 @@ void run_test( std::string_view short_filename, test_function test )
 {
     // Load file
     auto brep = geode::load_brep(
-        absl::StrCat( geode::DATA_PATH, short_filename, ".msh" ) );
+        absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
     test( brep );
-
+    const auto filename_gid = absl::StrCat( short_filename, "_output.gid" );
+    geode::save_brep( brep, filename_gid );
 }
 
 int main()

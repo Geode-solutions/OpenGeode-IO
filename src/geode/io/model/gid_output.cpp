@@ -28,6 +28,11 @@
 #include <string>
 #include <vector>
 
+#include <geode/basic/string.hpp>
+#include <geode/basic/range.hpp>
+
+#include <geode/geometry/point.hpp>
+
 #include <geode/mesh/core/tetrahedral_solid.hpp>
 #include <geode/mesh/core/triangulated_surface.hpp>
 
@@ -37,10 +42,6 @@
 
 namespace
 {
-    static constexpr char EOL{ '\n' };
-    static constexpr char SPACE{ ' ' };
-    static constexpr geode::index_t DEFAULT_PHYSICAL_TAG{ 0 };
-
     class GIDOutputImpl
     {
     public:
@@ -53,16 +54,128 @@ namespace
 
         void write_file()
         {
-            write_header();
+            write_header_block();
+            write_tetrahedra_nodes();
+            write_tetrahedra();
+            write_header_surfaces(  );
+            write_triangles_nodes();
+            write_triangles();
         }
 
     private:
 
-        void write_header()
+        void write_header_block()
         {
             file_ << "MESH";
-            file_ << SPACE << "dimension"<< SPACE << 3;
-            file_ << SPACE << "Tetrahedra" << SPACE << "Nnode" << SPACE << 4 << EOL;
+            file_ << geode::SPACE << "dimension"<< geode::SPACE << 3;
+            file_ << geode::SPACE << "Tetrahedra" << geode::SPACE << "Nnode" << geode::SPACE << 4 << geode::EOL;
+        }
+
+        void write_tetrahedra_nodes()
+        {
+            file_ << "Coordinates"<<geode::EOL;
+            for( const auto uv_index : geode::Range( brep_.nb_unique_vertices() ) )
+            {
+                for( const auto &cmv : brep_.component_mesh_vertices( uv_index ) )
+                {
+                    if( cmv.component_id.type() == geode::Block3D::component_type_static() )
+                    {
+                        file_ << uv_index << geode::SPACE;
+                        file_<< brep_.block( cmv.component_id.id() )
+                                                .mesh()
+                                                .point( cmv.vertex ).string() << geode::EOL;
+                        break;
+                    }
+                }
+            }
+            file_ << "End Coordinates"<<geode::EOL;
+        }
+
+        void write_tetrahedra(){
+            file_ << "Elements"<<geode::EOL;
+            for(const auto& block: brep_.blocks()){
+                for( const auto pol_id :
+                    geode::Range{ block.mesh().nb_polyhedra() } )
+                {
+                    for( const auto vertex_lidx : geode::LRange{ 4 } )
+                    {
+                        const auto tet_vertex =
+                            block.mesh().polyhedron_vertex( { pol_id, vertex_lidx } );
+                        const auto uid = brep_.unique_vertex(
+                            { block.component_id(), tet_vertex } );
+                        file_ <<geode::SPACE <<uid;
+                    }
+                    file_ << geode::EOL;
+                }
+            }
+            file_ << "End Elements"<<geode::EOL;
+        }
+
+        void write_header_surfaces()
+        {
+            file_ << "MESH";
+            file_ << geode::SPACE << "dimension"<< geode::SPACE << 3;
+            file_ << geode::SPACE << "Triangle" << geode::SPACE << "Nnode" << geode::SPACE << 3 << geode::EOL;
+        }
+
+        bool is_unique_vertex_on_a_surface_outside_of_block(const geode::index_t uv_index){
+            bool is_vertex_on_surface = false;
+            bool is_vertex_in_block = false;
+            for( const auto &cmv : brep_.component_mesh_vertices( uv_index ) )
+            {
+                if( cmv.component_id.type() == geode::Surface3D::component_type_static() )
+                {
+                    is_vertex_on_surface = true;
+                }
+                else if( cmv.component_id.type() == geode::Block3D::component_type_static() )
+                {
+                    is_vertex_in_block = true;
+                }
+            }
+            return is_vertex_on_surface && !is_vertex_in_block;
+        }
+
+        void write_triangles_nodes()
+        {
+            file_ << "Coordinates"<<geode::EOL;
+            for( const auto uv_index : geode::Range( brep_.nb_unique_vertices() ) )
+            {
+                if( !is_unique_vertex_on_a_surface_outside_of_block(uv_index) ) {
+                    continue;
+                }
+                for( const auto& cmv :
+                        brep_.component_mesh_vertices( uv_index ) )
+                    {
+                            file_ << uv_index << geode::SPACE;
+                            file_ << brep_.surface( cmv.component_id.id() )
+                                         .mesh()
+                                         .point( cmv.vertex )
+                                         .string()
+                                  << geode::EOL;
+                            break;
+                }
+            }
+            file_ << "End Coordinates"<<geode::EOL;
+        }
+
+        void write_triangles(){
+            file_ << "Elements"<<geode::EOL;
+            for(const auto& surface: brep_.surfaces()){
+                for( const auto facet_id :
+                    geode::Range{ surface.mesh().nb_polygons() } )
+                {
+                    for( const auto vertex_lidx : geode::LRange{ 3 } )
+                    {
+                        const auto triangle_vertex =
+                            surface.mesh().polygon_vertex( { facet_id, vertex_lidx } );
+                        const auto uid = brep_.unique_vertex(
+                            { surface.component_id(), triangle_vertex } );
+                        file_ <<geode::SPACE <<uid;
+                    }
+                    file_ << geode::EOL;
+                }
+            }
+            file_ << "End Elements"<<geode::EOL;
         }
 
      private:

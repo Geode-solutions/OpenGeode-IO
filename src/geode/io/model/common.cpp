@@ -32,6 +32,7 @@
 #include <geode/io/model/internal/msh_common.hpp>
 #include <geode/io/model/internal/msh_input.hpp>
 #include <geode/io/model/internal/msh_output.hpp>
+#include <geode/io/model/internal/gid_output.hpp>
 #include <geode/io/model/internal/svg_input.hpp>
 
 namespace
@@ -50,6 +51,9 @@ namespace
         geode::BRepOutputFactory::register_creator<
             geode::detail::VTMBRepOutput >(
             geode::detail::VTMBRepOutput::extension().data() );
+        geode::BRepOutputFactory::register_creator<
+            geode::internal::GIDOutput >(
+            geode::internal::GIDOutput::extension().data() );
     }
 
     void register_section_input()
