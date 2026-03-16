@@ -30,6 +30,8 @@
 
 #include <geode/basic/string.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/constant_attribute.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -42,6 +44,21 @@
 
 namespace
 {
+    constexpr auto FRACSIMA_ATTRIBUTE_NAME = "physical_tag";
+    int get_physical_tag_value(const geode::Surface3D& surface){
+        auto attribute =surface.mesh().polygon_attribute_manager()
+                    .find_or_create_attribute< geode::ConstantAttribute, int >(
+                        FRACSIMA_ATTRIBUTE_NAME, 0, { false, true, true } );
+        return attribute->value(0); 
+    }
+    int get_physical_tag_value(const geode::Block3D& block){
+        auto attribute =
+                block.mesh().polyhedron_attribute_manager()
+                    .find_or_create_attribute< geode::ConstantAttribute, int >(
+                        FRACSIMA_ATTRIBUTE_NAME, 0, { false, true, true } );
+        return attribute->value(0); 
+    }
+
     class GIDOutputImpl
     {
     public:
@@ -56,10 +73,10 @@ namespace
         {
             write_header_block();
             write_tetrahedra_nodes();
-            write_tetrahedra();
+            const auto nb_tet= write_tetrahedra();
             write_header_surfaces(  );
             write_triangles_nodes();
-            write_triangles();
+            write_triangles(nb_tet);
         }
 
     private:
@@ -91,12 +108,17 @@ namespace
             file_ << "End Coordinates"<<geode::EOL;
         }
 
-        void write_tetrahedra(){
+        geode::index_t write_tetrahedra(){
             file_ << "Elements"<<geode::EOL;
-            for(const auto& block: brep_.blocks()){
+            geode::index_t nb_tet{0};
+            for( const auto& block : brep_.blocks() )
+            {
+                const auto physical_tag = get_physical_tag_value( block );
+
                 for( const auto pol_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
+                    file_ <<pol_id;
                     for( const auto vertex_lidx : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex =
@@ -105,10 +127,12 @@ namespace
                             { block.component_id(), tet_vertex } );
                         file_ <<geode::SPACE <<uid;
                     }
-                    file_ << geode::EOL;
+                    file_ <<geode::SPACE<<physical_tag<< geode::EOL;
                 }
+                nb_tet += block.mesh().nb_polyhedra();
             }
             file_ << "End Elements"<<geode::EOL;
+            return nb_tet;
         }
 
         void write_header_surfaces()
@@ -158,12 +182,15 @@ namespace
             file_ << "End Coordinates"<<geode::EOL;
         }
 
-        void write_triangles(){
+        void write_triangles(const geode::index_t nb_tet){
             file_ << "Elements"<<geode::EOL;
             for(const auto& surface: brep_.surfaces()){
-                for( const auto facet_id :
+                const auto physical_tag = get_physical_tag_value( surface );
+
+                for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
+                    file_ <<nb_tet+facet_id;
                     for( const auto vertex_lidx : geode::LRange{ 3 } )
                     {
                         const auto triangle_vertex =
@@ -172,7 +199,7 @@ namespace
                             { surface.component_id(), triangle_vertex } );
                         file_ <<geode::SPACE <<uid;
                     }
-                    file_ << geode::EOL;
+                    file_ <<geode::SPACE<<physical_tag<< geode::EOL;
                 }
             }
             file_ << "End Elements"<<geode::EOL;
