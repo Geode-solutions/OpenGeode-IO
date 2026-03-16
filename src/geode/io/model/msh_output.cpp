@@ -85,15 +85,17 @@ namespace
         void write_header()
         {
             file_ << "$MeshFormat" << geode::EOL;
-            file_ << 4.1 << geode::SPACE << 0 << geode::SPACE << 8 << geode::EOL;
+            file_ << 4.1 << geode::SPACE << 0 << geode::SPACE << 8
+                  << geode::EOL;
             file_ << "$EndMeshFormat" << geode::EOL;
         }
 
         void write_entities()
         {
             file_ << "$Entities" << geode::EOL;
-            file_ << brep_.nb_corners() << geode::SPACE << brep_.nb_lines() << geode::SPACE
-                  << brep_.nb_surfaces() << geode::SPACE << brep_.nb_blocks() << geode::EOL;
+            file_ << brep_.nb_corners() << geode::SPACE << brep_.nb_lines()
+                  << geode::SPACE << brep_.nb_surfaces() << geode::SPACE
+                  << brep_.nb_blocks() << geode::EOL;
             write_corners();
             write_lines();
             write_surfaces();
@@ -106,9 +108,9 @@ namespace
             const Component& component, geode::index_t gmsh_id )
         {
             const auto bbox = component.mesh().bounding_box();
-            file_ << gmsh_id << geode::SPACE << bbox.min().string() << geode::SPACE
-                  << bbox.max().string() << geode::SPACE << DEFAULT_PHYSICAL_TAG
-                  << geode::SPACE;
+            file_ << gmsh_id << geode::SPACE << bbox.min().string()
+                  << geode::SPACE << bbox.max().string() << geode::SPACE
+                  << DEFAULT_PHYSICAL_TAG << geode::SPACE;
             file_ << brep_.nb_boundaries( component.id() );
             for( const auto& boundary : brep_.boundaries( component ) )
             {
@@ -149,9 +151,9 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 const auto bbox = surface.mesh().bounding_box();
-                file_ << count << geode::SPACE << bbox.min().string() << geode::SPACE
-                      << bbox.max().string() << geode::SPACE << DEFAULT_PHYSICAL_TAG
-                      << geode::SPACE;
+                file_ << count << geode::SPACE << bbox.min().string()
+                      << geode::SPACE << bbox.max().string() << geode::SPACE
+                      << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( surface.id() )
                              + 2 * brep_.nb_internal_lines( surface );
                 for( const auto& boundary : brep_.boundaries( surface ) )
@@ -160,8 +162,9 @@ namespace
                 }
                 for( const auto& internal : brep_.internal_lines( surface ) )
                 {
-                    file_ << geode::SPACE << uuid2gmsh_[internal.id()].id << geode::SPACE
-                          << "-" << uuid2gmsh_[internal.id()].id;
+                    file_ << geode::SPACE << uuid2gmsh_[internal.id()].id
+                          << geode::SPACE << "-"
+                          << uuid2gmsh_[internal.id()].id;
                 }
                 file_ << geode::EOL;
                 uuid2gmsh_[surface.id()] =
@@ -177,9 +180,9 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 const auto bbox = block.mesh().bounding_box();
-                file_ << count << geode::SPACE << bbox.min().string() << geode::SPACE
-                      << bbox.max().string() << geode::SPACE << DEFAULT_PHYSICAL_TAG
-                      << geode::SPACE;
+                file_ << count << geode::SPACE << bbox.min().string()
+                      << geode::SPACE << bbox.max().string() << geode::SPACE
+                      << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( block.id() )
                              + 2 * brep_.nb_internal_surfaces( block );
                 for( const auto& boundary : brep_.boundaries( block ) )
@@ -188,8 +191,9 @@ namespace
                 }
                 for( const auto& internal : brep_.internal_surfaces( block ) )
                 {
-                    file_ << geode::SPACE << uuid2gmsh_[internal.id()].id << geode::SPACE
-                          << "-" << uuid2gmsh_[internal.id()].id;
+                    file_ << geode::SPACE << uuid2gmsh_[internal.id()].id
+                          << geode::SPACE << "-"
+                          << uuid2gmsh_[internal.id()].id;
                 }
                 file_ << geode::EOL;
                 uuid2gmsh_[block.id()] =
@@ -217,8 +221,9 @@ namespace
                 }
             }
             file_ << component_type2dimension[component.component_type()]
-                  << geode::SPACE << uuid2gmsh_[component.id()].id << geode::SPACE << 0
-                  << geode::SPACE << nodes_to_export.size() << geode::EOL;
+                  << geode::SPACE << uuid2gmsh_[component.id()].id
+                  << geode::SPACE << 0 << geode::SPACE << nodes_to_export.size()
+                  << geode::EOL;
             for( const auto& vertex_pair : nodes_to_export )
             {
                 file_ << geode::internal::GMSH_OFFSET_START + vertex_pair.second
@@ -290,16 +295,18 @@ namespace
             for( const auto& corner : brep_.corners() )
             {
                 file_ << component_type2dimension[corner.component_type()]
-                      << geode::SPACE << uuid2gmsh_[corner.id()].id << geode::SPACE
-                      << element2type[GMSH_ELEMENT::POINT] << geode::SPACE
-                      << corner.mesh().nb_vertices() << geode::EOL;
+                      << geode::SPACE << uuid2gmsh_[corner.id()].id
+                      << geode::SPACE << element2type[GMSH_ELEMENT::POINT]
+                      << geode::SPACE << corner.mesh().nb_vertices()
+                      << geode::EOL;
                 for( const auto v :
                     geode::Range{ corner.mesh().nb_vertices() } )
                 {
                     const auto uid =
                         brep_.unique_vertex( { corner.component_id(), v } );
                     file_ << cur++ << geode::SPACE
-                          << geode::internal::GMSH_OFFSET_START + uid << geode::EOL;
+                          << geode::internal::GMSH_OFFSET_START + uid
+                          << geode::EOL;
                 }
             }
             return cur;
@@ -311,9 +318,9 @@ namespace
             for( const auto& line : brep_.lines() )
             {
                 file_ << component_type2dimension[line.component_type()]
-                      << geode::SPACE << uuid2gmsh_[line.id()].id << geode::SPACE
-                      << element2type[GMSH_ELEMENT::EDGE] << geode::SPACE
-                      << line.mesh().nb_edges() << geode::EOL;
+                      << geode::SPACE << uuid2gmsh_[line.id()].id
+                      << geode::SPACE << element2type[GMSH_ELEMENT::EDGE]
+                      << geode::SPACE << line.mesh().nb_edges() << geode::EOL;
                 for( const auto e : geode::Range{ line.mesh().nb_edges() } )
                 {
                     file_ << cur++;
@@ -339,9 +346,10 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 file_ << component_type2dimension[surface.component_type()]
-                      << geode::SPACE << uuid2gmsh_[surface.id()].id << geode::SPACE
-                      << element2type[GMSH_ELEMENT::TRIANGLE] << geode::SPACE
-                      << surface.mesh().nb_polygons() << geode::EOL;
+                      << geode::SPACE << uuid2gmsh_[surface.id()].id
+                      << geode::SPACE << element2type[GMSH_ELEMENT::TRIANGLE]
+                      << geode::SPACE << surface.mesh().nb_polygons()
+                      << geode::EOL;
                 for( const auto p :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
@@ -368,9 +376,10 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 file_ << component_type2dimension[block.component_type()]
-                      << geode::SPACE << uuid2gmsh_[block.id()].id << geode::SPACE
-                      << element2type[GMSH_ELEMENT::TETRAHEDRON] << geode::SPACE
-                      << block.mesh().nb_polyhedra() << geode::EOL;
+                      << geode::SPACE << uuid2gmsh_[block.id()].id
+                      << geode::SPACE << element2type[GMSH_ELEMENT::TETRAHEDRON]
+                      << geode::SPACE << block.mesh().nb_polyhedra()
+                      << geode::EOL;
                 for( const auto p :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {

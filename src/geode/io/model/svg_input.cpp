@@ -98,7 +98,7 @@ namespace
 
             void update( const char token )
             {
-                letter = static_cast<char>(std::tolower( token ));
+                letter = static_cast< char >( std::tolower( token ) );
                 absolute = std::isupper( token );
             }
 
