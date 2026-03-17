@@ -28,7 +28,6 @@
 #include <string>
 #include <vector>
 
-
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/constant_attribute.hpp>
 #include <geode/basic/range.hpp>
