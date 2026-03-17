@@ -128,7 +128,7 @@ namespace
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
                     file_ << pol_id;
-                    for( const auto vertex_lidx : geode::LRange{ 4 } )
+                    for( const auto vertex_lid : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
                             { pol_id, vertex_lidx } );
