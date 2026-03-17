@@ -9,6 +9,7 @@ Checks: >
   -llvmlibc*,
   -llvm-header-guard,
   -llvm-prefer-static-over-anonymous-namespace,
+  -google-readability-todo,
   -misc-no-recursion,
   -misc-include-cleaner,
   -misc-const-correctness,
