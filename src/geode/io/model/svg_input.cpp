@@ -98,8 +98,10 @@ namespace
 
             void update( const char token )
             {
-                letter = static_cast< char >( std::tolower( token ) );
-                absolute = std::isupper( token );
+                letter = static_cast< char >(
+                    std::tolower( static_cast< unsigned char >( token ) ) );
+                absolute =
+                    std::isupper( static_cast< unsigned char >( token ) );
             }
 
             geode::Point2D apply( const geode::Point2D& position,

@@ -28,27 +28,24 @@
 
 #include <geode/model/representation/io/brep_output.hpp>
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    class GIDOutput final : public BRepOutput
     {
-        class GIDOutput final : public BRepOutput
+    public:
+        explicit GIDOutput( std::string_view filename ) : BRepOutput( filename )
         {
-        public:
-            explicit GIDOutput( std::string_view filename )
-                : BRepOutput( filename )
-            {
-            }
+        }
 
-            static std::string_view extension()
-            {
-                static constexpr auto EXT = "gid";
-                return EXT;
-            }
+        [[nodiscard]] static std::string_view extension()
+        {
+            static constexpr auto EXT = "gid";
+            return EXT;
+        }
 
-            std::vector< std::string > write( const BRep& brep ) const final;
+        [[nodiscard]] std::vector< std::string > write(
+            const BRep& brep ) const final;
 
-            bool is_saveable( const BRep& brep ) const final;
-        };
-    } // namespace internal
-} // namespace geode
+        [[nodiscard]] bool is_saveable( const BRep& brep ) const final;
+    };
+} // namespace geode::internal

@@ -49,7 +49,7 @@
 
 namespace
 {
-    static constexpr geode::index_t DEFAULT_PHYSICAL_TAG{ 0 };
+    constexpr geode::index_t DEFAULT_PHYSICAL_TAG{ 0 };
 
     class MSHOutputImpl
     {
@@ -70,23 +70,22 @@ namespace
         }
 
     private:
-        enum struct GMSH_ELEMENT
+        enum struct GMSH_ELEMENT : geode::local_index_t
         {
-            POINT,
-            EDGE,
-            TRIANGLE,
-            QUADRANGLE,
-            TETRAHEDRON,
-            HEXAHEDRON,
-            PRISM,
-            PYRAMID
+            point,
+            edge,
+            triangle,
+            quadrangle,
+            tetrahedron,
+            hexahedron,
+            prism,
+            pyramid
         };
 
         void write_header()
         {
             file_ << "$MeshFormat" << geode::EOL;
-            file_ << 4.1 << geode::SPACE << 0 << geode::SPACE << 8
-                  << geode::EOL;
+            file_ << "4.1 0 8" << geode::EOL;
             file_ << "$EndMeshFormat" << geode::EOL;
         }
 
@@ -155,7 +154,7 @@ namespace
                       << geode::SPACE << bbox.max().string() << geode::SPACE
                       << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( surface.id() )
-                             + 2 * brep_.nb_internal_lines( surface );
+                             + ( 2 * brep_.nb_internal_lines( surface ) );
                 for( const auto& boundary : brep_.boundaries( surface ) )
                 {
                     file_ << geode::SPACE << uuid2gmsh_[boundary.id()].id;
@@ -184,7 +183,7 @@ namespace
                       << geode::SPACE << bbox.max().string() << geode::SPACE
                       << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( block.id() )
-                             + 2 * brep_.nb_internal_surfaces( block );
+                             + ( 2 * brep_.nb_internal_surfaces( block ) );
                 for( const auto& boundary : brep_.boundaries( block ) )
                 {
                     file_ << geode::SPACE << uuid2gmsh_[boundary.id()].id;
@@ -220,7 +219,7 @@ namespace
                     nodes_to_export.push_back( { v, uid } );
                 }
             }
-            file_ << component_type2dimension[component.component_type()]
+            file_ << component_type2dimension_[component.component_type()]
                   << geode::SPACE << uuid2gmsh_[component.id()].id
                   << geode::SPACE << 0 << geode::SPACE << nodes_to_export.size()
                   << geode::EOL;
@@ -289,14 +288,14 @@ namespace
             return nb_total_elements;
         }
 
-        geode::index_t write_corner_elements( geode::index_t first )
+        geode::index_t write_corner_elements( const geode::index_t first )
         {
             auto cur = first;
             for( const auto& corner : brep_.corners() )
             {
-                file_ << component_type2dimension[corner.component_type()]
+                file_ << component_type2dimension_[corner.component_type()]
                       << geode::SPACE << uuid2gmsh_[corner.id()].id
-                      << geode::SPACE << element2type[GMSH_ELEMENT::POINT]
+                      << geode::SPACE << element2type_[GMSH_ELEMENT::point]
                       << geode::SPACE << corner.mesh().nb_vertices()
                       << geode::EOL;
                 for( const auto v :
@@ -312,14 +311,14 @@ namespace
             return cur;
         }
 
-        geode::index_t write_line_elements( geode::index_t first )
+        geode::index_t write_line_elements( const geode::index_t first )
         {
             auto cur = first;
             for( const auto& line : brep_.lines() )
             {
-                file_ << component_type2dimension[line.component_type()]
+                file_ << component_type2dimension_[line.component_type()]
                       << geode::SPACE << uuid2gmsh_[line.id()].id
-                      << geode::SPACE << element2type[GMSH_ELEMENT::EDGE]
+                      << geode::SPACE << element2type_[GMSH_ELEMENT::edge]
                       << geode::SPACE << line.mesh().nb_edges() << geode::EOL;
                 for( const auto e : geode::Range{ line.mesh().nb_edges() } )
                 {
@@ -340,14 +339,14 @@ namespace
         }
 
         // TODO : more gmsh block if multi element//
-        geode::index_t write_surface_elements( geode::index_t first )
+        geode::index_t write_surface_elements( const geode::index_t first )
         {
             auto cur = first;
             for( const auto& surface : brep_.surfaces() )
             {
-                file_ << component_type2dimension[surface.component_type()]
+                file_ << component_type2dimension_[surface.component_type()]
                       << geode::SPACE << uuid2gmsh_[surface.id()].id
-                      << geode::SPACE << element2type[GMSH_ELEMENT::TRIANGLE]
+                      << geode::SPACE << element2type_[GMSH_ELEMENT::triangle]
                       << geode::SPACE << surface.mesh().nb_polygons()
                       << geode::EOL;
                 for( const auto p :
@@ -370,14 +369,15 @@ namespace
         }
 
         // TODO : more gmsh block if multi element//
-        geode::index_t write_block_elements( geode::index_t first )
+        void write_block_elements( const geode::index_t first )
         {
             auto cur = first;
             for( const auto& block : brep_.blocks() )
             {
-                file_ << component_type2dimension[block.component_type()]
+                file_ << component_type2dimension_[block.component_type()]
                       << geode::SPACE << uuid2gmsh_[block.id()].id
-                      << geode::SPACE << element2type[GMSH_ELEMENT::TETRAHEDRON]
+                      << geode::SPACE
+                      << element2type_[GMSH_ELEMENT::tetrahedron]
                       << geode::SPACE << block.mesh().nb_polyhedra()
                       << geode::EOL;
                 for( const auto p :
@@ -396,7 +396,6 @@ namespace
                     file_ << geode::EOL;
                 }
             }
-            return cur;
         }
 
         void write_elements()
@@ -411,11 +410,11 @@ namespace
                   << geode::internal::GMSH_OFFSET_START << geode::SPACE
                   << nb_total_elements << geode::EOL;
 
-            geode::index_t element_count{ geode::internal::GMSH_OFFSET_START };
-            element_count = write_corner_elements( element_count );
-            element_count = write_line_elements( element_count );
-            element_count = write_surface_elements( element_count );
-            element_count = write_block_elements( element_count );
+            const auto corners_offset =
+                write_corner_elements( geode::internal::GMSH_OFFSET_START );
+            const auto lines_offset = write_line_elements( corners_offset );
+            const auto surfaces_offset = write_surface_elements( lines_offset );
+            write_block_elements( surfaces_offset );
             file_ << "$EndElements" << geode::EOL;
         }
 
@@ -425,51 +424,50 @@ namespace
         absl::flat_hash_map< geode::uuid, geode::internal::GmshElementID >
             uuid2gmsh_;
         absl::flat_hash_map< geode::ComponentType, geode::index_t >
-            component_type2dimension = {
+            component_type2dimension_ = {
                 { geode::Corner3D::component_type_static(), 0 },
                 { geode::Line3D::component_type_static(), 1 },
                 { geode::Surface3D::component_type_static(), 2 },
                 { geode::Block3D::component_type_static(), 3 }
             };
-        absl::flat_hash_map< GMSH_ELEMENT, geode::index_t > element2type = {
-            { GMSH_ELEMENT::POINT, 15 }, { GMSH_ELEMENT::EDGE, 1 },
-            { GMSH_ELEMENT::TRIANGLE, 2 }, { GMSH_ELEMENT::QUADRANGLE, 3 },
-            { GMSH_ELEMENT::TETRAHEDRON, 4 }, { GMSH_ELEMENT::HEXAHEDRON, 5 },
-            { GMSH_ELEMENT::PRISM, 6 }, { GMSH_ELEMENT::PYRAMID, 7 }
+        // NOLINTBEGIN(*-magic-numbers)
+        absl::flat_hash_map< GMSH_ELEMENT, geode::index_t > element2type_ = {
+            { GMSH_ELEMENT::point, 15 }, { GMSH_ELEMENT::edge, 1 },
+            { GMSH_ELEMENT::triangle, 2 }, { GMSH_ELEMENT::quadrangle, 3 },
+            { GMSH_ELEMENT::tetrahedron, 4 }, { GMSH_ELEMENT::hexahedron, 5 },
+            { GMSH_ELEMENT::prism, 6 }, { GMSH_ELEMENT::pyramid, 7 }
         };
+        // NOLINTEND(*-magic-numbers)
     };
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    std::vector< std::string > MSHOutput::write( const BRep& brep ) const
     {
-        std::vector< std::string > MSHOutput::write( const BRep& brep ) const
-        {
-            MSHOutputImpl impl( filename(), brep );
-            impl.write_file();
-            return { to_string( filename() ) };
-        }
+        MSHOutputImpl impl( filename(), brep );
+        impl.write_file();
+        return { to_string( filename() ) };
+    }
 
-        bool MSHOutput::is_saveable( const BRep& brep ) const
+    bool MSHOutput::is_saveable( const BRep& brep ) const
+    {
+        for( const auto& surface : brep.surfaces() )
         {
-            for( const auto& surface : brep.surfaces() )
+            if( surface.mesh().type_name()
+                != TriangulatedSurface3D::type_name_static() )
             {
-                if( surface.mesh().type_name()
-                    != TriangulatedSurface3D::type_name_static() )
-                {
-                    return false;
-                }
+                return false;
             }
-            for( const auto& block : brep.blocks() )
-            {
-                if( block.mesh().type_name()
-                    != TetrahedralSolid3D::type_name_static() )
-                {
-                    return false;
-                }
-            }
-            return true;
         }
-    } // namespace internal
-} // namespace geode
+        for( const auto& block : brep.blocks() )
+        {
+            if( block.mesh().type_name()
+                != TetrahedralSolid3D::type_name_static() )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+} // namespace geode::internal

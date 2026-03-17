@@ -27,6 +27,8 @@
 
 #include <geode/io/mesh/common.hpp>
 
+#include <geode/basic/types.hpp>
+
 #include <geode/io/model/detail/vtm_brep_output.hpp>
 #include <geode/io/model/detail/vtm_section_output.hpp>
 #include <geode/io/model/internal/gid_output.hpp>
@@ -40,34 +42,34 @@ namespace
     void register_brep_input()
     {
         geode::BRepInputFactory::register_creator< geode::internal::MSHInput >(
-            geode::internal::MSHInput::extension().data() );
+            geode::to_string( geode::internal::MSHInput::extension() ) );
     }
 
     void register_brep_output()
     {
         geode::BRepOutputFactory::register_creator<
             geode::internal::MSHOutput >(
-            geode::internal::MSHOutput::extension().data() );
+            geode::to_string( geode::internal::MSHOutput::extension() ) );
         geode::BRepOutputFactory::register_creator<
             geode::detail::VTMBRepOutput >(
-            geode::detail::VTMBRepOutput::extension().data() );
+            geode::to_string( geode::detail::VTMBRepOutput::extension() ) );
         geode::BRepOutputFactory::register_creator<
             geode::internal::GIDOutput >(
-            geode::internal::GIDOutput::extension().data() );
+            geode::to_string( geode::internal::GIDOutput::extension() ) );
     }
 
     void register_section_input()
     {
         geode::SectionInputFactory::register_creator<
             geode::internal::SVGInput >(
-            geode::internal::SVGInput::extension().data() );
+            geode::to_string( geode::internal::SVGInput::extension() ) );
     }
 
     void register_section_output()
     {
         geode::SectionOutputFactory::register_creator<
             geode::detail::VTMSectionOutput >(
-            geode::detail::VTMSectionOutput::extension().data() );
+            geode::to_string( geode::detail::VTMSectionOutput::extension() ) );
     }
 } // namespace
 

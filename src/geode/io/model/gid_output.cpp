@@ -23,9 +23,11 @@
 
 #include <geode/io/model/internal/gid_output.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <string>
 #include <vector>
+
 
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/constant_attribute.hpp>
