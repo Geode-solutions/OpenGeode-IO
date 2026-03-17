@@ -43,8 +43,8 @@
 
 namespace
 {
-    constexpr auto FRACSIMA_ATTRIBUTE_NAME = "physical_tag";
-    int get_physical_tag_value( const geode::Surface3D& surface )
+    constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
+    int get_material_number_value( const geode::Surface3D& surface )
     {
         auto attribute =
             surface.mesh()
@@ -53,7 +53,7 @@ namespace
                     FRACSIMA_ATTRIBUTE_NAME, 0, { false, true, true } );
         return attribute->value( 0 );
     }
-    int get_physical_tag_value( const geode::Block3D& block )
+    int get_material_number_value( const geode::Block3D& block )
     {
         auto attribute =
             block.mesh()
@@ -95,6 +95,9 @@ namespace
         void write_tetrahedra_nodes()
         {
             file_ << "Coordinates" << geode::EOL;
+            file_ << "# node number   coordinate_x  coordinate_y  coordinate_z"
+                  << geode::EOL;
+            ;
             for( const auto uv_index :
                 geode::Range( brep_.nb_unique_vertices() ) )
             {
@@ -120,23 +123,25 @@ namespace
         geode::index_t write_tetrahedra()
         {
             file_ << "Elements" << geode::EOL;
+            file_ << "# element  node_1   node_2  node_3 material_number"
+                  << geode::EOL;
             geode::index_t nb_tet{ 0 };
             for( const auto& block : brep_.blocks() )
             {
-                const auto physical_tag = get_physical_tag_value( block );
+                const auto material_number = get_material_number_value( block );
                 for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
-                    file_ << pol_id;
+                    file_ << polyhedron_id;
                     for( const auto vertex_lid : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
-                            { pol_id, vertex_lidx } );
+                            { polyhedron_id, vertex_lid } );
                         const auto uid = brep_.unique_vertex(
                             { block.component_id(), tet_vertex } );
                         file_ << geode::SPACE << uid;
                     }
-                    file_ << geode::SPACE << physical_tag << geode::EOL;
+                    file_ << geode::SPACE << material_number << geode::EOL;
                 }
                 nb_tet += block.mesh().nb_polyhedra();
             }
@@ -176,6 +181,8 @@ namespace
         void write_triangles_nodes()
         {
             file_ << "Coordinates" << geode::EOL;
+            file_ << "# node number   coordinate_x  coordinate_y  coordinate_z"
+                  << geode::EOL;
             for( const auto uv_index :
                 geode::Range( brep_.nb_unique_vertices() ) )
             {
@@ -202,24 +209,27 @@ namespace
         void write_triangles( const geode::index_t nb_tet )
         {
             file_ << "Elements" << geode::EOL;
+            file_ << "# element  node_1   node_2  node_3 material_number"
+                  << geode::EOL;
             for( const auto& surface : brep_.surfaces() )
             {
-                const auto physical_tag = get_physical_tag_value( surface );
+                const auto material_number =
+                    get_material_number_value( surface );
 
                 for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
                     file_ << nb_tet + facet_id;
-                    for( const auto vertex_lidx : geode::LRange{ 3 } )
+                    for( const auto vertex_lid : geode::LRange{ 3 } )
                     {
                         const auto triangle_vertex =
                             surface.mesh().polygon_vertex(
-                                { facet_id, vertex_lidx } );
+                                { facet_id, vertex_lid } );
                         const auto uid = brep_.unique_vertex(
                             { surface.component_id(), triangle_vertex } );
                         file_ << geode::SPACE << uid;
                     }
-                    file_ << geode::SPACE << physical_tag << geode::EOL;
+                    file_ << geode::SPACE << material_number << geode::EOL;
                 }
             }
             file_ << "End Elements" << geode::EOL;
@@ -231,36 +241,32 @@ namespace
     };
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    std::vector< std::string > GIDOutput::write( const BRep& brep ) const
     {
-        std::vector< std::string > GIDOutput::write( const BRep& brep ) const
+        GIDOutputImpl impl( filename(), brep );
+        impl.write_file();
+        return { to_string( filename() ) };
+    }
+    bool GIDOutput::is_saveable( const BRep& brep ) const
+    {
+        for( const auto& surface : brep.surfaces() )
         {
-            GIDOutputImpl impl( filename(), brep );
-            impl.write_file();
-            return { to_string( filename() ) };
+            if( surface.mesh().type_name()
+                != TriangulatedSurface3D::type_name_static() )
+            {
+                return false;
+            }
         }
-
-        bool GIDOutput::is_saveable( const BRep& brep ) const
+        for( const auto& block : brep.blocks() )
         {
-            for( const auto& surface : brep.surfaces() )
+            if( block.mesh().type_name()
+                != TetrahedralSolid3D::type_name_static() )
             {
-                if( surface.mesh().type_name()
-                    != TriangulatedSurface3D::type_name_static() )
-                {
-                    return false;
-                }
+                return false;
             }
-            for( const auto& block : brep.blocks() )
-            {
-                if( block.mesh().type_name()
-                    != TetrahedralSolid3D::type_name_static() )
-                {
-                    return false;
-                }
-            }
-            return true;
         }
-    } // namespace internal
-} // namespace geode
+        return true;
+    }
+} // namespace geode::internal
