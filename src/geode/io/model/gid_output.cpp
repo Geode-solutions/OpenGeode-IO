@@ -124,8 +124,7 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 const auto physical_tag = get_physical_tag_value( block );
-
-                for( const auto pol_id :
+                for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
                     file_ << pol_id;
