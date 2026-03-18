@@ -159,120 +159,12 @@ namespace
         check_blocks( brep_description.brep );
     }
 
-    void test_brep_cube( const geode::BRep& brep )
+    void test_brep_mss( const geode::BRep& brep )
     {
         // NOLINTBEGIN(*-magic-numbers)
-        BrepDescription brep_cube_description{ brep, 8, 12, 6, 1 };
+        BrepDescription mss_description{ brep, 14, 23, 13, 2 };
         // NOLINTEND(*-magic-numbers)
-        test_brep( brep_cube_description );
-
-        // Number of component boundaries and incidences
-        for( const auto& c : brep.corners() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-                "[Test] Number of corner boundary should be 0" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 3,
-                "[Test] Number of corner incidences should be 3" );
-        }
-        for( const auto& l : brep.lines() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-                "[Test] Number of line boundary should be 2" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 2,
-                "[Test] Number of line incidences should be 2" );
-        }
-        for( const auto& s : brep.surfaces() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 4,
-                "[Test] Number of surface boundary should be 4" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1,
-                "[Test] Number of surface incidences should be 1" );
-        }
-        for( const auto& b : brep.blocks() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 6,
-                "[Test] Number of block boundary should be 6" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
-                "[Test] Number of block incidences should be 0" );
-        }
-    }
-
-    void test_brep_cone( const geode::BRep& brep )
-    {
-        // NOLINTBEGIN(*-magic-numbers)
-        BrepDescription brep_cone_description{ brep, 6, 13, 12, 4 };
-        // NOLINTEND(*-magic-numbers)
-        test_brep( brep_cone_description );
-
-        // Number of component boundaries and incidences
-        for( const auto& c : brep.corners() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-                "[Test] Number of corner boundary should be 0" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 4
-                                     || brep.nb_incidences( c.id() ) == 5,
-                "[Test] Number of corner incidences should be 4 or 5" );
-        }
-        for( const auto& l : brep.lines() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-                "[Test] Number of line boundary should be 2" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) > 1
-                                     && brep.nb_incidences( l.id() ) < 5,
-                "[Test] Number of line incidences should be 2, 3 or 4" );
-        }
-        for( const auto& s : brep.surfaces() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 3,
-                "[Test] Number of surface boundary should be 3" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 1
-                                     || brep.nb_incidences( s.id() ) == 2,
-                "[Test] Number of surface incidences should be 1 or 2" );
-        }
-        for( const auto& b : brep.blocks() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( b.id() ) == 4,
-                "[Test] Number of block boundary should be 4" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( b.id() ) == 0,
-                "[Test] Number of block incidences should be 0" );
-        }
-    }
-
-    void test_brep_internal( const geode::BRep& brep )
-    {
-        // NOLINTBEGIN(*-magic-numbers)
-        BrepDescription brep_internal_description{ brep, 5, 4, 1, 0 };
-        // NOLINTEND(*-magic-numbers)
-        test_brep( brep_internal_description );
-
-        // Number of component boundaries and incidences
-        for( const auto& c : brep.corners() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( c.id() ) == 0,
-                "[Test] Number of corner boundary should be 0" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( c.id() ) == 1
-                                     || brep.nb_incidences( c.id() ) == 2,
-                "[Test] Number of corner incidences should be 1 or 2" );
-        }
-        for( const auto& l : brep.lines() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( l.id() ) == 2,
-                "[Test] Number of line boundary should be 2" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( l.id() ) == 1
-                                     || brep.nb_embedding_surfaces( l ) == 1,
-                "[Test] Number of line incidences should be 1 or embedding in "
-                "1 "
-                "surface" );
-        }
-        for( const auto& s : brep.surfaces() )
-        {
-            OPENGEODE_EXCEPTION( brep.nb_boundaries( s.id() ) == 3,
-                "[Test] Number of surface boundary should be 3" );
-            OPENGEODE_EXCEPTION( brep.nb_internal_lines( s ) == 1,
-                "[Test] Number of surface internal should be 1" );
-            OPENGEODE_EXCEPTION( brep.nb_incidences( s.id() ) == 0,
-                "[Test] Number of surface incidences should be 0" );
-        }
+        test_brep( mss_description );
     }
 
     using test_function = void ( * )( const geode::BRep& );
@@ -281,20 +173,11 @@ namespace
     {
         // Load file
         auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, short_filename, ".msh" ) );
+            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
         test( brep );
-
-        // Save and reload
-        const auto filename =
-            absl::StrCat( short_filename, ".", brep.native_extension() );
-        geode::save_brep( brep, filename );
-        auto reloaded_brep = geode::load_brep( filename );
-        test( reloaded_brep );
-
-        const auto filename_msh = absl::StrCat( short_filename, "_output.msh" );
-        geode::save_brep( brep, filename_msh );
-        auto reloaded_brep2 = geode::load_brep( filename_msh );
-        test( reloaded_brep2 );
+        const auto filename_gid =
+            absl::StrCat( short_filename, "_output.gid_msh" );
+        geode::save_brep( brep, filename_gid );
     }
 } // namespace
 
@@ -304,9 +187,7 @@ int main()
     {
         geode::IOModelLibrary::initialize();
 
-        run_test( "triangle_internal", &test_brep_internal );
-        run_test( "cube_v22", &test_brep_cube );
-        run_test( "cone_v4", &test_brep_cone );
+        run_test( "mss", &test_brep_mss );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
