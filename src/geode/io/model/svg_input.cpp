@@ -105,8 +105,7 @@ namespace
             }
             [[nodiscard]] geode::Point2D apply_ml(
                 const geode::Point2D& position,
-                const std::vector< double >& params,
-                bool absolute )
+                const std::vector< double >& params ) const
             {
                 geode::Point2D step{ { params[0], params[1] } };
                 return absolute ? step : position + step;
@@ -114,8 +113,7 @@ namespace
 
             [[nodiscard]] geode::Point2D apply_h(
                 const geode::Point2D& position,
-                const std::vector< double >& params,
-                bool absolute )
+                const std::vector< double >& params ) const
             {
                 const auto x = position.value( 0 );
                 const auto y = position.value( 1 );
@@ -125,8 +123,7 @@ namespace
 
             [[nodiscard]] geode::Point2D apply_v(
                 const geode::Point2D& position,
-                const std::vector< double >& params,
-                bool absolute )
+                const std::vector< double >& params ) const
             {
                 const auto x = position.value( 0 );
                 const auto y = position.value( 1 );
@@ -140,23 +137,20 @@ namespace
                     "[SVGInput::Command::apply] Wrong number of parameters" );
                 if( letter == 'm' || letter == 'l' )
                 {
-                    return apply_ml( position, params, absolute );
+                    return apply_ml( position, params );
                 }
-                else if( letter == 'h' )
+                if( letter == 'h' )
                 {
-                    return apply_h( position, params, absolute );
+                    return apply_h( position, params );
                 }
-                else if( letter == 'v' )
+                if( letter == 'v' )
                 {
-                    return apply_v( position, params, absolute );
+                    return apply_v( position, params );
                 }
-                else
-                {
-                    throw geode::OpenGeodeException(
-                        "[SVGInput::Command::apply] Command not supported: ",
-                        std::string{ letter } );
-                    return position;
-                }
+                throw geode::OpenGeodeException(
+                    "[SVGInput::Command::apply] Command not supported: ",
+                    std::string{ letter } );
+                return position;
             }
 
             [[nodiscard]] geode::index_t get_nb_params() const
@@ -241,12 +235,12 @@ namespace
             geode::index_t nb_params ) const
         {
             std::vector< double > params( nb_params );
-            for( const auto t : geode::Range{ nb_params } )
+            for( const auto token_id : geode::Range{ nb_params } )
             {
-                const auto& token = tokens[first + t];
+                const auto& token = tokens[first + token_id];
                 try
                 {
-                    params[t] = std::stod( token );
+                    params[token_id] = std::stod( token );
                 }
                 catch( std::invalid_argument& /*unused*/ )
                 {
@@ -311,9 +305,9 @@ namespace
             geode::index_t token_id{ 0 };
             while( token_id < tokens.size() )
             {
-                token_id = update_command( tokens, t, cur_command );
+                token_id = update_command( tokens, token_id, cur_command );
                 token_id = apply_command(
-                    tokens, t, cur_command, cur_position, vertices );
+                    tokens, token_id, cur_command, cur_position, vertices );
                 token_id++;
             }
             create_line( vertices );
