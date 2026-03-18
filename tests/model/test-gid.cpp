@@ -90,11 +90,12 @@ namespace
         const geode::SurfaceMesh3D& mesh )
     {
         geode::index_t count{ 0 };
-        for( const auto p : geode::Range{ mesh.nb_polygons() } )
+        for( const auto polygon : geode::Range{ mesh.nb_polygons() } )
         {
-            for( const auto e : geode::LRange{ mesh.nb_polygon_edges( p ) } )
+            for( const auto edge :
+                geode::LRange{ mesh.nb_polygon_edges( polygon ) } )
             {
-                if( mesh.is_edge_on_border( { p, e } ) )
+                if( mesh.is_edge_on_border( { polygon, edge } ) )
                 {
                     count++;
                 }
@@ -105,9 +106,9 @@ namespace
 
     void check_surfaces( const geode::BRep& brep )
     {
-        for( const auto& s : brep.surfaces() )
+        for( const auto& surface : brep.surfaces() )
         {
-            const auto& mesh = s.mesh();
+            const auto& mesh = surface.mesh();
             OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
                 "[Test] Number of vertices in surfaces should not be null" );
             OPENGEODE_EXCEPTION( mesh.nb_polygons() > 0,
@@ -120,12 +121,13 @@ namespace
         const geode::SolidMesh3D& mesh )
     {
         geode::index_t count{ 0 };
-        for( const auto p : geode::Range{ mesh.nb_polyhedra() } )
+        for( const auto polyhedron : geode::Range{ mesh.nb_polyhedra() } )
         {
-            for( const auto f :
-                geode::LRange{ mesh.nb_polyhedron_facets( p ) } )
+            for( const auto facet :
+                geode::LRange{ mesh.nb_polyhedron_facets( polyhedron ) } )
             {
-                if( mesh.is_polyhedron_facet_on_border( { p, f } ) )
+                if( mesh.is_polyhedron_facet_on_border(
+                        { polyhedron, facet } ) )
                 {
                     count++;
                 }
@@ -136,9 +138,9 @@ namespace
 
     void check_blocks( const geode::BRep& brep )
     {
-        for( const auto& b : brep.blocks() )
+        for( const auto& block : brep.blocks() )
         {
-            const auto& mesh = b.mesh();
+            const auto& mesh = block.mesh();
             OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
                 "[Test] Number of vertices in blocks should not be null" );
             OPENGEODE_EXCEPTION( mesh.nb_polyhedra() > 0,
@@ -164,14 +166,7 @@ namespace
         // NOLINTEND(*-magic-numbers)
         test_brep( mss_description );
     }
-    struct BrepDescription
-    {
-        const geode::BRep& brep;
-        geode::index_t nb_corners;
-        geode::index_t nb_lines;
-        geode::index_t nb_surfaces;
-        geode::index_t nb_blocks;
-    };
+
     using test_function = void ( * )( const geode::BRep& );
 
     void run_test( std::string_view short_filename, test_function test )
