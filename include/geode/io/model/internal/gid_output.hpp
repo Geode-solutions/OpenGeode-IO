@@ -39,7 +39,7 @@ namespace geode::internal
 
         [[nodiscard]] static std::string_view extension()
         {
-            static constexpr auto EXT = "gid";
+            static constexpr auto EXT = "gid.msh";
             return EXT;
         }
 
