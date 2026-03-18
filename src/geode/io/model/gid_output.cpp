@@ -46,6 +46,8 @@ namespace
 {
     constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
     constexpr geode::index_t NODE_OFFSET = 1;
+    constexpr geode::index_t ELEMENT_OFFSET = 1;
+
     geode::index_t get_material_number_value( const geode::Surface3D& surface )
     {
         auto attribute =
@@ -132,7 +134,7 @@ namespace
                 for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
-                    file_ << polyhedron_id;
+                    file_ << polyhedron_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
@@ -215,7 +217,7 @@ namespace
                 for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
-                    file_ << nb_tet + facet_id;
+                    file_ << nb_tet + facet_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 3 } )
                     {
                         const auto triangle_vertex =
@@ -241,7 +243,10 @@ namespace geode::internal
 {
     std::vector< std::string > GIDOutput::write( const BRep& brep ) const
     {
-        GIDOutputImpl impl( filename(), brep );
+        auto filename_no_extention =
+            geode::filename_without_extension( to_string( filename() ) );
+        GIDOutputImpl impl(
+            absl::StrCat( filename_no_extention.string(), ".gid.msh" ), brep );
         impl.write_file();
         return { to_string( filename() ) };
     }

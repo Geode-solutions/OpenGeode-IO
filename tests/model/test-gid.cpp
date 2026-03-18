@@ -176,7 +176,7 @@ namespace
             absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
         test( brep );
         const auto filename_gid =
-            absl::StrCat( short_filename, "_output.gid.msh" );
+            absl::StrCat( short_filename, "_output.gid_msh" );
         geode::save_brep( brep, filename_gid );
     }
 } // namespace
