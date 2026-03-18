@@ -45,22 +45,24 @@
 namespace
 {
     constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
+    constexpr geode::index_t NODE_OFFSET = 1;
     int get_material_number_value( const geode::Surface3D& surface )
     {
         auto attribute =
             surface.mesh()
                 .polygon_attribute_manager()
                 .find_or_create_attribute< geode::ConstantAttribute, int >(
-                    FRACSIMA_ATTRIBUTE_NAME, 0, { false, true, true } );
+                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
         return attribute->value( 0 );
     }
+
     int get_material_number_value( const geode::Block3D& block )
     {
         auto attribute =
             block.mesh()
                 .polyhedron_attribute_manager()
                 .find_or_create_attribute< geode::ConstantAttribute, int >(
-                    FRACSIMA_ATTRIBUTE_NAME, 0, { false, true, true } );
+                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
         return attribute->value( 0 );
     }
 
@@ -89,16 +91,13 @@ namespace
         {
             file_ << "MESH";
             file_ << geode::SPACE << "dimension" << geode::SPACE << 3;
-            file_ << geode::SPACE << "Tetrahedra" << geode::SPACE << "Nnode"
-                  << geode::SPACE << 4 << geode::EOL;
+            file_ << geode::SPACE << "ElemType" << geode::SPACE << "Tetrahedra"
+                  << geode::SPACE << "Nnode" << geode::SPACE << 4 << geode::EOL;
         }
 
         void write_tetrahedra_nodes()
         {
             file_ << "Coordinates" << geode::EOL;
-            file_ << "# node number   coordinate_x  coordinate_y  coordinate_z"
-                  << geode::EOL;
-            ;
             for( const auto uv_index :
                 geode::Range( brep_.nb_unique_vertices() ) )
             {
@@ -108,7 +107,7 @@ namespace
                     if( cmv.component_id.type()
                         == geode::Block3D::component_type_static() )
                     {
-                        file_ << uv_index << geode::SPACE;
+                        file_ << uv_index + NODE_OFFSET << geode::SPACE;
                         file_ << brep_.block( cmv.component_id.id() )
                                      .mesh()
                                      .point( cmv.vertex )
@@ -124,8 +123,6 @@ namespace
         geode::index_t write_tetrahedra()
         {
             file_ << "Elements" << geode::EOL;
-            file_ << "# element  node_1   node_2  node_3 material_number"
-                  << geode::EOL;
             geode::index_t nb_tet{ 0 };
             for( const auto& block : brep_.blocks() )
             {
@@ -140,7 +137,7 @@ namespace
                             { polyhedron_id, vertex_lid } );
                         const auto uid = brep_.unique_vertex(
                             { block.component_id(), tet_vertex } );
-                        file_ << geode::SPACE << uid;
+                        file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
                 }
@@ -154,8 +151,8 @@ namespace
         {
             file_ << "MESH";
             file_ << geode::SPACE << "dimension" << geode::SPACE << 3;
-            file_ << geode::SPACE << "Triangle" << geode::SPACE << "Nnode"
-                  << geode::SPACE << 3 << geode::EOL;
+            file_ << geode::SPACE << "ElemType" << geode::SPACE << "Triangle"
+                  << geode::SPACE << "Nnode" << geode::SPACE << 3 << geode::EOL;
         }
 
         bool is_unique_vertex_on_a_surface_outside_of_block(
@@ -182,8 +179,6 @@ namespace
         void write_triangles_nodes()
         {
             file_ << "Coordinates" << geode::EOL;
-            file_ << "# node number   coordinate_x  coordinate_y  coordinate_z"
-                  << geode::EOL;
             for( const auto uv_index :
                 geode::Range( brep_.nb_unique_vertices() ) )
             {
@@ -195,7 +190,7 @@ namespace
                 for( const auto& cmv :
                     brep_.component_mesh_vertices( uv_index ) )
                 {
-                    file_ << uv_index << geode::SPACE;
+                    file_ << uv_index + NODE_OFFSET << geode::SPACE;
                     file_ << brep_.surface( cmv.component_id.id() )
                                  .mesh()
                                  .point( cmv.vertex )
@@ -210,8 +205,6 @@ namespace
         void write_triangles( const geode::index_t nb_tet )
         {
             file_ << "Elements" << geode::EOL;
-            file_ << "# element  node_1   node_2  node_3 material_number"
-                  << geode::EOL;
             for( const auto& surface : brep_.surfaces() )
             {
                 const auto material_number =
@@ -228,7 +221,7 @@ namespace
                                 { facet_id, vertex_lid } );
                         const auto uid = brep_.unique_vertex(
                             { surface.component_id(), triangle_vertex } );
-                        file_ << geode::SPACE << uid;
+                        file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
                 }
