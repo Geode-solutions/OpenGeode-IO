@@ -46,22 +46,24 @@ namespace
 {
     constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
     constexpr geode::index_t NODE_OFFSET = 1;
-    int get_material_number_value( const geode::Surface3D& surface )
+    geode::index_t get_material_number_value( const geode::Surface3D& surface )
     {
         auto attribute =
             surface.mesh()
                 .polygon_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute, int >(
+                .find_or_create_attribute< geode::ConstantAttribute,
+                    geode::index_t >(
                     FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
         return attribute->value( 0 );
     }
 
-    int get_material_number_value( const geode::Block3D& block )
+    geode::index_t get_material_number_value( const geode::Block3D& block )
     {
         auto attribute =
             block.mesh()
                 .polyhedron_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute, int >(
+                .find_or_create_attribute< geode::ConstantAttribute,
+                    geode::index_t >(
                     FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
         return attribute->value( 0 );
     }
