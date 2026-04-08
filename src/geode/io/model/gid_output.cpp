@@ -245,10 +245,11 @@ namespace geode::internal
     {
         auto filename_no_extention =
             geode::filename_without_extension( to_string( filename() ) );
-        GIDOutputImpl impl(
-            absl::StrCat( filename_no_extention.string(), ".gid.msh" ), brep );
+        auto filename =
+            absl::StrCat( filename_no_extention.string(), ".gid.msh" );
+        GIDOutputImpl impl( filename, brep );
         impl.write_file();
-        return { to_string( filename() ) };
+        return { filename };
     }
     bool GIDOutput::is_saveable( const BRep& brep ) const
     {
