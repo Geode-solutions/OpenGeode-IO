@@ -40,8 +40,9 @@ namespace geode
                 : dataset_{ GDALDataset::Open(
                       geode::to_string( filename ).c_str(), GDAL_OF_READONLY ) }
             {
-                OPENGEODE_EXCEPTION(
-                    dataset_, "[GDALFile] Failed to open file ", filename );
+                OpenGeodeIOImageException::check( dataset_ != nullptr, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[GDALFile] Failed to open file ", filename );
             }
 
             GDALDataset& dataset()
@@ -54,7 +55,8 @@ namespace geode
                 std::array< double, 6 > geo_transform;
                 const auto status =
                     dataset_->GetGeoTransform( geo_transform.data() );
-                OPENGEODE_EXCEPTION( status == CE_None,
+                OpenGeodeIOImageException::check( status == CE_None, nullptr,
+                    OpenGeodeException::TYPE::data,
                     "Failed to read geotransform from GDALDataset" );
                 Point2D origin;
                 Vector2D x_direction;

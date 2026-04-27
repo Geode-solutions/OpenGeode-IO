@@ -26,8 +26,9 @@
 #include <geode/basic/library.hpp>
 
 #include <geode/io/image/opengeode_io_image_export.hpp>
+#include <geode/io/project.hpp>
 
 namespace geode
 {
-    OPENGEODE_LIBRARY( opengeode_io_image_api, IOImage );
+    OPENGEODE_LIBRARY( opengeode_io_image_api, OpenGeodeIO, Image );
 } // namespace geode

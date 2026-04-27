@@ -70,9 +70,10 @@ namespace
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
                     offsets_values = read_integer_data_array< int64_t >( data );
-                    OPENGEODE_ASSERT( offsets_values.size() == nb_polygons,
+                    geode::OpenGeodeIOMeshException::assertion(
+                        offsets_values.size() == nb_polygons, nullptr,
+                        geode::OpenGeodeException::TYPE::data,
                         "[VTPInput::read_polygons] Wrong number of offsets" );
-                    geode_unused( nb_polygons );
                 }
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )

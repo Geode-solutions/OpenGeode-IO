@@ -21,4 +21,5 @@
 import opengeode
 
 from opengeode_io_py_image import *
-IOImageLibrary.initialize()
+
+OpenGeodeIOImageLibrary.initialize()

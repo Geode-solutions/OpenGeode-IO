@@ -54,25 +54,26 @@ namespace
 
     void check_count_components( const BrepDescription& brep_description )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOModelException::test(
             brep_description.brep.nb_corners() == brep_description.nb_corners,
-            "[Test] Number of corners is not correct" );
-        OPENGEODE_EXCEPTION(
+            "Number of corners is not correct" );
+        geode::OpenGeodeIOModelException::test(
             brep_description.brep.nb_lines() == brep_description.nb_lines,
-            "[Test] Number of lines is not correct" );
-        OPENGEODE_EXCEPTION(
+            "Number of lines is not correct" );
+        geode::OpenGeodeIOModelException::test(
             brep_description.brep.nb_surfaces() == brep_description.nb_surfaces,
-            "[Test] Number of surfaces is not correct" );
-        OPENGEODE_EXCEPTION(
+            "Number of surfaces is not correct" );
+        geode::OpenGeodeIOModelException::test(
             brep_description.brep.nb_blocks() == brep_description.nb_blocks,
-            "[Test] Number of blocks is not correct" );
+            "Number of blocks is not correct" );
     }
     void check_corners( const geode::BRep& brep )
     {
         for( const auto& corner : brep.corners() )
         {
-            OPENGEODE_EXCEPTION( corner.mesh().nb_vertices() == 1,
-                "[Test] Number of vertices in corners should be 1" );
+            geode::OpenGeodeIOModelException::test(
+                corner.mesh().nb_vertices() == 1,
+                "Number of vertices in corners should be 1" );
         }
     }
     void check_lines( const geode::BRep& brep )
@@ -80,10 +81,10 @@ namespace
         for( const auto& line : brep.lines() )
         {
             const auto& mesh = line.mesh();
-            OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
-                "[Test] Number of vertices in lines should not be null" );
-            OPENGEODE_EXCEPTION( mesh.nb_edges() > 0,
-                "[Test] Number of edges in lines should not be null" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_vertices() > 0,
+                "Number of vertices in lines should not be null" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_edges() > 0,
+                "Number of edges in lines should not be null" );
         }
     }
     geode::index_t count_surface_edge_on_border(
@@ -109,12 +110,13 @@ namespace
         for( const auto& surface : brep.surfaces() )
         {
             const auto& mesh = surface.mesh();
-            OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
-                "[Test] Number of vertices in surfaces should not be null" );
-            OPENGEODE_EXCEPTION( mesh.nb_polygons() > 0,
-                "[Test] Number of polygons in surfaces should not be null" );
-            OPENGEODE_EXCEPTION( count_surface_edge_on_border( mesh ) != 0,
-                "[Test] No polygon adjacency" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_vertices() > 0,
+                "Number of vertices in surfaces should not be null" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_polygons() > 0,
+                "Number of polygons in surfaces should not be null" );
+            geode::OpenGeodeIOModelException::test(
+                count_surface_edge_on_border( mesh ) != 0,
+                "No polygon adjacency" );
         }
     }
     geode::index_t count_polyhedron_facet_on_borders(
@@ -141,12 +143,13 @@ namespace
         for( const auto& block : brep.blocks() )
         {
             const auto& mesh = block.mesh();
-            OPENGEODE_EXCEPTION( mesh.nb_vertices() > 0,
-                "[Test] Number of vertices in blocks should not be null" );
-            OPENGEODE_EXCEPTION( mesh.nb_polyhedra() > 0,
-                "[Test] Number of polyhedra in blocks should not be null" );
-            OPENGEODE_EXCEPTION( count_polyhedron_facet_on_borders( mesh ) != 0,
-                "[Test] No polyhedron adjacency" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_vertices() > 0,
+                "Number of vertices in blocks should not be null" );
+            geode::OpenGeodeIOModelException::test( mesh.nb_polyhedra() > 0,
+                "Number of polyhedra in blocks should not be null" );
+            geode::OpenGeodeIOModelException::test(
+                count_polyhedron_facet_on_borders( mesh ) != 0,
+                "No polyhedron adjacency" );
         }
     }
 
@@ -185,7 +188,7 @@ int main()
 {
     try
     {
-        geode::IOModelLibrary::initialize();
+        geode::OpenGeodeIOModelLibrary::initialize();
 
         run_test( "mss", &test_brep_mss );
 

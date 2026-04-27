@@ -35,14 +35,14 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_triangulated_surface< 3 >(
             absl::StrCat( geode::DATA_PATH, "triangulated.smesh" ) );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 111,
-            "[Test] Number of vertices in the loaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 186,
-            "[Test] Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 111,
+            "Number of vertices in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 186,
+            "Number of polygons in the loaded Surface is not correct" );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

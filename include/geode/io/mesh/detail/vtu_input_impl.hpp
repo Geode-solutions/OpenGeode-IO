@@ -53,25 +53,27 @@ namespace geode
                     if( this->match(
                             data.attribute( "Name" ).value(), "offsets" ) )
                     {
-                        OPENGEODE_EXCEPTION(
+                        OpenGeodeIOMeshException::check(
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
+                            nullptr, OpenGeodeException::TYPE::data,
                             "[VTUInputImpl::read_cells] Wrong offset type, "
                             "supports only Int64" );
                         offsets_values =
                             this->template read_integer_data_array< int64_t >(
                                 data );
-                        OPENGEODE_ASSERT( offsets_values.size() == nb_cells,
+                        OpenGeodeIOMeshException::assertion(
+                            offsets_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "
                             "offsets" );
-                        geode_unused( nb_cells );
                     }
                     else if( this->match( data.attribute( "Name" ).value(),
                                  "connectivity" ) )
                     {
-                        OPENGEODE_EXCEPTION(
+                        OpenGeodeIOMeshException::check(
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
+                            nullptr, OpenGeodeException::TYPE::data,
                             "[VTUInputImpl::read_cells] Wrong connectivity "
                             "type, supports only Int64" );
                         connectivity_values =
@@ -102,13 +104,14 @@ namespace geode
                         }
                         else
                         {
-                            throw OpenGeodeException(
-                                "[VTUInputImpl::read_cells] Wrong types type" );
+                            throw OpenGeodeIOMeshException{ nullptr,
+                                OpenGeodeException::TYPE::data,
+                                "[VTUInputImpl::read_cells] Wrong types type" };
                         }
-                        OPENGEODE_ASSERT( types_values.size() == nb_cells,
+                        OpenGeodeIOMeshException::assertion(
+                            types_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "
                             "types" );
-                        geode_unused( nb_cells );
                     }
                 }
                 return std::tuple{ this->get_cell_vertices(

@@ -32,6 +32,8 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace geode
 {
     namespace internal
@@ -47,7 +49,9 @@ namespace geode
                   surface_mesh_( surface_mesh ),
                   export_id_{ assimp_export_id }
             {
-                OPENGEODE_EXCEPTION( std::ofstream{ to_string( file_ ) }.good(),
+                OpenGeodeIOMeshException::check(
+                    std::ofstream{ to_string( file_ ) }.good(), nullptr,
+                    OpenGeodeException::TYPE::data,
                     "[AssimpMeshOutput] Error while opening file: ", file_ );
             }
 
@@ -63,7 +67,8 @@ namespace geode
                 Assimp::Exporter exporter;
                 const auto status = exporter.Export( &assimp_scene_,
                     to_string( export_id_ ), to_string( file_ ) );
-                OPENGEODE_EXCEPTION( status == AI_SUCCESS,
+                OpenGeodeIOMeshException::check( status == AI_SUCCESS, nullptr,
+                    OpenGeodeException::TYPE::internal,
                     "[AssimpMeshOutput::write_file] Export in file \"", file_,
                     "\" has failed." );
             }

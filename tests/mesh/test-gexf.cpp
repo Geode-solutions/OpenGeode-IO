@@ -36,7 +36,7 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Build graph
         auto graph = geode::Graph::create();
         auto builder = geode::GraphBuilder::create( *graph );

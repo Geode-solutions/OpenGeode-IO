@@ -45,14 +45,15 @@ void test_jpg_from_gimp_input()
         absl::StrCat( geode::DATA_PATH, "grid_image_from_gimp.jpg" ) );
     auto grid = geode::load_regular_grid< 2 >(
         absl::StrCat( geode::DATA_PATH, "grid_from_gimp_image.og_rgd2d" ) );
-    OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =
         grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
             "RGB_data" );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOImageException::test(
             raster.color( cell_id ) == comparison_attribute->value( cell_id ),
             "[TEST] Wrong color value for pixel ", cell_id,
             " on image loaded from grid_image_from_gimp.jpg." );
@@ -67,14 +68,15 @@ void test_jpg_from_paraview_input()
         absl::StrCat( geode::DATA_PATH, "grid_image_from_paraview.jpg" ) );
     auto grid = geode::load_regular_grid< 2 >(
         absl::StrCat( geode::DATA_PATH, "grid_from_paraview_image.og_rgd2d" ) );
-    OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =
         grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
             "RGB_data" );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOImageException::test(
             raster.color( cell_id ) == comparison_attribute->value( cell_id ),
             "[TEST] Wrong color value for pixel ", cell_id,
             " on image loaded from grid_image_from_paraview.jpg." );
@@ -90,14 +92,15 @@ void test_png_input()
         absl::StrCat( geode::DATA_PATH, "grid_image.png" ) );
     auto grid = geode::load_regular_grid< 2 >(
         absl::StrCat( geode::DATA_PATH, "grid_from_image.og_rgd2d" ) );
-    OPENGEODE_EXCEPTION( raster.nb_cells() == grid->nb_cells(),
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
     auto comparison_attribute =
         grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
             "RGB_data" );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOImageException::test(
             raster.color( cell_id ) == comparison_attribute->value( cell_id ),
             "[TEST] Wrong color value for pixel ", cell_id,
             " on image loaded from grid_image.png." );
@@ -112,11 +115,12 @@ void test_tiff_input()
         absl::StrCat( geode::DATA_PATH, "cea.tiff" ) );
     auto ref_raster = geode::load_raster_image< 2 >(
         absl::StrCat( geode::DATA_PATH, "cea.og_img2d" ) );
-    OPENGEODE_EXCEPTION( raster.nb_cells() == ref_raster.nb_cells(),
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells() == ref_raster.nb_cells(),
         "[TEST] Wrong number of cells." );
     for( const auto cell_id : geode::Range{ ref_raster.nb_cells() } )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOImageException::test(
             raster.color( cell_id ) == ref_raster.color( cell_id ),
             "[TEST] Wrong color value for pixel ", cell_id,
             " on image loaded from reference pixel." );
@@ -130,7 +134,7 @@ int main()
     try
     {
         geode::OpenGeodeMeshLibrary::initialize();
-        geode::IOImageLibrary::initialize();
+        geode::OpenGeodeIOImageLibrary::initialize();
 
         test_jpg_from_gimp_input();
         test_jpg_from_paraview_input();

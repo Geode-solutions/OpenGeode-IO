@@ -52,6 +52,7 @@
 #include <geode/model/mixin/core/surface.hpp>
 
 #include <geode/io/image/detail/vtk_output.hpp>
+#include <geode/io/model/common.hpp>
 
 namespace geode
 {
@@ -304,9 +305,10 @@ namespace geode
                         }
                         else
                         {
-                            throw OpenGeodeException(
+                            throw geode::OpenGeodeIOModelException{ nullptr,
+                                geode::OpenGeodeException::TYPE::internal,
                                 "[Surfaces::save_surfaces] Cannot find the "
-                                "explicit SurfaceMesh type" );
+                                "explicit SurfaceMesh type" };
                         }
                     } );
                 }
@@ -320,9 +322,9 @@ namespace geode
             }
 
         private:
-            DEBUG_CONST std::string files_directory_;
+            std::string files_directory_;
             std::vector< std::string > files_;
-            DEBUG_CONST std::string prefix_;
+            std::string prefix_;
         };
     } // namespace detail
 } // namespace geode

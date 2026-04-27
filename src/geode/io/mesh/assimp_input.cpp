@@ -95,7 +95,8 @@ namespace geode
             Assimp::Importer importer;
             const auto* assimp_scene =
                 importer.ReadFile( to_string( file_ ), 0 );
-            OPENGEODE_EXCEPTION( assimp_scene, "[AssimpMeshInput::read_file] ",
+            OpenGeodeIOMeshException::check( assimp_scene, nullptr,
+                OpenGeodeException::TYPE::data, "[AssimpMeshInput::read_file] ",
                 importer.GetErrorString() );
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
