@@ -56,7 +56,7 @@ endif()
 
 install(
     FILES include/geode/io/project.hpp
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/geode/io/project.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/geode/io
     COMPONENT public
 )
 
