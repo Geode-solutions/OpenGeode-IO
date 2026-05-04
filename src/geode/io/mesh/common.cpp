@@ -49,6 +49,7 @@
 #include <geode/io/mesh/detail/vtu_tetrahedral_output.hpp>
 #include <geode/io/mesh/detail/vtu_triangulated_input.hpp>
 
+#include <geode/io/mesh/internal/csv_input.hpp>
 #include <geode/io/mesh/internal/dxf_input.hpp>
 #include <geode/io/mesh/internal/gexf_output.hpp>
 #include <geode/io/mesh/internal/obj_input.hpp>
@@ -185,6 +186,13 @@ namespace
             geode::detail::VTUHybridOutput::extension().data() );
     }
 
+    void register_point_set_input()
+    {
+        geode::PointSetInputFactory3D::register_creator<
+            geode::internal::CSVInput >(
+            geode::internal::CSVInput::extension().data() );
+    }
+
     void register_point_set_output()
     {
         geode::PointSetOutputFactory2D::register_creator<
@@ -279,6 +287,7 @@ namespace geode
         register_tetrahedral_solid_input();
         register_light_regular_grid_input();
         register_regular_grid_input();
+        register_point_set_input();
         register_hybrid_solid_input();
 
         register_point_set_output();
