@@ -53,13 +53,7 @@ namespace geode
     {
     public:
         Impl( std::string_view filename )
-            : file_{ geode::to_string( filename ), std::ios::binary },
-              separator_( ',' ),
-              x_column_( 0 ),
-              y_column_( 1 ),
-              z_column_( 2 ),
-              header_row_( 0 ),
-              first_row_( 1 )
+            : file_{ geode::to_string( filename ), std::ios::binary }
         {
         }
 
