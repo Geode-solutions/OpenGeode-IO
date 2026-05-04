@@ -39,15 +39,15 @@
 void test_csv_input()
 {
     const auto filepath =
-        absl::StrCat( geode::DATA_PATH, "geological_pointset3d.csv" );
+        absl::StrCat( geode::DATA_PATH, "top_granitoid_vertices.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
     OPENGEODE_EXCEPTION( additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be present" );
     auto point_set = geode::load_point_set< 3 >( filepath );
-    OPENGEODE_EXCEPTION( point_set->nb_vertices() == 500,
+    OPENGEODE_EXCEPTION( point_set->nb_vertices() == 103455,
         "[TEST: CSV input], "
-        "The point set should have 500 vertices found",
+        "The point set should have 103455 vertices found",
         point_set->nb_vertices() );
     geode::save_point_set( *point_set, "result.og_pts3d" );
 }

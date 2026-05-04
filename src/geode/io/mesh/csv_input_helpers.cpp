@@ -181,12 +181,12 @@ namespace geode
 
     private:
         std::ifstream file_;
-        char separator_;
-        index_t x_column_;
-        index_t y_column_;
-        index_t z_column_;
-        index_t header_row_;
-        index_t first_row_;
+        char separator_{ ',' };
+        index_t x_column_{ 0 };
+        index_t y_column_{ 1 };
+        index_t z_column_{ 2 };
+        index_t header_row_{ 0 };
+        index_t first_row_{ 1 };
     };
 
     CsvInputHelpers::CsvInputHelpers( std::string_view filename )
