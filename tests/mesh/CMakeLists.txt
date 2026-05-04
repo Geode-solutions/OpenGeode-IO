@@ -96,3 +96,12 @@ add_geode_test(
         ${PROJECT_NAME}::mesh
     ESSENTIAL
 )
+
+add_geode_test(
+    SOURCE "test-csv.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
+    ESSENTIAL
+)
