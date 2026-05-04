@@ -58,7 +58,6 @@ void test_csv_input_with_missing_json()
         absl::StrCat( geode::DATA_PATH, "other_geological_pointset3d.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
-    DEBUG( additional_files.has_additional_files() );
     OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "
         "missing keyword" );
@@ -70,7 +69,6 @@ void test_csv_input_with_missing_keyword()
         absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
-    DEBUG( additional_files.has_additional_files() );
     OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "
         "missing keyword" );
