@@ -24,6 +24,7 @@
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
+#include <geode/basic/input.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
 
@@ -32,7 +33,48 @@
 #include <geode/io/mesh/common.hpp>
 #include <geode/io/mesh/csv_input_helpers.hpp>
 #include <geode/mesh/core/point_set.hpp>
+#include <geode/mesh/io/point_set_input.hpp>
 #include <geode/mesh/io/point_set_output.hpp>
+
+void test_csv_input()
+{
+    const auto filepath =
+        absl::StrCat( geode::DATA_PATH, "geological_pointset3d.csv" );
+    const auto additional_files =
+        geode::point_set_additional_files< 3 >( filepath );
+    OPENGEODE_EXCEPTION( additional_files.has_additional_files(),
+        "[TEST: CSV input], Additional files should be present" );
+    auto point_set = geode::load_point_set< 3 >( filepath );
+    OPENGEODE_EXCEPTION( point_set->nb_vertices() == 500,
+        "[TEST: CSV input], "
+        "The point set should have 500 vertices found",
+        point_set->nb_vertices() );
+    geode::save_point_set( *point_set, "result.og_pts3d" );
+}
+
+void test_csv_input_with_missing_json()
+{
+    const auto filepath =
+        absl::StrCat( geode::DATA_PATH, "other_geological_pointset3d.csv" );
+    const auto additional_files =
+        geode::point_set_additional_files< 3 >( filepath );
+    DEBUG( additional_files.has_additional_files() );
+    OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
+        "[TEST: CSV input], Additional files should be missing because of a "
+        "missing keyword" );
+}
+
+void test_csv_input_with_missing_keyword()
+{
+    const auto filepath =
+        absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
+    const auto additional_files =
+        geode::point_set_additional_files< 3 >( filepath );
+    DEBUG( additional_files.has_additional_files() );
+    OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
+        "[TEST: CSV input], Additional files should be missing because of a "
+        "missing keyword" );
+}
 
 int main()
 {
@@ -40,19 +82,9 @@ int main()
     {
         geode::IOMeshLibrary::initialize();
         geode::Logger::set_level( geode::Logger::LEVEL::trace );
-        geode::CsvInputHelpers reader{ absl::StrCat(
-            geode::DATA_PATH, "geological_pointset3d.csv" ) };
-        reader.set_separator( ';' );
-        reader.set_x_column( 1 );
-        reader.set_y_column( 2 );
-        reader.set_z_column( 3 );
-        const auto point_set = reader.create_point_set();
-        for( const auto vertex : geode::Range{ point_set->nb_vertices() } )
-        {
-            SDEBUG( point_set->point( vertex ) );
-        }
-        geode::save_point_set( *point_set, "test_points.og_pts3d" );
-        geode::Logger::info( "TEST SUCCESS" );
+        test_csv_input();
+        test_csv_input_with_missing_json();
+        test_csv_input_with_missing_keyword();
         return 0;
     }
     catch( ... )

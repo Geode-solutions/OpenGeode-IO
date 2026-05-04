@@ -24,6 +24,7 @@ add_geode_library(
     SOURCES
         "assimp_input.cpp"
         "common.cpp"
+        "csv_input.cpp"
         "csv_input_helpers.cpp"
         "dot_polygonal_output.cpp"
         "dot_triangulated_output.cpp"
@@ -93,6 +94,7 @@ add_geode_library(
     INTERNAL_HEADERS
         "internal/assimp_input.hpp"
         "internal/assimp_output.hpp"
+        "internal/csv_input.hpp"
         "internal/dxf_input.hpp"
         "internal/gexf_output.hpp"
         "internal/obj_input.hpp"
@@ -117,5 +119,6 @@ add_geode_library(
         ZLIB::ZLIB
         Async++
         GDAL::GDAL
+        nlohmann_json::nlohmann_json
         ${PROJECT_NAME}::image
 )

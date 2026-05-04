@@ -59,10 +59,10 @@ namespace
     public:
         CSVInputImpl( std::string_view filename )
             : filename_{ filename },
-              json_file_{ geode::to_string( filename.substr(
-                              0, filename.find_last_of( '.' ) ) )
-                              + ".json",
-                  std::ios::binary }
+              json_filename_{ geode::to_string( filename.substr(
+                                  0, filename.find_last_of( '.' ) ) )
+                              + ".json" },
+              json_file_{ json_filename_, std::ios::binary }
         {
         }
 
@@ -72,39 +72,59 @@ namespace
             nlohmann::json json;
             json_file_ >> json;
             helpers.set_first_row( json["FirstRow"] );
-            helpers.set_header_row( json[" HeaderRow"] );
-            helpers.set_separator( json["Separator"] );
+            helpers.set_header_row( json["HeaderRow"] );
+            helpers.set_separator( json["Separator"].get< std::string >()[0] );
             helpers.set_x_column( json["XColumn"] );
             helpers.set_y_column( json["YColumn"] );
             helpers.set_z_column( json["ZColumn"] );
             return helpers.create_point_set();
         }
 
+        geode::AdditionalFiles additional_files()
+        {
+            DEBUG( "additional files" );
+            geode::AdditionalFiles missing;
+            if( !geode::file_exists( json_filename_ ) )
+            {
+                missing.optional_files.emplace_back( json_filename_, false );
+                return missing;
+            }
+            bool contains_all_info{ true };
+            nlohmann::json json;
+            json_file_ >> json;
+            if( !json.contains( "FirstRow" ) || !json.contains( "HeaderRow" )
+                || !json.contains( "Separator" ) || !json.contains( "XColumn" )
+                || !json.contains( "YColumn" ) || !json.contains( "ZColumn" ) )
+            {
+                contains_all_info = false;
+            }
+            missing.optional_files.emplace_back(
+                json_filename_, contains_all_info );
+            return missing;
+        }
+
     private:
         std::string_view filename_;
+        std::string json_filename_;
         std::ifstream json_file_;
-    }
+    };
 } // namespace
 
 namespace geode
 {
     namespace internal
     {
-        std::unique_ptr< PointSet3D > CSVInput::read( geode::MeshImpl& impl )
+        std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
         {
+            geode_unused( impl );
             CSVInputImpl reader{ this->filename() };
             return reader.point_set();
         }
 
         AdditionalFiles CSVInput::additional_files() const
         {
-            const auto file_path = geode::to_string( filename.substr(
-                                       0, filename.find_last_of( '.' ) ) )
-                                   + ".json";
-            AdditionalFiles missing;
-            missing.optional_files.emplace_back(
-                file_path, file_exists( file_path ) );
-            return missing;
+            CSVInputImpl reader{ this->filename() };
+            return reader.additional_files();
         }
 
     } // namespace internal

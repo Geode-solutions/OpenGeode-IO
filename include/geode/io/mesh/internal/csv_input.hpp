@@ -49,7 +49,7 @@ namespace geode
                 return EXT;
             }
 
-            std::unique_ptr< PointSet3D > read( geode::MeshImpl& impl ) final;
+            std::unique_ptr< PointSet3D > read( const MeshImpl& impl ) final;
 
             AdditionalFiles additional_files() const final;
 

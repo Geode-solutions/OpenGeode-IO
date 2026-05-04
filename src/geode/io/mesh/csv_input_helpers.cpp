@@ -101,12 +101,9 @@ namespace geode
             auto& attribute_manager = point_set->vertex_attribute_manager();
             while( std::getline( file_, line ) )
             {
-                DEBUG( "while" );
                 if( current_row == header_row_ )
                 {
-                    headers =
-                        absl::StrSplit( absl::StripAsciiWhitespace( line ),
-                            absl::ByChar( separator_ ) );
+                    headers = split_line( line );
                     current_row++;
                     continue;
                 }
@@ -115,11 +112,7 @@ namespace geode
                     current_row++;
                     continue;
                 }
-                const auto line_values = std::vector< std::string_view >{
-                    absl::StrSplit( absl::StripAsciiWhitespace( line ),
-                        absl::ByChar( separator_ ) )
-                };
-                DEBUG( line_values.size() );
+                const auto line_values = split_line( line );
                 if( line_values.empty() )
                 {
                     current_row++;
@@ -130,31 +123,30 @@ namespace geode
                 const auto z = string_to_double( line_values[z_column_] );
                 const auto vertex_id =
                     builder->create_point( geode::Point3D{ { x, y, z } } );
-                if( vertex_id == 0 )
-                {
-                    for( const auto col : geode::Range{ line_values.size() } )
-                    {
-                        DEBUG( col );
-                        if( col == x_column_ || col == y_column_
-                            || col == z_column_ )
-                        {
-                            continue;
-                        }
-                        DEBUG( "no skip " );
-                        const auto attribute_name = headers.at( col );
-                        double value{ 0 };
-                        if( !absl::SimpleAtod( line_values[col], &value ) )
-                        {
-                            DEBUG( "not double" );
-                            continue;
-                        }
-                        double_attrs[col] =
-                            attribute_manager.find_or_create_attribute<
-                                VariableAttribute, double >(
-                                attribute_name, 0.0 );
-                        DEBUG( double_attrs.at( col )->name() );
-                    }
-                }
+                set_attribute_on_vertex( vertex_id, line_values, headers,
+                    double_attrs, attribute_manager );
+                current_row++;
+            }
+
+            return point_set;
+        }
+
+    private:
+        std::vector< std::string > split_line( const std::string& line )
+        {
+            return absl::StrSplit( absl::StripAsciiWhitespace( line ),
+                absl::ByChar( separator_ ) );
+        }
+
+        void set_attribute_on_vertex( const geode::index_t vertex_id,
+            const std::vector< std::string >& line_values,
+            const std::vector< std::string >& headers,
+            absl::flat_hash_map< index_t,
+                std::shared_ptr< VariableAttribute< double > > >& double_attrs,
+            AttributeManager& attribute_manager )
+        {
+            if( vertex_id == 0 )
+            {
                 for( const auto col : geode::Range{ line_values.size() } )
                 {
                     if( col == x_column_ || col == y_column_
@@ -162,16 +154,29 @@ namespace geode
                     {
                         continue;
                     }
-                    if( double_attrs.contains( col ) )
+                    const auto attribute_name = headers.at( col );
+                    double value{ 0 };
+                    if( !absl::SimpleAtod( line_values[col], &value ) )
                     {
-                        double_attrs[col]->set_value(
-                            vertex_id, string_to_double( line_values[col] ) );
+                        continue;
                     }
+                    double_attrs[col] =
+                        attribute_manager.find_or_create_attribute<
+                            VariableAttribute, double >( attribute_name, 0.0 );
                 }
-                current_row++;
             }
-
-            return point_set;
+            for( const auto col : geode::Range{ line_values.size() } )
+            {
+                if( col == x_column_ || col == y_column_ || col == z_column_ )
+                {
+                    continue;
+                }
+                if( double_attrs.contains( col ) )
+                {
+                    double_attrs[col]->set_value(
+                        vertex_id, string_to_double( line_values[col] ) );
+                }
+            }
         }
 
     private:
