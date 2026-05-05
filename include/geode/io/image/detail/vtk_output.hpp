@@ -54,8 +54,8 @@ namespace geode
                   mesh_( mesh ),
                   type_{ type }
             {
-                OpenGeodeIOImageException::check( file_.good(), nullptr,
-                    OpenGeodeException::TYPE::data,
+                OpenGeodeIOImageException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKOutput] Error while writing file: ", filename );
             }
 

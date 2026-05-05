@@ -49,7 +49,7 @@ namespace geode
                   surface_mesh_( surface_mesh ),
                   export_id_{ assimp_export_id }
             {
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     std::ofstream{ to_string( file_ ) }.good(), nullptr,
                     OpenGeodeException::TYPE::data,
                     "[AssimpMeshOutput] Error while opening file: ", file_ );
@@ -67,8 +67,8 @@ namespace geode
                 Assimp::Exporter exporter;
                 const auto status = exporter.Export( &assimp_scene_,
                     to_string( export_id_ ), to_string( file_ ) );
-                OpenGeodeIOMeshException::check( status == AI_SUCCESS, nullptr,
-                    OpenGeodeException::TYPE::internal,
+                OpenGeodeIOMeshException::check_exception( status == AI_SUCCESS,
+                    nullptr, OpenGeodeException::TYPE::internal,
                     "[AssimpMeshOutput::write_file] Export in file \"", file_,
                     "\" has failed." );
             }

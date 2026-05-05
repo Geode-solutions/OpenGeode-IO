@@ -76,8 +76,8 @@ namespace
         GIDOutputImpl( std::string_view filename, const geode::BRep& brep )
             : file_{ geode::to_string( filename ) }, brep_( brep )
         {
-            geode::OpenGeodeIOModelException::check( file_.good(), nullptr,
-                geode::OpenGeodeException::TYPE::data,
+            geode::OpenGeodeIOModelException::check_exception( file_.good(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[GIDOutput] Error while opening file: ", filename );
         }
 

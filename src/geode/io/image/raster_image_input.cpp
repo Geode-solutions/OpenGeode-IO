@@ -46,8 +46,8 @@ namespace
             gdal_data.GetRasterBand( component )
                 ->RasterIO( GF_Read, 0, 0, width, height, values.data(), width,
                     height, GDT_Byte, 0, 0 );
-        geode::OpenGeodeIOImageException::check( status == CE_None, nullptr,
-            geode::OpenGeodeException::TYPE::data,
+        geode::OpenGeodeIOImageException::check_exception( status == CE_None,
+            nullptr, geode::OpenGeodeException::TYPE::data,
             "[ImageInputImpl] Failed to read color component" );
         return values;
     }

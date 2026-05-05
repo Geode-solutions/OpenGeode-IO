@@ -84,12 +84,12 @@ namespace geode
             VTKInputImpl( std::string_view filename, const char* type )
                 : file_{ to_string( filename ) }, type_{ type }
             {
-                OpenGeodeIOMeshException::check( file_.good(), nullptr,
-                    OpenGeodeException::TYPE::data,
+                OpenGeodeIOMeshException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput] Error while opening file: ", filename );
                 const auto status =
                     document_.load_file( to_string( filename ).c_str() );
-                OpenGeodeIOMeshException::check( status, nullptr,
+                OpenGeodeIOMeshException::check_exception( status, nullptr,
                     OpenGeodeException::TYPE::internal, status.description(),
                     "[VTKInput] Error while parsing file: ", filename );
                 root_ = document_.child( "VTKFile" );
@@ -215,7 +215,7 @@ namespace geode
                 index_t nb_components,
                 index_t offset )
             {
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     values.size() % nb_components == 0, nullptr,
                     OpenGeodeException::TYPE::data,
                     "[VTKInput::build_attribute] Number of attribute "
@@ -392,19 +392,19 @@ namespace geode
 
             void read_root_attributes()
             {
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     match( root_.attribute( "type" ).value(), type_ ), nullptr,
                     OpenGeodeException::TYPE::data,
                     "[VTKInput::read_root_attributes] VTK File type should be ",
                     type_ );
                 little_endian_ = match(
                     root_.attribute( "byte_order" ).value(), "LittleEndian" );
-                OpenGeodeIOMeshException::check( little_endian_, nullptr,
-                    OpenGeodeException::TYPE::internal,
+                OpenGeodeIOMeshException::check_exception( little_endian_,
+                    nullptr, OpenGeodeException::TYPE::internal,
                     "[VTKInput::read_root_attributes] Big Endian not "
                     "supported" );
                 const auto compressor = root_.attribute( "compressor" ).value();
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     std::string_view( compressor ).empty()
                         || match( compressor, "vtkZLibDataCompressor" ),
                     nullptr, OpenGeodeException::TYPE::internal,
@@ -415,7 +415,7 @@ namespace geode
                 if( const auto header_type = root_.attribute( "header_type" ) )
                 {
                     const auto& header_type_value = header_type.value();
-                    OpenGeodeIOMeshException::check(
+                    OpenGeodeIOMeshException::check_exception(
                         match( header_type_value, "UInt32" )
                             || match( header_type_value, "UInt64" ),
                         nullptr, OpenGeodeException::TYPE::internal,
@@ -434,7 +434,7 @@ namespace geode
                 {
                     return;
                 }
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     match( node.attribute( "encoding" ).value(), "base64" ),
                     nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::read_appended_data] VTK AppendedData "
@@ -507,7 +507,7 @@ namespace geode
                     input.substr( fixed_header_length, nb_characters );
                 const auto decoded_optional_header =
                     decode_base64( optional_header );
-                OpenGeodeIOMeshException::check(
+                OpenGeodeIOMeshException::check_exception(
                     decoded_optional_header.size()
                         == nb_data_blocks * sizeof( UInt ),
                     nullptr, OpenGeodeException::TYPE::data,
@@ -555,8 +555,9 @@ namespace geode
                             &decompressed_data_length,
                             &compressed_data_bytes[cur_data_offset],
                             compressed_data_length );
-                    OpenGeodeIOMeshException::check( uncompress_result == Z_OK,
-                        nullptr, OpenGeodeException::TYPE::data,
+                    OpenGeodeIOMeshException::check_exception(
+                        uncompress_result == Z_OK, nullptr,
+                        OpenGeodeException::TYPE::data,
                         "[VTKInput::decode] Error in zlib decompressing data" );
                     const auto values = reinterpret_cast< const T* >(
                         decompressed_data_bytes.data() );
@@ -575,8 +576,8 @@ namespace geode
             {
                 std::string bytes;
                 auto decode_status = absl::Base64Unescape( input, &bytes );
-                OpenGeodeIOMeshException::check( decode_status, nullptr,
-                    OpenGeodeException::TYPE::data,
+                OpenGeodeIOMeshException::check_exception( decode_status,
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::decode_base64] Error in decoding base64 data" );
                 return bytes;
             }
@@ -590,7 +591,7 @@ namespace geode
                 {
                     T value;
                     const auto ok = ( *string_convert )( string, &value );
-                    OpenGeodeIOMeshException::check( ok, nullptr,
+                    OpenGeodeIOMeshException::check_exception( ok, nullptr,
                         OpenGeodeException::TYPE::data,
                         "[VTKINPUT::read_ascii_data_array] Failed to read "
                         "value" );

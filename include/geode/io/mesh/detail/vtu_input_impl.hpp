@@ -53,7 +53,7 @@ namespace geode
                     if( this->match(
                             data.attribute( "Name" ).value(), "offsets" ) )
                     {
-                        OpenGeodeIOMeshException::check(
+                        OpenGeodeIOMeshException::check_exception(
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
                             nullptr, OpenGeodeException::TYPE::data,
@@ -62,7 +62,7 @@ namespace geode
                         offsets_values =
                             this->template read_integer_data_array< int64_t >(
                                 data );
-                        OpenGeodeIOMeshException::assertion(
+                        OpenGeodeIOMeshException::check_assertion(
                             offsets_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "
                             "offsets" );
@@ -70,7 +70,7 @@ namespace geode
                     else if( this->match( data.attribute( "Name" ).value(),
                                  "connectivity" ) )
                     {
-                        OpenGeodeIOMeshException::check(
+                        OpenGeodeIOMeshException::check_exception(
                             this->match(
                                 data.attribute( "type" ).value(), "Int64" ),
                             nullptr, OpenGeodeException::TYPE::data,
@@ -108,7 +108,7 @@ namespace geode
                                 OpenGeodeException::TYPE::data,
                                 "[VTUInputImpl::read_cells] Wrong types type" };
                         }
-                        OpenGeodeIOMeshException::assertion(
+                        OpenGeodeIOMeshException::check_assertion(
                             types_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "
                             "types" );

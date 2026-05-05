@@ -71,8 +71,8 @@ namespace
               brep_( brep ),
               builder_{ brep }
         {
-            geode::OpenGeodeIOModelException::check( file_.good(), nullptr,
-                geode::OpenGeodeException::TYPE::data,
+            geode::OpenGeodeIOModelException::check_exception( file_.good(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[MSHInput] Error while opening file: ", filename );
             first_read( filename );
         }
@@ -211,7 +211,7 @@ namespace
         {
             const auto header_tokens = geode::string_split( line );
             version_ = geode::string_to_double( header_tokens[0] );
-            geode::OpenGeodeIOModelException::check(
+            geode::OpenGeodeIOModelException::check_exception(
                 version() == 2 || version() == 4, nullptr,
                 geode::OpenGeodeException::TYPE::data,
                 "[MSHInput::set_msh_version] Only MSH file format "
@@ -358,7 +358,7 @@ namespace
                     }
                     else
                     {
-                        geode::OpenGeodeIOModelException::check(
+                        geode::OpenGeodeIOModelException::check_exception(
                             boundary.second == 2, nullptr,
                             geode::OpenGeodeException::TYPE::data,
                             "[MSHInput::create_surfaces] Wrong Surface/Line "
@@ -453,7 +453,7 @@ namespace
                 geode::string_to_index( tokens.at( 1 ) );
             const auto min_node_id = geode::string_to_index( tokens.at( 2 ) );
             const auto max_node_id = geode::string_to_index( tokens.at( 3 ) );
-            geode::OpenGeodeIOModelException::check(
+            geode::OpenGeodeIOModelException::check_exception(
                 min_node_id == 1 && max_node_id == nb_total_nodes, nullptr,
                 geode::OpenGeodeException::TYPE::internal,
                 "[MSHInput::read_node_section_v4] Non continuous node indexing "
@@ -475,7 +475,7 @@ namespace
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
             const auto nb_nodes = geode::string_to_index( tokens.at( 3 ) );
-            geode::OpenGeodeIOModelException::check(
+            geode::OpenGeodeIOModelException::check_exception(
                 geode::string_to_index( tokens.at( 2 ) ) == 0, nullptr,
                 geode::OpenGeodeException::TYPE::internal,
                 "[MSHInput::read_node_group] Parametric node coordinates "
@@ -517,7 +517,7 @@ namespace
         {
             const auto tokens = geode::string_split( line );
             geode::index_t t{ 0 };
-            geode::OpenGeodeIOModelException::check(
+            geode::OpenGeodeIOModelException::check_exception(
                 expected_element_id
                     == geode::string_to_index( tokens.at( t++ ) ),
                 nullptr, geode::OpenGeodeException::TYPE::data,
@@ -529,8 +529,8 @@ namespace
                 geode::string_to_index( tokens.at( t++ ) );
             // Tags
             const auto nb_tags = geode::string_to_index( tokens.at( t++ ) );
-            geode::OpenGeodeIOModelException::check( nb_tags >= 2, nullptr,
-                geode::OpenGeodeException::TYPE::data,
+            geode::OpenGeodeIOModelException::check_exception( nb_tags >= 2,
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[MSHInput::read_element] Number of tags for an element should "
                 "be at least 2." );
             const auto physical_entity =
@@ -560,7 +560,7 @@ namespace
                 geode::string_to_index( tokens.at( 2 ) );
             const auto max_element_id =
                 geode::string_to_index( tokens.at( 3 ) );
-            geode::OpenGeodeIOModelException::check(
+            geode::OpenGeodeIOModelException::check_exception(
                 min_element_id == 1 && max_element_id == nb_total_elements,
                 nullptr, geode::OpenGeodeException::TYPE::internal,
                 "[MSHInput::read_element_section_v4] Non continuous element "
@@ -710,7 +710,8 @@ namespace
         {
             const auto edges =
                 line.mesh().edges_around_vertex( old_line_vertex_id );
-            geode::OpenGeodeIOModelException::check( edges.size() == 1, nullptr,
+            geode::OpenGeodeIOModelException::check_exception(
+                edges.size() == 1, nullptr,
                 geode::OpenGeodeException::TYPE::internal,
                 "By construction, there should be one and only one "
                 "edge pointing to each vertex at this point." );
@@ -724,8 +725,9 @@ namespace
         {
             const auto polygons =
                 surface.mesh().polygons_around_vertex( old_surface_vertex_id );
-            geode::OpenGeodeIOModelException::check( polygons.size() == 1,
-                nullptr, geode::OpenGeodeException::TYPE::internal,
+            geode::OpenGeodeIOModelException::check_exception(
+                polygons.size() == 1, nullptr,
+                geode::OpenGeodeException::TYPE::internal,
                 "By construction, there should be one and only one "
                 "polygon pointing to each vertex at this point." );
             mesh_builder.set_polygon_vertex(
@@ -739,8 +741,9 @@ namespace
         {
             const auto polyhedra =
                 block.mesh().polyhedra_around_vertex( old_block_vertex_id );
-            geode::OpenGeodeIOModelException::check( polyhedra.size() == 1,
-                nullptr, geode::OpenGeodeException::TYPE::internal,
+            geode::OpenGeodeIOModelException::check_exception(
+                polyhedra.size() == 1, nullptr,
+                geode::OpenGeodeException::TYPE::internal,
                 "By construction, there should be one and only one "
                 "polyhedron pointing to each vertex at this point." );
             mesh_builder.set_polyhedron_vertex(

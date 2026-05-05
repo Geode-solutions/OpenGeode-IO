@@ -54,12 +54,12 @@ namespace
               section_( section ),
               builder_{ section }
         {
-            geode::OpenGeodeIOModelException::check( file_.good(), nullptr,
-                geode::OpenGeodeException::TYPE::data,
+            geode::OpenGeodeIOModelException::check_exception( file_.good(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[SVGInput] Error while opening file: ", filename );
             const auto loaded =
                 document_.load_file( geode::to_string( filename ).c_str() );
-            geode::OpenGeodeIOModelException::check( loaded, nullptr,
+            geode::OpenGeodeIOModelException::check_exception( loaded, nullptr,
                 geode::OpenGeodeException::TYPE::internal,
                 "[SVGInput] Error while parsing file: ", filename );
         }
@@ -135,7 +135,7 @@ namespace
             [[nodiscard]] geode::Point2D apply( const geode::Point2D& position,
                 const std::vector< double >& params ) const
             {
-                geode::OpenGeodeIOModelException::assertion(
+                geode::OpenGeodeIOModelException::check_assertion(
                     params.size() == get_nb_params(),
                     "[SVGInput::Command::apply] Wrong number of parameters" );
                 if( letter == 'm' || letter == 'l' )
@@ -265,8 +265,9 @@ namespace
             const auto& token = tokens[token_id];
             if( string_isalpha( token ) )
             {
-                geode::OpenGeodeIOModelException::check( token.size() == 1,
-                    nullptr, geode::OpenGeodeException::TYPE::data,
+                geode::OpenGeodeIOModelException::check_exception(
+                    token.size() == 1, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
                     "[SVGInputImpl::update_command] Command should be single "
                     "letter" );
                 command.update( *token.c_str() );

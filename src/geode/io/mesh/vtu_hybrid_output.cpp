@@ -51,8 +51,8 @@ namespace
             const auto nb_vertices = this->mesh().nb_polyhedron_vertices( p );
             const auto vtk_type =
                 geode::detail::VTK_NB_VERTICES_TO_CELL_TYPE[nb_vertices];
-            geode::OpenGeodeIOMeshException::check( vtk_type != 0, nullptr,
-                geode::OpenGeodeException::TYPE::data,
+            geode::OpenGeodeIOMeshException::check_exception( vtk_type != 0,
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[VTUHybridOutputImpl::write_vtk_cell] Polyhedron with ",
                 nb_vertices, " vertices not supported" );
             absl::StrAppend( &cell_types, vtk_type, " " );
