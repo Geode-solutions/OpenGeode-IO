@@ -131,7 +131,9 @@ namespace geode
                   nb_vertices_( nb_vertices ),
                   vertex_ids_str_( vertex_ids )
             {
-                OPENGEODE_EXCEPTION( elementary_entity_id > 0,
+                OpenGeodeIOModelException::check_exception(
+                    elementary_entity_id > 0, nullptr,
+                    OpenGeodeException::TYPE::data,
                     "[GMSHElement] GMSH tag for elementary entity "
                     "(second tag) should not be null" );
                 try

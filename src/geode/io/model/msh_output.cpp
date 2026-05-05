@@ -45,6 +45,7 @@
 #include <geode/model/mixin/core/surface.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
+#include <geode/io/model/common.hpp>
 #include <geode/io/model/internal/msh_common.hpp>
 
 namespace
@@ -57,7 +58,8 @@ namespace
         MSHOutputImpl( std::string_view filename, const geode::BRep& brep )
             : file_{ geode::to_string( filename ) }, brep_( brep )
         {
-            OPENGEODE_EXCEPTION( file_.good(),
+            geode::OpenGeodeIOModelException::check_exception( file_.good(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[MSHOutput] Error while opening file: ", filename );
         }
 

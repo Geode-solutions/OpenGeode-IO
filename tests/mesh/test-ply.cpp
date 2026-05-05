@@ -36,14 +36,14 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
             absl::StrCat( geode::DATA_PATH, "Armadillo.ply" ) );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 172974,
-            "[Test] Number of vertices in the loaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 345944,
-            "[Test] Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 172974,
+            "Number of vertices in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 345944,
+            "Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         const auto output_file_og =
@@ -55,11 +55,13 @@ int main()
         // Reload file
         auto reloaded_surface =
             geode::load_polygonal_surface< 3 >( output_file_ply );
-        OPENGEODE_EXCEPTION( reloaded_surface->nb_vertices() == 172974,
-            "[Test] Number of vertices in the reloaded Surface is not "
+        geode::OpenGeodeIOMeshException::test(
+            reloaded_surface->nb_vertices() == 172974,
+            "Number of vertices in the reloaded Surface is not "
             "correct" );
-        OPENGEODE_EXCEPTION( reloaded_surface->nb_polygons() == 345944,
-            "[Test] Number of polygons in the reloaded Surface is not "
+        geode::OpenGeodeIOMeshException::test(
+            reloaded_surface->nb_polygons() == 345944,
+            "Number of polygons in the reloaded Surface is not "
             "correct" );
 
         geode::Logger::info( "TEST SUCCESS" );

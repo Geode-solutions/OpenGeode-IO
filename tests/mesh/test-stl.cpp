@@ -36,14 +36,14 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_triangulated_surface< 3 >(
             absl::StrCat( geode::DATA_PATH, "thumbwheel.stl" ) );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
-            "[Test] Number of vertices in the loaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
-            "[Test] Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 525,
+            "Number of vertices in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1027,
+            "Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         geode::save_triangulated_surface( *surface,
@@ -54,11 +54,11 @@ int main()
         // Reload file
         auto reloaded_surface =
             geode::load_triangulated_surface< 3 >( output_file_stl );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 525,
-            "[Test] Number of vertices in the "
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 525,
+            "Number of vertices in the "
             "reloaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 1027,
-            "[Test] Number of polygons in the "
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1027,
+            "Number of polygons in the "
             "reloaded Surface is not correct" );
 
         geode::Logger::info( "TEST SUCCESS" );

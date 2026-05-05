@@ -36,7 +36,7 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
 
         auto surface = geode::PolygonalSurface3D::create();
         auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );

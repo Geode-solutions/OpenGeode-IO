@@ -26,8 +26,9 @@
 #include <geode/basic/library.hpp>
 
 #include <geode/io/model/opengeode_io_model_export.hpp>
+#include <geode/io/project.hpp>
 
 namespace geode
 {
-    OPENGEODE_LIBRARY( opengeode_io_model_api, IOModel );
+    OPENGEODE_LIBRARY( opengeode_io_model_api, OpenGeodeIO, Model );
 } // namespace geode

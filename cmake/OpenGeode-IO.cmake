@@ -54,6 +54,13 @@ if(NOT BUILD_SHARED_LIBS)
     )
 endif()
 
+
+install(
+    FILES include/geode/io/project.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/geode/io
+    COMPONENT public
+)
+
 # ------------------------------------------------------------------------------------------------
 # Configure the OpenGeode-IO libraries
 add_subdirectory(src/geode)

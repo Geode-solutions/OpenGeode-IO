@@ -38,27 +38,27 @@ void check( const geode::PolygonalSurface3D& surface,
     absl::Span< const std::string_view > vertex_attributes,
     absl::Span< const std::string_view > polygon_attributes )
 {
-    OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
-        "[Test] Number of vertices in the loaded Surface is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        surface.nb_vertices() == test_answers[0],
+        "Number of vertices in the loaded Surface is not correct: "
         "should be ",
         test_answers[0], ", get ", surface.nb_vertices() );
-    OPENGEODE_EXCEPTION( surface.nb_polygons() == test_answers[1],
-        "[Test] Number of polygons in the loaded Surface is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        surface.nb_polygons() == test_answers[1],
+        "Number of polygons in the loaded Surface is not correct: "
         "should be ",
         test_answers[1], ", get ", surface.nb_polygons() );
     for( const auto& name : vertex_attributes )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOMeshException::test(
             surface.vertex_attribute_manager().attribute_exists( name ),
-            "[Test] Attribute ", name,
-            " was not be loaded as attribute on vertices" );
+            "Attribute ", name, " was not be loaded as attribute on vertices" );
     }
     for( const auto& name : polygon_attributes )
     {
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOMeshException::test(
             surface.polygon_attribute_manager().attribute_exists( name ),
-            "[Test] Attribute ", name,
-            " was not be loaded as attribute on polygons" );
+            "Attribute ", name, " was not be loaded as attribute on polygons" );
     }
 }
 
@@ -101,7 +101,7 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
 
         run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
             { "FractureId", "FractureSize", "FractureArea" } );

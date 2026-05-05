@@ -35,6 +35,7 @@
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/string.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -136,9 +137,11 @@ namespace geode
             absl::FixedArray< Point3D > get_points(
                 const std::vector< T >& coords )
             {
-                OPENGEODE_ASSERT( coords.size() % 3 == 0,
-                    "[VTKInput::get_points] Number of "
-                    "coordinates is not multiple of 3" );
+                OpenGeodeIOMeshException::check_exception(
+                    coords.size() % 3 == 0, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::get_points] Number of coordinates is not "
+                    "multiple of 3" );
                 const auto nb_points = coords.size() / 3;
                 absl::FixedArray< Point3D > points( nb_points );
                 for( const auto p : Range{ nb_points } )
@@ -159,11 +162,14 @@ namespace geode
                 const auto nb_components =
                     this->read_attribute( points, "NumberOfComponents" );
                 const auto type = points.attribute( "type" ).value();
-                OPENGEODE_EXCEPTION( this->match( type, "Float32" )
-                                         || this->match( type, "Float64" ),
+                OpenGeodeIOMeshException::check_exception(
+                    this->match( type, "Float32" )
+                        || this->match( type, "Float64" ),
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::read_points] Cannot read points of type ", type,
                     ". Only Float32 and Float64 are accepted" );
-                OPENGEODE_EXCEPTION( nb_components == 3,
+                OpenGeodeIOMeshException::check_exception( nb_components == 3,
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::read_points] Trying to import 2D VTK object "
                     "into a 3D Surface is not allowed" );
                 const auto format = points.attribute( "format" ).value();
@@ -187,7 +193,9 @@ namespace geode
                         absl::RemoveExtraAsciiWhitespace( &string );
                         const auto coords =
                             read_ascii_coordinates( string, nb_points );
-                        OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
+                        OpenGeodeIOMeshException::check_exception(
+                            coords.size() == 3 * nb_points, nullptr,
+                            OpenGeodeException::TYPE::data,
                             "[VTKInput::read_points] Wrong number of "
                             "coordinates" );
                         return get_points( coords );
@@ -206,8 +214,9 @@ namespace geode
                 std::string_view coords_string, index_t nb_points )
             {
                 const auto coords = this->template decode< T >( coords_string );
-                geode_unused( nb_points );
-                OPENGEODE_ASSERT( coords.size() == 3 * nb_points,
+                OpenGeodeIOMeshException::check_exception(
+                    coords.size() == 3 * nb_points, nullptr,
+                    OpenGeodeException::TYPE::data,
                     "[VTKInput::read_points] Wrong number of coordinates" );
                 return get_points( coords );
             }
@@ -219,12 +228,7 @@ namespace geode
                 results.reserve( 3 * nb_points );
                 for( auto string : absl::StrSplit( coords, ' ' ) )
                 {
-                    double coord;
-                    const auto ok = absl::SimpleAtod( string, &coord );
-                    OPENGEODE_EXCEPTION( ok,
-                        "[VTKInput::read_ascii_coordinates] Failed to read "
-                        "coordinate" );
-                    results.push_back( coord );
+                    results.push_back( string_to_double( string ) );
                 }
                 return results;
             }

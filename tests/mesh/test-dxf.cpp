@@ -36,14 +36,14 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
             absl::StrCat( geode::DATA_PATH, "3D_faces.dxf" ) );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 49323,
-            "[Test] Number of vertices in the loaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 97966,
-            "[Test] Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 49323,
+            "Number of vertices in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 97966,
+            "Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         const auto output_file_og =

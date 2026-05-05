@@ -274,10 +274,10 @@ namespace
 
 namespace geode
 {
-    OPENGEODE_LIBRARY_IMPLEMENTATION( IOMesh )
+    OPENGEODE_LIBRARY_IMPLEMENTATION( OpenGeodeIO, Mesh )
     {
         OpenGeodeMeshLibrary::initialize();
-        IOImageLibrary::initialize();
+        OpenGeodeIOImageLibrary::initialize();
         GDALAllRegister();
 
         register_edged_curve_input();
