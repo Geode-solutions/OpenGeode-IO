@@ -42,10 +42,11 @@ void test_csv_input()
         absl::StrCat( geode::DATA_PATH, "top_granitoid_vertices.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
-    OPENGEODE_EXCEPTION( additional_files.has_additional_files(),
+    geode::OpenGeodeIOMeshException::test(
+        additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be present" );
     auto point_set = geode::load_point_set< 3 >( filepath );
-    OPENGEODE_EXCEPTION( point_set->nb_vertices() == 103455,
+    geode::OpenGeodeIOMeshException::test( point_set->nb_vertices() == 103455,
         "[TEST: CSV input], "
         "The point set should have 103455 vertices found",
         point_set->nb_vertices() );
@@ -58,7 +59,8 @@ void test_csv_input_with_missing_json()
         absl::StrCat( geode::DATA_PATH, "other_geological_pointset3d.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
-    OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
+    geode::OpenGeodeIOMeshException::test(
+        !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "
         "missing keyword" );
 }
@@ -69,7 +71,8 @@ void test_csv_input_with_missing_keyword()
         absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
-    OPENGEODE_EXCEPTION( !additional_files.has_additional_files(),
+    geode::OpenGeodeIOMeshException::test(
+        !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "
         "missing keyword" );
 }
@@ -78,7 +81,7 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         geode::Logger::set_level( geode::Logger::LEVEL::trace );
         test_csv_input();
         test_csv_input_with_missing_json();
