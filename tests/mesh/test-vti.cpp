@@ -63,25 +63,30 @@ void test_regular_grid( const geode::RegularGrid3D& grid )
 {
     geode::save_regular_grid( grid, "test.vti" );
     const auto reload_grid = geode::load_regular_grid< 3 >( "test.vti" );
-    OPENGEODE_EXCEPTION( grid.nb_cells() == reload_grid->nb_cells(),
+    geode::OpenGeodeIOMeshException::test(
+        grid.nb_cells() == reload_grid->nb_cells(),
         "[TEST] Wrong number of cells." );
-    OPENGEODE_EXCEPTION( grid.nb_vertices() == reload_grid->nb_vertices(),
+    geode::OpenGeodeIOMeshException::test(
+        grid.nb_vertices() == reload_grid->nb_vertices(),
         "[TEST] Wrong number of vertices." );
     for( const auto d : geode::LRange{ 3 } )
     {
-        OPENGEODE_EXCEPTION( grid.nb_cells_in_direction( d )
-                                 == reload_grid->nb_cells_in_direction( d ),
+        geode::OpenGeodeIOMeshException::test(
+            grid.nb_cells_in_direction( d )
+                == reload_grid->nb_cells_in_direction( d ),
             "[TEST] Wrong number of cells in direction ", d );
-        OPENGEODE_EXCEPTION( grid.cell_length_in_direction( d )
-                                 == reload_grid->cell_length_in_direction( d ),
+        geode::OpenGeodeIOMeshException::test(
+            grid.cell_length_in_direction( d )
+                == reload_grid->cell_length_in_direction( d ),
             "[TEST] Wrong cell length in direction ", d );
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOMeshException::test(
             grid.grid_coordinate_system().direction( d ).inexact_equal(
                 reload_grid->grid_coordinate_system().direction( d ) ),
             "[TEST] Wrong direction in direction ", d );
     }
-    OPENGEODE_EXCEPTION( grid.grid_coordinate_system().origin().inexact_equal(
-                             reload_grid->grid_coordinate_system().origin() ),
+    geode::OpenGeodeIOMeshException::test(
+        grid.grid_coordinate_system().origin().inexact_equal(
+            reload_grid->grid_coordinate_system().origin() ),
         "[TEST] Wrong origin." );
     geode::save_regular_grid( *reload_grid, "test2.vti" );
 }
@@ -90,26 +95,30 @@ void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
 {
     geode::save_light_regular_grid( grid, "test3.vti" );
     const auto reload_grid = geode::load_light_regular_grid< 3 >( "test3.vti" );
-    OPENGEODE_EXCEPTION( grid.nb_cells() == reload_grid.nb_cells(),
+    geode::OpenGeodeIOMeshException::test(
+        grid.nb_cells() == reload_grid.nb_cells(),
         "[TEST] Wrong number of cells." );
-    OPENGEODE_EXCEPTION(
+    geode::OpenGeodeIOMeshException::test(
         grid.nb_grid_vertices() == reload_grid.nb_grid_vertices(),
         "[TEST] Wrong number of vertices." );
     for( const auto d : geode::LRange{ 3 } )
     {
-        OPENGEODE_EXCEPTION( grid.nb_cells_in_direction( d )
-                                 == reload_grid.nb_cells_in_direction( d ),
+        geode::OpenGeodeIOMeshException::test(
+            grid.nb_cells_in_direction( d )
+                == reload_grid.nb_cells_in_direction( d ),
             "[TEST] Wrong number of cells in direction ", d );
-        OPENGEODE_EXCEPTION( grid.cell_length_in_direction( d )
-                                 == reload_grid.cell_length_in_direction( d ),
+        geode::OpenGeodeIOMeshException::test(
+            grid.cell_length_in_direction( d )
+                == reload_grid.cell_length_in_direction( d ),
             "[TEST] Wrong cell length in direction ", d );
-        OPENGEODE_EXCEPTION(
+        geode::OpenGeodeIOMeshException::test(
             grid.grid_coordinate_system().direction( d ).inexact_equal(
                 reload_grid.grid_coordinate_system().direction( d ) ),
             "[TEST] Wrong direction in direction ", d );
     }
-    OPENGEODE_EXCEPTION( grid.grid_coordinate_system().origin().inexact_equal(
-                             reload_grid.grid_coordinate_system().origin() ),
+    geode::OpenGeodeIOMeshException::test(
+        grid.grid_coordinate_system().origin().inexact_equal(
+            reload_grid.grid_coordinate_system().origin() ),
         "[TEST] Wrong origin." );
     geode::save_light_regular_grid( reload_grid, "test4.vti" );
 }
@@ -118,7 +127,7 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
 
         auto grid = geode::RegularGrid3D::create();
         auto builder = geode::RegularGridBuilder3D::create( *grid );

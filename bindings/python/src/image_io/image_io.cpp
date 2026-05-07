@@ -28,6 +28,7 @@
 PYBIND11_MODULE( opengeode_io_py_image, module )
 {
     module.doc() = "OpenGeode-IO Python binding for image";
-    pybind11::class_< geode::IOImageLibrary >( module, "IOImageLibrary" )
-        .def( "initialize", &geode::IOImageLibrary::initialize );
+    pybind11::class_< geode::OpenGeodeIOImageLibrary >(
+        module, "OpenGeodeIOImageLibrary" )
+        .def( "initialize", &geode::OpenGeodeIOImageLibrary::initialize );
 }

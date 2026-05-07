@@ -49,4 +49,5 @@ add_geode_library(
         pugixml::pugixml
         ZLIB::ZLIB
         ${PROJECT_NAME}::mesh
+        ${PROJECT_NAME}::image
 )

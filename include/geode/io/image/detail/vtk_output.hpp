@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <geode/io/mesh/common.hpp>
+#include <geode/io/image/common.hpp>
 
 #include <fstream>
 
@@ -54,7 +54,8 @@ namespace geode
                   mesh_( mesh ),
                   type_{ type }
             {
-                OPENGEODE_EXCEPTION( file_.good(),
+                OpenGeodeIOImageException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
                     "[VTKOutput] Error while writing file: ", filename );
             }
 

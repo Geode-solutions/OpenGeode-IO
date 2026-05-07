@@ -28,6 +28,8 @@
 
 #include <geode/model/representation/io/brep_output.hpp>
 
+#include <geode/io/model/common.hpp>
+
 namespace geode::internal
 {
     class GIDOutput final : public BRepOutput

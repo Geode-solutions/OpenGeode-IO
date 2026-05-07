@@ -28,6 +28,8 @@
 
 #include <geode/mesh/io/hybrid_solid_output.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace geode
 {
     FORWARD_DECLARATION_DIMENSION_CLASS( HybridSolid );

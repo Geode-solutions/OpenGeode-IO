@@ -42,12 +42,14 @@
 void check( const geode::SolidMesh< 3 >& solid,
     const std::array< geode::index_t, 2 >& test_answers )
 {
-    OPENGEODE_EXCEPTION( solid.nb_vertices() == test_answers[0],
-        "[Test] Number of vertices in the loaded Solid is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        solid.nb_vertices() == test_answers[0],
+        "Number of vertices in the loaded Solid is not correct: "
         "should be ",
         test_answers[0], ", get ", solid.nb_vertices() );
-    OPENGEODE_EXCEPTION( solid.nb_polyhedra() == test_answers[1],
-        "[Test] Number of polyhedra in the loaded Solid is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        solid.nb_polyhedra() == test_answers[1],
+        "Number of polyhedra in the loaded Solid is not correct: "
         "should be ",
         test_answers[1], ", get ", solid.nb_polyhedra() );
 }
@@ -55,12 +57,14 @@ void check( const geode::SolidMesh< 3 >& solid,
 void check( const geode::SurfaceMesh< 3 >& surface,
     const std::array< geode::index_t, 2 >& test_answers )
 {
-    OPENGEODE_EXCEPTION( surface.nb_vertices() == test_answers[0],
-        "[Test] Number of vertices in the loaded Surface is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        surface.nb_vertices() == test_answers[0],
+        "Number of vertices in the loaded Surface is not correct: "
         "should be ",
         test_answers[0], ", get ", surface.nb_vertices() );
-    OPENGEODE_EXCEPTION( surface.nb_polygons() == test_answers[1],
-        "[Test] Number of polygons in the loaded Surface is not correct: "
+    geode::OpenGeodeIOMeshException::test(
+        surface.nb_polygons() == test_answers[1],
+        "Number of polygons in the loaded Surface is not correct: "
         "should be ",
         test_answers[1], ", get ", surface.nb_polygons() );
 }
@@ -94,11 +98,11 @@ void run_solid_test( std::string_view filename,
     auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
     check( *reload_vtu, test_answers );
 
-    OPENGEODE_EXCEPTION(
+    geode::OpenGeodeIOMeshException::test(
         std::fabs( geode::is_tetrahedral_solid_loadable< 3 >( file ).value()
                    - loadability )
             < geode::GLOBAL_EPSILON,
-        "[Test] File should be loadable" );
+        "File should be loadable" );
 }
 
 void run_surface_test( std::string_view filename,
@@ -115,18 +119,18 @@ void run_surface_test( std::string_view filename,
     geode::save_triangulated_surface(
         *surface, absl::StrCat( filename_without_ext, ".og_tsf3d" ) );
 
-    OPENGEODE_EXCEPTION(
+    geode::OpenGeodeIOMeshException::test(
         std::fabs( geode::is_triangulated_surface_loadable< 3 >( file ).value()
                    - loadability )
             < geode::GLOBAL_EPSILON,
-        "[Test] File should be loadable" );
+        "File should be loadable" );
 }
 
 int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         geode::Logger::set_level( geode::Logger::LEVEL::debug );
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );

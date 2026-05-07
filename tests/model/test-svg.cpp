@@ -55,19 +55,19 @@ geode::index_t nb_closed_lines( const geode::Section& section )
 
 void test_section( const geode::Section& section )
 {
-    OPENGEODE_EXCEPTION(
-        section.nb_corners() == 31, "[Test] Number of corners is not correct" );
-    OPENGEODE_EXCEPTION(
-        section.nb_lines() == 31, "[Test] Number of lines is not correct" );
-    OPENGEODE_EXCEPTION( nb_closed_lines( section ) == 27,
-        "[Test] Number of closed lines is not correct" );
-    OPENGEODE_EXCEPTION( section.nb_surfaces() == 0,
-        "[Test] Number of surfaces is not correct" );
+    geode::OpenGeodeIOModelException::test(
+        section.nb_corners() == 31, "Number of corners is not correct" );
+    geode::OpenGeodeIOModelException::test(
+        section.nb_lines() == 31, "Number of lines is not correct" );
+    geode::OpenGeodeIOModelException::test( nb_closed_lines( section ) == 27,
+        "Number of closed lines is not correct" );
+    geode::OpenGeodeIOModelException::test(
+        section.nb_surfaces() == 0, "Number of surfaces is not correct" );
     for( const auto uv : geode::Range{ section.nb_unique_vertices() } )
     {
         const auto nb_cmv = section.component_mesh_vertices( uv ).size();
-        OPENGEODE_EXCEPTION( nb_cmv == 1 || nb_cmv == 3,
-            "[Test] Wrong number of mesh component "
+        geode::OpenGeodeIOModelException::test( nb_cmv == 1 || nb_cmv == 3,
+            "Wrong number of mesh component "
             "vertices for one unique vertex" );
     }
 }
@@ -76,7 +76,7 @@ int main()
 {
     try
     {
-        geode::IOModelLibrary::initialize();
+        geode::OpenGeodeIOModelLibrary::initialize();
 
         // Load file
         auto section = geode::load_section(

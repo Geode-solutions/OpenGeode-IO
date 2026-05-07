@@ -23,12 +23,13 @@
 
 #pragma once
 
-#include <geode/basic/library.hpp>
-
-#include <geode/io/mesh/opengeode_io_mesh_export.hpp>
-#include <geode/io/project.hpp>
+#include <geode/basic/assert.hpp>
 
 namespace geode
 {
-    OPENGEODE_LIBRARY( opengeode_io_mesh_api, OpenGeodeIO, Mesh );
+    class OpenGeodeIOException : public OpenGeodeException
+    {
+    protected:
+        using OpenGeodeException::OpenGeodeException;
+    };
 } // namespace geode

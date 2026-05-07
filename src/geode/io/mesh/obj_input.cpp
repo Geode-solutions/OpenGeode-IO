@@ -47,7 +47,8 @@ namespace geode
         auto OBJInput::additional_files() const -> AdditionalFiles
         {
             std::ifstream obj_file{ to_string( filename() ) };
-            OPENGEODE_EXCEPTION( obj_file,
+            OpenGeodeIOMeshException::check_exception( !obj_file.fail(),
+                nullptr, OpenGeodeException::TYPE::data,
                 "[OBJInput::additional_files] Failed to open file: ",
                 filename() );
             const auto mtllib_line =
@@ -72,7 +73,8 @@ namespace geode
             }
 
             std::ifstream mtl_file{ mtl_file_path };
-            OPENGEODE_EXCEPTION( mtl_file,
+            OpenGeodeIOMeshException::check_exception( !mtl_file.fail(),
+                nullptr, OpenGeodeException::TYPE::data,
                 "[OBJInput::additional_files] Failed to open file: ",
                 mtl_file_path );
             while( const auto texture_line =

@@ -25,6 +25,8 @@
 
 #include <geode/model/representation/io/section_input.hpp>
 
+#include <geode/io/model/common.hpp>
+
 namespace geode
 {
     namespace internal

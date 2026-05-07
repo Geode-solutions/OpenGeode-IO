@@ -22,8 +22,9 @@
 import os
 import sys
 import platform
+
 if sys.version_info >= (3, 8, 0) and platform.system() == "Windows":
-    for path in [x.strip() for x in os.environ['PATH'].split(';') if x]:
+    for path in [x.strip() for x in os.environ["PATH"].split(";") if x]:
         os.add_dll_directory(path)
 
 import opengeode
@@ -51,14 +52,14 @@ def test_section(section):
         nb_cmv = len(section.component_mesh_vertices(uv))
         if nb_cmv != 1 and nb_cmv != 3:
             raise ValueError(
-                "[Test] Wrong number of mesh component vertices for one unique vertex")
+                "[Test] Wrong number of mesh component vertices for one unique vertex"
+            )
 
 
-if __name__ == '__main__':
-    model_io.IOModelLibrary.initialize()
+if __name__ == "__main__":
+    model_io.OpenGeodeIOModelLibrary.initialize()
     test_dir = os.path.dirname(__file__)
-    data_dir = os.path.abspath(os.path.join(
-        test_dir, "../../../../tests/data"))
+    data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
 
     section = opengeode.load_section(os.path.join(data_dir, "logo.svg"))
     test_section(section)

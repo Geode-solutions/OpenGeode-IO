@@ -21,4 +21,5 @@
 import opengeode
 
 from opengeode_io_py_model import *
-IOModelLibrary.initialize()
+
+OpenGeodeIOModelLibrary.initialize()

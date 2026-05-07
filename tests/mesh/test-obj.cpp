@@ -38,14 +38,14 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto surface = geode::load_polygonal_surface< 3 >(
             absl::StrCat( geode::DATA_PATH, "TopHat.obj" ) );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
-            "[Test] Number of vertices in the loaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
-            "[Test] Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 363,
+            "Number of vertices in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 380,
+            "Number of polygons in the loaded Surface is not correct" );
 
         // Save file
         geode::save_polygonal_surface(
@@ -56,11 +56,11 @@ int main()
         // Reload file
         auto reloaded_surface =
             geode::load_polygonal_surface< 3 >( output_file_obj );
-        OPENGEODE_EXCEPTION( surface->nb_vertices() == 363,
-            "[Test] Number of vertices in the "
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 363,
+            "Number of vertices in the "
             "reloaded Surface is not correct" );
-        OPENGEODE_EXCEPTION( surface->nb_polygons() == 380,
-            "[Test] Number of polygons in the "
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 380,
+            "Number of polygons in the "
             "reloaded Surface is not correct" );
 
         geode::Logger::info( "TEST SUCCESS" );

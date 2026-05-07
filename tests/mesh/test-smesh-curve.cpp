@@ -35,15 +35,15 @@ int main()
 {
     try
     {
-        geode::IOMeshLibrary::initialize();
+        geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
         auto curve = geode::load_edged_curve< 3 >(
             absl::StrCat( geode::DATA_PATH, "curve.smesh" ) );
-        OPENGEODE_EXCEPTION( curve->nb_vertices() == 1023,
-            "[Test] Number of vertices in the "
+        geode::OpenGeodeIOMeshException::test( curve->nb_vertices() == 1023,
+            "Number of vertices in the "
             "loaded EdgedCurve is not correct" );
-        OPENGEODE_EXCEPTION( curve->nb_edges() == 1022,
-            "[Test] Number of edges in the loaded EdgedCurve is not correct" );
+        geode::OpenGeodeIOMeshException::test( curve->nb_edges() == 1022,
+            "Number of edges in the loaded EdgedCurve is not correct" );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

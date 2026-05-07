@@ -54,12 +54,14 @@ namespace
               section_( section ),
               builder_{ section }
         {
-            OPENGEODE_EXCEPTION( file_.good(),
+            geode::OpenGeodeIOModelException::check_exception( file_.good(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
                 "[SVGInput] Error while opening file: ", filename );
             const auto loaded =
                 document_.load_file( geode::to_string( filename ).c_str() );
-            OPENGEODE_EXCEPTION(
-                loaded, "[SVGInput] Error while parsing file: ", filename );
+            geode::OpenGeodeIOModelException::check_exception( loaded, nullptr,
+                geode::OpenGeodeException::TYPE::internal,
+                "[SVGInput] Error while parsing file: ", filename );
         }
 
         void read_file()
@@ -133,7 +135,8 @@ namespace
             [[nodiscard]] geode::Point2D apply( const geode::Point2D& position,
                 const std::vector< double >& params ) const
             {
-                OPENGEODE_ASSERT( params.size() == get_nb_params(),
+                geode::OpenGeodeIOModelException::check_assertion(
+                    params.size() == get_nb_params(),
                     "[SVGInput::Command::apply] Wrong number of parameters" );
                 if( letter == 'm' || letter == 'l' )
                 {
@@ -147,9 +150,10 @@ namespace
                 {
                     return apply_v( position, params );
                 }
-                throw geode::OpenGeodeException(
+                throw geode::OpenGeodeIOModelException{ nullptr,
+                    geode::OpenGeodeException::TYPE::internal,
                     "[SVGInput::Command::apply] Command not supported: ",
-                    std::string{ letter } );
+                    std::string{ letter } };
                 return position;
             }
 
@@ -244,11 +248,11 @@ namespace
                 }
                 catch( std::invalid_argument& /*unused*/ )
                 {
-                    throw geode::OpenGeodeException{
+                    throw geode::OpenGeodeIOModelException{ nullptr,
+                        geode::OpenGeodeException::TYPE::data,
                         "[SVGInputImpl::get_params] Path token is not a "
-                        "number: "
-                        + token
-                    };
+                        "number: ",
+                        token };
                 }
             }
             return params;
@@ -261,9 +265,11 @@ namespace
             const auto& token = tokens[token_id];
             if( string_isalpha( token ) )
             {
-                OPENGEODE_EXCEPTION( token.size() == 1,
-                    "[SVGInputImpl::update_command] Command "
-                    "should be single letter" );
+                geode::OpenGeodeIOModelException::check_exception(
+                    token.size() == 1, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[SVGInputImpl::update_command] Command should be single "
+                    "letter" );
                 command.update( *token.c_str() );
                 return token_id + 1;
             }
