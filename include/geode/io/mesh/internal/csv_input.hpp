@@ -47,16 +47,17 @@ namespace geode::internal
             return EXT;
         }
 
-        std::unique_ptr< PointSet3D > read( const MeshImpl& impl ) final;
+        [[nodiscard]] std::unique_ptr< PointSet3D > read(
+            const MeshImpl& impl ) final;
 
-        AdditionalFiles additional_files() const final;
+        [[nodiscard]] AdditionalFiles additional_files() const final;
 
-        index_t object_priority() const final
+        [[nodiscard]] index_t object_priority() const final
         {
             return 0;
         }
 
-        Percentage is_loadable() const final
+        [[nodiscard]] Percentage is_loadable() const final
         {
             return Percentage{ 1 };
         }

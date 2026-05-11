@@ -116,13 +116,13 @@ namespace geode
         std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
         {
             geode_unused( impl );
-            CSVInputImpl reader{ this->filename() };
+            CSVInputImpl reader{ filename() };
             return reader.point_set();
         }
 
         AdditionalFiles CSVInput::additional_files() const
         {
-            CSVInputImpl reader{ this->filename() };
+            CSVInputImpl reader{ filename() };
             return reader.additional_files();
         }
 
