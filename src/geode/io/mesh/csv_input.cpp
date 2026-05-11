@@ -71,12 +71,12 @@ namespace
             geode::CsvInputHelpers helpers{ filename_ };
             nlohmann::json json;
             json_file_ >> json;
-            helpers.set_first_row( json["FirstRow"] );
-            helpers.set_header_row( json["HeaderRow"] );
-            helpers.set_separator( json["Separator"].get< std::string >()[0] );
-            helpers.set_x_column( json["XColumn"] );
-            helpers.set_y_column( json["YColumn"] );
-            helpers.set_z_column( json["ZColumn"] );
+            helpers.set_first_row( json["firstRow"] );
+            helpers.set_header_row( json["headerRow"] );
+            helpers.set_separator( json["separator"].get< std::string >()[0] );
+            helpers.set_x_column( json["xColumn"] );
+            helpers.set_y_column( json["yColumn"] );
+            helpers.set_z_column( json["zColumn"] );
             return helpers.create_point_set();
         }
 
@@ -92,9 +92,9 @@ namespace
             bool contains_all_info{ true };
             nlohmann::json json;
             json_file_ >> json;
-            if( !json.contains( "FirstRow" ) || !json.contains( "HeaderRow" )
-                || !json.contains( "Separator" ) || !json.contains( "XColumn" )
-                || !json.contains( "YColumn" ) || !json.contains( "ZColumn" ) )
+            if( !json.contains( "firstRow" ) || !json.contains( "headerRow" )
+                || !json.contains( "separator" ) || !json.contains( "xColumn" )
+                || !json.contains( "yColumn" ) || !json.contains( "zColumn" ) )
             {
                 contains_all_info = false;
             }
