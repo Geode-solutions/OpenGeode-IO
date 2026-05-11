@@ -21,7 +21,7 @@
  *
  */
 
-#pragma once
+#include <geode/io/mesh/internal/csv_input.hpp>
 
 #include <fstream>
 #include <optional>
@@ -47,7 +47,6 @@
 #include <geode/basic/variable_attribute.hpp>
 
 #include <geode/io/mesh/csv_input_helpers.hpp>
-#include <geode/io/mesh/internal/csv_input.hpp>
 
 #include <geode/mesh/builder/point_set_builder.hpp>
 #include <geode/mesh/core/point_set.hpp>
@@ -57,7 +56,7 @@ namespace
     class CSVInputImpl
     {
     public:
-        CSVInputImpl( std::string_view filename )
+        explicit CSVInputImpl( std::string_view filename )
             : filename_{ filename },
               json_filename_{ geode::to_string( filename.substr(
                                   0, filename.find_last_of( '.' ) ) )
@@ -110,22 +109,18 @@ namespace
     };
 } // namespace
 
-namespace geode
+namespace geod::internal
 {
-    namespace internal
+    std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
     {
-        std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
-        {
-            geode_unused( impl );
-            CSVInputImpl reader{ this->filename() };
-            return reader.point_set();
-        }
+        geode_unused( impl );
+        CSVInputImpl reader{ this->filename() };
+        return reader.point_set();
+    }
 
-        AdditionalFiles CSVInput::additional_files() const
-        {
-            CSVInputImpl reader{ this->filename() };
-            return reader.additional_files();
-        }
-
-    } // namespace internal
-} // namespace geode
+    AdditionalFiles CSVInput::additional_files() const
+    {
+        CSVInputImpl reader{ this->filename() };
+        return reader.additional_files();
+    }
+} // namespace geod::internal
