@@ -150,7 +150,7 @@ namespace geode
 
         Percentage ImageInputImpl::is_loadable()
         {
-            if( dataset().GetRasterCount() < 2 )
+            if( dataset().GetRasterCount() == 0 )
             {
                 return Percentage{ 0 };
             }
