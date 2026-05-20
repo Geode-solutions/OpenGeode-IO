@@ -1,7 +1,7 @@
 {
-  "FirstRow": 1,
-  "HeaderRow": 0,
-  "XColumn": 1,
-  "YColumn": 2,
-  "ZColumn": 3
+  "firstRow": 1,
+  "headerRow": 0,
+  "xColumn": 1,
+  "yColumn": 2,
+  "zColumn": 3
 }

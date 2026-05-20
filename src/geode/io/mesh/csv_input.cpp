@@ -21,7 +21,7 @@
  *
  */
 
-#pragma once
+#include <geode/io/mesh/internal/csv_input.hpp>
 
 #include <fstream>
 #include <optional>
@@ -47,7 +47,6 @@
 #include <geode/basic/variable_attribute.hpp>
 
 #include <geode/io/mesh/csv_input_helpers.hpp>
-#include <geode/io/mesh/internal/csv_input.hpp>
 
 #include <geode/mesh/builder/point_set_builder.hpp>
 #include <geode/mesh/core/point_set.hpp>
@@ -57,7 +56,7 @@ namespace
     class CSVInputImpl
     {
     public:
-        CSVInputImpl( std::string_view filename )
+        explicit CSVInputImpl( std::string_view filename )
             : filename_{ filename },
               json_filename_{ geode::to_string( filename.substr(
                                   0, filename.find_last_of( '.' ) ) )
@@ -71,12 +70,12 @@ namespace
             geode::CsvInputHelpers helpers{ filename_ };
             nlohmann::json json;
             json_file_ >> json;
-            helpers.set_first_row( json["FirstRow"] );
-            helpers.set_header_row( json["HeaderRow"] );
-            helpers.set_separator( json["Separator"].get< std::string >()[0] );
-            helpers.set_x_column( json["XColumn"] );
-            helpers.set_y_column( json["YColumn"] );
-            helpers.set_z_column( json["ZColumn"] );
+            helpers.set_first_row( json["firstRow"] );
+            helpers.set_header_row( json["headerRow"] );
+            helpers.set_separator( json["separator"].get< std::string >()[0] );
+            helpers.set_x_column( json["xColumn"] );
+            helpers.set_y_column( json["yColumn"] );
+            helpers.set_z_column( json["zColumn"] );
             return helpers.create_point_set();
         }
 
@@ -100,9 +99,9 @@ namespace
             }
             nlohmann::json json;
             json_file_ >> json;
-            if( !json.contains( "FirstRow" ) || !json.contains( "HeaderRow" )
-                || !json.contains( "Separator" ) || !json.contains( "XColumn" )
-                || !json.contains( "YColumn" ) || !json.contains( "ZColumn" ) )
+            if( !json.contains( "firstRow" ) || !json.contains( "headerRow" )
+                || !json.contains( "separator" ) || !json.contains( "xColumn" )
+                || !json.contains( "yColumn" ) || !json.contains( "zColumn" ) )
             {
                 return geode::Percentage{ 0 };
             }
@@ -123,19 +122,19 @@ namespace geode
         std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
         {
             geode_unused( impl );
-            CSVInputImpl reader{ this->filename() };
+            CSVInputImpl reader{ filename() };
             return reader.point_set();
         }
 
         AdditionalFiles CSVInput::additional_files() const
         {
-            CSVInputImpl reader{ this->filename() };
+            CSVInputImpl reader{ filename() };
             return reader.additional_files();
         }
 
         Percentage CSVInput::is_loadable() const
         {
-            CSVInputImpl reader{ this->filename() };
+            CSVInputImpl reader{ filename() };
             return reader.is_loadable();
         }
 
