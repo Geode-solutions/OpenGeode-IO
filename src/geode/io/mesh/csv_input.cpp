@@ -132,28 +132,24 @@ namespace
     };
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
     {
-        std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
-        {
-            geode_unused( impl );
-            CSVInputImpl reader{ filename() };
-            return reader.point_set();
-        }
+        geode_unused( impl );
+        CSVInputImpl reader{ filename() };
+        return reader.point_set();
+    }
 
-        AdditionalFiles CSVInput::additional_files() const
-        {
-            CSVInputImpl reader{ filename() };
-            return reader.additional_files();
-        }
+    AdditionalFiles CSVInput::additional_files() const
+    {
+        CSVInputImpl reader{ filename() };
+        return reader.additional_files();
+    }
 
-        Percentage CSVInput::is_loadable() const
-        {
-            CSVInputImpl reader{ filename() };
-            return reader.is_loadable();
-        }
-
-    } // namespace internal
-} // namespace geode
+    Percentage CSVInput::is_loadable() const
+    {
+        CSVInputImpl reader{ filename() };
+        return reader.is_loadable();
+    }
+} // namespace geode::internal

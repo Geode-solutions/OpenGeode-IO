@@ -52,9 +52,9 @@ namespace geode::internal
 
         [[nodiscard]] AdditionalFiles additional_files() const final;
 
-        Percentage is_loadable() const final;
+        [[nodiscard]] Percentage is_loadable() const final;
 
-        index_t object_priority() const final
+        [[nodiscard]] index_t object_priority() const final
         {
             return 0;
         }
