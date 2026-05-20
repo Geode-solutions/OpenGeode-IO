@@ -85,10 +85,10 @@ namespace
             geode::AdditionalFiles missing;
             if( is_loadable().value() == 0 )
             {
-                missing.optional_files.emplace_back( json_filename_, false );
+                missing.mandatory_files.emplace_back( json_filename_, false );
                 return missing;
             }
-            missing.optional_files.emplace_back( json_filename_, true );
+            missing.mandatory_files.emplace_back( json_filename_, true );
             return missing;
         }
 
