@@ -42,6 +42,9 @@ void test_csv_input()
         absl::StrCat( geode::DATA_PATH, "top_granitoid_vertices.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
+    const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
+    geode::OpenGeodeIOMeshException::test( is_loadable.value() == 1,
+        "[TEST: CSV input], The point set should be loadable" );
     geode::OpenGeodeIOMeshException::test(
         additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be present" );
@@ -59,6 +62,9 @@ void test_csv_input_with_missing_json()
         absl::StrCat( geode::DATA_PATH, "other_geological_pointset3d.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
+    const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
+    geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
+        "[TEST: CSV input], The point set should be loadable" );
     geode::OpenGeodeIOMeshException::test(
         !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "
@@ -71,6 +77,9 @@ void test_csv_input_with_missing_keyword()
         absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
     const auto additional_files =
         geode::point_set_additional_files< 3 >( filepath );
+    const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
+    geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
+        "[TEST: CSV input], The point set should be loadable" );
     geode::OpenGeodeIOMeshException::test(
         !additional_files.has_additional_files(),
         "[TEST: CSV input], Additional files should be missing because of a "

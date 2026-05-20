@@ -82,25 +82,31 @@ namespace
 
         geode::AdditionalFiles additional_files()
         {
-            DEBUG( "additional files" );
             geode::AdditionalFiles missing;
-            if( !geode::file_exists( json_filename_ ) )
+            if( is_loadable().value() == 0 )
             {
                 missing.optional_files.emplace_back( json_filename_, false );
                 return missing;
             }
-            bool contains_all_info{ true };
+            missing.optional_files.emplace_back( json_filename_, true );
+            return missing;
+        }
+
+        geode::Percentage is_loadable()
+        {
+            if( !geode::file_exists( json_filename_ ) )
+            {
+                return geode::Percentage{ 0 };
+            }
             nlohmann::json json;
             json_file_ >> json;
             if( !json.contains( "FirstRow" ) || !json.contains( "HeaderRow" )
                 || !json.contains( "Separator" ) || !json.contains( "XColumn" )
                 || !json.contains( "YColumn" ) || !json.contains( "ZColumn" ) )
             {
-                contains_all_info = false;
+                return geode::Percentage{ 0 };
             }
-            missing.optional_files.emplace_back(
-                json_filename_, contains_all_info );
-            return missing;
+            return geode::Percentage{ 1 };
         }
 
     private:
@@ -125,6 +131,12 @@ namespace geode
         {
             CSVInputImpl reader{ this->filename() };
             return reader.additional_files();
+        }
+
+        Percentage CSVInput::is_loadable() const
+        {
+            CSVInputImpl reader{ this->filename() };
+            return reader.is_loadable();
         }
 
     } // namespace internal

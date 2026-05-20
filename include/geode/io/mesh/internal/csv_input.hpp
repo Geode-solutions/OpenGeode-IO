@@ -53,14 +53,11 @@ namespace geode
 
             AdditionalFiles additional_files() const final;
 
+            Percentage is_loadable() const final;
+
             index_t object_priority() const final
             {
                 return 0;
-            }
-
-            Percentage is_loadable() const final
-            {
-                return Percentage{ 1 };
             }
         };
     } // namespace internal
