@@ -86,6 +86,20 @@ void test_csv_input_with_missing_keyword()
         "missing keyword" );
 }
 
+void test_csv_input_with_wrong_value()
+{
+    const auto filepath = absl::StrCat( geode::DATA_PATH, "wrong_value.csv" );
+    const auto additional_files =
+        geode::point_set_additional_files< 3 >( filepath );
+    const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
+    geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
+        "[TEST: CSV input], The point set should be loadable" );
+    geode::OpenGeodeIOMeshException::test(
+        !additional_files.has_additional_files(),
+        "[TEST: CSV input], Additional files should be missing because of a "
+        "wrong value" );
+}
+
 int main()
 {
     try
@@ -95,6 +109,7 @@ int main()
         test_csv_input();
         test_csv_input_with_missing_json();
         test_csv_input_with_missing_keyword();
+        test_csv_input_with_wrong_value();
         return 0;
     }
     catch( ... )

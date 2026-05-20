@@ -105,6 +105,23 @@ namespace
             {
                 return geode::Percentage{ 0 };
             }
+            try
+            {
+                const auto separator = json["separator"].get< std::string >();
+                if( separator.size() != 1 )
+                {
+                    return geode::Percentage{ 0 };
+                }
+                json["firstRow"].get< geode::index_t >();
+                json["headerRow"].get< geode::index_t >();
+                json["xColumn"].get< geode::index_t >();
+                json["yColumn"].get< geode::index_t >();
+                json["zColumn"].get< geode::index_t >();
+            }
+            catch( const nlohmann::json::type_error& )
+            {
+                return geode::Percentage{ 0 };
+            }
             return geode::Percentage{ 1 };
         }
 
