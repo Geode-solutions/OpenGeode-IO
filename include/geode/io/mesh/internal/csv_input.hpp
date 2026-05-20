@@ -52,14 +52,11 @@ namespace geode::internal
 
         [[nodiscard]] AdditionalFiles additional_files() const final;
 
+        [[nodiscard]] Percentage is_loadable() const final;
+
         [[nodiscard]] index_t object_priority() const final
         {
             return 0;
-        }
-
-        [[nodiscard]] Percentage is_loadable() const final
-        {
-            return Percentage{ 1 };
         }
     };
 } // namespace geode::internal

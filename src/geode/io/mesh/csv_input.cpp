@@ -81,25 +81,48 @@ namespace
 
         geode::AdditionalFiles additional_files()
         {
-            DEBUG( "additional files" );
             geode::AdditionalFiles missing;
-            if( !geode::file_exists( json_filename_ ) )
+            if( is_loadable().value() == 0 )
             {
-                missing.optional_files.emplace_back( json_filename_, false );
+                missing.mandatory_files.emplace_back( json_filename_, false );
                 return missing;
             }
-            bool contains_all_info{ true };
+            missing.mandatory_files.emplace_back( json_filename_, true );
+            return missing;
+        }
+
+        geode::Percentage is_loadable()
+        {
+            if( !geode::file_exists( json_filename_ ) )
+            {
+                return geode::Percentage{ 0 };
+            }
             nlohmann::json json;
             json_file_ >> json;
             if( !json.contains( "firstRow" ) || !json.contains( "headerRow" )
                 || !json.contains( "separator" ) || !json.contains( "xColumn" )
                 || !json.contains( "yColumn" ) || !json.contains( "zColumn" ) )
             {
-                contains_all_info = false;
+                return geode::Percentage{ 0 };
             }
-            missing.optional_files.emplace_back(
-                json_filename_, contains_all_info );
-            return missing;
+            try
+            {
+                const auto separator = json["separator"].get< std::string >();
+                if( separator.size() != 1 )
+                {
+                    return geode::Percentage{ 0 };
+                }
+                json["firstRow"].get< geode::index_t >();
+                json["headerRow"].get< geode::index_t >();
+                json["xColumn"].get< geode::index_t >();
+                json["yColumn"].get< geode::index_t >();
+                json["zColumn"].get< geode::index_t >();
+            }
+            catch( const nlohmann::json::type_error& )
+            {
+                return geode::Percentage{ 0 };
+            }
+            return geode::Percentage{ 1 };
         }
 
     private:
@@ -109,22 +132,24 @@ namespace
     };
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
     {
-        std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
-        {
-            geode_unused( impl );
-            CSVInputImpl reader{ filename() };
-            return reader.point_set();
-        }
+        geode_unused( impl );
+        CSVInputImpl reader{ filename() };
+        return reader.point_set();
+    }
 
-        AdditionalFiles CSVInput::additional_files() const
-        {
-            CSVInputImpl reader{ filename() };
-            return reader.additional_files();
-        }
+    AdditionalFiles CSVInput::additional_files() const
+    {
+        CSVInputImpl reader{ filename() };
+        return reader.additional_files();
+    }
 
-    } // namespace internal
-} // namespace geode
+    Percentage CSVInput::is_loadable() const
+    {
+        CSVInputImpl reader{ filename() };
+        return reader.is_loadable();
+    }
+} // namespace geode::internal

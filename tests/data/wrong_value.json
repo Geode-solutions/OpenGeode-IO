@@ -1,0 +1,8 @@
+{
+  "separator": ",",
+  "firstRow": "a",
+  "headerRow": "b",
+  "xColumn": 1,
+  "yColumn": 2,
+  "zColumn": 3
+}
