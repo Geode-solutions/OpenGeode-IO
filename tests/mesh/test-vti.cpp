@@ -46,7 +46,7 @@ void put_attributes_on_grid( const geode::Grid3D& grid )
     const auto cell_attribute_id =
         grid.cell_attribute_manager()
             .create_attribute< geode::VariableAttribute, geode::index_t >(
-                "id", geode::NO_ID );
+                "id", geode::NO_ID, geode::AttributeProperties{} );
     auto att = grid.cell_attribute_manager()
                    .find_attribute< geode::VariableAttribute, geode::index_t >(
                        cell_attribute_id );
@@ -57,7 +57,7 @@ void put_attributes_on_grid( const geode::Grid3D& grid )
     const auto vertex_attribute_id =
         grid.grid_vertex_attribute_manager()
             .create_attribute< geode::VariableAttribute, geode::index_t >(
-                "id_vertex", geode::NO_ID );
+                "id_vertex", geode::NO_ID, geode::AttributeProperties{} );
     auto att_vertex =
         grid.grid_vertex_attribute_manager()
             .find_attribute< geode::VariableAttribute, geode::index_t >(
