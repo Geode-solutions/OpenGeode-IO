@@ -43,16 +43,25 @@
 
 void put_attributes_on_grid( const geode::Grid3D& grid )
 {
+    const auto cell_attribute_id =
+        grid.cell_attribute_manager()
+            .create_attribute< geode::VariableAttribute, geode::index_t >(
+                "id", geode::NO_ID );
     auto att = grid.cell_attribute_manager()
-                   .find_or_create_attribute< geode::VariableAttribute,
-                       geode::index_t >( "id", geode::NO_ID );
+                   .find_attribute< geode::VariableAttribute, geode::index_t >(
+                       cell_attribute_id );
     for( const auto c : geode::Range{ grid.nb_cells() } )
     {
         att->set_value( c, c );
     }
-    auto att_vertex = grid.grid_vertex_attribute_manager()
-                          .find_or_create_attribute< geode::VariableAttribute,
-                              geode::index_t >( "id_vertex", geode::NO_ID );
+    const auto vertex_attribute_id =
+        grid.grid_vertex_attribute_manager()
+            .create_attribute< geode::VariableAttribute, geode::index_t >(
+                "id_vertex", geode::NO_ID );
+    auto att_vertex =
+        grid.grid_vertex_attribute_manager()
+            .find_attribute< geode::VariableAttribute, geode::index_t >(
+                vertex_attribute_id );
     for( const auto c : geode::Range{ grid.nb_grid_vertices() } )
     {
         att_vertex->set_value( c, c );

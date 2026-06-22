@@ -50,23 +50,35 @@ namespace
 
     geode::index_t get_material_number_value( const geode::Surface3D& surface )
     {
-        auto attribute =
+        const auto attribute_ids =
             surface.mesh()
                 .polygon_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute,
-                    geode::index_t >(
-                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
+                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        geode::OpenGeodeIOModelException::check_exception(
+            attribute_ids.has_value(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "The surface does not have a material number attribute" );
+        auto attribute = surface.mesh()
+                             .polygon_attribute_manager()
+                             .find_read_only_attribute< geode::index_t >(
+                                 attribute_ids.value().at( 0 ) );
         return attribute->value( 0 );
     }
 
     geode::index_t get_material_number_value( const geode::Block3D& block )
     {
-        auto attribute =
+        const auto attribute_ids =
             block.mesh()
                 .polyhedron_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute,
-                    geode::index_t >(
-                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
+                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        geode::OpenGeodeIOModelException::check_exception(
+            attribute_ids.has_value(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "The surface does not have a material number attribute" );
+        auto attribute = block.mesh()
+                             .polyhedron_attribute_manager()
+                             .find_read_only_attribute< geode::index_t >(
+                                 attribute_ids.value().at( 0 ) );
         return attribute->value( 0 );
     }
 
