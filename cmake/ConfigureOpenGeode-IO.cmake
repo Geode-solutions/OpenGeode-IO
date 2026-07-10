@@ -43,13 +43,11 @@ ExternalProject_Add(opengeode-io
         -DUSE_SUPERBUILD:BOOL=OFF
         -DASSIMP_INSTALL_PREFIX:PATH=${ASSIMP_INSTALL_PREFIX}
         -DPUGIXML_INSTALL_PREFIX:PATH=${PUGIXML_INSTALL_PREFIX}
-        -DZLIB_INSTALL_PREFIX:PATH=${ZLIB_INSTALL_PREFIX}
         -DCMAKE_INSTALL_PREFIX:PATH=${OpenGeode-IO_PATH_INSTALL}
     BINARY_DIR ${OpenGeode-IO_PATH_BIN}
     DEPENDS 
         assimp
         pugixml
-        zlib
 )
 
 ExternalProject_Add_StepTargets(opengeode-io configure)
