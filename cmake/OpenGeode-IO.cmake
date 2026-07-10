@@ -29,7 +29,7 @@ find_package(OpenGeode REQUIRED CONFIG)
 find_package(Async++ REQUIRED CONFIG)
 find_package(GDAL REQUIRED CONFIG)
 find_package(nlohmann_json REQUIRED CONFIG)
-find_package(zlib REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ZLIB_INSTALL_PREFIX})
+find_package(zlib REQUIRED CONFIG)
 find_package(assimp REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${ASSIMP_INSTALL_PREFIX})
 find_package(pugixml REQUIRED CONFIG NO_DEFAULT_PATH PATHS ${PUGIXML_INSTALL_PREFIX})
 
@@ -46,7 +46,6 @@ if(NOT BUILD_SHARED_LIBS)
     install(
         DIRECTORY
             ${ASSIMP_INSTALL_PREFIX}/
-            ${ZLIB_INSTALL_PREFIX}/
         DESTINATION
             .
         COMPONENT
