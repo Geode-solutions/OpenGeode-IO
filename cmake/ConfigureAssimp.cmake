@@ -26,7 +26,7 @@ ExternalProject_Add(assimp
     BINARY_DIR ${ASSIMP_PATH}/build
     STAMP_DIR ${ASSIMP_PATH}/stamp
     GIT_REPOSITORY https://github.com/Geode-solutions/assimp
-    GIT_TAG v5.2.4.geode
+    GIT_TAG dc1cef10bf658c4c88f5af43076b839f3cb55c9f
     GIT_SHALLOW ON
     GIT_PROGRESS ON
     CMAKE_GENERATOR ${CMAKE_GENERATOR}
