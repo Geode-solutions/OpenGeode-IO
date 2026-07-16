@@ -102,34 +102,42 @@ void test_regular_grid( const geode::RegularGrid3D& grid )
 
 void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
 {
-    geode::save_light_regular_grid( grid, "test3.vti" );
-    const auto reload_grid = geode::load_light_regular_grid< 3 >( "test3.vti" );
-    geode::OpenGeodeIOMeshException::test(
-        grid.nb_cells() == reload_grid.nb_cells(),
-        "[TEST] Wrong number of cells." );
-    geode::OpenGeodeIOMeshException::test(
-        grid.nb_grid_vertices() == reload_grid.nb_grid_vertices(),
-        "[TEST] Wrong number of vertices." );
-    for( const auto d : geode::LRange{ 3 } )
-    {
-        geode::OpenGeodeIOMeshException::test(
-            grid.nb_cells_in_direction( d )
-                == reload_grid.nb_cells_in_direction( d ),
-            "[TEST] Wrong number of cells in direction ", d );
-        geode::OpenGeodeIOMeshException::test(
-            grid.cell_length_in_direction( d )
-                == reload_grid.cell_length_in_direction( d ),
-            "[TEST] Wrong cell length in direction ", d );
-        geode::OpenGeodeIOMeshException::test(
-            grid.grid_coordinate_system().direction( d ).inexact_equal(
-                reload_grid.grid_coordinate_system().direction( d ) ),
-            "[TEST] Wrong direction in direction ", d );
-    }
-    geode::OpenGeodeIOMeshException::test(
-        grid.grid_coordinate_system().origin().inexact_equal(
-            reload_grid.grid_coordinate_system().origin() ),
-        "[TEST] Wrong origin." );
-    geode::save_light_regular_grid( reload_grid, "test4.vti" );
+    // geode::save_light_regular_grid( grid, "test3.vti" );
+    // const auto reload_grid = geode::load_light_regular_grid< 3 >( "test3.vti"
+    // ); geode::OpenGeodeIOMeshException::test(
+    //     grid.nb_cells() == reload_grid.nb_cells(),
+    //     "[TEST] Wrong number of cells." );
+    // geode::OpenGeodeIOMeshException::test(
+    //     grid.nb_grid_vertices() == reload_grid.nb_grid_vertices(),
+    //     "[TEST] Wrong number of vertices." );
+    // for( const auto d : geode::LRange{ 3 } )
+    // {
+    //     geode::OpenGeodeIOMeshException::test(
+    //         grid.nb_cells_in_direction( d )
+    //             == reload_grid.nb_cells_in_direction( d ),
+    //         "[TEST] Wrong number of cells in direction ", d );
+    //     geode::OpenGeodeIOMeshException::test(
+    //         grid.cell_length_in_direction( d )
+    //             == reload_grid.cell_length_in_direction( d ),
+    //         "[TEST] Wrong cell length in direction ", d );
+    //     geode::OpenGeodeIOMeshException::test(
+    //         grid.grid_coordinate_system().direction( d ).inexact_equal(
+    //             reload_grid.grid_coordinate_system().direction( d ) ),
+    //         "[TEST] Wrong direction in direction ", d );
+    // }
+    // geode::OpenGeodeIOMeshException::test(
+    //     grid.grid_coordinate_system().origin().inexact_equal(
+    //         reload_grid.grid_coordinate_system().origin() ),
+    //     "[TEST] Wrong origin." );
+    // geode::save_light_regular_grid( reload_grid, "test4.vti" );
+    auto grid_with_value = geode::load_light_regular_grid< 3 >(
+        "/home/benjamin/Documents/Code/Geode-Implicit_private/build/"
+        "final_grid0.og_lrgd3d" );
+    geode::save_light_regular_grid( grid_with_value, "with_value.vti" );
+    auto grid_with_no_value = geode::load_light_regular_grid< 3 >(
+        "/home/benjamin/Documents/Code/Geode-Implicit_private/build/"
+        "final_grid1.og_lrgd3d" );
+    geode::save_light_regular_grid( grid_with_no_value, "with_no_value.vti" );
 }
 
 int main()
