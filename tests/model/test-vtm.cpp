@@ -43,27 +43,14 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         geode::OpenGeodeIOModelLibrary::initialize();
 
-        // auto brep =
-        //     geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" )
-        //     );
-        // const auto filename = absl::StrCat( "mss.vtm" );
-        // geode::save_brep( brep, filename );
-        auto before = geode::load_brep(
-            "/home/benjamin/Documents/Code/Geode-Implicit_private/build/"
-            "before_conversion.og_brep" );
-        geode::save_brep( before, "before_conversion.vtm" );
-        auto before2 = geode::load_brep(
-            "/home/benjamin/Documents/Code/Geode-Implicit_private/build/"
-            "mss_model_explicited.og_brep" );
-        geode::save_brep( before2, "mss_model_explicited.vtm" );
-        auto cube = geode::load_brep(
-            "/home/benjamin/Documents/Code/Geode-Implicit_private/tests/data/"
-            "simple_cases/cube_100.og_brep" );
-        geode::save_brep( cube, "cube_100.vtm" );
-        // auto section = geode::load_section(
-        // absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
-        // const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
-        // geode::save_section( section, filename2 );
+        auto brep =
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+        const auto filename = absl::StrCat( "mss.vtm" );
+        geode::save_brep( brep, filename );
+        auto section = geode::load_section(
+            absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
+        const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
+        geode::save_section( section, filename2 );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
