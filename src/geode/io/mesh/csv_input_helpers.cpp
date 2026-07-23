@@ -154,9 +154,14 @@ namespace geode
                     {
                         continue;
                     }
+                    const auto attribute_id =
+                        attribute_manager
+                            .create_attribute< VariableAttribute, double >(
+                                attribute_name, value, AttributeProperties{} );
                     double_attrs[col] =
-                        attribute_manager.find_or_create_attribute<
-                            VariableAttribute, double >( attribute_name, 0.0 );
+                        attribute_manager
+                            .find_attribute< VariableAttribute, double >(
+                                attribute_id );
                 }
             }
             for( const auto col : geode::Range{ line_values.size() } )
