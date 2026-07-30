@@ -99,6 +99,12 @@ namespace geode
                     {
                         for( const auto i : LRange{ attribute->nb_items() } )
                         {
+                            if( !attribute->has_value( e ) )
+                            {
+                                absl::StrAppend(
+                                    &values, std::nanf( " " ), " " );
+                                continue;
+                            }
                             const auto value =
                                 attribute->generic_item_value( e, i );
                             absl::StrAppend( &values, value, " " );
