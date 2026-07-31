@@ -43,10 +43,17 @@
 
 void put_attributes_on_grid( const geode::Grid3D& grid )
 {
+    geode::AttributeValues< geode::index_t > default_values;
+    default_values.default_value = geode::NO_ID;
+    default_values.no_value = geode::NO_ID;
+    geode::AttributeProperties properties;
+    properties.assignable = false;
+    properties.interpolable = false;
+    properties.transferable = true;
     const auto cell_attribute_id =
         grid.cell_attribute_manager()
             .create_attribute< geode::VariableAttribute, geode::index_t >(
-                "id", geode::NO_ID, geode::AttributeProperties{} );
+                "id", default_values, properties );
     auto att = grid.cell_attribute_manager()
                    .find_attribute< geode::VariableAttribute, geode::index_t >(
                        cell_attribute_id );
@@ -57,7 +64,7 @@ void put_attributes_on_grid( const geode::Grid3D& grid )
     const auto vertex_attribute_id =
         grid.grid_vertex_attribute_manager()
             .create_attribute< geode::VariableAttribute, geode::index_t >(
-                "id_vertex", geode::NO_ID, geode::AttributeProperties{} );
+                "id_vertex", default_values, properties );
     auto att_vertex =
         grid.grid_vertex_attribute_manager()
             .find_attribute< geode::VariableAttribute, geode::index_t >(

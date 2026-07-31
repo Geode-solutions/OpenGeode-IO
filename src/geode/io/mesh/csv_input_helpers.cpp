@@ -154,10 +154,17 @@ namespace geode
                     {
                         continue;
                     }
+                    AttributeValues< double > default_values;
+                    default_values.default_value = value;
+                    default_values.no_value = value;
+                    AttributeProperties properties;
+                    properties.assignable = false;
+                    properties.interpolable = false;
+                    properties.transferable = true;
                     const auto attribute_id =
                         attribute_manager
                             .create_attribute< VariableAttribute, double >(
-                                attribute_name, value, AttributeProperties{} );
+                                attribute_name, default_values, properties );
                     double_attrs[col] =
                         attribute_manager
                             .find_attribute< VariableAttribute, double >(

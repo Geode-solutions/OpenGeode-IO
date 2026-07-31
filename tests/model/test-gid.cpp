@@ -179,6 +179,13 @@ namespace
         auto brep = geode::load_brep(
             absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
         test( brep );
+        geode::AttributeValues< geode::index_t > default_values;
+        default_values.default_value = 1;
+        default_values.no_value = geode::NO_ID;
+        geode::AttributeProperties properties;
+        properties.assignable = false;
+        properties.interpolable = true;
+        properties.transferable = true;
         for( const auto& block : brep.blocks() )
         {
             const auto& mesh = block.mesh();
@@ -186,7 +193,7 @@ namespace
                 mesh.polyhedron_attribute_manager()
                     .create_attribute< geode::ConstantAttribute,
                         geode::index_t >(
-                        "material_number", 1, { false, true, true } );
+                        "material_number", default_values, properties );
         }
         for( const auto& surface : brep.surfaces() )
         {
@@ -195,7 +202,7 @@ namespace
                 mesh.polygon_attribute_manager()
                     .create_attribute< geode::ConstantAttribute,
                         geode::index_t >(
-                        "material_number", 1, { false, true, true } );
+                        "material_number", default_values, properties );
         }
         const auto filename_gid =
             absl::StrCat( short_filename, "_output.gid_msh" );
