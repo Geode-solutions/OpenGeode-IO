@@ -115,8 +115,8 @@ namespace geode
             {
                 return physical_ids.find( physical_id ) != physical_ids.end();
             }
-            absl::flat_hash_map< GmshElementID, geode::uuid > elementary_ids;
-            absl::flat_hash_map< GmshElementID, geode::uuid > physical_ids;
+            absl::flat_hash_map< GmshElementID, uuid > elementary_ids;
+            absl::flat_hash_map< GmshElementID, uuid > physical_ids;
         };
 
         class GMSHElement
@@ -215,7 +215,7 @@ namespace geode
                 };
                 const auto existing_id =
                     id_map.contains_elementary_id( cur_gmsh_id );
-                geode::uuid corner_uuid;
+                uuid corner_uuid;
                 geode::BRepBuilder builder{ brep };
                 if( existing_id )
                 {
@@ -255,7 +255,7 @@ namespace geode
                 const auto existing_id =
                     id_map.contains_elementary_id( cur_gmsh_id );
                 geode::BRepBuilder builder{ brep };
-                geode::uuid line_uuid;
+                uuid line_uuid;
                 if( existing_id )
                 {
                     line_uuid = id_map.elementary_ids.at( cur_gmsh_id );
@@ -303,7 +303,7 @@ namespace geode
                 const auto existing_id =
                     id_map.contains_elementary_id( cur_gmsh_id );
                 geode::BRepBuilder builder{ brep };
-                geode::uuid surface_uuid;
+                uuid surface_uuid;
                 if( existing_id )
                 {
                     surface_uuid = id_map.elementary_ids.at( cur_gmsh_id );
@@ -372,7 +372,7 @@ namespace geode
 
             virtual geode::index_t create_gmsh_polyhedron(
                 geode::BRepBuilder& builder,
-                const geode::uuid& block_uuid,
+                const uuid& block_uuid,
                 const std::vector< geode::index_t >& v_ids ) = 0;
 
             void add_element( geode::BRep& brep, GmshId2Uuids& id_map ) final
@@ -383,7 +383,7 @@ namespace geode
                 const auto existing_id =
                     id_map.contains_elementary_id( cur_gmsh_id );
                 geode::BRepBuilder builder{ brep };
-                geode::uuid block_uuid;
+                uuid block_uuid;
                 if( existing_id )
                 {
                     block_uuid = id_map.elementary_ids.at( cur_gmsh_id );
@@ -427,7 +427,7 @@ namespace geode
             }
 
             geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-                const geode::uuid& block_uuid,
+                const uuid& block_uuid,
                 const std::vector< geode::index_t >& v_ids ) override final
             {
                 static const std::array< std::vector< geode::local_index_t >,
@@ -451,7 +451,7 @@ namespace geode
             }
 
             geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-                const geode::uuid& block_uuid,
+                const uuid& block_uuid,
                 const std::vector< geode::index_t >& v_ids ) override final
             {
                 static const std::array< std::vector< geode::local_index_t >,
@@ -476,7 +476,7 @@ namespace geode
             }
 
             geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-                const geode::uuid& block_uuid,
+                const uuid& block_uuid,
                 const std::vector< geode::index_t >& v_ids ) override final
             {
                 static const std::array< std::vector< geode::local_index_t >,
@@ -500,7 +500,7 @@ namespace geode
             }
 
             geode::index_t create_gmsh_polyhedron( geode::BRepBuilder& builder,
-                const geode::uuid& block_uuid,
+                const uuid& block_uuid,
                 const std::vector< geode::index_t >& v_ids ) override final
             {
                 static const std::array< std::vector< geode::local_index_t >,

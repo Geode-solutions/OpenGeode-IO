@@ -129,7 +129,7 @@ namespace geode
             {
                 index_t counter{ 0 };
                 const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warn );
+                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_corners() );
                 absl::FixedArray< uuid > corner_ids(
@@ -187,7 +187,7 @@ namespace geode
             {
                 index_t counter{ 0 };
                 const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warn );
+                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_lines() );
                 absl::FixedArray< uuid > line_ids( this->mesh().nb_lines() );
@@ -243,7 +243,7 @@ namespace geode
             {
                 index_t counter{ 0 };
                 const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warn );
+                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_surfaces() );
                 absl::FixedArray< uuid > surface_ids(

@@ -83,16 +83,15 @@ namespace geode
                 const AttributeManager& manager,
                 absl::Span< const index_t > elements ) const
             {
-                for( const auto& name : manager.attribute_names() )
+                for( const auto& id : manager.attribute_ids() )
                 {
-                    const auto attribute =
-                        manager.find_generic_attribute( name );
+                    const auto attribute = manager.find_generic_attribute( id );
                     if( !attribute || !attribute->is_genericable() )
                     {
                         continue;
                     }
-                    auto data_array = write_attribute_header(
-                        attribute_node, name, attribute->nb_items() );
+                    auto data_array = write_attribute_header( attribute_node,
+                        attribute->name().value(), attribute->nb_items() );
                     auto min = std::numeric_limits< float >::max();
                     auto max = std::numeric_limits< float >::lowest();
                     std::string values;
@@ -100,6 +99,12 @@ namespace geode
                     {
                         for( const auto i : LRange{ attribute->nb_items() } )
                         {
+                            if( !attribute->has_value( e ) )
+                            {
+                                absl::StrAppend(
+                                    &values, std::nanf( " " ), " " );
+                                continue;
+                            }
                             const auto value =
                                 attribute->generic_item_value( e, i );
                             absl::StrAppend( &values, value, " " );

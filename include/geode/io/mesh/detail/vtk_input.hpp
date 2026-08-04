@@ -220,16 +220,21 @@ namespace geode
                     OpenGeodeException::TYPE::data,
                     "[VTKInput::build_attribute] Number of attribute "
                     "values is not a multiple of number of components" );
-                if( manager.find_generic_attribute( name ) )
-                {
-                    return;
-                }
                 if( nb_components == 1 )
                 {
+                    AttributeValues< T > default_values;
+                    default_values.default_value = T{};
+                    default_values.no_value = T{};
+                    AttributeProperties properties;
+                    properties.assignable = false;
+                    properties.interpolable = false;
+                    properties.transferable = true;
+                    auto attribute_id =
+                        manager.create_attribute< VariableAttribute, T >(
+                            name, default_values, properties );
                     auto attribute =
-                        manager
-                            .find_or_create_attribute< VariableAttribute, T >(
-                                name, T{} );
+                        manager.find_attribute< VariableAttribute, T >(
+                            attribute_id );
                     for( const auto i : Indices{ values } )
                     {
                         attribute->set_value( i + offset, values[i] );
@@ -374,9 +379,19 @@ namespace geode
                 std::string_view name,
                 index_t offset )
             {
+                AttributeValues< Container > default_values;
+                default_values.default_value = default_value;
+                default_values.no_value = default_value;
+                AttributeProperties properties;
+                properties.assignable = false;
+                properties.interpolable = false;
+                properties.transferable = true;
+                const auto attribute_id =
+                    manager.create_attribute< VariableAttribute, Container >(
+                        name, default_values, properties );
                 auto attribute =
-                    manager.find_or_create_attribute< VariableAttribute,
-                        Container >( name, default_value );
+                    manager.find_attribute< VariableAttribute, Container >(
+                        attribute_id );
                 for( const auto i : Range{ values.size() / nb_components } )
                 {
                     for( const auto c : Range{ nb_components } )

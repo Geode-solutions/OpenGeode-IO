@@ -35,8 +35,8 @@
 
 void check( const geode::PolygonalSurface3D& surface,
     const std::array< geode::index_t, 2 >& test_answers,
-    absl::Span< const std::string_view > vertex_attributes,
-    absl::Span< const std::string_view > polygon_attributes )
+    absl::Span< const geode::uuid > vertex_attributes,
+    absl::Span< const geode::uuid > polygon_attributes )
 {
     geode::OpenGeodeIOMeshException::test(
         surface.nb_vertices() == test_answers[0],
@@ -48,24 +48,26 @@ void check( const geode::PolygonalSurface3D& surface,
         "Number of polygons in the loaded Surface is not correct: "
         "should be ",
         test_answers[1], ", get ", surface.nb_polygons() );
-    for( const auto& name : vertex_attributes )
+    for( const auto& id : vertex_attributes )
     {
         geode::OpenGeodeIOMeshException::test(
-            surface.vertex_attribute_manager().attribute_exists( name ),
-            "Attribute ", name, " was not be loaded as attribute on vertices" );
+            surface.vertex_attribute_manager().attribute_exists( id ),
+            "Attribute ", id.string(),
+            " was not be loaded as attribute on vertices" );
     }
-    for( const auto& name : polygon_attributes )
+    for( const auto& id : polygon_attributes )
     {
         geode::OpenGeodeIOMeshException::test(
-            surface.polygon_attribute_manager().attribute_exists( name ),
-            "Attribute ", name, " was not be loaded as attribute on polygons" );
+            surface.polygon_attribute_manager().attribute_exists( id ),
+            "Attribute ", id.string(),
+            " was not be loaded as attribute on polygons" );
     }
 }
 
 void run_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers,
-    absl::Span< const std::string_view > vertex_attributes,
-    absl::Span< const std::string_view > polygon_attributes )
+    absl::Span< const geode::uuid > vertex_attributes,
+    absl::Span< const geode::uuid > polygon_attributes )
 {
     // Load file
     auto surface = geode::load_polygonal_surface< 3 >(
@@ -103,17 +105,23 @@ int main()
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
 
-        run_test( "dfn1_ascii.vtp", { 187, 10 }, { "FractureSize" },
-            { "FractureId", "FractureSize", "FractureArea" } );
+        std::vector< geode::uuid > first_vertex_attribute_ids;
+        std::vector< geode::uuid > first_polygon_attribute_ids;
+        run_test( "dfn1_ascii.vtp", { 187, 10 }, first_vertex_attribute_ids,
+            first_polygon_attribute_ids );
+        std::vector< geode::uuid > second_polygon_attribute_ids;
         run_test( "dfn2_mesh_compressed.vtp", { 33413, 58820 }, {},
-            { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
+            second_polygon_attribute_ids );
+        std::vector< geode::uuid > third_polygon_attribute_ids;
         run_test( "dfn2_mesh_append_encoded.vtp", { 33413, 58820 }, {},
-            { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
+            third_polygon_attribute_ids );
+        std::vector< geode::uuid > fourth_polygon_attribute_ids;
         run_test( "dfn2_mesh_append_encoded_compressed.vtp", { 33413, 58820 },
-            {},
-            { "Fracture Label", "Fracture size", "Triangle size", "Border" } );
-        run_test( "dfn3.vtp", { 238819, 13032 }, { "FractureSize" },
-            { "FractureId", "FractureSize", "FractureArea" } );
+            {}, fourth_polygon_attribute_ids );
+        std::vector< geode::uuid > fifth_vertex_attribute_ids;
+        std::vector< geode::uuid > fifth_polygon_attribute_ids;
+        run_test( "dfn3.vtp", { 238819, 13032 }, fifth_vertex_attribute_ids,
+            fifth_polygon_attribute_ids );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
