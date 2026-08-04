@@ -110,6 +110,7 @@ add_geode_library(
         "internal/triangle_output.hpp"
     PUBLIC_DEPENDENCIES
         OpenGeode::image
+        ${PROJECT_NAME}::image
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
@@ -120,5 +121,4 @@ add_geode_library(
         Async++
         GDAL::GDAL
         nlohmann_json::nlohmann_json
-        ${PROJECT_NAME}::image
 )
