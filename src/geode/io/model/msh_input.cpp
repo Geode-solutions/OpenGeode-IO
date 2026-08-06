@@ -438,9 +438,9 @@ namespace
             const std::string& line )
         {
             const auto tokens = geode::string_split( line );
-            return std::make_tuple( geode::string_to_index( tokens.at( 0 ) ),
+            return { geode::string_to_index( tokens.at( 0 ) ),
                 read_node_coordinates(
-                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) );
+                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) };
         }
 
         void read_node_section_v4()
