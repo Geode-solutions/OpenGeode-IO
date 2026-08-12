@@ -357,7 +357,8 @@ namespace
                 return;
             }
             const auto& line_id = builder_.add_line();
-            const auto line_builder = builder_.line_mesh_builder( line_id );
+            const auto line_builder =
+                builder_.line_mesh_builder( section_.line( line_id ) );
             line_builder->create_point( vertices.front() );
             for( const auto v : geode::Range{ 1, vertices.size() } )
             {
@@ -377,7 +378,7 @@ namespace
             for( const auto& unique_point : colocated_info.unique_points )
             {
                 const auto corner_id = builder_.add_corner();
-                builder_.corner_mesh_builder( corner_id )
+                builder_.corner_mesh_builder( section_.corner( corner_id ) )
                     ->create_point( unique_point );
                 const auto uv_id = builder_.create_unique_vertex();
                 builder_.set_unique_vertex(

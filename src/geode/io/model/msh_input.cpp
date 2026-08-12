@@ -603,7 +603,7 @@ namespace
         {
             for( const auto& c : brep_.corners() )
             {
-                builder_.corner_mesh_builder( c.id() )->set_point(
+                builder_.corner_mesh_builder( c )->set_point(
                     0, nodes_[brep_.unique_vertex( { c.component_id(), 0 } )] );
             }
         }
@@ -613,7 +613,7 @@ namespace
             for( const auto& l : brep_.lines() )
             {
                 filter_duplicated_line_vertices( l, brep_ );
-                auto line_builder = builder_.line_mesh_builder( l.id() );
+                auto line_builder = builder_.line_mesh_builder( l );
                 for( const auto v : geode::Range{ l.mesh().nb_vertices() } )
                 {
                     line_builder->set_point(
@@ -628,8 +628,7 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 filter_duplicated_surface_vertices( surface, brep_ );
-                auto surface_builder =
-                    builder_.surface_mesh_builder( surface.id() );
+                auto surface_builder = builder_.surface_mesh_builder( surface );
                 const auto& mesh = surface.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
@@ -692,7 +691,7 @@ namespace
             for( const auto& b : brep_.blocks() )
             {
                 filter_duplicated_block_vertices( b, brep_ );
-                auto block_builder = builder_.block_mesh_builder( b.id() );
+                auto block_builder = builder_.block_mesh_builder( b );
                 for( const auto v : geode::Range{ b.mesh().nb_vertices() } )
                 {
                     block_builder->set_point(
@@ -780,8 +779,7 @@ namespace
         void filter_duplicated_line_vertices(
             const geode::Line3D& line, geode::BRep& brep )
         {
-            auto builder =
-                geode::BRepBuilder{ brep }.line_mesh_builder( line.id() );
+            auto builder = geode::BRepBuilder{ brep }.line_mesh_builder( line );
             filter_duplicated_vertices( line, brep, *builder );
         }
 
@@ -789,7 +787,7 @@ namespace
             const geode::Surface3D& surface, geode::BRep& brep )
         {
             auto builder =
-                geode::BRepBuilder{ brep }.surface_mesh_builder( surface.id() );
+                geode::BRepBuilder{ brep }.surface_mesh_builder( surface );
             filter_duplicated_vertices( surface, brep, *builder );
         }
 
@@ -797,7 +795,7 @@ namespace
             const geode::Block3D& block, geode::BRep& brep )
         {
             auto builder =
-                geode::BRepBuilder{ brep }.block_mesh_builder( block.id() );
+                geode::BRepBuilder{ brep }.block_mesh_builder( block );
             filter_duplicated_vertices( block, brep, *builder );
         }
 
