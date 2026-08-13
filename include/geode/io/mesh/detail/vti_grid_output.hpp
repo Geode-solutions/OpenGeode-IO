@@ -25,6 +25,8 @@
 
 #include <string>
 
+#include <geode/geometry/coordinate_system.hpp>
+
 #include <geode/mesh/core/grid.hpp>
 
 #include <geode/io/image/detail/vti_output_impl.hpp>
