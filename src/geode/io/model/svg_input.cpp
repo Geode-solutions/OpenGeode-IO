@@ -399,8 +399,8 @@ namespace
                     colocated_info.colocated_mapping[cmv];
                 const auto& corner =
                     section_.corner( corner_ids[mapped_corner] );
-                const auto& line = section_.line(
-                    potential_corner_cmv_[cmv].component_id.id() );
+                const auto& line =
+                    section_.line( potential_corner_cmv_[cmv].component_id.id );
                 if( !boundary_relation_exist( corner, line ) )
                 {
                     builder_.add_corner_line_boundary_relationship(

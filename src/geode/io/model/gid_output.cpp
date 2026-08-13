@@ -121,11 +121,11 @@ namespace
                 for( const auto& cmv :
                     brep_.component_mesh_vertices( uv_index ) )
                 {
-                    if( cmv.component_id.type()
+                    if( cmv.component_id.type
                         == geode::Block3D::component_type_static() )
                     {
                         file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                        file_ << brep_.block( cmv.component_id.id() )
+                        file_ << brep_.block( cmv.component_id.id )
                                      .mesh()
                                      .point( cmv.vertex )
                                      .string()
@@ -179,12 +179,12 @@ namespace
             bool is_vertex_in_block = false;
             for( const auto& cmv : brep_.component_mesh_vertices( uv_index ) )
             {
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Surface3D::component_type_static() )
                 {
                     is_vertex_on_surface = true;
                 }
-                else if( cmv.component_id.type()
+                else if( cmv.component_id.type
                          == geode::Block3D::component_type_static() )
                 {
                     is_vertex_in_block = true;
@@ -208,7 +208,7 @@ namespace
                     brep_.component_mesh_vertices( uv_index ) )
                 {
                     file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                    file_ << brep_.surface( cmv.component_id.id() )
+                    file_ << brep_.surface( cmv.component_id.id )
                                  .mesh()
                                  .point( cmv.vertex )
                                  .string()
