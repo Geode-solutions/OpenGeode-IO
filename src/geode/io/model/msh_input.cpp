@@ -653,13 +653,13 @@ namespace
                                 { line.component_id(), e1 } ) );
                         for( const auto& cmv0 : cmvs0 )
                         {
-                            if( cmv0.component_id.id() != surface.id() )
+                            if( cmv0.component_id.id != surface.id() )
                             {
                                 continue;
                             }
                             for( const auto& cmv1 : cmvs1 )
                             {
-                                if( cmv1.component_id.id() != surface.id() )
+                                if( cmv1.component_id.id != surface.id() )
                                 {
                                     continue;
                                 }
@@ -810,8 +810,8 @@ namespace
             {
                 for( const auto& incidence_vertex : incidence_type_vertices )
                 {
-                    b2i_relations[boundary_vertex.component_id.id()].emplace(
-                        incidence_vertex.component_id.id() );
+                    b2i_relations[boundary_vertex.component_id.id].emplace(
+                        incidence_vertex.component_id.id );
                 }
             }
         }
@@ -825,13 +825,13 @@ namespace
         {
             for( const auto& boundary_vertex : boundary_type_vertices )
             {
-                if( b2i_relations.find( boundary_vertex.component_id.id() )
+                if( b2i_relations.find( boundary_vertex.component_id.id )
                     == b2i_relations.end() )
                 {
                     continue;
                 }
                 auto& incidences_in_relations =
-                    b2i_relations.at( boundary_vertex.component_id.id() );
+                    b2i_relations.at( boundary_vertex.component_id.id );
 
                 auto it = incidences_in_relations.cbegin();
                 while( it != incidences_in_relations.cend() )
@@ -842,7 +842,7 @@ namespace
                             incidence_type_vertices.end(),
                             [&incidence_id](
                                 const geode::ComponentMeshVertex& cmv ) {
-                                return cmv.component_id.id() == incidence_id;
+                                return cmv.component_id.id == incidence_id;
                             } )
                         == incidence_type_vertices.end() )
                     {
@@ -864,25 +864,25 @@ namespace
             std::vector< geode::ComponentMeshVertex > blocks_vertices;
             for( const auto& cmv : brep_.component_mesh_vertices( uv ) )
             {
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Corner3D::component_type_static() )
                 {
                     corners_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Line3D::component_type_static() )
                 {
                     lines_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Surface3D::component_type_static() )
                 {
                     surfaces_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Block3D::component_type_static() )
                 {
                     blocks_vertices.push_back( cmv );
