@@ -48,9 +48,13 @@ void test_jpg_from_gimp_input()
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
-    auto comparison_attribute =
-        grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
+    const auto attribute_ids =
+        grid->cell_attribute_manager().attribute_ids_matching_name(
             "RGB_data" );
+    auto comparison_attribute =
+        grid->cell_attribute_manager()
+            .find_read_only_attribute< geode::RGBColor >(
+                attribute_ids.value().at( 0 ) );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
         geode::OpenGeodeIOImageException::test(
@@ -71,9 +75,13 @@ void test_jpg_from_paraview_input()
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
-    auto comparison_attribute =
-        grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
+    const auto attribute_ids =
+        grid->cell_attribute_manager().attribute_ids_matching_name(
             "RGB_data" );
+    auto comparison_attribute =
+        grid->cell_attribute_manager()
+            .find_read_only_attribute< geode::RGBColor >(
+                attribute_ids.value().at( 0 ) );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
         geode::OpenGeodeIOImageException::test(
@@ -95,9 +103,13 @@ void test_png_input()
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
-    auto comparison_attribute =
-        grid->cell_attribute_manager().find_attribute< geode::RGBColor >(
+    const auto attribute_ids =
+        grid->cell_attribute_manager().attribute_ids_matching_name(
             "RGB_data" );
+    auto comparison_attribute =
+        grid->cell_attribute_manager()
+            .find_read_only_attribute< geode::RGBColor >(
+                attribute_ids.value().at( 0 ) );
     for( const auto cell_id : geode::Range{ raster.nb_cells() } )
     {
         geode::OpenGeodeIOImageException::test(

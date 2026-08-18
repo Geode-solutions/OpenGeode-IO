@@ -438,9 +438,9 @@ namespace
             const std::string& line )
         {
             const auto tokens = geode::string_split( line );
-            return std::make_tuple( geode::string_to_index( tokens.at( 0 ) ),
+            return { geode::string_to_index( tokens.at( 0 ) ),
                 read_node_coordinates(
-                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) );
+                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) };
         }
 
         void read_node_section_v4()
@@ -603,7 +603,7 @@ namespace
         {
             for( const auto& c : brep_.corners() )
             {
-                builder_.corner_mesh_builder( c.id() )->set_point(
+                builder_.corner_mesh_builder( c )->set_point(
                     0, nodes_[brep_.unique_vertex( { c.component_id(), 0 } )] );
             }
         }
@@ -613,7 +613,7 @@ namespace
             for( const auto& l : brep_.lines() )
             {
                 filter_duplicated_line_vertices( l, brep_ );
-                auto line_builder = builder_.line_mesh_builder( l.id() );
+                auto line_builder = builder_.line_mesh_builder( l );
                 for( const auto v : geode::Range{ l.mesh().nb_vertices() } )
                 {
                     line_builder->set_point(
@@ -628,8 +628,7 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 filter_duplicated_surface_vertices( surface, brep_ );
-                auto surface_builder =
-                    builder_.surface_mesh_builder( surface.id() );
+                auto surface_builder = builder_.surface_mesh_builder( surface );
                 const auto& mesh = surface.mesh();
                 for( const auto v : geode::Range{ mesh.nb_vertices() } )
                 {
@@ -654,13 +653,13 @@ namespace
                                 { line.component_id(), e1 } ) );
                         for( const auto& cmv0 : cmvs0 )
                         {
-                            if( cmv0.component_id.id() != surface.id() )
+                            if( cmv0.component_id.id != surface.id() )
                             {
                                 continue;
                             }
                             for( const auto& cmv1 : cmvs1 )
                             {
-                                if( cmv1.component_id.id() != surface.id() )
+                                if( cmv1.component_id.id != surface.id() )
                                 {
                                     continue;
                                 }
@@ -692,7 +691,7 @@ namespace
             for( const auto& b : brep_.blocks() )
             {
                 filter_duplicated_block_vertices( b, brep_ );
-                auto block_builder = builder_.block_mesh_builder( b.id() );
+                auto block_builder = builder_.block_mesh_builder( b );
                 for( const auto v : geode::Range{ b.mesh().nb_vertices() } )
                 {
                     block_builder->set_point(
@@ -780,8 +779,7 @@ namespace
         void filter_duplicated_line_vertices(
             const geode::Line3D& line, geode::BRep& brep )
         {
-            auto builder =
-                geode::BRepBuilder{ brep }.line_mesh_builder( line.id() );
+            auto builder = geode::BRepBuilder{ brep }.line_mesh_builder( line );
             filter_duplicated_vertices( line, brep, *builder );
         }
 
@@ -789,7 +787,7 @@ namespace
             const geode::Surface3D& surface, geode::BRep& brep )
         {
             auto builder =
-                geode::BRepBuilder{ brep }.surface_mesh_builder( surface.id() );
+                geode::BRepBuilder{ brep }.surface_mesh_builder( surface );
             filter_duplicated_vertices( surface, brep, *builder );
         }
 
@@ -797,7 +795,7 @@ namespace
             const geode::Block3D& block, geode::BRep& brep )
         {
             auto builder =
-                geode::BRepBuilder{ brep }.block_mesh_builder( block.id() );
+                geode::BRepBuilder{ brep }.block_mesh_builder( block );
             filter_duplicated_vertices( block, brep, *builder );
         }
 
@@ -812,8 +810,8 @@ namespace
             {
                 for( const auto& incidence_vertex : incidence_type_vertices )
                 {
-                    b2i_relations[boundary_vertex.component_id.id()].emplace(
-                        incidence_vertex.component_id.id() );
+                    b2i_relations[boundary_vertex.component_id.id].emplace(
+                        incidence_vertex.component_id.id );
                 }
             }
         }
@@ -827,13 +825,13 @@ namespace
         {
             for( const auto& boundary_vertex : boundary_type_vertices )
             {
-                if( b2i_relations.find( boundary_vertex.component_id.id() )
+                if( b2i_relations.find( boundary_vertex.component_id.id )
                     == b2i_relations.end() )
                 {
                     continue;
                 }
                 auto& incidences_in_relations =
-                    b2i_relations.at( boundary_vertex.component_id.id() );
+                    b2i_relations.at( boundary_vertex.component_id.id );
 
                 auto it = incidences_in_relations.cbegin();
                 while( it != incidences_in_relations.cend() )
@@ -844,7 +842,7 @@ namespace
                             incidence_type_vertices.end(),
                             [&incidence_id](
                                 const geode::ComponentMeshVertex& cmv ) {
-                                return cmv.component_id.id() == incidence_id;
+                                return cmv.component_id.id == incidence_id;
                             } )
                         == incidence_type_vertices.end() )
                     {
@@ -866,25 +864,25 @@ namespace
             std::vector< geode::ComponentMeshVertex > blocks_vertices;
             for( const auto& cmv : brep_.component_mesh_vertices( uv ) )
             {
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Corner3D::component_type_static() )
                 {
                     corners_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Line3D::component_type_static() )
                 {
                     lines_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Surface3D::component_type_static() )
                 {
                     surfaces_vertices.push_back( cmv );
                     continue;
                 }
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Block3D::component_type_static() )
                 {
                     blocks_vertices.push_back( cmv );

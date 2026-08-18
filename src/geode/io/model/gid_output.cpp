@@ -50,23 +50,35 @@ namespace
 
     geode::index_t get_material_number_value( const geode::Surface3D& surface )
     {
-        auto attribute =
+        const auto attribute_ids =
             surface.mesh()
                 .polygon_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute,
-                    geode::index_t >(
-                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
+                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        geode::OpenGeodeIOModelException::check_exception(
+            attribute_ids.has_value(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "The surface does not have a material number attribute" );
+        auto attribute = surface.mesh()
+                             .polygon_attribute_manager()
+                             .find_read_only_attribute< geode::index_t >(
+                                 attribute_ids.value().at( 0 ) );
         return attribute->value( 0 );
     }
 
     geode::index_t get_material_number_value( const geode::Block3D& block )
     {
-        auto attribute =
+        const auto attribute_ids =
             block.mesh()
                 .polyhedron_attribute_manager()
-                .find_or_create_attribute< geode::ConstantAttribute,
-                    geode::index_t >(
-                    FRACSIMA_ATTRIBUTE_NAME, 1, { false, true, true } );
+                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        geode::OpenGeodeIOModelException::check_exception(
+            attribute_ids.has_value(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "The surface does not have a material number attribute" );
+        auto attribute = block.mesh()
+                             .polyhedron_attribute_manager()
+                             .find_read_only_attribute< geode::index_t >(
+                                 attribute_ids.value().at( 0 ) );
         return attribute->value( 0 );
     }
 
@@ -109,11 +121,11 @@ namespace
                 for( const auto& cmv :
                     brep_.component_mesh_vertices( uv_index ) )
                 {
-                    if( cmv.component_id.type()
+                    if( cmv.component_id.type
                         == geode::Block3D::component_type_static() )
                     {
                         file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                        file_ << brep_.block( cmv.component_id.id() )
+                        file_ << brep_.block( cmv.component_id.id )
                                      .mesh()
                                      .point( cmv.vertex )
                                      .string()
@@ -167,12 +179,12 @@ namespace
             bool is_vertex_in_block = false;
             for( const auto& cmv : brep_.component_mesh_vertices( uv_index ) )
             {
-                if( cmv.component_id.type()
+                if( cmv.component_id.type
                     == geode::Surface3D::component_type_static() )
                 {
                     is_vertex_on_surface = true;
                 }
-                else if( cmv.component_id.type()
+                else if( cmv.component_id.type
                          == geode::Block3D::component_type_static() )
                 {
                     is_vertex_in_block = true;
@@ -196,7 +208,7 @@ namespace
                     brep_.component_mesh_vertices( uv_index ) )
                 {
                     file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                    file_ << brep_.surface( cmv.component_id.id() )
+                    file_ << brep_.surface( cmv.component_id.id )
                                  .mesh()
                                  .point( cmv.vertex )
                                  .string()
