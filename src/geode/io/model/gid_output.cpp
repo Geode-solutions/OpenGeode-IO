@@ -273,11 +273,27 @@ namespace geode::internal
             {
                 return false;
             }
+            const auto attribute_ids =
+                surface.mesh()
+                    .polygon_attribute_manager()
+                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+            if( !attribute_ids )
+            {
+                return false;
+            }
         }
         for( const auto& block : brep.blocks() )
         {
             if( block.mesh().type_name()
                 != TetrahedralSolid3D::type_name_static() )
+            {
+                return false;
+            }
+            const auto attribute_ids =
+                block.mesh()
+                    .polyhedron_attribute_manager()
+                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+            if( !attribute_ids )
             {
                 return false;
             }
