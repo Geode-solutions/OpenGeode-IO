@@ -86,7 +86,8 @@ namespace geode
                 for( const auto& id : manager.attribute_ids() )
                 {
                     const auto attribute = manager.find_generic_attribute( id );
-                    if( !attribute || !attribute->is_genericable() )
+                    if( !attribute || !attribute->is_genericable()
+                        || !attribute->properties().transferable )
                     {
                         continue;
                     }

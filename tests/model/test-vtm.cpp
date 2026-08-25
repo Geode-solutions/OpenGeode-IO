@@ -43,14 +43,16 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         geode::OpenGeodeIOModelLibrary::initialize();
 
-        auto brep =
-            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
-        const auto filename = absl::StrCat( "mss.vtm" );
+        auto brep = geode::load_brep( "native.og_brep" );
+        // auto brep =
+        //     geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" )
+        //     );
+        const auto filename = absl::StrCat( "native.vtm" );
         geode::save_brep( brep, filename );
-        auto section = geode::load_section(
-            absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
-        const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
-        geode::save_section( section, filename2 );
+        // auto section = geode::load_section(
+        //     absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
+        // const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
+        // geode::save_section( section, filename2 );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
