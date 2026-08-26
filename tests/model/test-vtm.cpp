@@ -51,7 +51,6 @@ int main()
             absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
         geode::save_section( section, filename2 );
-
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
