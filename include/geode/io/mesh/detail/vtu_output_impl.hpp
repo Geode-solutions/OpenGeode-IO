@@ -25,8 +25,6 @@
 
 #include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
-#include <absl/strings/str_split.h>
-
 namespace geode
 {
     namespace detail
@@ -35,6 +33,7 @@ namespace geode
         static constexpr auto VTK_HEXAHEDRON_TYPE = 12u;
         static constexpr auto VTK_PRISM_TYPE = 13u;
         static constexpr auto VTK_PYRAMID_TYPE = 14u;
+        static constexpr auto VTK_POLYHEDRON_TYPE = 42u;
         static constexpr std::array< geode::index_t, 9 >
             VTK_NB_VERTICES_TO_CELL_TYPE{ 0, 0, 0, 0, VTK_TETRAHEDRON_TYPE,
                 VTK_PYRAMID_TYPE, VTK_PRISM_TYPE, 0, VTK_HEXAHEDRON_TYPE };
@@ -59,16 +58,14 @@ namespace geode
             pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
             {
                 const auto nb_cells = this->mesh().nb_polyhedra();
-                std::string cell_connectivity;
+                std::vector< int64_t > cell_connectivity;
                 cell_connectivity.reserve( nb_cells * 4 );
-                std::string cell_offsets;
+                std::vector< int64_t > cell_offsets;
                 cell_offsets.reserve( nb_cells );
-                std::string cell_types;
+                std::vector< uint8_t > cell_types;
                 cell_types.reserve( nb_cells );
-                std::string cell_faces;
-                cell_faces.reserve( nb_cells * 4 );
-                std::string cell_face_offsets;
-                cell_face_offsets.reserve( nb_cells );
+                std::vector< int64_t > cell_faces;
+                std::vector< int64_t > cell_face_offsets;
                 index_t vertex_offset{ 0 };
                 index_t face_offset{ 0 };
                 for( const auto p : Range{ nb_cells } )
@@ -76,78 +73,40 @@ namespace geode
                     const auto nb_vertices =
                         this->mesh().nb_polyhedron_vertices( p );
                     vertex_offset += nb_vertices;
-                    absl::StrAppend( &cell_offsets, vertex_offset, " " );
+                    cell_offsets.push_back( vertex_offset );
                     for( const auto v : LRange{ nb_vertices } )
                     {
-                        absl::StrAppend( &cell_connectivity,
-                            this->mesh().polyhedron_vertex( { p, v } ), " " );
+                        cell_connectivity.push_back(
+                            this->mesh().polyhedron_vertex( { p, v } ) );
                     }
                     write_cell( p, cell_types, cell_faces, cell_face_offsets,
                         face_offset );
                 }
 
-                const auto nb_vertices = this->mesh().nb_vertices();
                 auto cells = piece.append_child( "Cells" );
-                auto connectivity = cells.append_child( "DataArray" );
-                connectivity.append_attribute( "type" ).set_value( "Int64" );
-                connectivity.append_attribute( "Name" ).set_value(
-                    "connectivity" );
-                connectivity.append_attribute( "format" ).set_value( "ascii" );
-                connectivity.append_attribute( "RangeMin" ).set_value( 0 );
-                connectivity.append_attribute( "RangeMax" )
-                    .set_value( nb_vertices - 1 );
-                connectivity.text().set( cell_connectivity.c_str() );
-
-                auto offsets = cells.append_child( "DataArray" );
-                offsets.append_attribute( "type" ).set_value( "Int64" );
-                offsets.append_attribute( "Name" ).set_value( "offsets" );
-                offsets.append_attribute( "format" ).set_value( "ascii" );
-                offsets.append_attribute( "RangeMin" ).set_value( 0 );
-                offsets.append_attribute( "RangeMax" ).set_value( nb_vertices );
-                offsets.text().set( cell_offsets.c_str() );
-
-                auto types = cells.append_child( "DataArray" );
-                types.append_attribute( "type" ).set_value( "UInt8" );
-                types.append_attribute( "Name" ).set_value( "types" );
-                types.append_attribute( "format" ).set_value( "ascii" );
-                types.append_attribute( "RangeMin" ).set_value( 1 );
-                types.append_attribute( "RangeMax" ).set_value( 42 );
-                types.text().set( cell_types.c_str() );
-
+                this->template write_data_array< int64_t >(
+                    cells, "connectivity", cell_connectivity );
+                this->template write_data_array< int64_t >(
+                    cells, "offsets", cell_offsets );
+                this->template write_data_array< uint8_t >(
+                    cells, "types", cell_types );
                 if( !cell_faces.empty() )
                 {
-                    auto faces = cells.append_child( "DataArray" );
-                    faces.append_attribute( "type" ).set_value( "Int64" );
-                    faces.append_attribute( "Name" ).set_value( "faces" );
-                    faces.append_attribute( "format" ).set_value( "ascii" );
-                    faces.append_attribute( "RangeMin" ).set_value( 0 );
-                    faces.append_attribute( "RangeMax" )
-                        .set_value( nb_vertices );
-                    faces.text().set( cell_faces.c_str() );
+                    this->template write_data_array< int64_t >(
+                        cells, "faces", cell_faces );
                 }
                 if( !cell_face_offsets.empty() )
                 {
-                    auto face_offsets = cells.append_child( "DataArray" );
-                    face_offsets.append_attribute( "type" ).set_value(
-                        "Int64" );
-                    face_offsets.append_attribute( "Name" ).set_value(
-                        "faceoffsets" );
-                    face_offsets.append_attribute( "format" )
-                        .set_value( "ascii" );
-                    face_offsets.append_attribute( "RangeMin" ).set_value( -1 );
-                    const std::vector< std::string_view > tokens =
-                        absl::StrSplit( cell_faces, " " );
-                    face_offsets.append_attribute( "RangeMax" )
-                        .set_value( tokens.size() );
-                    face_offsets.text().set( cell_face_offsets.c_str() );
+                    this->template write_data_array< int64_t >(
+                        cells, "faceoffsets", cell_face_offsets );
                 }
                 return cells;
             }
 
             virtual void write_cell( index_t c,
-                std::string& cell_types,
-                std::string& cell_faces,
-                std::string& cell_face_offsets,
+                std::vector< uint8_t >& cell_types,
+                std::vector< int64_t >& cell_faces,
+                std::vector< int64_t >& cell_face_offsets,
                 index_t& face_offset ) const = 0;
 
             pugi::xml_node write_vtk_cell_attributes(

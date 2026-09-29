@@ -32,6 +32,7 @@
 #include <geode/mesh/core/triangulated_surface.hpp>
 #include <geode/mesh/io/hybrid_solid_input.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
+#include <geode/mesh/io/polyhedral_solid_output.hpp>
 #include <geode/mesh/io/tetrahedral_solid_input.hpp>
 #include <geode/mesh/io/tetrahedral_solid_output.hpp>
 #include <geode/mesh/io/triangulated_surface_input.hpp>
@@ -105,6 +106,26 @@ void run_solid_test( std::string_view filename,
         "File should be loadable" );
 }
 
+void run_polyhedral_test( std::string_view filename,
+    const std::array< geode::index_t, 2 >& test_answers )
+{
+    // Load file
+    const auto file = absl::StrCat( geode::DATA_PATH, filename );
+    auto solid = geode::load_polyhedral_solid< 3 >( file );
+    check( *solid, test_answers );
+
+    // Save file
+    std::string_view filename_without_ext{ filename };
+    filename_without_ext.remove_suffix( 4 );
+    const auto output_filename_vtu =
+        absl::StrCat( filename_without_ext, "_polyhedral_output.vtu" );
+    geode::save_polyhedral_solid( *solid, output_filename_vtu );
+
+    // Reload file
+    auto reload_vtu = geode::load_polyhedral_solid< 3 >( output_filename_vtu );
+    check( *reload_vtu, test_answers );
+}
+
 void run_surface_test( std::string_view filename,
     const std::array< geode::index_t, 2 >& test_answers,
     double loadability )
@@ -135,6 +156,9 @@ int main()
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
+        run_solid_test( "cone_append_raw.vtu", { 580, 2197 }, 0.624858 );
+        run_polyhedral_test( "cone_append_raw.vtu", { 580, 2197 } );
+        run_solid_test( "cone_int32_raw.vtu", { 580, 2197 }, 0.624858 );
         run_surface_test( "cone.vtu", { 580, 1182 }, 0.336177 );
         run_surface_test( "mymesh.vtu", { 283308, 564408 }, 1 );
 

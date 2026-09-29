@@ -27,7 +27,6 @@
 
 #include <geode/basic/attribute_manager.hpp>
 
-#include <geode/geometry/bounding_box.hpp>
 #include <geode/geometry/point.hpp>
 
 namespace geode
@@ -35,16 +34,16 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        inline void write_point(
-            std::string& string, const Point< dimension >& point )
+        inline void write_point( std::vector< double >& coordinates,
+            const Point< dimension >& point )
         {
-            if( dimension < 3 )
+            for( const auto d : LRange{ dimension } )
             {
-                absl::StrAppend( &string, point.string(), " 0 " );
+                coordinates.push_back( point.value( d ) );
             }
-            else
+            for( [[maybe_unused]] const auto d : LRange{ dimension, 3 } )
             {
-                absl::StrAppend( &string, point.string(), " " );
+                coordinates.push_back( 0 );
             }
         }
 
@@ -83,37 +82,27 @@ namespace geode
                 write_vtk_cells( piece );
             }
 
-            pugi::xml_node write_vtk_points( pugi::xml_node& piece,
-                absl::Span< const index_t > vertices ) const
+            pugi::xml_node write_vtk_points(
+                pugi::xml_node& piece, absl::Span< const index_t > vertices )
             {
                 auto points = piece.append_child( "Points" );
                 if( vertices.size() == 0 )
                 {
                     return points;
                 }
-                auto data_array =
-                    this->write_attribute_header( points, "Points", 3 );
-                const auto bbox = this->mesh().bounding_box();
-                auto min = bbox.min().value( 0 );
-                auto max = bbox.max().value( 0 );
-                for( const auto d : Range{ 1, dimension } )
-                {
-                    min = std::min( min, bbox.min().value( d ) );
-                    max = std::max( max, bbox.max().value( d ) );
-                }
-                data_array.append_attribute( "RangeMin" ).set_value( min );
-                data_array.append_attribute( "RangeMax" ).set_value( max );
-                std::string vertices_str;
+                std::vector< double > coordinates;
+                coordinates.reserve( 3 * vertices.size() );
                 for( const auto v : vertices )
                 {
-                    write_point( vertices_str, this->mesh().point( v ) );
+                    write_point( coordinates, this->mesh().point( v ) );
                 }
-                data_array.text().set( vertices_str.c_str() );
+                this->template write_data_array< double >(
+                    points, "Points", coordinates, 3 );
                 return points;
             }
 
-            pugi::xml_node write_vtk_vertex_attributes( pugi::xml_node& piece,
-                absl::Span< const index_t > vertices ) const
+            pugi::xml_node write_vtk_vertex_attributes(
+                pugi::xml_node& piece, absl::Span< const index_t > vertices )
             {
                 auto point_data = piece.append_child( "PointData" );
                 this->write_attributes( point_data,

@@ -44,12 +44,12 @@ namespace
 
     private:
         void write_cell( geode::index_t /*unused*/,
-            std::string& cell_types,
-            std::string& /*unused*/,
-            std::string& /*unused*/,
+            std::vector< uint8_t >& cell_types,
+            std::vector< int64_t >& /*unused*/,
+            std::vector< int64_t >& /*unused*/,
             geode::index_t& /*unused*/ ) const override
         {
-            absl::StrAppend( &cell_types, "10 " );
+            cell_types.push_back( geode::detail::VTK_TETRAHEDRON_TYPE );
         }
     };
 } // namespace

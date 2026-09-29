@@ -27,8 +27,6 @@
 
 #include <geode/basic/filename.hpp>
 
-#include <geode/geometry/bounding_box.hpp>
-
 #include <geode/image/core/raster_image.hpp>
 #include <geode/image/io/raster_image_output.hpp>
 
@@ -92,25 +90,18 @@ namespace geode
                 save_images();
                 for( const auto& texture_info : textures_info_ )
                 {
-                    auto data_array = this->write_attribute_header(
-                        vertex_node, texture_info.first, 2 );
-                    BoundingBox2D bbox;
-                    std::string values;
+                    std::vector< double > values;
+                    values.reserve( 2 * unique_texture_vertices_.size() );
                     const auto& texture = texture_info.second.get();
                     for( const auto& texture_vertex : unique_texture_vertices_ )
                     {
                         const auto& coordinates =
                             texture.texture_coordinates( texture_vertex );
-                        absl::StrAppend( &values, coordinates.string(), " " );
-                        bbox.add_point( coordinates );
+                        values.push_back( coordinates.value( 0 ) );
+                        values.push_back( coordinates.value( 1 ) );
                     }
-                    const auto min = std::min(
-                        bbox.min().value( 0 ), bbox.min().value( 1 ) );
-                    const auto max = std::max(
-                        bbox.max().value( 0 ), bbox.max().value( 1 ) );
-                    data_array.append_attribute( "RangeMin" ).set_value( min );
-                    data_array.append_attribute( "RangeMax" ).set_value( max );
-                    data_array.text().set( values.c_str() );
+                    this->template write_data_array< double >(
+                        vertex_node, texture_info.first, values, 2 );
                 }
             }
 
@@ -161,25 +152,10 @@ namespace geode
             pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
             {
                 auto polys = piece.append_child( "Polys" );
-                auto connectivity = polys.append_child( "DataArray" );
-                connectivity.append_attribute( "type" ).set_value( "Int64" );
-                connectivity.append_attribute( "Name" ).set_value(
-                    "connectivity" );
-                connectivity.append_attribute( "format" ).set_value( "ascii" );
-                connectivity.append_attribute( "RangeMin" ).set_value( 0 );
-                connectivity.append_attribute( "RangeMax" )
-                    .set_value( this->mesh().nb_vertices() - 1 );
-                auto offsets = polys.append_child( "DataArray" );
-                offsets.append_attribute( "type" ).set_value( "Int64" );
-                offsets.append_attribute( "Name" ).set_value( "offsets" );
-                offsets.append_attribute( "format" ).set_value( "ascii" );
-                offsets.append_attribute( "RangeMin" ).set_value( 0 );
-                offsets.append_attribute( "RangeMax" )
-                    .set_value( this->mesh().nb_vertices() );
                 const auto nb_polys = this->mesh().nb_polygons();
-                std::string poly_connectivity;
+                std::vector< int64_t > poly_connectivity;
                 poly_connectivity.reserve( nb_polys * 3 );
-                std::string poly_offsets;
+                std::vector< int64_t > poly_offsets;
                 poly_offsets.reserve( nb_polys );
                 index_t vertex_count{ 0 };
                 for( const auto p : Range{ nb_polys } )
@@ -187,24 +163,26 @@ namespace geode
                     const auto nb_polygon_vertices =
                         this->mesh().nb_polygon_vertices( p );
                     vertex_count += nb_polygon_vertices;
-                    absl::StrAppend( &poly_offsets, vertex_count, " " );
+                    poly_offsets.push_back( vertex_count );
                     for( const auto v : LRange{ nb_polygon_vertices } )
                     {
                         const auto vertex =
                             this->mesh().polygon_vertex( { p, v } );
                         if( vertex_mapping_.empty() )
                         {
-                            absl::StrAppend( &poly_connectivity, vertex, " " );
+                            poly_connectivity.push_back( vertex );
                         }
                         else
                         {
-                            absl::StrAppend( &poly_connectivity,
-                                vertex_mapping_[vertex].at( p ), " " );
+                            poly_connectivity.push_back(
+                                vertex_mapping_[vertex].at( p ) );
                         }
                     }
                 }
-                connectivity.text().set( poly_connectivity.c_str() );
-                offsets.text().set( poly_offsets.c_str() );
+                this->template write_data_array< int64_t >(
+                    polys, "connectivity", poly_connectivity );
+                this->template write_data_array< int64_t >(
+                    polys, "offsets", poly_offsets );
                 return polys;
             }
 
