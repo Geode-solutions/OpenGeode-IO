@@ -313,8 +313,8 @@ namespace geode
                     // VTK marks missing values with NaN, only available in
                     // floating arrays
                     const auto has_all_values =
-                        absl::c_all_of( elements, [typed]( index_t e ) {
-                            return typed->has_value( e );
+                        absl::c_all_of( elements, [typed]( index_t element ) {
+                            return typed->has_value( element );
                         } );
                     if( !has_all_values )
                     {
@@ -336,22 +336,23 @@ namespace geode
                 using Traits = VTKAttributeValue< Value >;
                 std::vector< Stored > values;
                 values.reserve( elements.size() * Traits::nb_components );
-                for( const auto e : elements )
+                for( const auto element : elements )
                 {
                     if constexpr( std::is_floating_point_v< Stored > )
                     {
-                        if( !attribute.has_value( e ) )
+                        if( !attribute.has_value( element ) )
                         {
                             values.insert( values.end(), Traits::nb_components,
                                 std::numeric_limits< Stored >::quiet_NaN() );
                             continue;
                         }
                     }
-                    const auto& value = attribute.value( e );
-                    for( const auto c : LRange{ Traits::nb_components } )
+                    const auto& value = attribute.value( element );
+                    for( const auto component :
+                        LRange{ Traits::nb_components } )
                     {
                         values.push_back( static_cast< Stored >(
-                            Traits::component( value, c ) ) );
+                            Traits::component( value, component ) ) );
                     }
                 }
                 write_data_array< Stored >( attribute_node,
@@ -365,14 +366,15 @@ namespace geode
                 const auto nb_items = attribute.nb_items();
                 std::vector< float > values;
                 values.reserve( elements.size() * nb_items );
-                for( const auto e : elements )
+                for( const auto element : elements )
                 {
-                    const auto has_value = attribute.has_value( e );
-                    for( const auto i : LRange{ nb_items } )
+                    const auto has_value = attribute.has_value( element );
+                    for( const auto item : LRange{ nb_items } )
                     {
                         values.push_back(
-                            has_value ? attribute.generic_item_value( e, i )
-                                      : std::nanf( "" ) );
+                            has_value
+                                ? attribute.generic_item_value( element, item )
+                                : std::nanf( "" ) );
                     }
                 }
                 write_data_array< float >( attribute_node,
