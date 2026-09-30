@@ -43,9 +43,9 @@ namespace
 
     private:
         void write_cell( geode::index_t p,
-            std::string& cell_types,
-            std::string& /*unused*/,
-            std::string& /*unused*/,
+            std::vector< uint8_t >& cell_types,
+            std::vector< int64_t >& /*unused*/,
+            std::vector< int64_t >& /*unused*/,
             geode::index_t& /*unused*/ ) const override
         {
             const auto nb_vertices = this->mesh().nb_polyhedron_vertices( p );
@@ -55,7 +55,7 @@ namespace
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[VTUHybridOutputImpl::write_vtk_cell] Polyhedron with ",
                 nb_vertices, " vertices not supported" );
-            absl::StrAppend( &cell_types, vtk_type, " " );
+            cell_types.push_back( vtk_type );
         }
     };
 } // namespace

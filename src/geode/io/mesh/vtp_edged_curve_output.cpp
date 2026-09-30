@@ -54,38 +54,26 @@ namespace
         pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
         {
             auto lines = piece.append_child( "Lines" );
-            auto connectivity = lines.append_child( "DataArray" );
-            connectivity.append_attribute( "type" ).set_value( "Int64" );
-            connectivity.append_attribute( "Name" ).set_value( "connectivity" );
-            connectivity.append_attribute( "format" ).set_value( "ascii" );
-            connectivity.append_attribute( "RangeMin" ).set_value( 0 );
-            connectivity.append_attribute( "RangeMax" )
-                .set_value( this->mesh().nb_vertices() - 1 );
-            auto offsets = lines.append_child( "DataArray" );
-            offsets.append_attribute( "type" ).set_value( "Int64" );
-            offsets.append_attribute( "Name" ).set_value( "offsets" );
-            offsets.append_attribute( "format" ).set_value( "ascii" );
-            offsets.append_attribute( "RangeMin" ).set_value( 0 );
-            offsets.append_attribute( "RangeMax" )
-                .set_value( this->mesh().nb_vertices() );
             const auto nb_edges = this->mesh().nb_edges();
-            std::string edge_connectivity;
+            std::vector< int64_t > edge_connectivity;
             edge_connectivity.reserve( nb_edges * 2 );
-            std::string edge_offsets;
+            std::vector< int64_t > edge_offsets;
             edge_offsets.reserve( nb_edges );
             geode::index_t vertex_count{ 0 };
             for( const auto e : geode::Range{ nb_edges } )
             {
                 vertex_count += 2;
-                absl::StrAppend( &edge_offsets, vertex_count, " " );
+                edge_offsets.push_back( vertex_count );
                 for( const auto v : geode::LRange{ 2 } )
                 {
-                    absl::StrAppend( &edge_connectivity,
-                        this->mesh().edge_vertex( { e, v } ), " " );
+                    edge_connectivity.push_back(
+                        this->mesh().edge_vertex( { e, v } ) );
                 }
             }
-            connectivity.text().set( edge_connectivity.c_str() );
-            offsets.text().set( edge_offsets.c_str() );
+            this->template write_data_array< int64_t >(
+                lines, "connectivity", edge_connectivity );
+            this->template write_data_array< int64_t >(
+                lines, "offsets", edge_offsets );
             return lines;
         }
 

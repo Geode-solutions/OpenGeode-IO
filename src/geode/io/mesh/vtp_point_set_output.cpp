@@ -53,32 +53,15 @@ namespace
         pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
         {
             auto verts = piece.append_child( "Verts" );
-            auto connectivity = verts.append_child( "DataArray" );
-            connectivity.append_attribute( "type" ).set_value( "Int64" );
-            connectivity.append_attribute( "Name" ).set_value( "connectivity" );
-            connectivity.append_attribute( "format" ).set_value( "ascii" );
-            connectivity.append_attribute( "RangeMin" ).set_value( 0 );
-            connectivity.append_attribute( "RangeMax" )
-                .set_value( this->mesh().nb_vertices() - 1 );
-            auto offsets = verts.append_child( "DataArray" );
-            offsets.append_attribute( "type" ).set_value( "Int64" );
-            offsets.append_attribute( "Name" ).set_value( "offsets" );
-            offsets.append_attribute( "format" ).set_value( "ascii" );
-            offsets.append_attribute( "RangeMin" ).set_value( 0 );
-            offsets.append_attribute( "RangeMax" )
-                .set_value( this->mesh().nb_vertices() );
             const auto nb_vertices = this->mesh().nb_vertices();
-            std::string vertex_connectivity;
-            vertex_connectivity.reserve( nb_vertices );
-            std::string vertex_offsets;
-            vertex_offsets.reserve( nb_vertices );
-            for( const auto v : geode::Range{ nb_vertices } )
-            {
-                absl::StrAppend( &vertex_offsets, v + 1, " " );
-                absl::StrAppend( &vertex_connectivity, v, " " );
-            }
-            connectivity.text().set( vertex_connectivity.c_str() );
-            offsets.text().set( vertex_offsets.c_str() );
+            std::vector< int64_t > vertex_connectivity( nb_vertices );
+            absl::c_iota( vertex_connectivity, 0 );
+            std::vector< int64_t > vertex_offsets( nb_vertices );
+            absl::c_iota( vertex_offsets, 1 );
+            this->template write_data_array< int64_t >(
+                verts, "connectivity", vertex_connectivity );
+            this->template write_data_array< int64_t >(
+                verts, "offsets", vertex_offsets );
             return verts;
         }
 

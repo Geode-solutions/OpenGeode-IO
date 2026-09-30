@@ -29,13 +29,7 @@
 
 #include <pugixml.hpp>
 
-#include <zlib.h>
-
-#include <absl/strings/escaping.h>
-#include <absl/strings/str_split.h>
-
 #include <geode/basic/attribute_manager.hpp>
-#include <geode/basic/string.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -172,65 +166,13 @@ namespace geode
                     nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::read_points] Trying to import 2D VTK object "
                     "into a 3D Surface is not allowed" );
-                const auto format = points.attribute( "format" ).value();
-                if( this->match( format, "appended" ) )
-                {
-                    if( this->match( type, "Float32" ) )
-                    {
-                        return decode_points< float >(
-                            this->read_appended_data( points ), nb_points );
-                    }
-                    return decode_points< double >(
-                        this->read_appended_data( points ), nb_points );
-                }
-                else
-                {
-                    const auto coords_string =
-                        absl::StripAsciiWhitespace( points.child_value() );
-                    if( this->match( format, "ascii" ) )
-                    {
-                        auto string = to_string( coords_string );
-                        absl::RemoveExtraAsciiWhitespace( &string );
-                        const auto coords =
-                            read_ascii_coordinates( string, nb_points );
-                        OpenGeodeIOMeshException::check_exception(
-                            coords.size() == 3 * nb_points, nullptr,
-                            OpenGeodeException::TYPE::data,
-                            "[VTKInput::read_points] Wrong number of "
-                            "coordinates" );
-                        return get_points( coords );
-                    }
-                    if( this->match( type, "Float32" ) )
-                    {
-                        return decode_points< float >(
-                            coords_string, nb_points );
-                    }
-                    return decode_points< double >( coords_string, nb_points );
-                }
-            }
-
-            template < typename T >
-            absl::FixedArray< Point3D > decode_points(
-                std::string_view coords_string, index_t nb_points )
-            {
-                const auto coords = this->template decode< T >( coords_string );
+                const auto coords =
+                    this->template read_data_array< double >( points );
                 OpenGeodeIOMeshException::check_exception(
                     coords.size() == 3 * nb_points, nullptr,
                     OpenGeodeException::TYPE::data,
                     "[VTKInput::read_points] Wrong number of coordinates" );
                 return get_points( coords );
-            }
-
-            std::vector< double > read_ascii_coordinates(
-                std::string_view coords, index_t nb_points )
-            {
-                std::vector< double > results;
-                results.reserve( 3 * nb_points );
-                for( auto string : absl::StrSplit( coords, ' ' ) )
-                {
-                    results.push_back( string_to_double( string ) );
-                }
-                return results;
             }
 
         private:

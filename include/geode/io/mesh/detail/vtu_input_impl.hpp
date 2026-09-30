@@ -53,15 +53,8 @@ namespace geode
                     if( this->match(
                             data.attribute( "Name" ).value(), "offsets" ) )
                     {
-                        OpenGeodeIOMeshException::check_exception(
-                            this->match(
-                                data.attribute( "type" ).value(), "Int64" ),
-                            nullptr, OpenGeodeException::TYPE::data,
-                            "[VTUInputImpl::read_cells] Wrong offset type, "
-                            "supports only Int64" );
                         offsets_values =
-                            this->template read_integer_data_array< int64_t >(
-                                data );
+                            this->template read_data_array< int64_t >( data );
                         OpenGeodeIOMeshException::check_assertion(
                             offsets_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "
@@ -70,44 +63,14 @@ namespace geode
                     else if( this->match( data.attribute( "Name" ).value(),
                                  "connectivity" ) )
                     {
-                        OpenGeodeIOMeshException::check_exception(
-                            this->match(
-                                data.attribute( "type" ).value(), "Int64" ),
-                            nullptr, OpenGeodeException::TYPE::data,
-                            "[VTUInputImpl::read_cells] Wrong connectivity "
-                            "type, supports only Int64" );
                         connectivity_values =
-                            this->template read_integer_data_array< int64_t >(
-                                data );
+                            this->template read_data_array< int64_t >( data );
                     }
                     else if( this->match(
                                  data.attribute( "Name" ).value(), "types" ) )
                     {
-                        if( this->match(
-                                data.attribute( "type" ).value(), "UInt8" ) )
-                        {
-                            types_values =
-                                this->template read_uint8_data_array< uint8_t >(
-                                    data );
-                        }
-                        else if( this->match( data.attribute( "type" ).value(),
-                                     "Int32" ) )
-                        {
-                            types_values.reserve( nb_cells );
-                            for( const auto type :
-                                this->template read_integer_data_array<
-                                    int32_t >( data ) )
-                            {
-                                types_values.push_back(
-                                    static_cast< uint8_t >( type ) );
-                            }
-                        }
-                        else
-                        {
-                            throw OpenGeodeIOMeshException{ nullptr,
-                                OpenGeodeException::TYPE::data,
-                                "[VTUInputImpl::read_cells] Wrong types type" };
-                        }
+                        types_values =
+                            this->template read_data_array< uint8_t >( data );
                         OpenGeodeIOMeshException::check_assertion(
                             types_values.size() == nb_cells,
                             "[VTUInputImpl::read_cells] Wrong number of "

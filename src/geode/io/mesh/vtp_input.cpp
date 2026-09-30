@@ -69,7 +69,7 @@ namespace
             {
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
-                    offsets_values = read_integer_data_array< int64_t >( data );
+                    offsets_values = read_data_array< int64_t >( data );
                     geode::OpenGeodeIOMeshException::check_assertion(
                         offsets_values.size() == nb_polygons, nullptr,
                         geode::OpenGeodeException::TYPE::data,
@@ -78,8 +78,7 @@ namespace
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
                 {
-                    connectivity_values =
-                        read_integer_data_array< int64_t >( data );
+                    connectivity_values = read_data_array< int64_t >( data );
                 }
             }
             return get_cell_vertices( connectivity_values, offsets_values );

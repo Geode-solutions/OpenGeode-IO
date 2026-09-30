@@ -45,14 +45,14 @@ namespace
 
     private:
         void write_cell( geode::index_t p,
-            std::string& cell_types,
-            std::string& cell_faces,
-            std::string& cell_face_offsets,
+            std::vector< uint8_t >& cell_types,
+            std::vector< int64_t >& cell_faces,
+            std::vector< int64_t >& cell_face_offsets,
             geode::index_t& face_offset ) const override
         {
             add_cell_type( p, cell_types );
             const auto nb_faces = this->mesh().nb_polyhedron_facets( p );
-            absl::StrAppend( &cell_faces, nb_faces, " " );
+            cell_faces.push_back( nb_faces );
             geode::index_t offset{ 1 };
             for( const auto f : geode::LRange{ nb_faces } )
             {
@@ -60,50 +60,45 @@ namespace
                 const auto nb_vertices =
                     this->mesh().nb_polyhedron_facet_vertices( facet );
                 offset += nb_vertices + 1;
-                absl::StrAppend( &cell_faces, nb_vertices, " " );
+                cell_faces.push_back( nb_vertices );
                 for( const auto v : geode::LRange{ nb_vertices } )
                 {
-                    absl::StrAppend( &cell_faces,
-                        this->mesh().polyhedron_facet_vertex( { facet, v } ),
-                        " " );
+                    cell_faces.push_back(
+                        this->mesh().polyhedron_facet_vertex( { facet, v } ) );
                 }
             }
             face_offset += offset;
-            absl::StrAppend( &cell_face_offsets, face_offset, " " );
+            cell_face_offsets.push_back( face_offset );
         }
 
-        void add_cell_type(
-            geode::index_t polyhedron_id, std::string& cell_types ) const
+        void add_cell_type( geode::index_t polyhedron_id,
+            std::vector< uint8_t >& cell_types ) const
         {
             if( geode::detail::solid_polyhedron_is_a_tetrahedron(
                     this->mesh(), polyhedron_id ) )
             {
-                absl::StrAppend(
-                    &cell_types, geode::detail::VTK_TETRAHEDRON_TYPE, " " );
+                cell_types.push_back( geode::detail::VTK_TETRAHEDRON_TYPE );
                 return;
             }
             if( geode::detail::solid_polyhedron_is_a_prism(
                     this->mesh(), polyhedron_id ) )
             {
-                absl::StrAppend(
-                    &cell_types, geode::detail::VTK_PRISM_TYPE, " " );
+                cell_types.push_back( geode::detail::VTK_PRISM_TYPE );
                 return;
             }
             if( geode::detail::solid_polyhedron_is_a_pyramid(
                     this->mesh(), polyhedron_id ) )
             {
-                absl::StrAppend(
-                    &cell_types, geode::detail::VTK_PYRAMID_TYPE, " " );
+                cell_types.push_back( geode::detail::VTK_PYRAMID_TYPE );
                 return;
             }
             if( geode::detail::solid_polyhedron_is_a_hexaedron(
                     this->mesh(), polyhedron_id ) )
             {
-                absl::StrAppend(
-                    &cell_types, geode::detail::VTK_HEXAHEDRON_TYPE, " " );
+                cell_types.push_back( geode::detail::VTK_HEXAHEDRON_TYPE );
                 return;
             }
-            absl::StrAppend( &cell_types, "42 " );
+            cell_types.push_back( geode::detail::VTK_POLYHEDRON_TYPE );
         }
     };
 } // namespace

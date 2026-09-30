@@ -62,29 +62,17 @@ namespace
         {
             auto point_data = piece.append_child( "PointData" );
             point_data.append_attribute( "Scalars" ).set_value( "Color" );
-            auto data_array = point_data.append_child( "DataArray" );
-            data_array.append_attribute( "type" ).set_value( "UInt8" );
-            data_array.append_attribute( "Name" ).set_value( "Color" );
-            data_array.append_attribute( "format" ).set_value( "ascii" );
-            data_array.append_attribute( "NumberOfComponents" ).set_value( 3 );
-            auto min = std::numeric_limits< geode::local_index_t >::max();
-            auto max = std::numeric_limits< geode::local_index_t >::lowest();
-            std::string values;
+            std::vector< uint8_t > values;
+            values.reserve( 3 * this->mesh().nb_cells() );
             for( const auto c : geode::Range{ this->mesh().nb_cells() } )
             {
                 const auto& color = this->mesh().color( c );
-                absl::StrAppend( &values, color.red(), " ", color.green(), " ",
-                    color.blue(), " " );
-                min = std::min(
-                    min, std::min( color.red(),
-                             std::min( color.green(), color.blue() ) ) );
-                max = std::max(
-                    max, std::max( color.red(),
-                             std::max( color.green(), color.blue() ) ) );
+                values.push_back( color.red() );
+                values.push_back( color.green() );
+                values.push_back( color.blue() );
             }
-            data_array.append_attribute( "RangeMin" ).set_value( min );
-            data_array.append_attribute( "RangeMax" ).set_value( max );
-            data_array.text().set( values.c_str() );
+            this->template write_data_array< uint8_t >(
+                point_data, "Color", values, 3 );
         }
     };
 } // namespace
