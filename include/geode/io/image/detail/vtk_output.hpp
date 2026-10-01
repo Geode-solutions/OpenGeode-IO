@@ -34,6 +34,7 @@
 #include <pugixml.hpp>
 
 #include <absl/algorithm/container.h>
+#include <absl/container/flat_hash_map.h>
 
 #include <geode/basic/attribute_manager.hpp>
 
@@ -218,34 +219,40 @@ namespace geode
                 const AttributeManager& manager,
                 absl::Span< const index_t > elements )
             {
+                const auto names = compute_attribute_names( manager );
                 for( const auto& id : manager.attribute_ids() )
                 {
                     const auto attribute = manager.find_generic_attribute( id );
-                    if( !attribute || !attribute->properties().transferable )
+                    if( !should_be_written( attribute ) )
                     {
                         continue;
                     }
-                    if( write_typed_attribute( attribute_node, *attribute,
+                    const auto& name = names.at( id );
+                    if( write_typed_attribute( attribute_node, name, *attribute,
                             elements, VTKScalarAttributeTypes{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< bool >{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< unsigned char >{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< int >{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< unsigned int >{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< float >{} )
-                        || write_typed_attribute( attribute_node, *attribute,
-                            elements, VTKAttributeArrays< double >{} ) )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements, VTKAttributeArrays< bool >{} )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements,
+                            VTKAttributeArrays< unsigned char >{} )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements, VTKAttributeArrays< int >{} )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements,
+                            VTKAttributeArrays< unsigned int >{} )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements,
+                            VTKAttributeArrays< float >{} )
+                        || write_typed_attribute( attribute_node, name,
+                            *attribute, elements,
+                            VTKAttributeArrays< double >{} ) )
                     {
                         continue;
                     }
                     if( attribute->is_genericable() )
                     {
                         write_generic_attribute(
-                            attribute_node, *attribute, elements );
+                            attribute_node, name, *attribute, elements );
                     }
                 }
             }
@@ -284,19 +291,71 @@ namespace geode
             }
 
         private:
+            static bool should_be_written(
+                const std::shared_ptr< AttributeBase >& attribute )
+            {
+                return attribute && attribute->properties().transferable;
+            }
+
+            static absl::flat_hash_map< uuid, std::string >
+                compute_attribute_names( const AttributeManager& manager )
+            {
+                absl::flat_hash_map< uuid, std::string > names;
+                for( const auto& series_name : manager.time_series_names() )
+                {
+                    const auto time_steps = manager.time_steps( series_name );
+                    for( const auto step : Indices{ time_steps } )
+                    {
+                        names.emplace( time_steps[step].attribute_id,
+                            absl::StrCat( series_name, "@", step ) );
+                    }
+                }
+                absl::flat_hash_map< std::string, std::vector< uuid > >
+                    same_name_ids;
+                for( const auto& id : manager.attribute_ids() )
+                {
+                    if( names.contains( id ) )
+                    {
+                        continue;
+                    }
+                    const auto attribute = manager.find_generic_attribute( id );
+                    if( !should_be_written( attribute ) )
+                    {
+                        continue;
+                    }
+                    same_name_ids[attribute->name().value()].push_back( id );
+                }
+                for( const auto& [name, ids] : same_name_ids )
+                {
+                    if( ids.size() == 1 )
+                    {
+                        names.emplace( ids.front(), name );
+                        continue;
+                    }
+                    for( const auto index : Indices{ ids } )
+                    {
+                        names.emplace(
+                            ids[index], absl::StrCat( name, "_", index ) );
+                    }
+                }
+                return names;
+            }
+
             template < typename... Values >
             bool write_typed_attribute( pugi::xml_node& attribute_node,
+                std::string_view name,
                 AttributeBase& attribute,
                 absl::Span< const index_t > elements,
                 VTKAttributeTypeList< Values... > /*unused*/ )
             {
                 return ( write_typed_attribute< Values >(
-                             attribute_node, attribute, elements )
+                             attribute_node, name, attribute, elements )
                          || ... );
             }
 
             template < typename Value >
             bool write_typed_attribute( pugi::xml_node& attribute_node,
+                std::string_view name,
                 AttributeBase& attribute,
                 absl::Span< const index_t > elements )
             {
@@ -319,17 +378,18 @@ namespace geode
                     if( !has_all_values )
                     {
                         write_typed_values< Value, double >(
-                            attribute_node, *typed, elements );
+                            attribute_node, name, *typed, elements );
                         return true;
                     }
                 }
                 write_typed_values< Value, Stored >(
-                    attribute_node, *typed, elements );
+                    attribute_node, name, *typed, elements );
                 return true;
             }
 
             template < typename Value, typename Stored >
             void write_typed_values( pugi::xml_node& attribute_node,
+                std::string_view name,
                 const ReadOnlyAttribute< Value >& attribute,
                 absl::Span< const index_t > elements )
             {
@@ -355,11 +415,12 @@ namespace geode
                             Traits::component( value, component ) ) );
                     }
                 }
-                write_data_array< Stored >( attribute_node,
-                    attribute.name().value(), values, Traits::nb_components );
+                write_data_array< Stored >(
+                    attribute_node, name, values, Traits::nb_components );
             }
 
             void write_generic_attribute( pugi::xml_node& attribute_node,
+                std::string_view name,
                 const AttributeBase& attribute,
                 absl::Span< const index_t > elements )
             {
@@ -377,8 +438,8 @@ namespace geode
                                 : std::nanf( "" ) );
                     }
                 }
-                write_data_array< float >( attribute_node,
-                    attribute.name().value(), values, nb_items );
+                write_data_array< float >(
+                    attribute_node, name, values, nb_items );
             }
 
             template < typename T >

@@ -30,6 +30,7 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
@@ -270,6 +271,84 @@ void run_attribute_types_test()
     }
 }
 
+double temperature_value( double time, geode::index_t vertex )
+{
+    return 10. * time + vertex;
+}
+
+void test_time_series()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 1, 1 } } );
+    builder->create_polygon( { 0, 1, 2 } );
+    builder->create_polygon( { 1, 3, 2 } );
+    const std::array< double, 3 > creation_times{ 2., 0.5, 1. };
+    auto& manager = surface->vertex_attribute_manager();
+    for( const auto time : creation_times )
+    {
+        const auto step =
+            manager.find_attribute< geode::VariableAttribute, double >(
+                manager.create_time_step_attribute< geode::VariableAttribute,
+                    double >( "temperature", time, { 0, 0 }, {} ) );
+        for( const auto vertex : geode::Range{ surface->nb_vertices() } )
+        {
+            step->set_value( vertex, temperature_value( time, vertex ) );
+        }
+    }
+    const std::array< double, 2 > same_name_values{ 1., 2. };
+    auto& polygon_manager = surface->polygon_attribute_manager();
+    for( const auto value : same_name_values )
+    {
+        const auto id =
+            polygon_manager
+                .create_attribute< geode::VariableAttribute, double >(
+                    "temperature", { value, 0 }, {} );
+    }
+    geode::save_polygonal_surface( *surface, "time_series.vtp" );
+    const auto reload_surface =
+        geode::load_polygonal_surface< 3 >( "time_series.vtp" );
+    const auto& reload_manager = reload_surface->vertex_attribute_manager();
+    const std::array< double, 3 > sorted_times{ 0.5, 1., 2. };
+    for( const auto step : geode::Indices{ sorted_times } )
+    {
+        const auto name = absl::StrCat( "temperature@", step );
+        const auto ids = reload_manager.attribute_ids_matching_name( name );
+        geode::OpenGeodeIOMeshException::test(
+            ids && ids->size() == 1, "Attribute ", name, " should be written" );
+        const auto attribute =
+            reload_manager.find_read_only_attribute< double >( ids->front() );
+        for( const auto vertex : geode::Range{ reload_surface->nb_vertices() } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                attribute->value( vertex )
+                    == temperature_value( sorted_times[step], vertex ),
+                "Wrong value of ", name, " at vertex ", vertex );
+        }
+    }
+    const auto& reload_polygon_manager =
+        reload_surface->polygon_attribute_manager();
+    for( const auto index : geode::Indices{ same_name_values } )
+    {
+        const auto name = absl::StrCat( "temperature_", index );
+        const auto ids =
+            reload_polygon_manager.attribute_ids_matching_name( name );
+        const auto attribute =
+            reload_polygon_manager.find_read_only_attribute< double >(
+                ids->front() );
+        for( const auto polygon :
+            geode::Range{ reload_surface->nb_polygons() } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                attribute->value( polygon ) == same_name_values[index],
+                "Wrong value of ", name, " at polygon ", polygon );
+        }
+    }
+}
+
 int main()
 {
     try
@@ -299,6 +378,7 @@ int main()
 
         run_encoding_tests();
         run_attribute_types_test();
+        test_time_series();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
