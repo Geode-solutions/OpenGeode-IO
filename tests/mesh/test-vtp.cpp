@@ -308,6 +308,7 @@ void test_time_series()
                 .create_attribute< geode::VariableAttribute, double >(
                     "temperature", { value, 0 }, {} );
     }
+    geode::save_polygonal_surface( *surface, "time_series.vtp" );
     const auto reload_surface =
         geode::load_polygonal_surface< 3 >( "time_series.vtp" );
     const auto& reload_manager = reload_surface->vertex_attribute_manager();
