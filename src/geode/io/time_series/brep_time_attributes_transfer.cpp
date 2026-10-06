@@ -46,76 +46,70 @@ namespace
 
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    BRepTimeAttributesTransfer::BRepTimeAttributesTransfer(
+        BRep& brep, absl::Span< const std::string_view > ignored_attributes )
+        : brep_( brep ),
+          ignored_attributes_(
+              ignored_attributes.begin(), ignored_attributes.end() )
     {
-        BRepTimeAttributesTransfer::BRepTimeAttributesTransfer( BRep& brep,
-            absl::Span< const std::string_view > ignored_attributes )
-            : brep_( brep ),
-              ignored_attributes_(
-                  ignored_attributes.begin(), ignored_attributes.end() )
-        {
-        }
+    }
 
-        void BRepTimeAttributesTransfer::write_step( double time,
-            const SolidMesh3D& mesh,
-            const SolidToBlocksMappings& mappings )
-        {
-            write_vertex_step( time, mesh, mappings.vertices );
-            write_polyhedron_step( time, mesh, mappings.polyhedra );
-        }
+    void BRepTimeAttributesTransfer::write_step( double time,
+        const SolidMesh3D& mesh,
+        const SolidToBlocksMappings& mappings )
+    {
+        write_vertex_step( time, mesh, mappings.vertices );
+        write_polyhedron_step( time, mesh, mappings.polyhedra );
+    }
 
-        void BRepTimeAttributesTransfer::write_vertex_step( double time,
-            const SolidMesh3D& mesh,
-            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                block_mappings )
+    void BRepTimeAttributesTransfer::write_vertex_step( double time,
+        const SolidMesh3D& mesh,
+        const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+            block_mappings )
+    {
+        for( const auto& [block_id, mesh2block] : block_mappings )
         {
-            for( const auto& [block_id, mesh2block] : block_mappings )
+            write_block_step( time, mesh.vertex_attribute_manager(),
+                brep_.block( block_id ).mesh().vertex_attribute_manager(),
+                mesh2block );
+        }
+    }
+
+    void BRepTimeAttributesTransfer::write_polyhedron_step( double time,
+        const SolidMesh3D& mesh,
+        const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+            block_mappings )
+    {
+        for( const auto& [block_id, mesh2block] : block_mappings )
+        {
+            write_block_step( time, mesh.polyhedron_attribute_manager(),
+                brep_.block( block_id ).mesh().polyhedron_attribute_manager(),
+                mesh2block );
+        }
+    }
+
+    void BRepTimeAttributesTransfer::write_block_step( double time,
+        const AttributeManager& manager,
+        AttributeManager& block_manager,
+        const GenericMapping< index_t >& mesh2block )
+    {
+        for( const auto& attribute_id : manager.attribute_ids() )
+        {
+            const auto attribute =
+                manager.find_generic_attribute( attribute_id );
+            const auto& name = attribute->name();
+            if( !name || !attribute->properties().transferable
+                || ignored_attributes_.contains( name.value() ) )
             {
-                write_block_step( time, mesh.vertex_attribute_manager(),
-                    brep_.block( block_id ).mesh().vertex_attribute_manager(),
-                    mesh2block );
+                continue;
             }
+            delete_existing_step( block_manager, name.value(), time );
+            auto properties = attribute->properties();
+            properties.time = time;
+            block_manager.import( manager, mesh2block, attribute_id );
+            block_manager.set_attribute_properties( attribute_id, properties );
         }
-
-        void BRepTimeAttributesTransfer::write_polyhedron_step( double time,
-            const SolidMesh3D& mesh,
-            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                block_mappings )
-        {
-            for( const auto& [block_id, mesh2block] : block_mappings )
-            {
-                write_block_step( time, mesh.polyhedron_attribute_manager(),
-                    brep_.block( block_id )
-                        .mesh()
-                        .polyhedron_attribute_manager(),
-                    mesh2block );
-            }
-        }
-
-        void BRepTimeAttributesTransfer::write_block_step( double time,
-            const AttributeManager& manager,
-            AttributeManager& block_manager,
-            const GenericMapping< index_t >& mesh2block )
-        {
-            for( const auto& attribute_id : manager.attribute_ids() )
-            {
-                const auto attribute =
-                    manager.find_generic_attribute( attribute_id );
-                const auto& name = attribute->name();
-                if( !name || !attribute->properties().transferable
-                    || ignored_attributes_.contains( name.value() ) )
-                {
-                    continue;
-                }
-                delete_existing_step( block_manager, name.value(), time );
-                auto properties = attribute->properties();
-                properties.time = time;
-                block_manager.import( manager, mesh2block, attribute_id );
-                block_manager.set_attribute_properties(
-                    attribute_id, properties );
-            }
-        }
-    } // namespace internal
-} // namespace geode
+    }
+} // namespace geode::internal

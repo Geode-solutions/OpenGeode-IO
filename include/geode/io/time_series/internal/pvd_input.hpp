@@ -27,28 +27,25 @@
 
 #include <geode/io/time_series/common.hpp>
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    class PVDBRepTimeSeriesInput final : public BRepTimeSeriesInput
     {
-        class PVDBRepTimeSeriesInput final : public BRepTimeSeriesInput
+    public:
+        explicit PVDBRepTimeSeriesInput( std::string_view filename )
+            : BRepTimeSeriesInput{ filename }
         {
-        public:
-            explicit PVDBRepTimeSeriesInput( std::string_view filename )
-                : BRepTimeSeriesInput{ filename }
-            {
-            }
+        }
 
-            [[nodiscard]] static std::string_view extension()
-            {
-                return "pvd";
-            }
+        [[nodiscard]] static std::string_view extension()
+        {
+            return "pvd";
+        }
 
-            [[nodiscard]] AdditionalFiles additional_files() const final;
+        [[nodiscard]] AdditionalFiles additional_files() const final;
 
-            [[nodiscard]] Percentage is_loadable() const final;
+        [[nodiscard]] Percentage is_loadable() const final;
 
-            void read( BRep& brep ) final;
-        };
-    } // namespace internal
-} // namespace geode
+        void read( BRep& brep ) final;
+    };
+} // namespace geode::internal

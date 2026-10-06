@@ -40,40 +40,36 @@ namespace geode
     class BRep;
 } // namespace geode
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    class BRepTimeAttributesTransfer
     {
+    public:
+        BRepTimeAttributesTransfer( BRep& brep,
+            absl::Span< const std::string_view > ignored_attributes );
 
-        class BRepTimeAttributesTransfer
-        {
-        public:
-            BRepTimeAttributesTransfer( BRep& brep,
-                absl::Span< const std::string_view > ignored_attributes );
+        void write_step( double time,
+            const SolidMesh3D& mesh,
+            const SolidToBlocksMappings& mappings );
 
-            void write_step( double time,
-                const SolidMesh3D& mesh,
-                const SolidToBlocksMappings& mappings );
+    private:
+        void write_vertex_step( double time,
+            const SolidMesh3D& mesh,
+            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+                block_mappings );
 
-        private:
-            void write_vertex_step( double time,
-                const SolidMesh3D& mesh,
-                const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                    block_mappings );
+        void write_polyhedron_step( double time,
+            const SolidMesh3D& mesh,
+            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+                block_mappings );
 
-            void write_polyhedron_step( double time,
-                const SolidMesh3D& mesh,
-                const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                    block_mappings );
+        void write_block_step( double time,
+            const AttributeManager& manager,
+            AttributeManager& block_manager,
+            const GenericMapping< index_t >& mesh2block );
 
-            void write_block_step( double time,
-                const AttributeManager& manager,
-                AttributeManager& block_manager,
-                const GenericMapping< index_t >& mesh2block );
-
-        private:
-            BRep& brep_;
-            absl::flat_hash_set< std::string > ignored_attributes_;
-        };
-    } // namespace internal
-} // namespace geode
+    private:
+        BRep& brep_;
+        absl::flat_hash_set< std::string > ignored_attributes_;
+    };
+} // namespace geode::internal

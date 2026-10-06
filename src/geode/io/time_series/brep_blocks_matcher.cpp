@@ -39,6 +39,7 @@
 #include <geode/mesh/core/solid_mesh.hpp>
 
 #include <geode/model/mixin/core/block.hpp>
+#include <geode/model/mixin/core/vertex_identifier.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
 namespace
@@ -66,103 +67,99 @@ namespace
         }
         return { closest, min_distance };
     }
+
+    void map_block_vertices( geode::internal::SolidToBlocksMappings& mappings,
+        absl::Span< const geode::ComponentMeshVertex > component_vertices,
+        geode::index_t solid_vertex )
+    {
+        for( const auto& component_vertex : component_vertices )
+        {
+            if( component_vertex.component_id.type
+                == geode::Block3D::component_type_static() )
+            {
+                mappings.vertices[component_vertex.component_id.id].map(
+                    solid_vertex, component_vertex.vertex );
+            }
+        }
+    }
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    BRepBlocksMatcher::BRepBlocksMatcher( const BRep& brep )
+        : brep_( brep ), barycenters_{ compute_barycenters() }
     {
-        BRepBlocksMatcher::BRepBlocksMatcher( const BRep& brep )
-            : brep_( brep ), barycenters_{ compute_barycenters() }
-        {
-        }
+    }
 
-        SolidToBlocksMappings BRepBlocksMatcher::mappings(
-            const SolidMesh3D& solid ) const
-        {
-            const auto matched_ids = match_polyhedra( solid );
-            return build_mappings( solid, matched_ids );
-        }
+    SolidToBlocksMappings BRepBlocksMatcher::mappings(
+        const SolidMesh3D& solid ) const
+    {
+        const auto matched_ids = match_polyhedra( solid );
+        return build_mappings( solid, matched_ids );
+    }
 
-        std::vector< Point3D > BRepBlocksMatcher::compute_barycenters()
+    std::vector< Point3D > BRepBlocksMatcher::compute_barycenters()
+    {
+        std::vector< Point3D > barycenters;
+        for( const auto& block : brep_.blocks() )
         {
-            std::vector< Point3D > barycenters;
-            for( const auto& block : brep_.blocks() )
+            const auto& mesh = block.mesh();
+            for( const auto p : Range{ mesh.nb_polyhedra() } )
             {
-                const auto& mesh = block.mesh();
-                for( const auto p : Range{ mesh.nb_polyhedra() } )
+                polyhedra_.push_back( { block.id(), p } );
+                barycenters.push_back( mesh.polyhedron_barycenter( p ) );
+            }
+        }
+        return barycenters;
+    }
+
+    std::vector< index_t > BRepBlocksMatcher::match_polyhedra(
+        const SolidMesh3D& solid ) const
+    {
+        std::vector< index_t > matched_ids;
+        matched_ids.reserve( solid.nb_polyhedra() );
+        for( const auto p : Range{ solid.nb_polyhedra() } )
+        {
+            const auto barycenter = solid.polyhedron_barycenter( p );
+            const auto matched_id = barycenters_.closest_neighbor( barycenter );
+            matched_ids.push_back( matched_id );
+        }
+        return matched_ids;
+    }
+
+    SolidToBlocksMappings BRepBlocksMatcher::build_mappings(
+        const SolidMesh3D& solid,
+        absl::Span< const index_t > matched_ids ) const
+    {
+        SolidToBlocksMappings mappings;
+        absl::flat_hash_set< index_t > mapped_unique_vertices;
+        for( const auto p : Range{ solid.nb_polyhedra() } )
+        {
+            const auto matched_id = matched_ids[p];
+            const auto& block_polyhedron = polyhedra_[matched_id];
+            const auto& block_id = block_polyhedron.block_id;
+            mappings.polyhedra[block_id].map( p, block_polyhedron.element );
+            const auto& block = brep_.block( block_id );
+            const auto& block_mesh = block.mesh();
+            for( const auto v : LRange{ block_mesh.nb_polyhedron_vertices(
+                     block_polyhedron.element ) } )
+            {
+                const auto block_vertex = block_mesh.polyhedron_vertex(
+                    { block_polyhedron.element, v } );
+                const auto unique_vertex = brep_.unique_vertex(
+                    { block.component_id(), block_vertex } );
+                if( !mapped_unique_vertices.insert( unique_vertex ).second )
                 {
-                    polyhedra_.push_back( { block.id(), p } );
-                    barycenters.push_back( mesh.polyhedron_barycenter( p ) );
+                    continue;
                 }
-            }
-            return barycenters;
-        }
-
-        std::vector< index_t > BRepBlocksMatcher::match_polyhedra(
-            const SolidMesh3D& solid ) const
-        {
-            std::vector< index_t > matched_ids;
-            matched_ids.reserve( solid.nb_polyhedra() );
-            for( const auto p : Range{ solid.nb_polyhedra() } )
-            {
-                const auto barycenter = solid.polyhedron_barycenter( p );
-                const auto matched_id =
-                    barycenters_.closest_neighbor( barycenter );
-                matched_ids.push_back( matched_id );
-            }
-            return matched_ids;
-        }
-
-        SolidToBlocksMappings BRepBlocksMatcher::build_mappings(
-            const SolidMesh3D& solid,
-            absl::Span< const index_t > matched_ids ) const
-        {
-            SolidToBlocksMappings mappings;
-            absl::flat_hash_set< index_t > mapped_unique_vertices;
-            for( const auto p : Range{ solid.nb_polyhedra() } )
-            {
-                const auto matched_id = matched_ids[p];
-                const auto& block_polyhedron = polyhedra_[matched_id];
-                const auto& block_id = block_polyhedron.block_id;
-                mappings.polyhedra[block_id].map( p, block_polyhedron.element );
-                const auto& block = brep_.block( block_id );
-                const auto& block_mesh = block.mesh();
-                for( const auto v : LRange{ block_mesh.nb_polyhedron_vertices(
-                         block_polyhedron.element ) } )
-                {
-                    const auto block_vertex = block_mesh.polyhedron_vertex(
-                        { block_polyhedron.element, v } );
-                    const auto unique_vertex = brep_.unique_vertex(
-                        { block.component_id(), block_vertex } );
-                    if( !mapped_unique_vertices.insert( unique_vertex ).second )
-                    {
-                        continue;
-                    }
-                    const auto& point = block_mesh.point( block_vertex );
-                    const auto [solid_vertex, distance] =
-                        closest_polyhedron_vertex( solid, p, point );
-                    map_block_vertices( mappings, solid_vertex, unique_vertex );
-                }
-            }
-            return mappings;
-        }
-
-        void BRepBlocksMatcher::map_block_vertices(
-            SolidToBlocksMappings& mappings,
-            index_t solid_vertex,
-            index_t unique_vertex ) const
-        {
-            for( const auto& component_vertex :
-                brep_.component_mesh_vertices( unique_vertex ) )
-            {
-                if( component_vertex.component_id.type
-                    == Block3D::component_type_static() )
-                {
-                    mappings.vertices[component_vertex.component_id.id].map(
-                        solid_vertex, component_vertex.vertex );
-                }
+                const auto& point = block_mesh.point( block_vertex );
+                const auto [solid_vertex, distance] =
+                    closest_polyhedron_vertex( solid, p, point );
+                map_block_vertices( mappings,
+                    brep_.component_mesh_vertices( unique_vertex ),
+                    solid_vertex );
             }
         }
-    } // namespace internal
-} // namespace geode
+        return mappings;
+    }
+} // namespace geode::internal

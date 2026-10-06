@@ -59,11 +59,10 @@ namespace
         "localToGlobalMap", "ghostRank"
     };
 
-    bool has_extension( std::string_view filename, std::string_view extension )
+    std::string lower_extension( std::string_view filename )
     {
         return absl::AsciiStrToLower(
-                   geode::extension_from_filename( filename ) )
-               == extension;
+            geode::extension_from_filename( filename ) );
     }
 
     pugi::xml_node load_vtk_file( pugi::xml_document& document,
@@ -84,22 +83,19 @@ namespace
         return root.child( geode::to_string( type ).c_str() );
     }
 
-    std::string resolve_path(
-        std::string_view referencing_file, std::string_view referenced_file )
+    std::string resolve_path( const std::filesystem::path& directory,
+        std::string_view referenced_file )
     {
         const std::filesystem::path path{ geode::to_string( referenced_file ) };
         if( path.is_absolute() )
         {
             return path.string();
         }
-        return absl::StrCat( geode::filepath_without_filename(
-                                 geode::to_string( referencing_file ) )
-                                 .string(),
-            referenced_file );
+        return absl::StrCat( directory.string(), referenced_file );
     }
 
     void add_vtm_block_files( const pugi::xml_node& block,
-        std::string_view vtm_filename,
+        const std::filesystem::path& vtm_directory,
         std::vector< std::string >& files )
     {
         for( const auto& child : block.children() )
@@ -107,7 +103,7 @@ namespace
             const auto name = geode::to_string( child.name() );
             if( name == "Block" )
             {
-                add_vtm_block_files( child, vtm_filename, files );
+                add_vtm_block_files( child, vtm_directory, files );
             }
             else if( name == "DataSet" )
             {
@@ -116,7 +112,7 @@ namespace
                 {
                     continue;
                 }
-                files.push_back( resolve_path( vtm_filename, file ) );
+                files.push_back( resolve_path( vtm_directory, file ) );
             }
         }
     }
@@ -126,6 +122,8 @@ namespace
         pugi::xml_document document;
         const auto collection =
             load_vtk_file( document, filename, "Collection" );
+        const auto directory =
+            geode::filepath_without_filename( geode::to_string( filename ) );
         std::vector< PVDDataSet > datasets;
         for( const auto& dataset : collection.children( "DataSet" ) )
         {
@@ -141,13 +139,13 @@ namespace
                 geode::OpenGeodeException::TYPE::data,
                 "[read_pvd_collection] DataSet without file in ", filename );
             geode::OpenGeodeIOTimeSeriesException::check_exception(
-                has_extension( referenced_file, "vtm" )
-                    || has_extension( referenced_file, "vtu" ),
+                lower_extension( referenced_file ) == "vtm"
+                    || lower_extension( referenced_file ) == "vtu",
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[read_pvd_collection] DataSet ", referenced_file, " in ",
                 filename, " is neither a .vtm nor a .vtu file" );
             datasets.push_back( { time.as_double(),
-                resolve_path( filename, referenced_file ) } );
+                resolve_path( directory, referenced_file ) } );
         }
         absl::c_sort(
             datasets, []( const PVDDataSet& lhs, const PVDDataSet& rhs ) {
@@ -158,7 +156,7 @@ namespace
 
     std::string dataset_vtu_file( std::string_view filename )
     {
-        if( has_extension( filename, "vtu" ) )
+        if( lower_extension( filename ) == "vtu" )
         {
             return geode::to_string( filename );
         }
@@ -166,13 +164,15 @@ namespace
         const auto multiblock =
             load_vtk_file( document, filename, "vtkMultiBlockDataSet" );
         std::vector< std::string > files;
-        add_vtm_block_files( multiblock, filename, files );
+        add_vtm_block_files( multiblock,
+            geode::filepath_without_filename( geode::to_string( filename ) ),
+            files );
         geode::OpenGeodeIOTimeSeriesException::check_exception(
             files.size() == 1, nullptr, geode::OpenGeodeException::TYPE::data,
             "[dataset_vtu_file] ", filename, " lists ", files.size(),
             " datasets: only one .vtu per time step is supported" );
         geode::OpenGeodeIOTimeSeriesException::check_exception(
-            has_extension( files.front(), "vtu" ), nullptr,
+            lower_extension( files.front() ) == "vtu", nullptr,
             geode::OpenGeodeException::TYPE::data, "[dataset_vtu_file] ",
             files.front(), " is not a .vtu dataset" );
         return files.front();
@@ -184,7 +184,7 @@ namespace
         for( const auto& dataset : read_pvd_collection( filename ) )
         {
             files.push_back( dataset.file );
-            if( has_extension( dataset.file, "vtm" )
+            if( lower_extension( dataset.file ) == "vtm"
                 && geode::file_exists( dataset.file ) )
             {
                 files.push_back( dataset_vtu_file( dataset.file ) );
@@ -194,60 +194,55 @@ namespace
     }
 } // namespace
 
-namespace geode
+namespace geode::internal
 {
-    namespace internal
+    AdditionalFiles PVDBRepTimeSeriesInput::additional_files() const
     {
-        AdditionalFiles PVDBRepTimeSeriesInput::additional_files() const
+        AdditionalFiles files;
+        for( auto& file : collection_files( this->filename() ) )
         {
-            AdditionalFiles files;
-            for( auto& file : collection_files( this->filename() ) )
-            {
-                const auto is_missing = !file_exists( file );
-                files.mandatory_files.emplace_back(
-                    std::move( file ), is_missing );
-            }
-            return files;
+            const auto is_missing = !file_exists( file );
+            files.mandatory_files.emplace_back( std::move( file ), is_missing );
         }
+        return files;
+    }
 
-        Percentage PVDBRepTimeSeriesInput::is_loadable() const
+    Percentage PVDBRepTimeSeriesInput::is_loadable() const
+    {
+        try
         {
-            try
-            {
-                const auto files = collection_files( this->filename() );
-                if( files.empty() )
-                {
-                    return Percentage{ 0 };
-                }
-                const auto nb_existing =
-                    absl::c_count_if( files, []( const std::string& file ) {
-                        return file_exists( file );
-                    } );
-                return Percentage{ static_cast< double >( nb_existing )
-                                   / files.size() };
-            }
-            catch( ... )
+            const auto files = collection_files( this->filename() );
+            if( files.empty() )
             {
                 return Percentage{ 0 };
             }
+            const auto nb_existing =
+                absl::c_count_if( files, []( const std::string& file ) {
+                    return file_exists( file );
+                } );
+            return Percentage{ static_cast< double >( nb_existing )
+                               / static_cast< double >( files.size() ) };
         }
-
-        void PVDBRepTimeSeriesInput::read( BRep& brep )
+        catch( ... )
         {
-            const BRepBlocksMatcher matcher{ brep };
-            BRepTimeAttributesTransfer transfer{ brep,
-                GEOS_IGNORED_ATTRIBUTES };
-            std::optional< SolidToBlocksMappings > mappings;
-            for( const auto& dataset : read_pvd_collection( this->filename() ) )
-            {
-                const auto vtu = dataset_vtu_file( dataset.file );
-                const auto mesh = load_polyhedral_solid< 3 >( vtu );
-                if( !mappings )
-                {
-                    mappings = matcher.mappings( *mesh );
-                }
-                transfer.write_step( dataset.time, *mesh, mappings.value() );
-            }
+            return Percentage{ 0 };
         }
-    } // namespace internal
-} // namespace geode
+    }
+
+    void PVDBRepTimeSeriesInput::read( BRep& brep )
+    {
+        const BRepBlocksMatcher matcher{ brep };
+        BRepTimeAttributesTransfer transfer{ brep, GEOS_IGNORED_ATTRIBUTES };
+        std::optional< SolidToBlocksMappings > mappings;
+        for( const auto& dataset : read_pvd_collection( this->filename() ) )
+        {
+            const auto vtu = dataset_vtu_file( dataset.file );
+            const auto mesh = load_polyhedral_solid< 3 >( vtu );
+            if( !mappings )
+            {
+                mappings = matcher.mappings( *mesh );
+            }
+            transfer.write_step( dataset.time, *mesh, mappings.value() );
+        }
+    }
+} // namespace geode::internal
