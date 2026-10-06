@@ -23,6 +23,12 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+
+#include <absl/container/flat_hash_set.h>
+#include <absl/types/span.h>
+
 #include <geode/io/time_series/common.hpp>
 #include <geode/io/time_series/internal/brep_blocks_matcher.hpp>
 
@@ -42,11 +48,12 @@ namespace geode
         class BRepTimeAttributesTransfer
         {
         public:
-            explicit BRepTimeAttributesTransfer( const BRep& brep );
+            BRepTimeAttributesTransfer( BRep& brep,
+                absl::Span< const std::string_view > ignored_attributes );
 
             void write_step( double time,
                 const SolidMesh3D& mesh,
-                const ModelToSolidMappings& mappings );
+                const SolidToBlocksMappings& mappings );
 
         private:
             void write_vertex_step( double time,
@@ -65,7 +72,8 @@ namespace geode
                 const GenericMapping< index_t >& mesh2block );
 
         private:
-            const BRep& brep_;
+            BRep& brep_;
+            absl::flat_hash_set< std::string > ignored_attributes_;
         };
     } // namespace internal
 } // namespace geode

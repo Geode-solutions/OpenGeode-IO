@@ -186,6 +186,46 @@ namespace
             "[Test] Collection should have a missing file" );
     }
 
+    void test_vtu_datasets()
+    {
+        const std::string pvd{ "pvd_input/vtu.pvd" };
+        std::ofstream file{ pvd };
+        file << "<?xml version=\"1.0\"?>\n<VTKFile type=\"Collection\" "
+                "version=\"0.1\">\n<Collection>\n<DataSet timestep=\"0\" "
+                "file=\""
+             << simulation_file(
+                    "vtkOutput/000000/grid_geos/Level0/reservoir/rank_0.vtu" )
+             << "\" />\n</Collection>\n</VTKFile>\n";
+        file.close();
+        geode::OpenGeodeIOTimeSeriesException::test(
+            geode::is_brep_time_series_loadable( pvd ).value() == 1,
+            "[Test] Collection of .vtu should be loadable" );
+        auto brep = load_model();
+        geode::load_brep_time_series( brep, pvd );
+        for( const auto& block : brep.blocks() )
+        {
+            const geode::AttributeTimeSeries< double > pressure{
+                block.mesh().polyhedron_attribute_manager(), "pressure"
+            };
+            geode::OpenGeodeIOTimeSeriesException::test(
+                pressure.nb_time_steps() == 1,
+                "[Test] Wrong number of time steps from .vtu collection" );
+        }
+    }
+
+    void test_unsupported_dataset()
+    {
+        const std::string pvd{ "pvd_input/unsupported.pvd" };
+        std::ofstream file{ pvd };
+        file << "<?xml version=\"1.0\"?>\n<VTKFile type=\"Collection\" "
+                "version=\"0.1\">\n<Collection>\n<DataSet timestep=\"0\" "
+                "file=\"surface.vtp\" />\n</Collection>\n</VTKFile>\n";
+        file.close();
+        geode::OpenGeodeIOTimeSeriesException::test(
+            geode::is_brep_time_series_loadable( pvd ).value() == 0,
+            "[Test] Collection of .vtp should not be loadable" );
+    }
+
 } // namespace
 
 int main()
@@ -196,6 +236,8 @@ int main()
         std::filesystem::create_directories( "pvd_input" );
         test_import();
         test_missing_file();
+        test_vtu_datasets();
+        test_unsupported_dataset();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

@@ -23,12 +23,7 @@
 
 #include <geode/io/time_series/internal/brep_time_attributes_transfer.hpp>
 
-#include <array>
-
-#include <absl/algorithm/container.h>
-
 #include <geode/basic/attribute_manager.hpp>
-#include <geode/basic/logger.hpp>
 
 #include <geode/mesh/core/solid_mesh.hpp>
 
@@ -37,13 +32,6 @@
 
 namespace
 {
-    // GEOS parallel partitioning bookkeeping arrays, meaningless on the BRep.
-    // Mesh internal attributes (points, polyhedra around vertex...) are not
-    // listed: they are not transferable, unlike the arrays read from the file
-    constexpr std::array< std::string_view, 2 > IGNORED_ATTRIBUTES{
-        "localToGlobalMap", "ghostRank"
-    };
-
     void delete_existing_step(
         geode::AttributeManager& manager, std::string_view name, double time )
     {
@@ -62,15 +50,17 @@ namespace geode
 {
     namespace internal
     {
-        BRepTimeAttributesTransfer::BRepTimeAttributesTransfer(
-            const BRep& brep )
-            : brep_( brep )
+        BRepTimeAttributesTransfer::BRepTimeAttributesTransfer( BRep& brep,
+            absl::Span< const std::string_view > ignored_attributes )
+            : brep_( brep ),
+              ignored_attributes_( ignored_attributes.begin(),
+                  ignored_attributes.end() )
         {
         }
 
         void BRepTimeAttributesTransfer::write_step( double time,
             const SolidMesh3D& mesh,
-            const ModelToSolidMappings& mappings )
+            const SolidToBlocksMappings& mappings )
         {
             write_vertex_step( time, mesh, mappings.vertices );
             write_polyhedron_step( time, mesh, mappings.polyhedra );
@@ -115,8 +105,7 @@ namespace geode
                     manager.find_generic_attribute( attribute_id );
                 const auto& name = attribute->name();
                 if( !name || !attribute->properties().transferable
-                    || absl::c_linear_search(
-                        IGNORED_ATTRIBUTES, name.value() ) )
+                    || ignored_attributes_.contains( name.value() ) )
                 {
                     continue;
                 }

@@ -23,11 +23,15 @@
 
 #pragma once
 
+#include <vector>
+
 #include <absl/container/flat_hash_map.h>
+#include <absl/types/span.h>
 
 #include <geode/basic/mapping.hpp>
-#include <geode/basic/pimpl.hpp>
 #include <geode/basic/uuid.hpp>
+
+#include <geode/geometry/nn_search.hpp>
 
 #include <geode/io/time_series/common.hpp>
 
@@ -43,7 +47,7 @@ namespace geode
     namespace internal
     {
         // Solid elements to Block elements, per Block id
-        struct ModelToSolidMappings
+        struct SolidToBlocksMappings
         {
             absl::flat_hash_map< uuid, GenericMapping< index_t > > polyhedra;
             absl::flat_hash_map< uuid, GenericMapping< index_t > > vertices;
@@ -51,15 +55,36 @@ namespace geode
 
         class BRepBlocksMatcher
         {
+            struct BlockElement
+            {
+                uuid block_id;
+                index_t element;
+            };
+
         public:
             explicit BRepBlocksMatcher( const BRep& brep );
-            ~BRepBlocksMatcher();
 
-            [[nodiscard]] ModelToSolidMappings mappings(
+            [[nodiscard]] SolidToBlocksMappings mappings(
                 const SolidMesh3D& solid ) const;
 
         private:
-            IMPLEMENTATION_MEMBER( impl_ );
+            [[nodiscard]] std::vector< Point3D > compute_barycenters();
+
+            [[nodiscard]] std::vector< index_t > match_polyhedra(
+                const SolidMesh3D& solid ) const;
+
+            [[nodiscard]] SolidToBlocksMappings build_mappings(
+                const SolidMesh3D& solid,
+                absl::Span< const index_t > matched_ids ) const;
+
+            void map_block_vertices( SolidToBlocksMappings& mappings,
+                index_t solid_vertex,
+                index_t unique_vertex ) const;
+
+        private:
+            const BRep& brep_;
+            std::vector< BlockElement > polyhedra_;
+            NNSearch3D barycenters_;
         };
     } // namespace internal
 } // namespace geode

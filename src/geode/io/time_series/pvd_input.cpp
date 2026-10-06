@@ -23,6 +23,7 @@
 
 #include <geode/io/time_series/internal/pvd_input.hpp>
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <vector>
@@ -52,6 +53,18 @@ namespace
         double time;
         std::string file;
     };
+
+    // GEOS parallel partitioning bookkeeping arrays, meaningless on the BRep
+    constexpr std::array< std::string_view, 2 > GEOS_IGNORED_ATTRIBUTES{
+        "localToGlobalMap", "ghostRank"
+    };
+
+    bool has_extension( std::string_view filename, std::string_view extension )
+    {
+        return absl::AsciiStrToLower(
+                   geode::extension_from_filename( filename ) )
+               == extension;
+    }
 
     pugi::xml_node load_vtk_file( pugi::xml_document& document,
         std::string_view filename,
@@ -127,6 +140,12 @@ namespace
                 !referenced_file.empty(), nullptr,
                 geode::OpenGeodeException::TYPE::data,
                 "[read_pvd_collection] DataSet without file in ", filename );
+            geode::OpenGeodeIOTimeSeriesException::check_exception(
+                has_extension( referenced_file, "vtm" )
+                    || has_extension( referenced_file, "vtu" ),
+                nullptr, geode::OpenGeodeException::TYPE::data,
+                "[read_pvd_collection] DataSet ", referenced_file, " in ",
+                filename, " is neither a .vtm nor a .vtu file" );
             datasets.push_back( { time.as_double(),
                 resolve_path( filename, referenced_file ) } );
         }
@@ -139,11 +158,10 @@ namespace
 
     std::string dataset_vtu_file( std::string_view filename )
     {
-        const auto extension =
-            absl::AsciiStrToLower( geode::extension_from_filename( filename ) );
-        geode::OpenGeodeIOTimeSeriesException::check_exception(
-            extension == "vtm", nullptr, geode::OpenGeodeException::TYPE::data,
-            "[dataset_vtu_file] ", filename, " is not a vtm dataset" );
+        if( has_extension( filename, "vtu" ) )
+        {
+            return geode::to_string( filename );
+        }
         pugi::xml_document document;
         const auto multiblock =
             load_vtk_file( document, filename, "vtkMultiBlockDataSet" );
@@ -154,19 +172,10 @@ namespace
             "[dataset_vtu_file] ", filename, " lists ", files.size(),
             " datasets: only one .vtu per time step is supported" );
         geode::OpenGeodeIOTimeSeriesException::check_exception(
-            absl::AsciiStrToLower(
-                geode::extension_from_filename( files.front() ) )
-                == "vtu",
-            nullptr, geode::OpenGeodeException::TYPE::data,
-            "[dataset_vtu_file] ", files.front(), " is not a .vtu dataset" );
+            has_extension( files.front(), "vtu" ), nullptr,
+            geode::OpenGeodeException::TYPE::data, "[dataset_vtu_file] ",
+            files.front(), " is not a .vtu dataset" );
         return files.front();
-    }
-
-    bool is_vtm( std::string_view filename )
-    {
-        return absl::AsciiStrToLower(
-                   geode::extension_from_filename( filename ) )
-               == "vtm";
     }
 
     std::vector< std::string > collection_files( std::string_view filename )
@@ -175,7 +184,8 @@ namespace
         for( const auto& dataset : read_pvd_collection( filename ) )
         {
             files.push_back( dataset.file );
-            if( is_vtm( dataset.file ) && geode::file_exists( dataset.file ) )
+            if( has_extension( dataset.file, "vtm" )
+                && geode::file_exists( dataset.file ) )
             {
                 files.push_back( dataset_vtu_file( dataset.file ) );
             }
@@ -225,11 +235,12 @@ namespace geode
         void PVDBRepTimeSeriesInput::read( BRep& brep )
         {
             const BRepBlocksMatcher matcher{ brep };
-            BRepTimeAttributesTransfer transfer{ brep };
-            std::optional< ModelToSolidMappings > mappings;
+            BRepTimeAttributesTransfer transfer{ brep,
+                GEOS_IGNORED_ATTRIBUTES };
+            std::optional< SolidToBlocksMappings > mappings;
             for( const auto& dataset : read_pvd_collection( this->filename() ) )
             {
-                const auto vtu = dataset_vtu_file( dataset.file ); //
+                const auto vtu = dataset_vtu_file( dataset.file );
                 const auto mesh = load_polyhedral_solid< 3 >( vtu );
                 if( !mappings )
                 {
