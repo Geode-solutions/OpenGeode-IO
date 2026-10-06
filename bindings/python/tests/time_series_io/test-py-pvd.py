@@ -36,7 +36,7 @@ TIMES = [0.0, 1e6, 2e6]
 def test_block(block):
     manager = block.mesh().polyhedron_attribute_manager()
     for name in ["pressure", "temperature"]:
-        series = opengeode.AttributeTimeSeriesdouble(manager, name)
+        series = opengeode.AttributeTimeSeriesDouble(manager, name)
         if series.nb_time_steps() != len(TIMES):
             raise ValueError("[Test] Wrong number of time steps for " + name)
         for step, time in enumerate(TIMES):
