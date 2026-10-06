@@ -53,8 +53,8 @@ namespace geode
         BRepTimeAttributesTransfer::BRepTimeAttributesTransfer( BRep& brep,
             absl::Span< const std::string_view > ignored_attributes )
             : brep_( brep ),
-              ignored_attributes_( ignored_attributes.begin(),
-                  ignored_attributes.end() )
+              ignored_attributes_(
+                  ignored_attributes.begin(), ignored_attributes.end() )
         {
         }
 

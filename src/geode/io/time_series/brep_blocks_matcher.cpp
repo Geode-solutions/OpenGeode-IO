@@ -125,8 +125,7 @@ namespace geode
                 const auto matched_id = matched_ids[p];
                 const auto& block_polyhedron = polyhedra_[matched_id];
                 const auto& block_id = block_polyhedron.block_id;
-                mappings.polyhedra[block_id].map(
-                    p, block_polyhedron.element );
+                mappings.polyhedra[block_id].map( p, block_polyhedron.element );
                 const auto& block = brep_.block( block_id );
                 const auto& block_mesh = block.mesh();
                 for( const auto v : LRange{ block_mesh.nb_polyhedron_vertices(
