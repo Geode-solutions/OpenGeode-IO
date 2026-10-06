@@ -18,21 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(src)
 
-if(OPENGEODE_IO_WITH_TESTS)
-    add_subdirectory(tests)
-endif()
-
-add_geode_python_wheel(
-    NAME "OpenGeode-IO"
-    DESCRIPTION 
-        "Implementation of input and output formats for OpenGeode"
-    MODULES
-        "image_io.py"
-        "mesh_io.py"
-        "model_io.py"
-        "time_series_io.py"
-    SUPERBUILD
-    LICENSE "MIT"
+add_geode_python_test(
+    SOURCE "test-py-pvd.py"
+    DEPENDENCIES
+        ${PROJECT_NAME}::py_time_series
 )

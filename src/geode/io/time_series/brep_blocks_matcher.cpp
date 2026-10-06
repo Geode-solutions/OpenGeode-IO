@@ -156,10 +156,27 @@ namespace geode
                         const auto& point = block_mesh.point( block_vertex );
                         const auto [solid_vertex, distance] =
                             closest_polyhedron_vertex( solid, p, point );
-                        mappings.vertices.map( solid_vertex, unique_vertex );
+                        map_block_vertices(
+                            mappings, solid_vertex, unique_vertex );
                     }
                 }
                 return mappings;
+            }
+
+            void map_block_vertices( ModelToSolidMappings& mappings,
+                index_t solid_vertex,
+                index_t unique_vertex ) const
+            {
+                for( const auto& component_vertex :
+                    brep_.component_mesh_vertices( unique_vertex ) )
+                {
+                    if( component_vertex.component_id.type
+                        == Block3D::component_type_static() )
+                    {
+                        mappings.vertices[component_vertex.component_id.id]
+                            .map( solid_vertex, component_vertex.vertex );
+                    }
+                }
             }
 
         private:

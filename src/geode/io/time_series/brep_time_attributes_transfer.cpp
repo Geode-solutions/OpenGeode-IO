@@ -56,33 +56,6 @@ namespace
         }
     }
 
-    absl::flat_hash_map< geode::uuid, geode::GenericMapping< geode::index_t > >
-        block_vertex_mappings( const geode::BRep& brep,
-            const geode::GenericMapping< geode::index_t >& solid2unique )
-    {
-        absl::flat_hash_map< geode::uuid,
-            geode::GenericMapping< geode::index_t > >
-            mappings;
-        for( const auto& [solid_vertex, unique_vertices] :
-            solid2unique.in2out_map() )
-        {
-            for( const auto unique_vertex : unique_vertices )
-            {
-                for( const auto& component_vertex :
-                    brep.component_mesh_vertices( unique_vertex ) )
-                {
-                    if( component_vertex.component_id.type
-                        == geode::Block3D::component_type_static() )
-                    {
-                        mappings[component_vertex.component_id.id].map(
-                            solid_vertex, component_vertex.vertex );
-                    }
-                }
-            }
-        }
-        return mappings;
-    }
-
 } // namespace
 
 namespace geode
@@ -105,10 +78,10 @@ namespace geode
 
         void BRepTimeAttributesTransfer::write_vertex_step( double time,
             const SolidMesh3D& mesh,
-            const GenericMapping< index_t >& solid2unique )
+            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+                block_mappings )
         {
-            for( const auto& [block_id, mesh2block] :
-                block_vertex_mappings( brep_, solid2unique ) )
+            for( const auto& [block_id, mesh2block] : block_mappings )
             {
                 write_block_step( time, mesh.vertex_attribute_manager(),
                     brep_.block( block_id ).mesh().vertex_attribute_manager(),

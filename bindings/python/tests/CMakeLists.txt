@@ -20,3 +20,4 @@
 
 add_subdirectory(mesh_io)
 add_subdirectory(model_io)
+add_subdirectory(time_series_io)

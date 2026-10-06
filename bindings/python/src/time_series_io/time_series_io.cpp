@@ -21,45 +21,14 @@
  *
  */
 
-#pragma once
-
-#include <absl/container/flat_hash_map.h>
-
-#include <geode/basic/mapping.hpp>
-#include <geode/basic/pimpl.hpp>
-#include <geode/basic/uuid.hpp>
+#include <pybind11/pybind11.h>
 
 #include <geode/io/time_series/common.hpp>
 
-namespace geode
+PYBIND11_MODULE( opengeode_io_py_time_series, module )
 {
-    FORWARD_DECLARATION_DIMENSION_CLASS( SolidMesh );
-    ALIAS_3D( SolidMesh );
-    class BRep;
-} // namespace geode
-
-namespace geode
-{
-    namespace internal
-    {
-        // Solid elements to Block elements, per Block id
-        struct ModelToSolidMappings
-        {
-            absl::flat_hash_map< uuid, GenericMapping< index_t > > polyhedra;
-            absl::flat_hash_map< uuid, GenericMapping< index_t > > vertices;
-        };
-
-        class BRepBlocksMatcher
-        {
-        public:
-            explicit BRepBlocksMatcher( const BRep& brep );
-            ~BRepBlocksMatcher();
-
-            [[nodiscard]] ModelToSolidMappings mappings(
-                const SolidMesh3D& solid ) const;
-
-        private:
-            IMPLEMENTATION_MEMBER( impl_ );
-        };
-    } // namespace internal
-} // namespace geode
+    module.doc() = "OpenGeode-IO Python binding for time series";
+    pybind11::class_< geode::OpenGeodeIOTimeSeriesLibrary >(
+        module, "OpenGeodeIOTimeSeriesLibrary" )
+        .def( "initialize", &geode::OpenGeodeIOTimeSeriesLibrary::initialize );
+}

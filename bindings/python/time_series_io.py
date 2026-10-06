@@ -18,21 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(src)
 
-if(OPENGEODE_IO_WITH_TESTS)
-    add_subdirectory(tests)
-endif()
+import opengeode
 
-add_geode_python_wheel(
-    NAME "OpenGeode-IO"
-    DESCRIPTION 
-        "Implementation of input and output formats for OpenGeode"
-    MODULES
-        "image_io.py"
-        "mesh_io.py"
-        "model_io.py"
-        "time_series_io.py"
-    SUPERBUILD
-    LICENSE "MIT"
-)
+from opengeode_io_py_time_series import *
+
+OpenGeodeIOTimeSeriesLibrary.initialize()

@@ -51,7 +51,8 @@ namespace geode
         private:
             void write_vertex_step( double time,
                 const SolidMesh3D& mesh,
-                const GenericMapping< index_t >& solid2unique );
+                const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+                    block_mappings );
 
             void write_polyhedron_step( double time,
                 const SolidMesh3D& mesh,
