@@ -32,6 +32,7 @@ add_geode_python_wheel(
         "image_io.py"
         "mesh_io.py"
         "model_io.py"
+        "time_series_io.py"
     SUPERBUILD
     LICENSE "MIT"
 )

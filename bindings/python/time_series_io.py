@@ -18,23 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-@PACKAGE_INIT@ 
 
-include(CMakeFindDependencyMacro)
-find_dependency(OpenGeode CONFIG)
+import opengeode
 
-# Load information for each target
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_image_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_mesh_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_model_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_time_series_target.cmake)
+from opengeode_io_py_time_series import *
 
-get_target_property(library_type @PROJECT_NAME@::mesh TYPE)
-if(library_type STREQUAL "STATIC_LIBRARY")
-    find_dependency(Async++ CONFIG)
-    find_dependency(GDAL CONFIG)
-    find_dependency(assimp CONFIG)
-    find_dependency(pugixml CONFIG)
-    find_dependency(zlib CONFIG)
-    find_dependency(nlohmann_json CONFIG)
-endif()
+OpenGeodeIOTimeSeriesLibrary.initialize()

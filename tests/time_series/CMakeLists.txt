@@ -18,23 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-@PACKAGE_INIT@ 
-
-include(CMakeFindDependencyMacro)
-find_dependency(OpenGeode CONFIG)
-
-# Load information for each target
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_image_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_mesh_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_model_target.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@_time_series_target.cmake)
-
-get_target_property(library_type @PROJECT_NAME@::mesh TYPE)
-if(library_type STREQUAL "STATIC_LIBRARY")
-    find_dependency(Async++ CONFIG)
-    find_dependency(GDAL CONFIG)
-    find_dependency(assimp CONFIG)
-    find_dependency(pugixml CONFIG)
-    find_dependency(zlib CONFIG)
-    find_dependency(nlohmann_json CONFIG)
-endif()
+add_geode_test(
+    SOURCE "test-pvd-input.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::geometry
+        OpenGeode::mesh
+        OpenGeode::model
+        ${PROJECT_NAME}::time_series
+)
