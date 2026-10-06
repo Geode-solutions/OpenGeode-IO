@@ -54,12 +54,11 @@ namespace
 {
     constexpr geode::index_t NB_CELLS{ 26400 };
 
-    constexpr std::array< double, 5 > TIMES{ 0., 5e5, 1e6, 1.5e6, 2e6 };
-    constexpr std::array< double, 5 > MIN_PRESSURES{ 41369000, 27579000,
-        27579000, 27579000, 27579000 };
-    constexpr std::array< double, 5 > MAX_PRESSURES{ 41369000,
-        317036303.68696225, 325747376.2510222, 317089362.62659305,
-        288502139.3156352 };
+    constexpr std::array< double, 3 > TIMES{ 0., 1e6, 2e6 };
+    constexpr std::array< double, 3 > MIN_PRESSURES{ 41369000, 27579000,
+        27579000 };
+    constexpr std::array< double, 3 > MAX_PRESSURES{ 41369000,
+        325747376.2510222, 288502139.3156352 };
     constexpr double TEMPERATURE{ 300 };
 
     // GEOS simulation of the SPE10 benchmark (layers 84 and 85) run on

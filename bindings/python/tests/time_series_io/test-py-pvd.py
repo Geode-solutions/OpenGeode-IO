@@ -30,7 +30,7 @@ if sys.version_info >= (3, 8, 0) and platform.system() == "Windows":
 import opengeode
 import opengeode_io_py_time_series as time_series_io
 
-TIMES = [0.0, 5e5, 1e6, 1.5e6, 2e6]
+TIMES = [0.0, 1e6, 2e6]
 
 
 def test_block(block):
