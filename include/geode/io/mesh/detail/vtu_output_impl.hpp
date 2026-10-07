@@ -29,11 +29,14 @@ namespace geode
 {
     namespace detail
     {
-        static constexpr auto VTK_TETRAHEDRON_TYPE = 10u;
-        static constexpr auto VTK_HEXAHEDRON_TYPE = 12u;
-        static constexpr auto VTK_PRISM_TYPE = 13u;
-        static constexpr auto VTK_PYRAMID_TYPE = 14u;
-        static constexpr auto VTK_POLYHEDRON_TYPE = 42u;
+        static constexpr auto VTK_TRIANGLE_TYPE = 5U;
+        static constexpr auto VTK_POLYGON_TYPE = 7U;
+        static constexpr auto VTK_QUAD_TYPE = 9U;
+        static constexpr auto VTK_TETRAHEDRON_TYPE = 10U;
+        static constexpr auto VTK_HEXAHEDRON_TYPE = 12U;
+        static constexpr auto VTK_PRISM_TYPE = 13U;
+        static constexpr auto VTK_PYRAMID_TYPE = 14U;
+        static constexpr auto VTK_POLYHEDRON_TYPE = 42U;
         static constexpr std::array< geode::index_t, 9 >
             VTK_NB_VERTICES_TO_CELL_TYPE{ 0, 0, 0, 0, VTK_TETRAHEDRON_TYPE,
                 VTK_PYRAMID_TYPE, VTK_PRISM_TYPE, 0, VTK_HEXAHEDRON_TYPE };
@@ -44,7 +47,22 @@ namespace geode
         protected:
             VTUOutputImpl( std::string_view filename, const Mesh< 3 >& solid )
                 : VTKMeshOutputImpl< Mesh, 3 >(
-                      filename, solid, "UnstructuredGrid" )
+                    filename, solid, "UnstructuredGrid" )
+            {
+            }
+
+            // Cells written after the polyhedra, using the solid vertices.
+            // Each cell appends its vertices to the connectivity, then the
+            // connectivity size to the offsets and its VTK type to the types.
+            [[nodiscard]] virtual index_t nb_additional_cells() const
+            {
+                return 0;
+            }
+
+            virtual void write_additional_cells(
+                std::vector< int64_t >& /*unused*/,
+                std::vector< int64_t >& /*unused*/,
+                std::vector< uint8_t >& /*unused*/ ) const
             {
             }
 
@@ -52,7 +70,8 @@ namespace geode
             void append_number_elements( pugi::xml_node& piece ) override
             {
                 piece.append_attribute( "NumberOfCells" )
-                    .set_value( this->mesh().nb_polyhedra() );
+                    .set_value(
+                        this->mesh().nb_polyhedra() + nb_additional_cells() );
             }
 
             pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
@@ -81,6 +100,13 @@ namespace geode
                     }
                     write_cell( p, cell_types, cell_faces, cell_face_offsets,
                         face_offset );
+                }
+                write_additional_cells(
+                    cell_connectivity, cell_offsets, cell_types );
+                if( !cell_face_offsets.empty() )
+                {
+                    // Additional cells are not polyhedra, they have no faces
+                    cell_face_offsets.resize( cell_types.size(), -1 );
                 }
 
                 auto cells = piece.append_child( "Cells" );

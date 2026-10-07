@@ -86,6 +86,7 @@ add_geode_library(
         "detail/vtu_solid_input.hpp"
         "detail/vtu_triangulated_input.hpp"
         "detail/vtu_output_impl.hpp"
+        "detail/vtu_solid_output_impl.hpp"
         "detail/vtu_hybrid_input.hpp"
         "detail/vtu_polyhedral_input.hpp"
         "detail/vtu_polyhedral_output.hpp"

@@ -25,34 +25,7 @@
 
 #include <string>
 
-#include <geode/mesh/core/tetrahedral_solid.hpp>
-
-#include <geode/io/mesh/detail/vtu_output_impl.hpp>
-
-namespace
-{
-    class VTUTetrahedralOutputImpl
-        : public geode::detail::VTUOutputImpl< geode::TetrahedralSolid >
-    {
-    public:
-        VTUTetrahedralOutputImpl(
-            std::string_view filename, const geode::TetrahedralSolid3D& solid )
-            : geode::detail::VTUOutputImpl< geode::TetrahedralSolid >{ filename,
-                  solid }
-        {
-        }
-
-    private:
-        void write_cell( geode::index_t /*unused*/,
-            std::vector< uint8_t >& cell_types,
-            std::vector< int64_t >& /*unused*/,
-            std::vector< int64_t >& /*unused*/,
-            geode::index_t& /*unused*/ ) const override
-        {
-            cell_types.push_back( geode::detail::VTK_TETRAHEDRON_TYPE );
-        }
-    };
-} // namespace
+#include <geode/io/mesh/detail/vtu_solid_output_impl.hpp>
 
 namespace geode
 {
