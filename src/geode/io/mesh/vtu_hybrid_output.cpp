@@ -25,40 +25,7 @@
 
 #include <string>
 
-#include <geode/mesh/core/hybrid_solid.hpp>
-
-#include <geode/io/mesh/detail/vtu_output_impl.hpp>
-namespace
-{
-    class VTUHybridOutputImpl
-        : public geode::detail::VTUOutputImpl< geode::HybridSolid >
-    {
-    public:
-        VTUHybridOutputImpl(
-            std::string_view filename, const geode::HybridSolid3D& solid )
-            : geode::detail::VTUOutputImpl< geode::HybridSolid >{ filename,
-                  solid }
-        {
-        }
-
-    private:
-        void write_cell( geode::index_t p,
-            std::vector< uint8_t >& cell_types,
-            std::vector< int64_t >& /*unused*/,
-            std::vector< int64_t >& /*unused*/,
-            geode::index_t& /*unused*/ ) const override
-        {
-            const auto nb_vertices = this->mesh().nb_polyhedron_vertices( p );
-            const auto vtk_type =
-                geode::detail::VTK_NB_VERTICES_TO_CELL_TYPE[nb_vertices];
-            geode::OpenGeodeIOMeshException::check_exception( vtk_type != 0,
-                nullptr, geode::OpenGeodeException::TYPE::data,
-                "[VTUHybridOutputImpl::write_vtk_cell] Polyhedron with ",
-                nb_vertices, " vertices not supported" );
-            cell_types.push_back( vtk_type );
-        }
-    };
-} // namespace
+#include <geode/io/mesh/detail/vtu_solid_output_impl.hpp>
 
 namespace geode
 {
