@@ -66,6 +66,8 @@ namespace geode::internal
          * Block meshes.
          * Attributes sharing a name across the datasets are merged into a
          * single time step attribute per Block.
+         * @warning The attributes of the given meshes are modified: those
+         * sharing a name are given the same id.
          */
         void write_step( double time,
             absl::Span< const std::unique_ptr< SolidMesh3D > > meshes,
@@ -77,8 +79,8 @@ namespace geode::internal
             absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
                 block_manager );
 
-        [[nodiscard]] absl::flat_hash_set< std::string > share_attribute_ids(
-            absl::Span< const DatasetElements > datasets ) const;
+        [[nodiscard]] absl::flat_hash_set< std::string > unify_attribute_ids(
+            absl::Span< const DatasetElements > datasets );
 
         [[nodiscard]] std::optional< std::string > transferred_name(
             const AttributeManager& manager, const uuid& attribute_id ) const;

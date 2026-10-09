@@ -56,7 +56,7 @@ namespace
         }
     }
 
-    void share_attribute_id( geode::AttributeManager& manager,
+    void unify_attribute_id( geode::AttributeManager& manager,
         const geode::uuid& attribute_id,
         const std::string& name,
         absl::flat_hash_map< std::string, SharedAttribute >& shared_attributes )
@@ -128,7 +128,7 @@ namespace geode::internal
         absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
             block_manager )
     {
-        const auto names = share_attribute_ids( datasets );
+        const auto names = unify_attribute_ids( datasets );
         for( const auto& block : brep_.blocks() )
         {
             auto& manager = block_manager( block.mesh() );
@@ -150,9 +150,10 @@ namespace geode::internal
 
     // Each dataset gives its own id to a field: the ids are made identical
     // so that every dataset fills the same time step attribute of a Block.
+    // Returns the names of the transferred attributes.
     absl::flat_hash_set< std::string >
-        BRepTimeAttributesTransfer::share_attribute_ids(
-            absl::Span< const DatasetElements > datasets ) const
+        BRepTimeAttributesTransfer::unify_attribute_ids(
+            absl::Span< const DatasetElements > datasets )
     {
         absl::flat_hash_map< std::string, SharedAttribute > shared_attributes;
         for( const auto& dataset : datasets )
@@ -163,7 +164,7 @@ namespace geode::internal
                 if( const auto name =
                         transferred_name( manager, attribute_id ) )
                 {
-                    share_attribute_id( manager, attribute_id, name.value(),
+                    unify_attribute_id( manager, attribute_id, name.value(),
                         shared_attributes );
                 }
             }
