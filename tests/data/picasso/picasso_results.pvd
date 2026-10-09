@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<VTKFile type="Collection" version="0.1">
+	<Collection>
+		<DataSet timestep="0" file="picasso_results/000000.vtm" />
+		<DataSet timestep="50000000" file="picasso_results/000005.vtm" />
+		<DataSet timestep="100000000" file="picasso_results/000010.vtm" />
+	</Collection>
+</VTKFile>
