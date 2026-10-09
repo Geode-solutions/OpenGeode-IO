@@ -25,7 +25,8 @@
 
 #include <array>
 #include <filesystem>
-#include <optional>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include <absl/algorithm/container.h>
@@ -154,11 +155,12 @@ namespace
         return datasets;
     }
 
-    std::string dataset_vtu_file( std::string_view filename )
+    // GEOS writes one .vtu per region and per MPI rank in each .vtm
+    std::vector< std::string > dataset_vtu_files( std::string_view filename )
     {
         if( lower_extension( filename ) == "vtu" )
         {
-            return geode::to_string( filename );
+            return { geode::to_string( filename ) };
         }
         pugi::xml_document document;
         const auto multiblock =
@@ -167,15 +169,17 @@ namespace
         add_vtm_block_files( multiblock,
             geode::filepath_without_filename( geode::to_string( filename ) ),
             files );
-        geode::OpenGeodeIOTimeSeriesException::check_exception(
-            files.size() == 1, nullptr, geode::OpenGeodeException::TYPE::data,
-            "[dataset_vtu_file] ", filename, " lists ", files.size(),
-            " datasets: only one .vtu per time step is supported" );
-        geode::OpenGeodeIOTimeSeriesException::check_exception(
-            lower_extension( files.front() ) == "vtu", nullptr,
-            geode::OpenGeodeException::TYPE::data, "[dataset_vtu_file] ",
-            files.front(), " is not a .vtu dataset" );
-        return files.front();
+        geode::OpenGeodeIOTimeSeriesException::check_exception( !files.empty(),
+            nullptr, geode::OpenGeodeException::TYPE::data,
+            "[dataset_vtu_files] ", filename, " lists no dataset" );
+        for( const auto& file : files )
+        {
+            geode::OpenGeodeIOTimeSeriesException::check_exception(
+                lower_extension( file ) == "vtu", nullptr,
+                geode::OpenGeodeException::TYPE::data, "[dataset_vtu_files] ",
+                file, " is not a .vtu dataset" );
+        }
+        return files;
     }
 
     std::vector< std::string > collection_files( std::string_view filename )
@@ -187,7 +191,10 @@ namespace
             if( lower_extension( dataset.file ) == "vtm"
                 && geode::file_exists( dataset.file ) )
             {
-                files.push_back( dataset_vtu_file( dataset.file ) );
+                for( auto& vtu : dataset_vtu_files( dataset.file ) )
+                {
+                    files.push_back( std::move( vtu ) );
+                }
             }
         }
         return files;
@@ -233,16 +240,28 @@ namespace geode::internal
     {
         const BRepBlocksMatcher matcher{ brep };
         BRepTimeAttributesTransfer transfer{ brep, GEOS_IGNORED_ATTRIBUTES };
-        std::optional< SolidToBlocksMappings > mappings;
+        std::vector< SolidToBlocksMappings > mappings;
         for( const auto& dataset : read_pvd_collection( this->filename() ) )
         {
-            const auto vtu = dataset_vtu_file( dataset.file );
-            const auto mesh = load_polyhedral_solid< 3 >( vtu );
-            if( !mappings )
+            std::vector< std::unique_ptr< SolidMesh3D > > meshes;
+            for( const auto& vtu : dataset_vtu_files( dataset.file ) )
             {
-                mappings = matcher.mappings( *mesh );
+                meshes.push_back( load_polyhedral_solid< 3 >( vtu ) );
             }
-            transfer.write_step( dataset.time, *mesh, mappings.value() );
+            if( mappings.empty() )
+            {
+                for( const auto& mesh : meshes )
+                {
+                    mappings.push_back( matcher.mappings( *mesh ) );
+                }
+            }
+            OpenGeodeIOTimeSeriesException::check_exception(
+                meshes.size() == mappings.size(), nullptr,
+                OpenGeodeException::TYPE::data, "[PVDInput] ", dataset.file,
+                " lists ", meshes.size(),
+                " datasets whereas the first time step lists ",
+                mappings.size() );
+            transfer.write_step( dataset.time, meshes, mappings );
         }
     }
 } // namespace geode::internal

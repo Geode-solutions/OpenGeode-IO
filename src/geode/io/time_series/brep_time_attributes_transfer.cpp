@@ -23,7 +23,13 @@
 
 #include <geode/io/time_series/internal/brep_time_attributes_transfer.hpp>
 
+#include <vector>
+
+#include <absl/container/flat_hash_map.h>
+
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
+#include <geode/basic/range.hpp>
 
 #include <geode/mesh/core/solid_mesh.hpp>
 
@@ -32,6 +38,12 @@
 
 namespace
 {
+    struct SharedAttribute
+    {
+        geode::uuid id;
+        std::string_view type;
+    };
+
     void delete_existing_step(
         geode::AttributeManager& manager, std::string_view name, double time )
     {
@@ -42,6 +54,32 @@ namespace
                 manager.delete_attribute( step.attribute_id );
             }
         }
+    }
+
+    void unify_attribute_id( geode::AttributeManager& manager,
+        const geode::uuid& attribute_id,
+        const std::string& name,
+        absl::flat_hash_map< std::string, SharedAttribute >& shared_attributes )
+    {
+        const auto type = manager.attribute_type( attribute_id );
+        const auto [shared, inserted] = shared_attributes.try_emplace(
+            name, SharedAttribute{ attribute_id, type } );
+        if( inserted )
+        {
+            return;
+        }
+        if( shared->second.type != type )
+        {
+            geode::Logger::warning( "[BRepTimeAttributesTransfer] Attribute ",
+                name,
+                " has different types among the datasets of a time step, "
+                "values of type ",
+                type, " are not imported" );
+            manager.delete_attribute( attribute_id );
+            return;
+        }
+        manager.copy_attribute( attribute_id, shared->second.id );
+        manager.delete_attribute( attribute_id );
     }
 
 } // namespace
@@ -57,37 +95,99 @@ namespace geode::internal
     }
 
     void BRepTimeAttributesTransfer::write_step( double time,
-        const SolidMesh3D& mesh,
-        const SolidToBlocksMappings& mappings )
+        absl::Span< const std::unique_ptr< SolidMesh3D > > meshes,
+        absl::Span< const SolidToBlocksMappings > mappings )
     {
-        write_vertex_step( time, mesh, mappings.vertices );
-        write_polyhedron_step( time, mesh, mappings.polyhedra );
+        OpenGeodeIOTimeSeriesException::check_exception(
+            meshes.size() == mappings.size(), nullptr,
+            OpenGeodeException::TYPE::internal,
+            "[BRepTimeAttributesTransfer::write_step] Each dataset should "
+            "have its mappings" );
+        std::vector< DatasetElements > vertices;
+        std::vector< DatasetElements > polyhedra;
+        for( const auto dataset : Indices{ meshes } )
+        {
+            const auto& mesh = *meshes[dataset];
+            vertices.push_back( { mesh.vertex_attribute_manager(),
+                mappings[dataset].vertices } );
+            polyhedra.push_back( { mesh.polyhedron_attribute_manager(),
+                mappings[dataset].polyhedra } );
+        }
+        write_elements_step( time, vertices,
+            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
+                return block_mesh.vertex_attribute_manager();
+            } );
+        write_elements_step( time, polyhedra,
+            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
+                return block_mesh.polyhedron_attribute_manager();
+            } );
     }
 
-    void BRepTimeAttributesTransfer::write_vertex_step( double time,
-        const SolidMesh3D& mesh,
-        const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-            block_mappings )
+    void BRepTimeAttributesTransfer::write_elements_step( double time,
+        absl::Span< const DatasetElements > datasets,
+        absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
+            block_manager )
     {
-        for( const auto& [block_id, mesh2block] : block_mappings )
+        const auto names = unify_attribute_ids( datasets );
+        for( const auto& block : brep_.blocks() )
         {
-            write_block_step( time, mesh.vertex_attribute_manager(),
-                brep_.block( block_id ).mesh().vertex_attribute_manager(),
-                mesh2block );
+            auto& manager = block_manager( block.mesh() );
+            for( const auto& name : names )
+            {
+                delete_existing_step( manager, name, time );
+            }
+        }
+        for( const auto& dataset : datasets )
+        {
+            for( const auto& [block_id, mesh2block] : dataset.block_mappings )
+            {
+                write_block_step( time, dataset.manager,
+                    block_manager( brep_.block( block_id ).mesh() ),
+                    mesh2block );
+            }
         }
     }
 
-    void BRepTimeAttributesTransfer::write_polyhedron_step( double time,
-        const SolidMesh3D& mesh,
-        const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-            block_mappings )
+    // Each dataset gives its own id to a field: the ids are made identical
+    // so that every dataset fills the same time step attribute of a Block.
+    // Returns the names of the transferred attributes.
+    absl::flat_hash_set< std::string >
+        BRepTimeAttributesTransfer::unify_attribute_ids(
+            absl::Span< const DatasetElements > datasets )
     {
-        for( const auto& [block_id, mesh2block] : block_mappings )
+        absl::flat_hash_map< std::string, SharedAttribute > shared_attributes;
+        for( const auto& dataset : datasets )
         {
-            write_block_step( time, mesh.polyhedron_attribute_manager(),
-                brep_.block( block_id ).mesh().polyhedron_attribute_manager(),
-                mesh2block );
+            auto& manager = dataset.manager;
+            for( const auto& attribute_id : manager.attribute_ids() )
+            {
+                if( const auto name =
+                        transferred_name( manager, attribute_id ) )
+                {
+                    unify_attribute_id( manager, attribute_id, name.value(),
+                        shared_attributes );
+                }
+            }
         }
+        absl::flat_hash_set< std::string > names;
+        for( const auto& shared_attribute : shared_attributes )
+        {
+            names.insert( shared_attribute.first );
+        }
+        return names;
+    }
+
+    std::optional< std::string > BRepTimeAttributesTransfer::transferred_name(
+        const AttributeManager& manager, const uuid& attribute_id ) const
+    {
+        const auto attribute = manager.find_generic_attribute( attribute_id );
+        const auto& name = attribute->name();
+        if( !name || !attribute->properties().transferable
+            || ignored_attributes_.contains( name.value() ) )
+        {
+            return std::nullopt;
+        }
+        return name;
     }
 
     void BRepTimeAttributesTransfer::write_block_step( double time,
@@ -97,16 +197,12 @@ namespace geode::internal
     {
         for( const auto& attribute_id : manager.attribute_ids() )
         {
-            const auto attribute =
-                manager.find_generic_attribute( attribute_id );
-            const auto& name = attribute->name();
-            if( !name || !attribute->properties().transferable
-                || ignored_attributes_.contains( name.value() ) )
+            if( !transferred_name( manager, attribute_id ) )
             {
                 continue;
             }
-            delete_existing_step( block_manager, name.value(), time );
-            auto properties = attribute->properties();
+            auto properties =
+                manager.find_generic_attribute( attribute_id )->properties();
             properties.time = time;
             block_manager.import( manager, mesh2block, attribute_id );
             block_manager.set_attribute_properties( attribute_id, properties );

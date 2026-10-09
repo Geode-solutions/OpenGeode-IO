@@ -23,10 +23,13 @@
 
 #pragma once
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include <absl/container/flat_hash_set.h>
+#include <absl/functional/function_ref.h>
 #include <absl/types/span.h>
 
 #include <geode/io/time_series/common.hpp>
@@ -44,24 +47,43 @@ namespace geode::internal
 {
     class BRepTimeAttributesTransfer
     {
+        // Elements of one dataset of a time step and their mappings to
+        // the Block elements
+        struct DatasetElements
+        {
+            AttributeManager& manager;
+            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
+                block_mappings;
+        };
+
     public:
         BRepTimeAttributesTransfer( BRep& brep,
             absl::Span< const std::string_view > ignored_attributes );
 
+        /*!
+         * Write the attributes of all the datasets of a time step (e.g. one
+         * per GEOS region and per MPI rank) as time step attributes of the
+         * Block meshes.
+         * Attributes sharing a name across the datasets are merged into a
+         * single time step attribute per Block.
+         * @warning The attributes of the given meshes are modified: those
+         * sharing a name are given the same id.
+         */
         void write_step( double time,
-            const SolidMesh3D& mesh,
-            const SolidToBlocksMappings& mappings );
+            absl::Span< const std::unique_ptr< SolidMesh3D > > meshes,
+            absl::Span< const SolidToBlocksMappings > mappings );
 
     private:
-        void write_vertex_step( double time,
-            const SolidMesh3D& mesh,
-            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                block_mappings );
+        void write_elements_step( double time,
+            absl::Span< const DatasetElements > datasets,
+            absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
+                block_manager );
 
-        void write_polyhedron_step( double time,
-            const SolidMesh3D& mesh,
-            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                block_mappings );
+        [[nodiscard]] absl::flat_hash_set< std::string > unify_attribute_ids(
+            absl::Span< const DatasetElements > datasets );
+
+        [[nodiscard]] std::optional< std::string > transferred_name(
+            const AttributeManager& manager, const uuid& attribute_id ) const;
 
         void write_block_step( double time,
             const AttributeManager& manager,
