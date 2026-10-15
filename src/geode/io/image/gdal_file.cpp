@@ -67,7 +67,7 @@ namespace geode
                     x_direction.set_value( axis, geo_transform[3 * axis + 1] );
                     y_direction.set_value( axis, geo_transform[3 * axis + 2] );
                 }
-                return { origin, { x_direction, y_direction } };
+                return { { x_direction, y_direction }, origin };
             }
 
             bool is_coordinate_system_loadable()
