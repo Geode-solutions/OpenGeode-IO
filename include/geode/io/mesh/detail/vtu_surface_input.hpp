@@ -85,15 +85,23 @@ namespace geode
                 const auto [polygon_vertices, types] =
                     this->read_cells( piece, nb_polygons );
                 const auto polygons_offset = this->mesh().nb_polygons();
+                index_t nb_invalid_polygons{ 0 };
                 for( const auto p : Indices{ polygon_vertices } )
                 {
                     const auto it = elements_.find( types[p] );
-                    if( it != elements_.end()
-                        && it->second == polygon_vertices[p].size() )
+                    if( it == elements_.end()
+                        || it->second != polygon_vertices[p].size() )
                     {
-                        this->builder().create_polygon( polygon_vertices[p] );
+                        continue;
                     }
+                    if( !this->are_cell_vertices_valid( polygon_vertices[p] ) )
+                    {
+                        nb_invalid_polygons++;
+                        continue;
+                    }
+                    this->builder().create_polygon( polygon_vertices[p] );
                 }
+                this->warn_invalid_cells( nb_invalid_polygons );
                 return polygons_offset;
             }
 
