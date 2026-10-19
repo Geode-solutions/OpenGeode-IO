@@ -160,7 +160,8 @@ int main()
         run_polyhedral_test( "cone_append_raw.vtu", { 580, 2197 } );
         run_solid_test( "cone_int32_raw.vtu", { 580, 2197 }, 0.624858 );
         run_surface_test( "cone.vtu", { 580, 1182 }, 0.336177 );
-        run_surface_test( "mymesh.vtu", { 283308, 564408 }, 1 );
+        // One triangle references a vertex out of range and is skipped
+        run_surface_test( "mymesh.vtu", { 283308, 564407 }, 1 );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

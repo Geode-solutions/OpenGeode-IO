@@ -123,15 +123,24 @@ namespace geode
                 const auto [polyhedron_vertices, types] =
                     this->read_cells( piece, nb_polyhedra );
                 const auto polyhedra_offset = this->mesh().nb_polyhedra();
+                index_t nb_invalid_polyhedra{ 0 };
                 for( const auto p : Indices{ polyhedron_vertices } )
                 {
                     const auto it = elements_.find( types[p] );
-                    if( it != elements_.end() )
+                    if( it == elements_.end() )
                     {
-                        this->builder().create_polyhedron(
-                            polyhedron_vertices[p], it->second );
+                        continue;
                     }
+                    if( !this->are_cell_vertices_valid(
+                            polyhedron_vertices[p] ) )
+                    {
+                        nb_invalid_polyhedra++;
+                        continue;
+                    }
+                    this->builder().create_polyhedron(
+                        polyhedron_vertices[p], it->second );
                 }
+                this->warn_invalid_cells( nb_invalid_polyhedra );
                 return polyhedra_offset;
             }
 
