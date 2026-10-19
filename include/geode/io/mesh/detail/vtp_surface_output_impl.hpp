@@ -48,7 +48,7 @@ namespace geode
                 const auto manager = this->mesh().texture_manager();
                 const auto texture_names = manager.texture_names();
                 textures_info_.reserve( texture_names.size() );
-                for( const auto texture_name : texture_names )
+                for( const auto& texture_name : texture_names )
                 {
                     textures_info_.emplace_back(
                         texture_name, manager.find_texture( texture_name ) );
@@ -196,7 +196,7 @@ namespace geode
             }
 
         private:
-            std::vector< std::pair< std::string_view,
+            std::vector< std::pair< std::string,
                 std::reference_wrapper< const Texture2D > > >
                 textures_info_;
             std::vector< absl::flat_hash_map< index_t, index_t > >

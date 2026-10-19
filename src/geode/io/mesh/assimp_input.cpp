@@ -187,7 +187,7 @@ namespace geode
             {
                 const auto& mesh = surfaces_[s];
                 auto manager = mesh->texture_manager();
-                for( const auto name : manager.texture_names() )
+                for( const auto& name : manager.texture_names() )
                 {
                     const auto& texture = manager.find_texture( name );
                     auto& merged_texture =
