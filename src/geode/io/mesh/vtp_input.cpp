@@ -87,16 +87,20 @@ namespace
         geode::index_t build_polygons(
             absl::Span< const std::vector< geode::index_t > > polygon_vertices )
         {
-            absl::FixedArray< geode::index_t > new_polygons(
-                polygon_vertices.size() );
-            std::iota( new_polygons.begin(), new_polygons.end(),
-                mesh().nb_polygons() );
+            const auto polygons_offset = mesh().nb_polygons();
+            geode::index_t nb_invalid_polygons{ 0 };
             for( const auto& pv : polygon_vertices )
             {
+                if( !are_cell_vertices_valid( pv ) )
+                {
+                    nb_invalid_polygons++;
+                    continue;
+                }
                 builder().create_polygon( pv );
             }
+            warn_invalid_cells( nb_invalid_polygons );
             builder().compute_polygon_adjacencies();
-            return new_polygons[0];
+            return polygons_offset;
         }
     };
 } // namespace

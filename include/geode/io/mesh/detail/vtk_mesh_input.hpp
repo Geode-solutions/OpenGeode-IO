@@ -30,6 +30,7 @@
 #include <pugixml.hpp>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -57,6 +58,27 @@ namespace geode
             MeshBuilder& builder()
             {
                 return *mesh_builder_;
+            }
+
+            bool are_cell_vertices_valid(
+                absl::Span< const index_t > vertices )
+            {
+                const auto nb_vertices = this->mesh().nb_vertices();
+                return absl::c_all_of( vertices, [nb_vertices]( index_t v ) {
+                    return v < nb_vertices;
+                } );
+            }
+
+            void warn_invalid_cells( index_t nb_invalid_cells )
+            {
+                if( nb_invalid_cells == 0 )
+                {
+                    return;
+                }
+                Logger::warning( "[VTKInput] ", nb_invalid_cells,
+                    " cell(s) referencing vertices out of range (number of "
+                    "vertices: ",
+                    this->mesh().nb_vertices(), ") have been skipped" );
             }
 
             absl::FixedArray< std::vector< index_t > > get_cell_vertices(
