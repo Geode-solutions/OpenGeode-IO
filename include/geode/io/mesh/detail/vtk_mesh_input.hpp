@@ -60,8 +60,7 @@ namespace geode
                 return *mesh_builder_;
             }
 
-            bool are_cell_vertices_valid(
-                absl::Span< const index_t > vertices )
+            bool are_cell_vertices_valid( absl::Span< const index_t > vertices )
             {
                 const auto nb_vertices = this->mesh().nb_vertices();
                 return absl::c_all_of( vertices, [nb_vertices]( index_t v ) {
