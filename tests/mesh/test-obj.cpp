@@ -182,6 +182,39 @@ namespace
         geode::OpenGeodeIOMeshException::test( texture.image().nb_cells() > 0,
             "Texture image with absolute path should be loaded" );
     }
+
+    void test_additional_files_bare_filename()
+    {
+        {
+            std::ofstream obj{ "bare_additional.obj" };
+            obj << "mtllib bare additional.mtl\n"
+                << "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n";
+            std::ofstream mtl{ "bare additional.mtl" };
+            mtl << "newmtl material\n"
+                << "map_Kd -clamp on -s 1 1 1 missing texture.png\n";
+        }
+        const auto files = geode::polygonal_surface_additional_files< 3 >(
+            "bare_additional.obj" );
+        geode::OpenGeodeIOMeshException::test( files.optional_files.size() == 2,
+            "Wrong number of OBJ additional files" );
+        geode::OpenGeodeIOMeshException::test(
+            files.optional_files[0].filename == "bare additional.mtl"
+                && !files.optional_files[0].is_missing,
+            "MTL file next to a bare OBJ filename should be found" );
+        geode::OpenGeodeIOMeshException::test(
+            files.optional_files[1].filename == "missing texture.png"
+                && files.optional_files[1].is_missing,
+            "Texture file should be read after map_Kd options" );
+
+        {
+            std::ofstream obj{ "bare_mtllib.obj" };
+            obj << "mtllib\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n";
+        }
+        geode::OpenGeodeIOMeshException::test(
+            geode::polygonal_surface_additional_files< 3 >( "bare_mtllib.obj" )
+                .optional_files.empty(),
+            "OBJ with an empty mtllib should have no additional file" );
+    }
 } // namespace
 
 int main()
@@ -220,6 +253,7 @@ int main()
         test_lines_and_points();
         test_too_large_polygon();
         test_absolute_texture_path();
+        test_additional_files_bare_filename();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
