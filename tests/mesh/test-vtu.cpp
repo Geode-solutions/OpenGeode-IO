@@ -33,6 +33,7 @@
 #include <geode/geometry/point.hpp>
 
 #include <geode/mesh/builder/hybrid_solid_builder.hpp>
+#include <geode/mesh/builder/polyhedral_solid_builder.hpp>
 #include <geode/mesh/core/hybrid_solid.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/core/tetrahedral_solid.hpp>
@@ -432,6 +433,55 @@ void test_vtk_polyhedron()
     check( *hybrid, { 8, 1 } );
 }
 
+void test_polyhedral_round_trip()
+{
+    auto solid = geode::PolyhedralSolid3D::create();
+    auto builder = geode::PolyhedralSolidBuilder3D::create( *solid );
+    for( const auto& point : { geode::Point3D{ { 0, 0, 0 } },
+             geode::Point3D{ { 1, 0, 0 } }, geode::Point3D{ { 1, 1, 0 } },
+             geode::Point3D{ { 0, 1, 0 } }, geode::Point3D{ { 0, 0, 1 } },
+             geode::Point3D{ { 1, 0, 1 } }, geode::Point3D{ { 1, 1, 1 } },
+             geode::Point3D{ { 0, 1, 1 } }, geode::Point3D{ { 0, 0, -1 } } } )
+    {
+        builder->create_point( point );
+    }
+    // Hexahedron with vertices not in the VTK_HEXAHEDRON order
+    builder->create_polyhedron( { 6, 0, 1, 2, 3, 4, 5, 7 },
+        { { 1, 5, 6, 2 }, { 3, 0, 7, 4 }, { 1, 4, 7, 5 }, { 2, 6, 0, 3 },
+            { 1, 2, 3, 4 }, { 5, 7, 0, 6 } } );
+    // Pyramid with vertices not in the VTK_PYRAMID order
+    builder->create_polyhedron(
+        { 8, 0, 1, 2, 3 }, { { 0, 1, 2 }, { 0, 2, 3 }, { 0, 3, 4 }, { 0, 4, 1 },
+                               { 1, 4, 3, 2 } } );
+    // Tetrahedron with a non canonical vertex order
+    builder->create_polyhedron( { 0, 1, 3, 8 },
+        { { 0, 2, 1 }, { 0, 1, 3 }, { 1, 2, 3 }, { 0, 3, 2 } } );
+    builder->compute_polyhedron_adjacencies();
+    std::vector< double > volumes;
+    for( const auto p : geode::Range{ solid->nb_polyhedra() } )
+    {
+        volumes.push_back( solid->polyhedron_volume( p ) );
+        geode::OpenGeodeIOMeshException::test( volumes.back() > 0,
+            "Test polyhedron ", p, " should have a positive volume" );
+    }
+    geode::save_polyhedral_solid( *solid, "polyhedral_round_trip.vtu" );
+    const auto reload =
+        geode::load_polyhedral_solid< 3 >( "polyhedral_round_trip.vtu" );
+    check( *reload, { 9, 3 } );
+    for( const auto p : geode::Range{ solid->nb_polyhedra() } )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            reload->nb_polyhedron_facets( p )
+                == solid->nb_polyhedron_facets( p ),
+            "Wrong number of facets for reloaded polyhedron ", p );
+        geode::OpenGeodeIOMeshException::test(
+            std::fabs( reload->polyhedron_volume( p ) - volumes[p] )
+                < geode::GLOBAL_EPSILON,
+            "Wrong volume for reloaded polyhedron ", p, ": should be ",
+            volumes[p], ", get ", reload->polyhedron_volume( p ) );
+    }
+}
+
 int main()
 {
     try
@@ -446,6 +496,7 @@ int main()
         test_cells_with_wrong_number_of_vertices();
         test_hexahedron_and_voxel();
         test_vtk_polyhedron();
+        test_polyhedral_round_trip();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
