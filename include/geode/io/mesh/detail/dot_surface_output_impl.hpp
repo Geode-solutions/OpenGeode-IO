@@ -75,7 +75,8 @@ namespace geode
                 const auto name =
                     surface_.name().value_or( surface_.id().string() );
                 file_ << "graph \""
-                      << absl::StrReplaceAll( name, { { "\"", "\\\"" } } )
+                      << absl::StrReplaceAll(
+                             name, { { "\\", "\\\\" }, { "\"", "\\\"" } } )
                       << "\" {\n";
                 const auto& edges = surface_.edges();
                 for( const auto edge : Range{ edges.nb_edges() } )

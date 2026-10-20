@@ -77,6 +77,14 @@ void test_graph_name()
     geode::OpenGeodeIOMeshException::test(
         named == "graph \"my \\\"surface\\\"\" {",
         "[TEST] Wrong graph identifier: ", named );
+
+    // A trailing backslash must not escape the closing quote
+    builder->set_name( "my\\surface\\" );
+    geode::save_polygonal_surface( *surface, "backslash.dot" );
+    const auto backslash = first_line( "backslash.dot" );
+    geode::OpenGeodeIOMeshException::test(
+        backslash == "graph \"my\\\\surface\\\\\" {",
+        "[TEST] Wrong graph identifier: ", backslash );
 }
 
 int main()
