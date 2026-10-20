@@ -132,8 +132,8 @@ namespace geode
             std::vector< std::string_view > tokens()
             {
                 std::getline( file_, line_ );
-                return absl::StrSplit(
-                    absl::StripAsciiWhitespace( line_ ), " " );
+                return absl::StrSplit( absl::StripAsciiWhitespace( line_ ),
+                    absl::ByAnyChar( " \t" ), absl::SkipEmpty() );
             }
 
         private:

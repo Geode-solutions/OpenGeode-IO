@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
@@ -33,6 +35,41 @@
 
 namespace
 {
+    std::unique_ptr< geode::EdgedCurve3D > load_from_string(
+        std::string_view name, std::string_view content )
+    {
+        const auto filename = absl::StrCat( name, ".smesh" );
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << content;
+        }
+        return geode::load_edged_curve< 3 >( filename );
+    }
+
+    void check_curve( const geode::EdgedCurve3D& curve,
+        geode::index_t nb_vertices,
+        geode::index_t nb_edges,
+        std::string_view test )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            curve.nb_vertices() == nb_vertices, "[", test,
+            "] Wrong number of vertices: ", curve.nb_vertices() );
+        geode::OpenGeodeIOMeshException::test( curve.nb_edges() == nb_edges,
+            "[", test, "] Wrong number of edges: ", curve.nb_edges() );
+    }
+
+    void test_whitespaces()
+    {
+        const auto curve =
+            load_from_string( "smesh_whitespaces", "3  3\t0 0\r\n"
+                                                   "0\t0.0  0.0 0.0\r\n"
+                                                   "  1 1.0\t\t0.0 0.0  \r\n"
+                                                   "2 2.0 0.0 0.0\r\n"
+                                                   "2   0\r\n"
+                                                   "2 0  1\r\n"
+                                                   "2\t1\t2\r\n" );
+        check_curve( *curve, 3, 2, "whitespaces" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -62,6 +99,7 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         test_load();
         test_is_loadable();
+        test_whitespaces();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
