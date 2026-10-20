@@ -120,6 +120,23 @@ namespace
             "[short rows] Wrong last point" );
     }
 
+    void test_invalid_coordinates()
+    {
+        const auto point_set = read_csv( write_csv( "csv_invalid_coordinates",
+            "x,y,z\n"
+            "0,0,0\n"
+            "nan,1,1\n"
+            "2,inf,2\n"
+            "3,3,abc\n"
+            "4,,4\n"
+            "5,5,5\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 2, "invalid coordinates" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 1 ) == geode::Point3D{ { 5, 5, 5 } },
+            "[invalid coordinates] Wrong last point" );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -229,6 +246,7 @@ int main()
         test_csv_input_with_wrong_value();
         test_invalid_settings();
         test_blank_and_short_rows();
+        test_invalid_coordinates();
         return 0;
     }
     catch( ... )

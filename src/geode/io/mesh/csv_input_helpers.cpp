@@ -21,6 +21,7 @@
  *
  */
 
+#include <cmath>
 #include <fstream>
 #include <optional>
 #include <sstream>
@@ -100,6 +101,8 @@ namespace geode
             static constexpr index_t MAX_REPORTED_ROWS{ 10 };
             std::vector< index_t > short_rows;
             index_t nb_short_rows{ 0 };
+            std::vector< index_t > invalid_rows;
+            index_t nb_invalid_rows{ 0 };
             while( std::getline( file_, line ) )
             {
                 if( current_row == header_row_ )
@@ -129,11 +132,18 @@ namespace geode
                     current_row++;
                     continue;
                 }
-                const auto x = string_to_double( line_values[x_column_] );
-                const auto y = string_to_double( line_values[y_column_] );
-                const auto z = string_to_double( line_values[z_column_] );
-                const auto vertex_id =
-                    builder->create_point( geode::Point3D{ { x, y, z } } );
+                const auto point = read_point( line_values );
+                if( !point )
+                {
+                    if( invalid_rows.size() < MAX_REPORTED_ROWS )
+                    {
+                        invalid_rows.push_back( current_row + 1 );
+                    }
+                    nb_invalid_rows++;
+                    current_row++;
+                    continue;
+                }
+                const auto vertex_id = builder->create_point( point.value() );
                 set_attribute_on_vertex( vertex_id, line_values, headers,
                     double_attrs, attribute_manager );
                 current_row++;
@@ -146,10 +156,37 @@ namespace geode
                     " (rows: ", absl::StrJoin( short_rows, ", " ),
                     nb_short_rows > short_rows.size() ? ", ..." : "", ")" );
             }
+            if( nb_invalid_rows != 0 )
+            {
+                Logger::warning( "[CSVInput] Skipped ", nb_invalid_rows,
+                    " rows with non numeric or non finite coordinates in "
+                    "file ",
+                    filename_, " (rows: ", absl::StrJoin( invalid_rows, ", " ),
+                    nb_invalid_rows > invalid_rows.size() ? ", ..." : "", ")" );
+            }
             return point_set;
         }
 
     private:
+        std::optional< Point3D > read_point(
+            const std::vector< std::string >& line_values ) const
+        {
+            Point3D point;
+            const std::array< index_t, 3 > columns{ x_column_, y_column_,
+                z_column_ };
+            for( const auto d : LRange{ 3 } )
+            {
+                double value;
+                if( !absl::SimpleAtod( line_values[columns[d]], &value )
+                    || !std::isfinite( value ) )
+                {
+                    return std::nullopt;
+                }
+                point.set_value( d, value );
+            }
+            return point;
+        }
+
         std::vector< std::string > split_line( const std::string& line )
         {
             return absl::StrSplit( absl::StripAsciiWhitespace( line ),
