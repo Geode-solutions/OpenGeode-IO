@@ -113,7 +113,7 @@ namespace geode
                 const auto& assimp_mesh = *assimp_scene->mMeshes[i];
                 if( !assimp_mesh.HasTextureCoords( 0 ) )
                 {
-                    return;
+                    continue;
                 }
                 const auto& mesh = *surfaces_[i];
                 const auto& material = materials_[assimp_mesh.mMaterialIndex];

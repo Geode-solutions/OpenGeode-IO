@@ -54,10 +54,12 @@ int main()
         // Reload file
         auto reloaded_surface =
             geode::load_triangulated_surface< 3 >( output_file_stl );
-        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 525,
+        geode::OpenGeodeIOMeshException::test(
+            reloaded_surface->nb_vertices() == 525,
             "Number of vertices in the "
             "reloaded Surface is not correct" );
-        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1027,
+        geode::OpenGeodeIOMeshException::test(
+            reloaded_surface->nb_polygons() == 1027,
             "Number of polygons in the "
             "reloaded Surface is not correct" );
 
