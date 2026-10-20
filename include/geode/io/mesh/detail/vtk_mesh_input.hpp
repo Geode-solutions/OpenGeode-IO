@@ -104,12 +104,22 @@ namespace geode
                     vertices.reserve( cur_offset - prev_offset );
                     for( const auto v : Range{ prev_offset, cur_offset } )
                     {
-                        vertices.push_back(
-                            static_cast< index_t >( connectivity[v] ) );
+                        vertices.push_back( piece_vertex( connectivity[v] ) );
                     }
                     prev_offset = cur_offset;
                 }
                 return cell_vertices;
+            }
+
+            // Converts a vertex index of the current piece into a mesh vertex
+            // index, NO_ID if the index is out of the piece range
+            index_t piece_vertex( int64_t vertex ) const
+            {
+                if( vertex < 0 || vertex >= piece_nb_vertices_ )
+                {
+                    return NO_ID;
+                }
+                return piece_vertex_offset_ + static_cast< index_t >( vertex );
             }
 
         private:
@@ -117,6 +127,7 @@ namespace geode
             {
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
+                    this->start_piece();
                     read_vtk_points( piece );
                     read_vtk_cells( piece );
                 }
@@ -136,6 +147,8 @@ namespace geode
                 const auto nb_points =
                     this->read_attribute( piece, "NumberOfPoints" );
                 const auto vertex_offset = build_points( piece, nb_points );
+                piece_vertex_offset_ = vertex_offset;
+                piece_nb_vertices_ = nb_points;
                 this->read_data( piece.child( "PointData" ),
                     DataMapping{ nb_points, vertex_offset },
                     this->mesh().vertex_attribute_manager() );
@@ -209,6 +222,8 @@ namespace geode
 
         private:
             std::unique_ptr< MeshBuilder > mesh_builder_;
+            index_t piece_vertex_offset_{ 0 };
+            int64_t piece_nb_vertices_{ std::numeric_limits< int64_t >::max() };
         }; // namespace detail
     } // namespace detail
 } // namespace geode

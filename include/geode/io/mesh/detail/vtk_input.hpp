@@ -35,6 +35,7 @@
 #include <zlib.h>
 
 #include <absl/algorithm/container.h>
+#include <absl/container/flat_hash_map.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/escaping.h>
 #include <absl/strings/match.h>
@@ -156,6 +157,13 @@ namespace geode
                 read_appended_data();
             }
 
+            // To be called before reading each piece: data arrays are then
+            // gathered with the arrays of the same name in previous pieces
+            void start_piece()
+            {
+                current_piece_++;
+            }
+
             void initialize_mesh( std::unique_ptr< Mesh >&& mesh )
             {
                 mesh_ = std::move( mesh );
@@ -256,12 +264,8 @@ namespace geode
                     properties.assignable = false;
                     properties.interpolable = false;
                     properties.transferable = true;
-                    auto attribute_id =
-                        manager.create_attribute< VariableAttribute, T >(
-                            name, default_values, properties );
-                    auto attribute =
-                        manager.find_attribute< VariableAttribute, T >(
-                            attribute_id );
+                    auto attribute = find_or_create_attribute< T >(
+                        manager, name, default_values, properties );
                     for( const auto i : Indices{ values } )
                     {
                         const auto element = mapping.element( i );
@@ -423,6 +427,40 @@ namespace geode
             }
 
         private:
+            // Reuses the attribute of the same name and type created while
+            // reading a previous piece, creates a new one otherwise
+            template < typename T >
+            std::shared_ptr< VariableAttribute< T > > find_or_create_attribute(
+                AttributeManager& manager,
+                std::string_view name,
+                AttributeValues< T > default_values,
+                AttributeProperties properties )
+            {
+                const std::pair< const AttributeManager*, std::string > key{
+                    &manager, to_string( name )
+                };
+                const auto it = created_attributes_.find( key );
+                if( it != created_attributes_.end()
+                    && it->second.second != current_piece_ )
+                {
+                    if( auto attribute =
+                            std::dynamic_pointer_cast< VariableAttribute< T > >(
+                                manager.find_generic_attribute(
+                                    it->second.first ) ) )
+                    {
+                        it->second.second = current_piece_;
+                        return attribute;
+                    }
+                }
+                const auto attribute_id =
+                    manager.create_attribute< VariableAttribute, T >( name,
+                        std::move( default_values ), std::move( properties ) );
+                created_attributes_.insert_or_assign(
+                    key, std::pair{ attribute_id, current_piece_ } );
+                return manager.find_attribute< VariableAttribute, T >(
+                    attribute_id );
+            }
+
             template < typename Container, typename T >
             void create_attribute( AttributeManager& manager,
                 const Container& default_value,
@@ -439,12 +477,8 @@ namespace geode
                 properties.assignable = false;
                 properties.interpolable = false;
                 properties.transferable = true;
-                const auto attribute_id =
-                    manager.create_attribute< VariableAttribute, Container >(
-                        name, default_values, properties );
-                auto attribute =
-                    manager.find_attribute< VariableAttribute, Container >(
-                        attribute_id );
+                auto attribute = find_or_create_attribute< Container >(
+                    manager, name, default_values, properties );
                 for( const auto i : Range{ values.size() / nb_components } )
                 {
                     const auto element = mapping.element( i );
@@ -919,6 +953,11 @@ namespace geode
             std::string file_content_;
             std::string_view raw_appended_data_;
             std::string_view appended_data_;
+            index_t current_piece_{ 0 };
+            absl::flat_hash_map<
+                std::pair< const AttributeManager*, std::string >,
+                std::pair< uuid, index_t > >
+                created_attributes_;
         }; // namespace detail
     } // namespace detail
 } // namespace geode
