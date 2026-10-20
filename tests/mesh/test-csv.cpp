@@ -84,6 +84,42 @@ namespace
             false, "[", filename, "] Reading should have failed" );
     }
 
+    constexpr auto VALID_SETTINGS = R"({
+  "firstRow": 1,
+  "headerRow": 0,
+  "separator": ",",
+  "xColumn": 0,
+  "yColumn": 1,
+  "zColumn": 2
+})";
+
+    void check_nb_vertices( const geode::PointSet3D& point_set,
+        geode::index_t expected,
+        std::string_view test )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            point_set.nb_vertices() == expected, "[", test,
+            "] Wrong number of vertices: ", point_set.nb_vertices(),
+            " instead of ", expected );
+    }
+
+    void test_blank_and_short_rows()
+    {
+        const auto point_set = read_csv( write_csv( "csv_short_rows",
+            "x,y,z,v\r\n"
+            "0,0,0,1\r\n"
+            "\r\n"
+            "1,1\r\n"
+            "   \r\n"
+            "2,2,2,3\r\n"
+            "3,3,3\r\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 3, "short rows" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 2 ) == geode::Point3D{ { 3, 3, 3 } },
+            "[short rows] Wrong last point" );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -192,6 +228,7 @@ int main()
         test_csv_input_with_missing_keyword();
         test_csv_input_with_wrong_value();
         test_invalid_settings();
+        test_blank_and_short_rows();
         return 0;
     }
     catch( ... )

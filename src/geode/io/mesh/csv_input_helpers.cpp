@@ -29,6 +29,7 @@
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
 #include <absl/strings/match.h>
+#include <absl/strings/str_join.h>
 #include <absl/strings/str_split.h>
 
 #include <geode/geometry/point.hpp>
@@ -53,7 +54,8 @@ namespace geode
     {
     public:
         Impl( std::string_view filename )
-            : file_{ geode::to_string( filename ), std::ios::binary }
+            : filename_{ filename },
+              file_{ geode::to_string( filename ), std::ios::binary }
         {
         }
 
@@ -93,6 +95,11 @@ namespace geode
                 std::shared_ptr< VariableAttribute< double > > >
                 double_attrs;
             auto& attribute_manager = point_set->vertex_attribute_manager();
+            const auto max_coordinate_column =
+                std::max( { x_column_, y_column_, z_column_ } );
+            static constexpr index_t MAX_REPORTED_ROWS{ 10 };
+            std::vector< index_t > short_rows;
+            index_t nb_short_rows{ 0 };
             while( std::getline( file_, line ) )
             {
                 if( current_row == header_row_ )
@@ -106,9 +113,19 @@ namespace geode
                     current_row++;
                     continue;
                 }
-                const auto line_values = split_line( line );
-                if( line_values.empty() )
+                if( absl::StripAsciiWhitespace( line ).empty() )
                 {
+                    current_row++;
+                    continue;
+                }
+                const auto line_values = split_line( line );
+                if( line_values.size() <= max_coordinate_column )
+                {
+                    if( short_rows.size() < MAX_REPORTED_ROWS )
+                    {
+                        short_rows.push_back( current_row + 1 );
+                    }
+                    nb_short_rows++;
                     current_row++;
                     continue;
                 }
@@ -121,7 +138,14 @@ namespace geode
                     double_attrs, attribute_manager );
                 current_row++;
             }
-
+            if( nb_short_rows != 0 )
+            {
+                Logger::warning( "[CSVInput] Skipped ", nb_short_rows,
+                    " rows without the coordinate column ",
+                    max_coordinate_column, " in file ", filename_,
+                    " (rows: ", absl::StrJoin( short_rows, ", " ),
+                    nb_short_rows > short_rows.size() ? ", ..." : "", ")" );
+            }
             return point_set;
         }
 
@@ -186,6 +210,7 @@ namespace geode
         }
 
     private:
+        std::string filename_;
         std::ifstream file_;
         char separator_{ ',' };
         index_t x_column_{ 0 };
