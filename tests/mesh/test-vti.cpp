@@ -21,6 +21,8 @@
  *
  */
 
+#include <fstream>
+
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
@@ -175,6 +177,69 @@ void test_loadability()
         "3D grid should be loadable in 3D" );
 }
 
+std::string vti_file( std::string_view image_attributes )
+{
+    return absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"ImageData\" "
+                         "version=\"1.0\" byte_order=\"LittleEndian\">\n"
+                         "<ImageData ",
+        image_attributes, ">\n<Piece></Piece>\n</ImageData>\n</VTKFile>\n" );
+}
+
+void write_file( std::string_view filename, std::string_view content )
+{
+    std::ofstream file{ geode::to_string( filename ), std::ios::binary };
+    file << content;
+}
+
+void check_grid_load_fails(
+    std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading malformed file ", filename );
+        geode::load_regular_grid< 3 >( filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading malformed file ", filename, " should fail" );
+}
+
+void test_extent()
+{
+    write_file(
+        "extent.vti", vti_file( "WholeExtent=\"2 5 -1 3 0 2\" "
+                                "Origin=\"1 2 3\" Spacing=\"1 2 3\"" ) );
+    const auto grid = geode::load_regular_grid< 3 >( "extent.vti" );
+    const auto light_grid = geode::load_light_regular_grid< 3 >( "extent.vti" );
+    const std::array< geode::index_t, 3 > nb_cells{ 3, 4, 2 };
+    const geode::Point3D origin{ { 3, 0, 3 } };
+    for( const geode::Grid3D* current :
+        { static_cast< const geode::Grid3D* >( grid.get() ),
+            static_cast< const geode::Grid3D* >( &light_grid ) } )
+    {
+        for( const auto d : geode::LRange{ 3 } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                current->nb_cells_in_direction( d ) == nb_cells[d],
+                "[TEST] Wrong number of cells in direction ", d );
+        }
+        geode::OpenGeodeIOMeshException::test(
+            current->grid_coordinate_system().origin().inexact_equal( origin ),
+            "[TEST] Wrong origin: ",
+            current->grid_coordinate_system().origin().string() );
+    }
+    check_grid_load_fails(
+        "missing_extent.vti", vti_file( "WholeExtent=\"0 1 0 1\"" ) );
+    check_grid_load_fails(
+        "inverted_extent.vti", vti_file( "WholeExtent=\"0 1 0 1 3 2\"" ) );
+    check_grid_load_fails( "missing_origin.vti",
+        vti_file( "WholeExtent=\"0 1 0 1 0 1\" Origin=\"0 0\"" ) );
+}
+
 int main()
 {
     try
@@ -194,6 +259,7 @@ int main()
         test_light_regular_grid( lgrid );
 
         test_loadability();
+        test_extent();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
