@@ -68,12 +68,15 @@ namespace geode
                     }
                 }
                 absl::flat_hash_map< index_t, index_t > elements;
+                // Only sample the first elements to keep this check cheap
+                static constexpr index_t NB_SAMPLED_ELEMENTS{ 100 };
                 const auto nb_elements = read_count( "elements" );
                 index_t nb_read_elements{ 0 };
-                for( const auto e : Range{ nb_elements } )
+                for( const auto e :
+                    Range{ std::min( nb_elements, NB_SAMPLED_ELEMENTS ) } )
                 {
                     geode_unused( e );
-                    const auto values = tokens();
+                    const auto& values = tokens();
                     if( values.empty() )
                     {
                         break;
@@ -117,10 +120,11 @@ namespace geode
                 index_t nb_duplicated{ 0 };
                 points.reserve( std::min< std::uintmax_t >(
                     nb_points, max_nb_data_lines() ) );
+                vertices_.reserve( points.capacity() );
                 for( const auto p : Range{ nb_points } )
                 {
                     geode_unused( p );
-                    const auto values = tokens();
+                    const auto& values = tokens();
                     if( is_truncated( values, 4 ) )
                     {
                         Logger::warning( "[SMESHInput] File ", filename_,
@@ -159,7 +163,7 @@ namespace geode
 
             void read_elements()
             {
-                const auto header = tokens();
+                const auto& header = tokens();
                 if( is_truncated( header, 1 ) )
                 {
                     Logger::warning( "[SMESHInput] File ", filename_,
@@ -175,7 +179,7 @@ namespace geode
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
-                    const auto values = tokens();
+                    const auto& values = tokens();
                     if( values.empty()
                         || ( file_.eof()
                              && ( values.size() < 2
@@ -291,7 +295,7 @@ namespace geode
 
             index_t read_count( std::string_view what )
             {
-                const auto header = tokens();
+                const auto& header = tokens();
                 check_nb_tokens(
                     header, 1, absl::StrCat( "the number of ", what ) );
                 return parse_index( header.front() );
@@ -340,22 +344,25 @@ namespace geode
              * comments (everything after a '#'), and split it into tokens.
              * Return an empty vector at the end of the file.
              */
-            std::vector< std::string_view > tokens()
+            const std::vector< std::string_view >& tokens()
             {
+                tokens_.clear();
                 while( std::getline( file_, line_ ) )
                 {
                     line_number_++;
                     std::string_view content{ line_ };
                     content = content.substr( 0, content.find( '#' ) );
-                    std::vector< std::string_view > result =
-                        absl::StrSplit( content, absl::ByAnyChar( " \t\r" ),
-                            absl::SkipEmpty() );
-                    if( !result.empty() )
+                    for( const auto token : absl::StrSplit( content,
+                             absl::ByAnyChar( " \t\r" ), absl::SkipEmpty() ) )
                     {
-                        return result;
+                        tokens_.push_back( token );
+                    }
+                    if( !tokens_.empty() )
+                    {
+                        break;
                     }
                 }
-                return {};
+                return tokens_;
             }
 
         private:
@@ -364,6 +371,7 @@ namespace geode
             std::unique_ptr< Builder > builder_;
             std::ifstream file_;
             std::string line_;
+            std::vector< std::string_view > tokens_;
             index_t line_number_{ 0 };
             absl::flat_hash_map< index_t, index_t > vertices_;
         };

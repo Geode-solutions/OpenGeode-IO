@@ -27,6 +27,7 @@
 
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
+#include <geode/basic/range.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -242,6 +243,33 @@ namespace
             curve->point( 1 ) == geode::Point3D{ { 1.0, 0.0, 0.0 } },
             "[duplicates] First point with a given id should be kept" );
     }
+
+    void test_is_loadable_samples_elements()
+    {
+        // is_loadable only samples the first elements: corrupted lines
+        // further in the file are reported by the reading itself
+        const auto filename = "smesh_is_loadable_sample.smesh";
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << "2 3 0 0\n"
+                    "0 0.0 0.0 0.0\n"
+                    "1 1.0 0.0 0.0\n"
+                    "300\n";
+            for( const auto e : geode::Range{ 150 } )
+            {
+                geode_unused( e );
+                file << "2 0 1\n";
+            }
+            for( const auto e : geode::Range{ 150 } )
+            {
+                geode_unused( e );
+                file << "two zero one\n";
+            }
+        }
+        geode::OpenGeodeIOMeshException::test(
+            geode::is_edged_curve_loadable< 3 >( filename ).value() == 1,
+            "[is_loadable sample] File should be loadable" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -278,6 +306,7 @@ int main()
         test_unknown_vertices();
         test_truncated();
         test_duplicates();
+        test_is_loadable_samples_elements();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
