@@ -124,7 +124,7 @@ namespace geode
                 {
                     return Percentage{ 1 };
                 }
-                const auto [_, types] = this->read_cells( piece, nb_polyhedra );
+                const auto types = this->read_cell_types( piece, nb_polyhedra );
                 index_t nb_loadable_polyhedra{ 0 };
                 for( const auto& type : types )
                 {

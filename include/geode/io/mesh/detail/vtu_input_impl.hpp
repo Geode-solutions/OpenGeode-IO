@@ -39,6 +39,30 @@ namespace geode
             {
             }
 
+            // Reads only the cell types, without decoding connectivity
+            std::vector< uint8_t > read_cell_types(
+                const pugi::xml_node& piece, index_t nb_cells ) const
+            {
+                std::vector< uint8_t > types_values;
+                for( const auto& data :
+                    piece.child( "Cells" ).children( "DataArray" ) )
+                {
+                    if( this->match(
+                            data.attribute( "Name" ).value(), "types" ) )
+                    {
+                        types_values =
+                            this->template read_data_array< uint8_t >( data );
+                        break;
+                    }
+                }
+                OpenGeodeIOMeshException::check_exception(
+                    types_values.size() == nb_cells, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTUInputImpl::read_cell_types] Wrong number of types: ",
+                    types_values.size(), " instead of ", nb_cells );
+                return types_values;
+            }
+
             std::tuple< absl::FixedArray< std::vector< index_t > >,
                 std::vector< uint8_t > >
                 read_cells(

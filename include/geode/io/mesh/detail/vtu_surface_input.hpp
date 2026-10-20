@@ -70,7 +70,7 @@ namespace geode
                 {
                     return Percentage{ 1 };
                 }
-                const auto [_, types] = this->read_cells( piece, nb_polygons );
+                const auto types = this->read_cell_types( piece, nb_polygons );
                 index_t nb_loadable_polygons{ 0 };
                 for( const auto& type : types )
                 {
