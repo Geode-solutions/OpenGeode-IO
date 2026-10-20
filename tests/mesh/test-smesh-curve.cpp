@@ -156,6 +156,28 @@ namespace
             "2 0 1\n",
             "at line 3" );
     }
+
+    void test_wrong_element_size()
+    {
+        check_load_error( "smesh_triangles_as_curve",
+            "3 3 0 0\n"
+            "0 0.0 0.0 0.0\n"
+            "1 1.0 0.0 0.0\n"
+            "2 2.0 1.0 0.0\n"
+            "1 0\n"
+            "3 0 1 2\n",
+            "has 2 vertices" );
+        const auto curve =
+            load_from_string( "smesh_mixed_elements", "3 3 0 0\n"
+                                                      "0 0.0 0.0 0.0\n"
+                                                      "1 1.0 0.0 0.0\n"
+                                                      "2 2.0 1.0 0.0\n"
+                                                      "3 0\n"
+                                                      "2 0 1\n"
+                                                      "3 0 1 2\n"
+                                                      "2 1 2\n" );
+        check_curve( *curve, 3, 2, "mixed elements" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -188,6 +210,7 @@ int main()
         test_whitespaces();
         test_comments();
         test_short_lines();
+        test_wrong_element_size();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

@@ -28,6 +28,7 @@
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/filename.hpp>
+#include <geode/basic/logger.hpp>
 #include <geode/basic/string.hpp>
 
 #include <geode/geometry/point.hpp>
@@ -115,11 +116,20 @@ namespace geode
             void read_elements()
             {
                 const auto nb_elements = read_count( "elements" );
+                index_t nb_wrong_size{ 0 };
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
-                    check_nb_tokens( values, element + 1, "an element" );
+                    check_nb_tokens( values, 1, "an element" );
+                    const auto nb_element_vertices = parse_index( values[0] );
+                    check_nb_tokens(
+                        values, nb_element_vertices + 1, "an element" );
+                    if( nb_element_vertices != element )
+                    {
+                        nb_wrong_size++;
+                        continue;
+                    }
                     std::array< index_t, element > vertices;
                     for( const auto d : LRange{ element } )
                     {
@@ -128,6 +138,18 @@ namespace geode
                     }
                     create_element( vertices );
                 }
+                if( nb_wrong_size == 0 )
+                {
+                    return;
+                }
+                OpenGeodeIOMeshException::check_exception(
+                    nb_wrong_size != nb_elements, nullptr,
+                    OpenGeodeException::TYPE::data, "[SMESHInput] None of the ",
+                    nb_elements, " elements of file ", filename_, " has ",
+                    element, " vertices" );
+                Logger::warning( "[SMESHInput] Skipped ", nb_wrong_size, " of ",
+                    nb_elements, " elements not having ", element,
+                    " vertices in file ", filename_ );
             }
 
             virtual void create_element(
