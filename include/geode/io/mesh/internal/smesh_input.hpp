@@ -57,7 +57,7 @@ namespace geode
                 for( const auto p : Range{ nb_points } )
                 {
                     geode_unused( p );
-                    std::getline( file_, line_ );
+                    tokens();
                 }
                 absl::flat_hash_map< index_t, index_t > elements;
                 const auto nb_elements = string_to_index( tokens().front() );
@@ -129,11 +129,27 @@ namespace geode
             virtual void create_element(
                 const std::array< index_t, element >& vertices ) = 0;
 
+            /*!
+             * Read the next line holding data, skipping blank lines and
+             * comments (everything after a '#'), and split it into tokens.
+             * Return an empty vector at the end of the file.
+             */
             std::vector< std::string_view > tokens()
             {
-                std::getline( file_, line_ );
-                return absl::StrSplit( absl::StripAsciiWhitespace( line_ ),
-                    absl::ByAnyChar( " \t" ), absl::SkipEmpty() );
+                while( std::getline( file_, line_ ) )
+                {
+                    line_number_++;
+                    std::string_view content{ line_ };
+                    content = content.substr( 0, content.find( '#' ) );
+                    std::vector< std::string_view > result =
+                        absl::StrSplit( content, absl::ByAnyChar( " \t\r" ),
+                            absl::SkipEmpty() );
+                    if( !result.empty() )
+                    {
+                        return result;
+                    }
+                }
+                return {};
             }
 
         private:
@@ -141,6 +157,7 @@ namespace geode
             std::unique_ptr< Builder > builder_;
             std::ifstream file_;
             std::string line_;
+            index_t line_number_{ 0 };
             absl::flat_hash_map< index_t, index_t > vertices_;
         };
     } // namespace internal

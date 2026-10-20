@@ -70,6 +70,30 @@ namespace
                                                    "2\t1\t2\r\n" );
         check_curve( *curve, 3, 2, "whitespaces" );
     }
+
+    void test_comments()
+    {
+        const auto curve = load_from_string( "smesh_comments",
+            "# Part 1 - node list\n"
+            "\n"
+            "3 3 0 0 # nb points\n"
+            "0 0.0 0.0 0.0\n"
+            "   \n"
+            "# a comment line\n"
+            "1 1.0 0.0 0.0 # inline comment\n"
+            "2 2.0 0.0 0.0\n"
+            "\n"
+            "# Part 2 - facet list\n"
+            "2 0\n"
+            "2 0 1\n"
+            "#2 5 6\n"
+            "2 1 2#no space\n"
+            "# Part 3 - hole list\n"
+            "0\n"
+            "# Part 4 - region list\n"
+            "0\n" );
+        check_curve( *curve, 3, 2, "comments" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -100,6 +124,7 @@ int main()
         test_load();
         test_is_loadable();
         test_whitespaces();
+        test_comments();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
