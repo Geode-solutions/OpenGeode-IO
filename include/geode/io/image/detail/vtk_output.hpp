@@ -26,6 +26,7 @@
 #include <geode/io/image/common.hpp>
 
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -45,6 +46,16 @@ namespace geode
 {
     namespace detail
     {
+        // Shortest representation of value which is read back exactly,
+        // independently of the locale
+        inline std::string vtk_double_string( double value )
+        {
+            std::array< char, 32 > buffer;
+            const auto result = std::to_chars(
+                buffer.data(), buffer.data() + buffer.size(), value );
+            return { buffer.data(), result.ptr };
+        }
+
         template < typename T >
         constexpr const char* vtk_data_type()
         {

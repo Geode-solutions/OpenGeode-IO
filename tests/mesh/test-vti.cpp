@@ -139,6 +139,29 @@ void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
     geode::save_light_regular_grid( reload_grid, "test4.vti" );
 }
 
+void test_precision()
+{
+    const geode::Point3D origin{ { 1.2345678901234567, -9876.54321098765,
+        0.1 } };
+    const std::array< double, 3 > lengths{ 0.1234567891, 1. / 3., 7e-5 };
+    geode::LightRegularGrid3D grid{ origin, { 2, 3, 4 }, lengths };
+    geode::save_light_regular_grid( grid, "precision.vti" );
+    const auto reload_grid =
+        geode::load_light_regular_grid< 3 >( "precision.vti" );
+    for( const auto d : geode::LRange{ 3 } )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            reload_grid.cell_length_in_direction( d ) == lengths[d],
+            "[TEST] Cell length in direction ", d,
+            " was not saved exactly: should be ", lengths[d], ", get ",
+            reload_grid.cell_length_in_direction( d ) );
+        geode::OpenGeodeIOMeshException::test(
+            reload_grid.grid_coordinate_system().origin().value( d )
+                == origin.value( d ),
+            "[TEST] Origin in direction ", d, " was not saved exactly" );
+    }
+}
+
 int main()
 {
     try
@@ -156,6 +179,7 @@ int main()
             { 10, 20, 30 }, { 1, 1, 1 } };
         put_attributes_on_grid( lgrid );
         test_light_regular_grid( lgrid );
+        test_precision();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
