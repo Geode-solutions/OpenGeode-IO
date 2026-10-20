@@ -114,6 +114,7 @@ namespace geode
                 // The header count may be corrupted: never trust it more than
                 // the number of lines the file can hold
                 std::vector< Point3D > points;
+                index_t nb_duplicated{ 0 };
                 points.reserve( std::min< std::uintmax_t >(
                     nb_points, max_nb_data_lines() ) );
                 for( const auto p : Range{ nb_points } )
@@ -128,14 +129,25 @@ namespace geode
                         break;
                     }
                     check_nb_tokens( values, 4, "a point" );
-                    vertices_.emplace( parse_index( values[0] ),
-                        static_cast< index_t >( points.size() ) );
+                    if( !vertices_
+                            .emplace( parse_index( values[0] ),
+                                static_cast< index_t >( points.size() ) )
+                            .second )
+                    {
+                        nb_duplicated++;
+                        continue;
+                    }
                     Point3D point;
                     for( const auto d : LRange{ 3 } )
                     {
                         point.set_value( d, parse_double( values[d + 1] ) );
                     }
                     points.push_back( point );
+                }
+                if( nb_duplicated != 0 )
+                {
+                    Logger::warning( "[SMESHInput] Skipped ", nb_duplicated,
+                        " points with an already used id in file ", filename_ );
                 }
                 builder_->create_vertices(
                     static_cast< index_t >( points.size() ) );
@@ -159,6 +171,7 @@ namespace geode
                 index_t nb_read_elements{ 0 };
                 index_t nb_wrong_size{ 0 };
                 index_t nb_unknown_vertex{ 0 };
+                index_t nb_degenerate{ 0 };
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
@@ -202,6 +215,11 @@ namespace geode
                         nb_unknown_vertex++;
                         continue;
                     }
+                    if( is_degenerate( vertices ) )
+                    {
+                        nb_degenerate++;
+                        continue;
+                    }
                     create_element( vertices );
                 }
                 if( nb_unknown_vertex != 0 )
@@ -209,6 +227,11 @@ namespace geode
                     Logger::warning( "[SMESHInput] Skipped ", nb_unknown_vertex,
                         " elements referencing unknown point ids in file ",
                         filename_ );
+                }
+                if( nb_degenerate != 0 )
+                {
+                    Logger::warning( "[SMESHInput] Skipped ", nb_degenerate,
+                        " elements with repeated points in file ", filename_ );
                 }
                 if( nb_wrong_size == 0 )
                 {
@@ -226,6 +249,22 @@ namespace geode
 
             virtual void create_element(
                 const std::array< index_t, element >& vertices ) = 0;
+
+            static bool is_degenerate(
+                const std::array< index_t, element >& vertices )
+            {
+                for( const auto v0 : LRange{ element } )
+                {
+                    for( const auto v1 : LRange{ v0 + 1, element } )
+                    {
+                        if( vertices[v0] == vertices[v1] )
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
 
             /*!
              * A missing or incomplete last line means that the file was cut

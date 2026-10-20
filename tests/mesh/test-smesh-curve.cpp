@@ -28,6 +28,8 @@
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/geometry/point.hpp>
+
 #include <geode/mesh/core/edged_curve.hpp>
 #include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/io/edged_curve_input.hpp>
@@ -222,6 +224,24 @@ namespace
                                                   "1 1.0 0.0 0.0\n" );
         check_curve( *huge_count, 2, 0, "huge count" );
     }
+
+    void test_duplicates()
+    {
+        const auto curve =
+            load_from_string( "smesh_duplicates", "4 3 0 0\n"
+                                                  "0 0.0 0.0 0.0\n"
+                                                  "1 1.0 0.0 0.0\n"
+                                                  "1 5.0 5.0 5.0\n"
+                                                  "2 2.0 1.0 0.0\n"
+                                                  "3 0\n"
+                                                  "2 0 1\n"
+                                                  "2 2 2\n"
+                                                  "2 1 2\n" );
+        check_curve( *curve, 3, 2, "duplicates" );
+        geode::OpenGeodeIOMeshException::test(
+            curve->point( 1 ) == geode::Point3D{ { 1.0, 0.0, 0.0 } },
+            "[duplicates] First point with a given id should be kept" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -257,6 +277,7 @@ int main()
         test_wrong_element_size();
         test_unknown_vertices();
         test_truncated();
+        test_duplicates();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
