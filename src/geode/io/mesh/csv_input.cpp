@@ -54,14 +54,15 @@
 
 namespace
 {
+    // All settings are mandatory in the JSON file: no default value
     struct CSVSettings
     {
-        geode::index_t first_row{ 1 };
-        geode::index_t header_row{ 0 };
-        char separator{ ',' };
-        geode::index_t x_column{ 0 };
-        geode::index_t y_column{ 1 };
-        geode::index_t z_column{ 2 };
+        geode::index_t first_row;
+        geode::index_t header_row;
+        char separator;
+        geode::index_t x_column;
+        geode::index_t y_column;
+        geode::index_t z_column;
     };
 
     class CSVInputImpl

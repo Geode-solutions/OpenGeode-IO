@@ -181,8 +181,8 @@ namespace geode
                 }
                 Logger::warning( "[CSVInput] ", nb_invalid,
                     " non numeric values of attribute \"",
-                    attribute_names_.at( col ), "\" replaced by NaN in file ",
-                    filename_ );
+                    double_attrs_.at( col )->name().value(),
+                    "\" replaced by NaN in file ", filename_ );
             }
             return point_set;
         }
@@ -327,7 +327,6 @@ namespace geode
             const auto attribute_id =
                 attribute_manager.create_attribute< VariableAttribute, double >(
                     name, default_values, properties );
-            attribute_names_[col] = name;
             return attribute_manager
                 .find_attribute< VariableAttribute, double >( attribute_id );
         }
@@ -349,7 +348,6 @@ namespace geode
             std::shared_ptr< VariableAttribute< double > > >
             double_attrs_;
         absl::flat_hash_map< index_t, index_t > invalid_cells_;
-        absl::flat_hash_map< index_t, std::string > attribute_names_;
         std::string filename_;
         std::ifstream file_;
         char separator_{ ',' };
