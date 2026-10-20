@@ -99,10 +99,17 @@ namespace geode
             std::unique_ptr< Mesh > read_file()
             {
                 read_common_data();
+                OpenGeodeIOMeshException::check_exception( root_.child( type_ ),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_file] No ", type_,
+                    " element found in file" );
                 for( const auto& vtk_object : root_.children( type_ ) )
                 {
                     read_vtk_object( vtk_object );
                 }
+                OpenGeodeIOMeshException::check_exception( mesh_ != nullptr,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_file] No mesh could be read" );
                 return std::move( mesh_ );
             }
 

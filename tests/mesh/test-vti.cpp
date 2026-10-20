@@ -240,6 +240,24 @@ void test_extent()
         vti_file( "WholeExtent=\"0 1 0 1 0 1\" Origin=\"0 0\"" ) );
 }
 
+void test_missing_image_data()
+{
+    write_file( "missing_image_data.vti",
+        "<?xml version=\"1.0\"?>\n<VTKFile type=\"ImageData\" "
+        "version=\"1.0\" byte_order=\"LittleEndian\">\n</VTKFile>\n" );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading file without ImageData" );
+        geode::load_light_regular_grid< 3 >( "missing_image_data.vti" );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading file without ImageData should fail" );
+}
+
 int main()
 {
     try
@@ -260,6 +278,7 @@ int main()
 
         test_loadability();
         test_extent();
+        test_missing_image_data();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
