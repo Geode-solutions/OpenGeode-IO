@@ -31,8 +31,10 @@
 #include <cstring>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include <pugixml.hpp>
 
@@ -183,7 +185,7 @@ namespace geode
             {
                 auto root = write_root_attributes();
                 write_vtk_object( root );
-                if( appended_data_.empty() )
+                if( appended_blocks_.empty() )
                 {
                     document_.save( file_ );
                 }
@@ -284,6 +286,19 @@ namespace geode
                 absl::Span< const T > values,
                 local_index_t nb_components = 1 )
             {
+                return write_data_array< T >( parent, name,
+                    std::vector< T >( values.begin(), values.end() ),
+                    nb_components );
+            }
+
+            // Same as above, the values are kept without copy until the
+            // file is written
+            template < typename T >
+            pugi::xml_node write_data_array( pugi::xml_node& parent,
+                std::string_view name,
+                std::vector< T >&& values,
+                local_index_t nb_components = 1 )
+            {
                 auto data_array = parent.append_child( "DataArray" );
                 data_array.append_attribute( "type" ).set_value(
                     vtk_data_type< T >() );
@@ -292,20 +307,18 @@ namespace geode
                 data_array.append_attribute( "format" ).set_value( "appended" );
                 data_array.append_attribute( "NumberOfComponents" )
                     .set_value( nb_components );
-                write_range( data_array, values );
+                write_range( data_array, absl::Span< const T >{ values } );
                 data_array.append_attribute( "offset" )
-                    .set_value( appended_data_.size() );
-                const HeaderType nb_bytes = values.size() * sizeof( T );
-                const auto old_size = appended_data_.size();
-                appended_data_.resize(
-                    old_size + sizeof( HeaderType ) + nb_bytes );
-                auto* data = appended_data_.data() + old_size;
-                std::memcpy( data, &nb_bytes, sizeof( HeaderType ) );
-                if( nb_bytes > 0 )
-                {
-                    std::memcpy(
-                        data + sizeof( HeaderType ), values.data(), nb_bytes );
-                }
+                    .set_value( appended_size_ );
+                auto owner =
+                    std::make_shared< std::vector< T > >( std::move( values ) );
+                AppendedBlock block;
+                block.nb_bytes = owner->size() * sizeof( T );
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+                block.data = reinterpret_cast< const char* >( owner->data() );
+                block.owner = std::move( owner );
+                appended_size_ += sizeof( HeaderType ) + block.nb_bytes;
+                appended_blocks_.push_back( std::move( block ) );
                 return data_array;
             }
 
@@ -320,7 +333,16 @@ namespace geode
                 const auto xml_string = xml.str();
                 const auto split = xml_string.rfind( "_</AppendedData>" ) + 1;
                 file_.write( xml_string.data(), split );
-                file_.write( appended_data_.data(), appended_data_.size() );
+                for( auto& block : appended_blocks_ )
+                {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+                    file_.write(
+                        reinterpret_cast< const char* >( &block.nb_bytes ),
+                        sizeof( HeaderType ) );
+                    file_.write( block.data,
+                        static_cast< std::streamsize >( block.nb_bytes ) );
+                    block.owner.reset();
+                }
                 file_.write(
                     xml_string.data() + split, xml_string.size() - split );
             }
@@ -468,8 +490,8 @@ namespace geode
                             Traits::component( value, component ) ) );
                     }
                 }
-                write_data_array< Stored >(
-                    attribute_node, name, values, Traits::nb_components );
+                write_data_array< Stored >( attribute_node, name,
+                    std::move( values ), Traits::nb_components );
             }
 
             void write_generic_attribute( pugi::xml_node& attribute_node,
@@ -492,7 +514,7 @@ namespace geode
                     }
                 }
                 write_data_array< float >(
-                    attribute_node, name, values, nb_items );
+                    attribute_node, name, std::move( values ), nb_items );
             }
 
             template < typename T >
@@ -565,7 +587,16 @@ namespace geode
             const Mesh& mesh_;
             pugi::xml_document document_;
             const char* type_;
-            std::string appended_data_;
+            // Raw data blocks written after the XML, each one prefixed by
+            // its size
+            struct AppendedBlock
+            {
+                std::shared_ptr< const void > owner;
+                const char* data{ nullptr };
+                HeaderType nb_bytes{ 0 };
+            };
+            std::vector< AppendedBlock > appended_blocks_;
+            HeaderType appended_size_{ 0 };
         };
     } // namespace detail
 } // namespace geode

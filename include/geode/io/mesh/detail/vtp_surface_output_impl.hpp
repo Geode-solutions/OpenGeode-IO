@@ -136,8 +136,8 @@ namespace geode
                         values.push_back( coordinates.value( 0 ) );
                         values.push_back( coordinates.value( 1 ) );
                     }
-                    this->template write_data_array< double >(
-                        vertex_node, texture_info.first, values, 2 );
+                    this->template write_data_array< double >( vertex_node,
+                        texture_info.first, std::move( values ), 2 );
                 }
             }
 
@@ -218,9 +218,9 @@ namespace geode
                     }
                 }
                 this->template write_data_array< int64_t >(
-                    polys, "connectivity", poly_connectivity );
+                    polys, "connectivity", std::move( poly_connectivity ) );
                 this->template write_data_array< int64_t >(
-                    polys, "offsets", poly_offsets );
+                    polys, "offsets", std::move( poly_offsets ) );
                 return polys;
             }
 

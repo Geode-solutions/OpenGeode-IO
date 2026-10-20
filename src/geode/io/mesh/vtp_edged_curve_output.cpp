@@ -72,9 +72,9 @@ namespace
                 }
             }
             this->template write_data_array< int64_t >(
-                lines, "connectivity", edge_connectivity );
+                lines, "connectivity", std::move( edge_connectivity ) );
             this->template write_data_array< int64_t >(
-                lines, "offsets", edge_offsets );
+                lines, "offsets", std::move( edge_offsets ) );
             return lines;
         }
 

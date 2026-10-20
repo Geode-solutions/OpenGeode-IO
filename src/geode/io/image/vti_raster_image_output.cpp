@@ -72,7 +72,7 @@ namespace
                 values.push_back( color.blue() );
             }
             this->template write_data_array< uint8_t >(
-                point_data, "Color", values, 3 );
+                point_data, "Color", std::move( values ), 3 );
         }
     };
 } // namespace

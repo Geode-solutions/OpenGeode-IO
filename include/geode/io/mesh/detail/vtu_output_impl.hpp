@@ -133,20 +133,20 @@ namespace geode
 
                 auto cells = piece.append_child( "Cells" );
                 this->template write_data_array< int64_t >(
-                    cells, "connectivity", cell_connectivity );
+                    cells, "connectivity", std::move( cell_connectivity ) );
                 this->template write_data_array< int64_t >(
-                    cells, "offsets", cell_offsets );
+                    cells, "offsets", std::move( cell_offsets ) );
                 this->template write_data_array< uint8_t >(
-                    cells, "types", cell_types );
+                    cells, "types", std::move( cell_types ) );
                 if( !cell_faces.empty() )
                 {
                     this->template write_data_array< int64_t >(
-                        cells, "faces", cell_faces );
+                        cells, "faces", std::move( cell_faces ) );
                 }
                 if( !cell_face_offsets.empty() )
                 {
                     this->template write_data_array< int64_t >(
-                        cells, "faceoffsets", cell_face_offsets );
+                        cells, "faceoffsets", std::move( cell_face_offsets ) );
                 }
                 return cells;
             }
