@@ -485,6 +485,62 @@ void test_texture_files()
         "[TEST] Texture image file should exist" );
 }
 
+void test_texture_split_vertices()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 1, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    // Vertex 1 is used twice by the first polygon
+    builder->create_polygon( { 0, 1, 2, 1 } );
+    builder->create_polygon( { 0, 2, 3 } );
+    auto& texture = surface->texture_manager().find_or_create_texture( "uv" );
+    const std::array< std::vector< geode::Point2D >, 2 > uvs{ {
+        { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 0 } },
+            geode::Point2D{ { 1, 1 } }, geode::Point2D{ { 0.5, 0.5 } } },
+        { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 0.2, 1 } },
+            geode::Point2D{ { 0, 1 } } },
+    } };
+    for( const auto p : geode::LIndices{ uvs } )
+    {
+        for( const auto v : geode::LIndices{ uvs[p] } )
+        {
+            texture.set_texture_coordinates( { p, v }, uvs[p][v] );
+        }
+    }
+    geode::save_polygonal_surface( *surface, "texture_split.vtp" );
+
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "texture_split.vtp" );
+    // Vertex 0 is shared with the same UV, vertex 1 has 2 UVs, vertex 2 has
+    // 2 UVs: 6 vertices
+    geode::OpenGeodeIOMeshException::test( reload->nb_vertices() == 6,
+        "[TEST] Wrong number of split vertices: ", reload->nb_vertices() );
+    const auto& manager = reload->vertex_attribute_manager();
+    const auto reload_uv =
+        manager.find_read_only_attribute< std::array< double, 2 > >(
+            manager.attribute_ids_matching_name( "uv" )->at( 0 ) );
+    for( const auto p : geode::LIndices{ uvs } )
+    {
+        for( const auto v : geode::LIndices{ uvs[p] } )
+        {
+            const geode::PolygonVertex pv{ p, v };
+            const auto vertex = reload->polygon_vertex( pv );
+            geode::OpenGeodeIOMeshException::test(
+                reload->point( vertex )
+                    == surface->point( surface->polygon_vertex( pv ) ),
+                "[TEST] Wrong point for polygon ", p, " corner ", v );
+            const auto& uv = reload_uv->value( vertex );
+            geode::OpenGeodeIOMeshException::test(
+                uv[0] == uvs[p][v].value( 0 ) && uv[1] == uvs[p][v].value( 1 ),
+                "[TEST] Wrong texture coordinates for polygon ", p, " corner ",
+                v );
+        }
+    }
+}
+
 bool save_throws(
     const geode::PolygonalSurface3D& surface, std::string_view filename )
 {
@@ -551,6 +607,7 @@ int main()
         test_write_errors();
         test_duplicated_names();
         test_texture_files();
+        test_texture_split_vertices();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
