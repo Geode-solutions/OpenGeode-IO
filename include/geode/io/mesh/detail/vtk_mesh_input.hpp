@@ -80,6 +80,17 @@ namespace geode
                     this->mesh().nb_vertices(), ") have been skipped" );
             }
 
+            void warn_wrong_size_cells( index_t nb_wrong_size_cells )
+            {
+                if( nb_wrong_size_cells == 0 )
+                {
+                    return;
+                }
+                Logger::warning( "[VTKInput] ", nb_wrong_size_cells,
+                    " cell(s) with a number of vertices inconsistent with "
+                    "their type have been skipped" );
+            }
+
             absl::FixedArray< std::vector< index_t > > get_cell_vertices(
                 absl::Span< const int64_t > connectivity,
                 absl::Span< const int64_t > offsets ) const

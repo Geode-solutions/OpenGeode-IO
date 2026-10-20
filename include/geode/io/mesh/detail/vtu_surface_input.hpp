@@ -92,12 +92,17 @@ namespace geode
                 std::vector< index_t > cell_polygons(
                     polygon_vertices.size(), NO_ID );
                 index_t nb_invalid_polygons{ 0 };
+                index_t nb_wrong_size_polygons{ 0 };
                 for( const auto p : Indices{ polygon_vertices } )
                 {
                     const auto it = elements_.find( types[p] );
-                    if( it == elements_.end()
-                        || it->second != polygon_vertices[p].size() )
+                    if( it == elements_.end() )
                     {
+                        continue;
+                    }
+                    if( it->second != polygon_vertices[p].size() )
+                    {
+                        nb_wrong_size_polygons++;
                         continue;
                     }
                     if( !this->are_cell_vertices_valid( polygon_vertices[p] ) )
@@ -109,6 +114,7 @@ namespace geode
                         this->builder().create_polygon( polygon_vertices[p] );
                 }
                 this->warn_invalid_cells( nb_invalid_polygons );
+                this->warn_wrong_size_cells( nb_wrong_size_polygons );
                 return cell_polygons;
             }
 

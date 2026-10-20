@@ -131,11 +131,18 @@ namespace geode
                 std::vector< index_t > cell_polyhedra(
                     polyhedron_vertices.size(), NO_ID );
                 index_t nb_invalid_polyhedra{ 0 };
+                index_t nb_wrong_size_polyhedra{ 0 };
                 for( const auto p : Indices{ polyhedron_vertices } )
                 {
                     const auto it = elements_.find( types[p] );
                     if( it == elements_.end() )
                     {
+                        continue;
+                    }
+                    if( !has_element_size(
+                            it->second, polyhedron_vertices[p].size() ) )
+                    {
+                        nb_wrong_size_polyhedra++;
                         continue;
                     }
                     if( !this->are_cell_vertices_valid(
@@ -148,7 +155,23 @@ namespace geode
                         polyhedron_vertices[p], it->second );
                 }
                 this->warn_invalid_cells( nb_invalid_polyhedra );
+                this->warn_wrong_size_cells( nb_wrong_size_polyhedra );
                 return cell_polyhedra;
+            }
+
+            static bool has_element_size(
+                const VTKElement& element, size_t nb_vertices )
+            {
+                local_index_t element_nb_vertices{ 0 };
+                for( const auto& facet : element )
+                {
+                    for( const auto vertex : facet )
+                    {
+                        element_nb_vertices = std::max< local_index_t >(
+                            element_nb_vertices, vertex + 1 );
+                    }
+                }
+                return element_nb_vertices == nb_vertices;
             }
 
         private:

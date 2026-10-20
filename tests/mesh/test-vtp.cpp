@@ -520,6 +520,25 @@ void test_appended_offset_out_of_range()
             appended_data, "</VTKFile>\n" ) );
 }
 
+void test_empty_polygon()
+{
+    const auto surface = load_file( "empty_polygon.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"4\"",
+            absl::StrCat( ascii_points(),
+                ascii_polys( "0 1 2 1 3 1 3 2", "3 3 5 8" ),
+                "<CellData><DataArray type=\"Int32\" Name=\"id\" "
+                "format=\"ascii\">10 20 30 40</DataArray></CellData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,
+        "Empty and degenerated polygons should be skipped" );
+    const auto& manager = surface->polygon_attribute_manager();
+    const auto attribute = manager.find_generic_attribute(
+        manager.attribute_ids_matching_name( "id" )->at( 0 ) );
+    geode::OpenGeodeIOMeshException::test(
+        attribute->generic_value( 0 ) == 10.f
+            && attribute->generic_value( 1 ) == 40.f,
+        "Cell data should be transferred to the valid polygons" );
+}
+
 int main()
 {
     try
@@ -531,6 +550,7 @@ int main()
         test_zero_components();
         test_unsupported_array_type();
         test_appended_offset_out_of_range();
+        test_empty_polygon();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;

@@ -93,9 +93,15 @@ namespace
             std::vector< geode::index_t > cell_polygons(
                 polygon_vertices.size(), geode::NO_ID );
             geode::index_t nb_invalid_polygons{ 0 };
+            geode::index_t nb_degenerated_polygons{ 0 };
             for( const auto p : geode::Indices{ polygon_vertices } )
             {
                 const auto& pv = polygon_vertices[p];
+                if( pv.size() < 3 )
+                {
+                    nb_degenerated_polygons++;
+                    continue;
+                }
                 if( !are_cell_vertices_valid( pv ) )
                 {
                     nb_invalid_polygons++;
@@ -104,6 +110,12 @@ namespace
                 cell_polygons[p] = builder().create_polygon( pv );
             }
             warn_invalid_cells( nb_invalid_polygons );
+            if( nb_degenerated_polygons > 0 )
+            {
+                geode::Logger::warning( "[VTPInput] ", nb_degenerated_polygons,
+                    " polygon(s) with less than 3 vertices have been "
+                    "skipped" );
+            }
             builder().compute_polygon_adjacencies();
             return cell_polygons;
         }

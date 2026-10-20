@@ -299,6 +299,24 @@ void test_no_cell()
     check( *surface, { 8, 0 } );
 }
 
+void test_cells_with_wrong_number_of_vertices()
+{
+    // First tetrahedron has only 3 vertices
+    write_file( "wrong_cell_size.vtu",
+        vtu_file( vtu_piece( 2, "0 1 2 0 1 2 4", "3 7", "10 10",
+            "<CellData><DataArray type=\"Int32\" Name=\"id\" "
+            "format=\"ascii\">10 20</DataArray></CellData>\n" ) ) );
+    const auto solid =
+        geode::load_tetrahedral_solid< 3 >( "wrong_cell_size.vtu" );
+    check( *solid, { 8, 1 } );
+    const auto& manager = solid->polyhedron_attribute_manager();
+    const auto attribute = manager.find_generic_attribute(
+        manager.attribute_ids_matching_name( "id" )->at( 0 ) );
+    geode::OpenGeodeIOMeshException::test(
+        attribute->generic_value( 0 ) == 20.f,
+        "Cell data should be transferred to the valid tetrahedron" );
+}
+
 int main()
 {
     try
@@ -310,6 +328,7 @@ int main()
         test_cell_data_with_skipped_cells();
         test_multiple_pieces();
         test_no_cell();
+        test_cells_with_wrong_number_of_vertices();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
