@@ -406,12 +406,36 @@ void test_zlib_header_overflow()
     check_load_fails( "zlib_header_overflow.vtp", content );
 }
 
+std::string ascii_polys(
+    std::string_view connectivity, std::string_view offsets )
+{
+    return absl::StrCat( "<Polys><DataArray type=\"Int64\" "
+                         "Name=\"connectivity\" format=\"ascii\">",
+        connectivity,
+        "</DataArray>\n<DataArray type=\"Int64\" Name=\"offsets\" "
+        "format=\"ascii\">",
+        offsets, "</DataArray></Polys>\n" );
+}
+
+void test_invalid_offsets()
+{
+    check_load_fails( "offsets_out_of_range.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat(
+                ascii_points(), ascii_polys( "0 1 2", "3 100000" ) ) ) );
+    check_load_fails( "offsets_decreasing.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat(
+                ascii_points(), ascii_polys( "0 1 2 1 3 2", "3 2" ) ) ) );
+}
+
 int main()
 {
     try
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         test_zlib_header_overflow();
+        test_invalid_offsets();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;

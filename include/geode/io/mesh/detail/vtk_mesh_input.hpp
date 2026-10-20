@@ -87,9 +87,19 @@ namespace geode
                 absl::FixedArray< std::vector< index_t > > cell_vertices(
                     offsets.size() );
                 int64_t prev_offset{ 0 };
+                const auto nb_connectivity =
+                    static_cast< int64_t >( connectivity.size() );
                 for( const auto p : Indices{ offsets } )
                 {
                     const auto cur_offset = offsets[p];
+                    OpenGeodeIOMeshException::check_exception(
+                        cur_offset >= prev_offset
+                            && cur_offset <= nb_connectivity,
+                        nullptr, OpenGeodeException::TYPE::data,
+                        "[VTKInput::get_cell_vertices] Invalid offset ",
+                        cur_offset, " for cell ", p,
+                        " (previous offset: ", prev_offset,
+                        ", connectivity size: ", nb_connectivity, ")" );
                     auto& vertices = cell_vertices[p];
                     vertices.reserve( cur_offset - prev_offset );
                     for( const auto v : Range{ prev_offset, cur_offset } )
