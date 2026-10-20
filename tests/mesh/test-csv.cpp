@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/input.hpp>
 #include <geode/basic/logger.hpp>
@@ -32,12 +34,84 @@
 
 #include <geode/io/mesh/common.hpp>
 #include <geode/io/mesh/csv_input_helpers.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/io/point_set_input.hpp>
 #include <geode/mesh/io/point_set_output.hpp>
 
 namespace
 {
+    std::string write_csv( std::string_view name,
+        std::string_view csv_content,
+        std::string_view json_content )
+    {
+        const auto filename = absl::StrCat( name, ".csv" );
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << csv_content;
+        }
+        std::ofstream json{ absl::StrCat( name, ".json" ), std::ios::binary };
+        json << json_content;
+        return filename;
+    }
+
+    std::unique_ptr< geode::PointSet3D > read_csv( const std::string& filename )
+    {
+        // Use the reader directly: load_point_set hides the error message
+        auto reader =
+            geode::PointSetInputFactory< 3 >::create( "csv", filename );
+        return reader->read( geode::MeshFactory::default_impl(
+            geode::PointSet3D::type_name_static() ) );
+    }
+
+    void check_read_error(
+        const std::string& filename, std::string_view expected_message )
+    {
+        try
+        {
+            read_csv( filename );
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            const std::string message{ exception.what() };
+            geode::OpenGeodeIOMeshException::test(
+                message.find( expected_message ) != std::string::npos, "[",
+                filename, "] Wrong error message: ", message, " (expected \"",
+                expected_message, "\")" );
+            return;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            false, "[", filename, "] Reading should have failed" );
+    }
+
+    void test_invalid_settings()
+    {
+        constexpr auto CSV = "x,y,z\n1,2,3\n";
+        check_read_error( write_csv( "csv_no_separator", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "xColumn": 0, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"separator\" is missing in settings file csv_no_separator.json" );
+        check_read_error( write_csv( "csv_empty_separator", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "separator": "",
+  "xColumn": 0, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"separator\" of settings file csv_empty_separator.json" );
+        check_read_error( write_csv( "csv_negative_column", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "separator": ",",
+  "xColumn": -1, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"xColumn\" of settings file csv_negative_column.json" );
+        const auto malformed =
+            write_csv( "csv_malformed_json", CSV, R"({ "firstRow": 1, )" );
+        check_read_error( malformed, "csv_malformed_json.json" );
+        geode::OpenGeodeIOMeshException::test(
+            geode::is_point_set_loadable< 3 >( malformed ).value() == 0,
+            "[TEST: CSV input] Malformed JSON should not be loadable" );
+        geode::OpenGeodeIOMeshException::test(
+            !geode::point_set_additional_files< 3 >( malformed )
+                .has_additional_files(),
+            "[TEST: CSV input] Malformed JSON is not missing" );
+    }
 
     void test_csv_input()
     {
@@ -117,6 +191,7 @@ int main()
         test_csv_input_with_missing_json();
         test_csv_input_with_missing_keyword();
         test_csv_input_with_wrong_value();
+        test_invalid_settings();
         return 0;
     }
     catch( ... )
