@@ -215,6 +215,19 @@ namespace
                 .optional_files.empty(),
             "OBJ with an empty mtllib should have no additional file" );
     }
+
+    void test_output_files( const geode::PolygonalSurface3D& surface )
+    {
+        std::filesystem::remove( "output_files.mtl" );
+        const auto files =
+            geode::save_polygonal_surface( surface, "output_files.obj" );
+        geode::OpenGeodeIOMeshException::test(
+            files.size() == 1 && files[0] == "output_files.obj",
+            "Wrong OBJ output file list" );
+        geode::OpenGeodeIOMeshException::test(
+            !std::filesystem::exists( "output_files.mtl" ),
+            "OBJ output should not write an unlisted MTL file" );
+    }
 } // namespace
 
 int main()
@@ -254,6 +267,7 @@ int main()
         test_too_large_polygon();
         test_absolute_texture_path();
         test_additional_files_bare_filename();
+        test_output_files( *surface );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
