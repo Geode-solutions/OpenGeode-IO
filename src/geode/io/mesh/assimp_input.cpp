@@ -31,6 +31,7 @@
 #include <async++.h>
 
 #include <absl/algorithm/container.h>
+#include <absl/container/flat_hash_set.h>
 
 #include <geode/basic/common.hpp>
 #include <geode/basic/filename.hpp>
@@ -190,18 +191,6 @@ namespace geode
                     }
                     polygon++;
                 }
-                if( !material.second.empty() )
-                {
-                    try
-                    {
-                        texture.set_image(
-                            load_raster_image< 2 >( material.second ) );
-                    }
-                    catch( const OpenGeodeException& e )
-                    {
-                        Logger::warning( e.what() );
-                    }
-                }
             }
         }
 
@@ -267,7 +256,6 @@ namespace geode
                     const auto& texture = manager.find_texture( name );
                     auto& merged_texture =
                         merged_manager.find_or_create_texture( name );
-                    merged_texture.set_image( texture.image().clone() );
                     for( const auto p : Range{ mesh->nb_polygons() } )
                     {
                         const auto merged_polygon =
@@ -294,6 +282,25 @@ namespace geode
                                 texture.texture_coordinates( { p, v } ) );
                         }
                     }
+                }
+            }
+            // Load each texture image once, directly in the merged mesh
+            absl::flat_hash_set< std::string_view > loaded_textures;
+            for( const auto& [name, image_path] : materials_ )
+            {
+                if( image_path.empty() || !merged_manager.texture_exists( name )
+                    || !loaded_textures.emplace( name ).second )
+                {
+                    continue;
+                }
+                try
+                {
+                    merged_manager.find_or_create_texture( name ).set_image(
+                        load_raster_image< 2 >( image_path ) );
+                }
+                catch( const OpenGeodeException& e )
+                {
+                    Logger::warning( e.what() );
                 }
             }
             return merged;

@@ -126,6 +126,13 @@ namespace
             check_texture_coordinates( *surface, "textured_material", expected )
                 == 3,
             "Wrong number of textured corners in two_groups_textured" );
+        geode::OpenGeodeIOMeshException::test(
+            surface->texture_manager()
+                    .find_texture( "textured_material" )
+                    .image()
+                    .nb_cells()
+                == 524 * 774,
+            "Texture image of two_groups_textured is not loaded" );
     }
 
     void test_duplicated_polygon_textures()
