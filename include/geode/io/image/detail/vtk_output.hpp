@@ -30,12 +30,14 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <map>
 #include <sstream>
 
 #include <pugixml.hpp>
 
 #include <absl/algorithm/container.h>
 #include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 
 #include <geode/basic/attribute_manager.hpp>
 
@@ -332,8 +334,8 @@ namespace geode
                             absl::StrCat( series_name, "@", step ) );
                     }
                 }
-                absl::flat_hash_map< std::string, std::vector< uuid > >
-                    same_name_ids;
+                // Ordered to get deterministic names
+                std::map< std::string, std::vector< uuid > > same_name_ids;
                 for( const auto& id : manager.attribute_ids() )
                 {
                     if( names.contains( id ) )
@@ -347,17 +349,36 @@ namespace geode
                     }
                     same_name_ids[attribute->name().value()].push_back( id );
                 }
+                absl::flat_hash_set< std::string > used_names;
+                for( const auto& [id, name] : names )
+                {
+                    used_names.insert( name );
+                }
                 for( const auto& [name, ids] : same_name_ids )
                 {
-                    if( ids.size() == 1 )
+                    if( ids.size() == 1 && !used_names.contains( name ) )
                     {
                         names.emplace( ids.front(), name );
+                        used_names.insert( name );
+                    }
+                }
+                for( const auto& [name, ids] : same_name_ids )
+                {
+                    if( ids.size() == 1 && names.contains( ids.front() ) )
+                    {
                         continue;
                     }
-                    for( const auto index : Indices{ ids } )
+                    // Suffixed names must not collide with any other name
+                    index_t suffix{ 0 };
+                    for( const auto& id : ids )
                     {
-                        names.emplace(
-                            ids[index], absl::StrCat( name, "_", index ) );
+                        auto unique_name = absl::StrCat( name, "_", suffix++ );
+                        while( used_names.contains( unique_name ) )
+                        {
+                            unique_name = absl::StrCat( name, "_", suffix++ );
+                        }
+                        used_names.insert( unique_name );
+                        names.emplace( id, std::move( unique_name ) );
                     }
                 }
                 return names;

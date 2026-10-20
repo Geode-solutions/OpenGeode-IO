@@ -25,6 +25,8 @@
 
 #include <filesystem>
 
+#include <absl/strings/match.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
@@ -351,6 +353,48 @@ void test_time_series()
     }
 }
 
+void test_duplicated_names()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    builder->create_polygon( { 0, 1, 2 } );
+    auto& manager = surface->polygon_attribute_manager();
+    for( const auto value : { 1., 2. } )
+    {
+        [[maybe_unused]] const auto id =
+            manager.create_attribute< geode::VariableAttribute, double >(
+                "value", { value, 0 }, {} );
+    }
+    [[maybe_unused]] const auto literal_id =
+        manager.create_attribute< geode::VariableAttribute, double >(
+            "value_0", { 3., 0 }, {} );
+    geode::save_polygonal_surface( *surface, "duplicated_names.vtp" );
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "duplicated_names.vtp" );
+    const auto& reload_manager = reload->polygon_attribute_manager();
+    const auto literal = reload_manager.find_read_only_attribute< double >(
+        reload_manager.attribute_ids_matching_name( "value_0" )->front() );
+    geode::OpenGeodeIOMeshException::test( literal->value( 0 ) == 3.,
+        "[TEST] Attribute value_0 should keep its name" );
+    std::vector< double > renamed_values;
+    for( const auto& id : reload_manager.attribute_ids() )
+    {
+        const auto attribute = reload_manager.find_generic_attribute( id );
+        const auto name = attribute->name().value();
+        if( name != "value_0" && absl::StartsWith( name, "value_" ) )
+        {
+            renamed_values.push_back( attribute->generic_value( 0 ) );
+        }
+    }
+    absl::c_sort( renamed_values );
+    geode::OpenGeodeIOMeshException::test(
+        renamed_values == std::vector< double >{ 1., 2. },
+        "[TEST] Attributes with the same name should get unique names" );
+}
+
 bool save_throws(
     const geode::PolygonalSurface3D& surface, std::string_view filename )
 {
@@ -414,6 +458,7 @@ int main()
         run_attribute_types_test();
         test_time_series();
         test_write_errors();
+        test_duplicated_names();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
