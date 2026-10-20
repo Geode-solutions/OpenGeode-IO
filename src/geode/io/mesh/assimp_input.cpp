@@ -25,6 +25,7 @@
 
 #include <assimp/Importer.hpp>
 
+#include <filesystem>
 #include <type_traits>
 
 #include <async++.h>
@@ -309,9 +310,13 @@ namespace geode
                         nullptr, nullptr, nullptr, nullptr, nullptr )
                     == AI_SUCCESS )
                 {
-                    materials_[i].second = absl::StrCat(
-                        filepath_without_filename( file_ ).string(),
-                        Path.C_Str() );
+                    std::filesystem::path texture_path{ Path.C_Str() };
+                    if( texture_path.is_relative() )
+                    {
+                        texture_path =
+                            filepath_without_filename( file_ ) / texture_path;
+                    }
+                    materials_[i].second = texture_path.string();
                 }
             }
         }

@@ -21,6 +21,7 @@
  *
  */
 
+#include <filesystem>
 #include <fstream>
 
 #include <geode/tests_config.hpp>
@@ -158,6 +159,29 @@ namespace
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 3,
             "Too large polygon vertices should not be loaded" );
     }
+
+    void test_absolute_texture_path()
+    {
+        {
+            std::ofstream obj{ "absolute_texture.obj" };
+            obj << "mtllib absolute_texture.mtl\n"
+                << "v 0 0 0\nv 1 0 0\nv 0 1 0\n"
+                << "vt 0 0\nvt 1 0\nvt 0 1\n"
+                << "usemtl absolute\nf 1/1 2/2 3/3\n";
+            std::ofstream mtl{ "absolute_texture.mtl" };
+            mtl << "newmtl absolute\nKd 1 1 1\nmap_Kd "
+                << std::filesystem::absolute(
+                       absl::StrCat( geode::DATA_PATH, "grid_image.png" ) )
+                       .generic_string()
+                << "\n";
+        }
+        auto surface =
+            geode::load_polygonal_surface< 3 >( "./absolute_texture.obj" );
+        const auto& texture =
+            surface->texture_manager().find_texture( "absolute" );
+        geode::OpenGeodeIOMeshException::test( texture.image().nb_cells() > 0,
+            "Texture image with absolute path should be loaded" );
+    }
 } // namespace
 
 int main()
@@ -195,6 +219,7 @@ int main()
         test_duplicated_polygon_textures();
         test_lines_and_points();
         test_too_large_polygon();
+        test_absolute_texture_path();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
