@@ -29,6 +29,9 @@
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/geometry/point.hpp>
+
+#include <geode/mesh/builder/hybrid_solid_builder.hpp>
 #include <geode/mesh/core/hybrid_solid.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/core/tetrahedral_solid.hpp>
@@ -317,6 +320,69 @@ void test_cells_with_wrong_number_of_vertices()
         "Cell data should be transferred to the valid tetrahedron" );
 }
 
+// Checks each polyhedron is the unit cube with facets on the cube faces
+void check_unit_cubes( const geode::SolidMesh3D& solid, double expected_volume )
+{
+    for( const auto p : geode::Range{ solid.nb_polyhedra() } )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            std::fabs( solid.polyhedron_volume( p ) - expected_volume )
+                < geode::GLOBAL_EPSILON,
+            "Wrong volume for hexahedron ", p, ": should be ", expected_volume,
+            ", get ", solid.polyhedron_volume( p ) );
+        const auto facets = solid.polyhedron_facets_vertices( p );
+        geode::OpenGeodeIOMeshException::test(
+            facets.size() == 6, "Hexahedron ", p, " should have 6 facets" );
+        for( const auto& facet : facets )
+        {
+            geode::Point3D barycenter;
+            for( const auto vertex : facet )
+            {
+                barycenter = barycenter + solid.point( vertex );
+            }
+            barycenter = barycenter / static_cast< double >( facet.size() );
+            geode::index_t nb_half{ 0 };
+            for( const auto d : geode::LRange{ 3 } )
+            {
+                if( std::fabs( barycenter.value( d ) - 0.5 )
+                    < geode::GLOBAL_EPSILON )
+                {
+                    nb_half++;
+                }
+            }
+            geode::OpenGeodeIOMeshException::test( nb_half == 2,
+                "Facet of hexahedron ", p, " is not a face of the cube" );
+        }
+    }
+}
+
+void test_hexahedron_and_voxel()
+{
+    // Cell 0 is a VTK_HEXAHEDRON, cell 1 a VTK_VOXEL, on the same cube
+    write_file( "hexahedron_voxel.vtu",
+        vtu_file( vtu_piece(
+            2, "0 1 3 2 4 5 7 6 0 1 2 3 4 5 6 7", "8 16", "12 11" ) ) );
+    auto reference = geode::HybridSolid3D::create();
+    auto builder = geode::HybridSolidBuilder3D::create( *reference );
+    for( const auto& point :
+        { geode::Point3D{ { 0, 0, 0 } }, geode::Point3D{ { 1, 0, 0 } },
+            geode::Point3D{ { 1, 1, 0 } }, geode::Point3D{ { 0, 1, 0 } },
+            geode::Point3D{ { 0, 0, 1 } }, geode::Point3D{ { 1, 0, 1 } },
+            geode::Point3D{ { 1, 1, 1 } }, geode::Point3D{ { 0, 1, 1 } } } )
+    {
+        builder->create_point( point );
+    }
+    builder->create_hexahedron( { 0, 1, 2, 3, 4, 5, 6, 7 } );
+    const auto expected_volume = reference->polyhedron_volume( 0 );
+    const auto hybrid = geode::load_hybrid_solid< 3 >( "hexahedron_voxel.vtu" );
+    check( *hybrid, { 8, 2 } );
+    check_unit_cubes( *hybrid, expected_volume );
+    const auto polyhedral =
+        geode::load_polyhedral_solid< 3 >( "hexahedron_voxel.vtu" );
+    check( *polyhedral, { 8, 2 } );
+    check_unit_cubes( *polyhedral, expected_volume );
+}
+
 int main()
 {
     try
@@ -329,6 +395,7 @@ int main()
         test_multiple_pieces();
         test_no_cell();
         test_cells_with_wrong_number_of_vertices();
+        test_hexahedron_and_voxel();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );

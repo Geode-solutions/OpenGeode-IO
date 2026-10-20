@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <absl/container/inlined_vector.h>
+
 #include <geode/io/mesh/detail/vtu_input_impl.hpp>
 
 namespace geode
@@ -32,58 +34,63 @@ namespace geode
         template < typename Mesh >
         class VTUSolidInput : public VTUInputImpl< Mesh >
         {
-            using VTKElement = absl::FixedArray< std::vector< local_index_t > >;
+            struct VTKElement
+            {
+                VTKElement( local_index_t nb_vertices_in,
+                    std::vector< std::vector< local_index_t > > facets_in,
+                    std::vector< local_index_t > vertex_order_in = {} )
+                    : nb_vertices{ nb_vertices_in },
+                      facets{ std::move( facets_in ) },
+                      vertex_order{ std::move( vertex_order_in ) }
+                {
+                }
+
+                local_index_t nb_vertices;
+                std::vector< std::vector< local_index_t > > facets;
+                // Position in the VTK cell of each polyhedron vertex, empty
+                // if the vertex orders are the same
+                std::vector< local_index_t > vertex_order;
+            };
 
         protected:
             VTUSolidInput(
                 std::string_view filename, const geode::MeshImpl& impl )
-                : VTUInputImpl< Mesh >( filename, impl ),
-                  vtk_tetrahedron_( 4 ),
-                  vtk_hexahedron_( 6 ),
-                  vtk_prism_( 5 ),
-                  vtk_pyramid_( 5 )
+                : VTUInputImpl< Mesh >( filename, impl )
             {
-                vtk_tetrahedron_[0] = { 1, 3, 2 };
-                vtk_tetrahedron_[1] = { 0, 2, 3 };
-                vtk_tetrahedron_[2] = { 3, 1, 0 };
-                vtk_tetrahedron_[3] = { 0, 1, 2 };
-                vtk_hexahedron_[0] = { 0, 4, 5, 1 };
-                vtk_hexahedron_[1] = { 1, 5, 7, 3 };
-                vtk_hexahedron_[2] = { 3, 7, 6, 2 };
-                vtk_hexahedron_[3] = { 2, 6, 4, 0 };
-                vtk_hexahedron_[4] = { 4, 6, 7, 5 };
-                vtk_hexahedron_[5] = { 0, 1, 3, 2 };
-                vtk_prism_[0] = { 0, 2, 1 };
-                vtk_prism_[1] = { 3, 4, 5 };
-                vtk_prism_[2] = { 0, 3, 5, 2 };
-                vtk_prism_[3] = { 1, 2, 5, 4 };
-                vtk_prism_[4] = { 0, 1, 4, 3 };
-                vtk_pyramid_[0] = { 0, 4, 1 };
-                vtk_pyramid_[1] = { 1, 4, 2 };
-                vtk_pyramid_[2] = { 2, 4, 3 };
-                vtk_pyramid_[3] = { 3, 4, 0 };
-                vtk_pyramid_[4] = { 0, 1, 2, 3 };
             }
 
             void enable_tetrahedron()
             {
-                elements_.emplace( 10, vtk_tetrahedron_ );
+                elements_.emplace(
+                    10, VTKElement{ 4, { { 1, 3, 2 }, { 0, 2, 3 }, { 3, 1, 0 },
+                                           { 0, 1, 2 } } } );
             }
 
             void enable_hexahedron()
             {
-                elements_.emplace( 11, vtk_hexahedron_ ); // voxel
-                elements_.emplace( 12, vtk_hexahedron_ ); // hexahedron
+                // VTK_HEXAHEDRON vertex order is the OpenGeode one
+                const std::vector< std::vector< local_index_t > > facets{
+                    { 0, 4, 5, 1 }, { 2, 6, 7, 3 }, { 0, 3, 7, 4 },
+                    { 1, 5, 6, 2 }, { 0, 1, 2, 3 }, { 4, 7, 6, 5 }
+                };
+                elements_.emplace( 12, VTKElement{ 8, facets } );
+                // VTK_VOXEL vertices are ordered along x, then y, then z
+                elements_.emplace(
+                    11, VTKElement{ 8, facets, { 0, 1, 3, 2, 4, 5, 7, 6 } } );
             }
 
             void enable_prism()
             {
-                elements_.emplace( 13, vtk_prism_ );
+                elements_.emplace( 13,
+                    VTKElement{ 6, { { 0, 2, 1 }, { 3, 4, 5 }, { 0, 3, 5, 2 },
+                                       { 1, 2, 5, 4 }, { 0, 1, 4, 3 } } } );
             }
 
             void enable_pyramid()
             {
-                elements_.emplace( 14, vtk_pyramid_ );
+                elements_.emplace(
+                    14, VTKElement{ 5, { { 0, 4, 1 }, { 1, 4, 2 }, { 2, 4, 3 },
+                                           { 3, 4, 0 }, { 0, 1, 2, 3 } } } );
             }
 
         private:
@@ -139,8 +146,8 @@ namespace geode
                     {
                         continue;
                     }
-                    if( !has_element_size(
-                            it->second, polyhedron_vertices[p].size() ) )
+                    const auto& element = it->second;
+                    if( element.nb_vertices != polyhedron_vertices[p].size() )
                     {
                         nb_wrong_size_polyhedra++;
                         continue;
@@ -151,35 +158,33 @@ namespace geode
                         nb_invalid_polyhedra++;
                         continue;
                     }
-                    cell_polyhedra[p] = this->builder().create_polyhedron(
-                        polyhedron_vertices[p], it->second );
+                    cell_polyhedra[p] =
+                        create_polyhedron( polyhedron_vertices[p], element );
                 }
                 this->warn_invalid_cells( nb_invalid_polyhedra );
                 this->warn_wrong_size_cells( nb_wrong_size_polyhedra );
                 return cell_polyhedra;
             }
 
-            static bool has_element_size(
-                const VTKElement& element, size_t nb_vertices )
+            index_t create_polyhedron( absl::Span< const index_t > vertices,
+                const VTKElement& element )
             {
-                local_index_t element_nb_vertices{ 0 };
-                for( const auto& facet : element )
+                if( element.vertex_order.empty() )
                 {
-                    for( const auto vertex : facet )
-                    {
-                        element_nb_vertices = std::max< local_index_t >(
-                            element_nb_vertices, vertex + 1 );
-                    }
+                    return this->builder().create_polyhedron(
+                        vertices, element.facets );
                 }
-                return element_nb_vertices == nb_vertices;
+                absl::InlinedVector< index_t, 8 > ordered_vertices;
+                for( const auto vertex : element.vertex_order )
+                {
+                    ordered_vertices.push_back( vertices[vertex] );
+                }
+                return this->builder().create_polyhedron(
+                    ordered_vertices, element.facets );
             }
 
         private:
             absl::flat_hash_map< int64_t, VTKElement > elements_;
-            VTKElement vtk_tetrahedron_;
-            VTKElement vtk_hexahedron_;
-            VTKElement vtk_prism_;
-            VTKElement vtk_pyramid_;
         };
     } // namespace detail
 } // namespace geode
