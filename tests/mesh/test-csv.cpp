@@ -26,9 +26,11 @@
 #include <fstream>
 
 #include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/input.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/variable_attribute.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -135,6 +137,41 @@ namespace
         geode::OpenGeodeIOMeshException::test(
             point_set->point( 1 ) == geode::Point3D{ { 5, 5, 5 } },
             "[invalid coordinates] Wrong last point" );
+    }
+
+    std::shared_ptr< geode::VariableAttribute< double > > find_double_attribute(
+        geode::PointSet3D& point_set, std::string_view name )
+    {
+        auto& manager = point_set.vertex_attribute_manager();
+        const auto ids = manager.attribute_ids_matching_name( name );
+        geode::OpenGeodeIOMeshException::test(
+            ids.has_value() && ids->size() == 1, "[TEST: CSV input] Attribute ",
+            name, " should exist once" );
+        return manager.find_attribute< geode::VariableAttribute, double >(
+            ids->front() );
+    }
+
+    void test_attribute_no_value()
+    {
+        const auto point_set = read_csv( write_csv( "csv_attribute_no_value",
+            "x,y,z,v\n"
+            "0,0,0,7\n"
+            "1,1,1,7\n"
+            "2,2,2,3\n"
+            "3,3,3\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 4, "attribute no value" );
+        const auto attribute = find_double_attribute( *point_set, "v" );
+        for( const auto v : geode::Range{ 3 } )
+        {
+            geode::OpenGeodeIOMeshException::test( attribute->has_value( v ),
+                "[attribute no value] Vertex ", v, " should have a value" );
+        }
+        geode::OpenGeodeIOMeshException::test(
+            attribute->value( 0 ) == 7 && attribute->value( 2 ) == 3,
+            "[attribute no value] Wrong attribute values" );
+        geode::OpenGeodeIOMeshException::test( !attribute->has_value( 3 ),
+            "[attribute no value] Vertex 3 should not have a value" );
     }
 
     void test_invalid_settings()
@@ -247,6 +284,7 @@ int main()
         test_invalid_settings();
         test_blank_and_short_rows();
         test_invalid_coordinates();
+        test_attribute_no_value();
         return 0;
     }
     catch( ... )

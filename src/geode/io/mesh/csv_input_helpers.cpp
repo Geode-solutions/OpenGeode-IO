@@ -23,6 +23,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -215,9 +216,12 @@ namespace geode
                     {
                         continue;
                     }
+                    // Rows without value for this column keep NaN
                     AttributeValues< double > default_values;
-                    default_values.default_value = value;
-                    default_values.no_value = value;
+                    default_values.default_value =
+                        std::numeric_limits< double >::quiet_NaN();
+                    default_values.no_value =
+                        std::numeric_limits< double >::quiet_NaN();
                     AttributeProperties properties;
                     properties.assignable = false;
                     properties.interpolable = false;
