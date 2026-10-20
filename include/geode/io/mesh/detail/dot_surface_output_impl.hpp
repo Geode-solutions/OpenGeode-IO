@@ -30,6 +30,8 @@
 
 #include <geode/mesh/core/surface_edges.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace geode
 {
     namespace detail
@@ -44,6 +46,9 @@ namespace geode
                   file_( to_string( filename ) ),
                   surface_( surface )
             {
+                OpenGeodeIOMeshException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[DotOutput] Error while opening file: ", filename_ );
                 surface_.enable_edges();
             }
 
@@ -61,6 +66,9 @@ namespace geode
                 }
                 file_ << "}\n";
                 file_.close();
+                OpenGeodeIOMeshException::check_exception( !file_.fail(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[DotOutput] Error while writing file: ", filename_ );
             }
 
         private:

@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
@@ -349,6 +351,38 @@ void test_time_series()
     }
 }
 
+bool save_throws(
+    const geode::PolygonalSurface3D& surface, std::string_view filename )
+{
+    try
+    {
+        geode::save_polygonal_surface( surface, filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return true;
+    }
+    return false;
+}
+
+void test_write_errors()
+{
+    const auto surface = geode::load_polygonal_surface< 3 >(
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    // A directory cannot be opened as an output file
+    std::filesystem::create_directories( "directory.vtp" );
+    geode::OpenGeodeIOMeshException::test(
+        save_throws( *surface, "directory.vtp" ),
+        "[TEST] Saving into a directory should throw" );
+#ifdef __linux__
+    // Writing into /dev/full always fails with ENOSPC
+    std::filesystem::remove( "full.vtp" );
+    std::filesystem::create_symlink( "/dev/full", "full.vtp" );
+    geode::OpenGeodeIOMeshException::test( save_throws( *surface, "full.vtp" ),
+        "[TEST] Saving into a full device should throw" );
+#endif
+}
+
 int main()
 {
     try
@@ -379,6 +413,7 @@ int main()
         run_encoding_tests();
         run_attribute_types_test();
         test_time_series();
+        test_write_errors();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

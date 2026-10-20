@@ -178,19 +178,15 @@ namespace geode
                 if( appended_data_.empty() )
                 {
                     document_.save( file_ );
-                    return;
                 }
-                auto appended = root.append_child( "AppendedData" );
-                appended.append_attribute( "encoding" ).set_value( "raw" );
-                appended.text().set( "_" );
-                std::ostringstream xml;
-                document_.save( xml );
-                const auto xml_string = xml.str();
-                const auto split = xml_string.rfind( "_</AppendedData>" ) + 1;
-                file_.write( xml_string.data(), split );
-                file_.write( appended_data_.data(), appended_data_.size() );
-                file_.write(
-                    xml_string.data() + split, xml_string.size() - split );
+                else
+                {
+                    write_with_appended_data( root );
+                }
+                file_.flush();
+                OpenGeodeIOImageException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKOutput] Error while writing file: ", filename_ );
             }
 
         protected:
@@ -302,6 +298,21 @@ namespace geode
             }
 
         private:
+            void write_with_appended_data( pugi::xml_node& root )
+            {
+                auto appended = root.append_child( "AppendedData" );
+                appended.append_attribute( "encoding" ).set_value( "raw" );
+                appended.text().set( "_" );
+                std::ostringstream xml;
+                document_.save( xml );
+                const auto xml_string = xml.str();
+                const auto split = xml_string.rfind( "_</AppendedData>" ) + 1;
+                file_.write( xml_string.data(), split );
+                file_.write( appended_data_.data(), appended_data_.size() );
+                file_.write(
+                    xml_string.data() + split, xml_string.size() - split );
+            }
+
             static bool should_be_written(
                 const std::shared_ptr< AttributeBase >& attribute )
             {

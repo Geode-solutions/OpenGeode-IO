@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
@@ -31,6 +33,20 @@
 #include <geode/mesh/io/polygonal_surface_output.hpp>
 
 #include <geode/io/mesh/common.hpp>
+
+bool save_throws(
+    const geode::PolygonalSurface3D& surface, std::string_view filename )
+{
+    try
+    {
+        geode::save_polygonal_surface( surface, filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return true;
+    }
+    return false;
+}
 
 int main()
 {
@@ -43,6 +59,20 @@ int main()
         builder->create_vertices( 3 );
         builder->create_polygon( { 0, 1, 2 } );
         geode::save_polygonal_surface( *surface, "test.dot" );
+
+        // A directory cannot be opened as an output file
+        std::filesystem::create_directories( "directory.dot" );
+        geode::OpenGeodeIOMeshException::test(
+            save_throws( *surface, "directory.dot" ),
+            "[TEST] Saving into a directory should throw" );
+#ifdef __linux__
+        // Writing into /dev/full always fails with ENOSPC
+        std::filesystem::remove( "full.dot" );
+        std::filesystem::create_symlink( "/dev/full", "full.dot" );
+        geode::OpenGeodeIOMeshException::test(
+            save_throws( *surface, "full.dot" ),
+            "[TEST] Saving into a full device should throw" );
+#endif
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
