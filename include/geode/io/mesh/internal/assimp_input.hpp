@@ -59,8 +59,6 @@ namespace geode
 
             void read_meshes( const aiScene* assimp_scene );
 
-            void read_textures( const aiScene* assimp_scene );
-
             std::unique_ptr< Mesh > merge_meshes();
 
         private:

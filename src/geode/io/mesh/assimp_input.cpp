@@ -62,8 +62,9 @@ namespace
     }
 
     template < typename Mesh >
-    std::unique_ptr< Mesh > build_mesh(
-        const aiMesh& assimp_mesh, geode::index_t& nb_skipped_faces )
+    std::unique_ptr< Mesh > build_mesh( const aiMesh& assimp_mesh,
+        std::string_view texture_name,
+        geode::index_t& nb_skipped_faces )
     {
         auto mesh = Mesh::create();
         auto builder = Mesh::Builder::create( *mesh );
@@ -104,6 +105,12 @@ namespace
                 builder->set_point( new_vertices[v],
                     geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
             } );
+        geode::Texture2D* texture{ nullptr };
+        if( assimp_mesh.HasTextureCoords( 0 ) )
+        {
+            texture =
+                &mesh->texture_manager().find_or_create_texture( texture_name );
+        }
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
@@ -117,7 +124,18 @@ namespace
             {
                 polygon_vertices[i] = new_vertices[face.mIndices[i]];
             }
-            builder->create_polygon( polygon_vertices );
+            const auto polygon = builder->create_polygon( polygon_vertices );
+            if( !texture )
+            {
+                continue;
+            }
+            for( const auto i : geode::LIndices{ polygon_vertices } )
+            {
+                const auto& coord =
+                    assimp_mesh.mTextureCoords[0][face.mIndices[i]];
+                texture->set_texture_coordinates(
+                    { polygon, i }, geode::Point2D{ { coord.x, coord.y } } );
+            }
         }
         // Without shared vertices (e.g. OBJ, STL or DXF importers) there is no
         // adjacency to compute
@@ -153,45 +171,8 @@ namespace geode
                 importer.GetErrorString() );
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
-            read_textures( assimp_scene );
             importer.FreeScene();
             return merge_meshes();
-        }
-
-        template < typename Mesh >
-        void AssimpMeshInput< Mesh >::read_textures(
-            const aiScene* assimp_scene )
-        {
-            for( const auto i : Range{ assimp_scene->mNumMeshes } )
-            {
-                const auto& assimp_mesh = *assimp_scene->mMeshes[i];
-                if( !assimp_mesh.HasTextureCoords( 0 ) )
-                {
-                    continue;
-                }
-                const auto& mesh = *surfaces_[i];
-                const auto& material = materials_[assimp_mesh.mMaterialIndex];
-                auto& texture = mesh.texture_manager().find_or_create_texture(
-                    material.first );
-                index_t polygon{ 0 };
-                for( const auto f : Range{ assimp_mesh.mNumFaces } )
-                {
-                    const auto& face = assimp_mesh.mFaces[f];
-                    if( !is_face_supported< Mesh >( face ) )
-                    {
-                        continue;
-                    }
-                    for( const auto v : LRange{ face.mNumIndices } )
-                    {
-                        const auto mesh_vertex = face.mIndices[v];
-                        const auto& coord =
-                            assimp_mesh.mTextureCoords[0][mesh_vertex];
-                        texture.set_texture_coordinates(
-                            { polygon, v }, Point2D{ { coord.x, coord.y } } );
-                    }
-                    polygon++;
-                }
-            }
         }
 
         template < typename Mesh >
@@ -206,8 +187,10 @@ namespace geode
             {
                 tasks[i] =
                     async::spawn( [this, i, &assimp_scene, &nb_skipped_faces] {
-                        surfaces_[i] = build_mesh< Mesh >(
-                            *assimp_scene->mMeshes[i], nb_skipped_faces[i] );
+                        const auto& assimp_mesh = *assimp_scene->mMeshes[i];
+                        surfaces_[i] = build_mesh< Mesh >( assimp_mesh,
+                            materials_[assimp_mesh.mMaterialIndex].first,
+                            nb_skipped_faces[i] );
                     } );
             }
             for( auto& task :
@@ -223,10 +206,12 @@ namespace geode
             if( total_skipped_faces > 0 )
             {
                 Logger::warning( "[AssimpMeshInput::read_meshes] Skipped ",
-                    total_skipped_faces,
-                    " unsupported faces (lines, points, empty faces or "
-                    "polygons with too many vertices) in file ",
-                    file_ );
+                    total_skipped_faces, " unsupported faces (",
+                    std::is_same_v< Mesh, TriangulatedSurface3D >
+                        ? "non-triangle faces"
+                        : "lines, points, empty faces or polygons with too "
+                          "many vertices",
+                    ") in file ", file_ );
             }
         }
 
