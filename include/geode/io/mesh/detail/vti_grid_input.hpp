@@ -25,6 +25,9 @@
 
 #include <array>
 #include <fstream>
+#include <optional>
+
+#include <absl/strings/numbers.h>
 
 #include <geode/basic/string.hpp>
 
@@ -68,6 +71,38 @@ namespace geode
             };
 
         protected:
+            using Extent = std::array< std::array< int64_t, 2 >, 3 >;
+
+            // Reads the [start, end] point indices in each direction, nullopt
+            // if WholeExtent is missing or malformed
+            static std::optional< Extent > read_whole_extent(
+                const pugi::xml_node& vtk_object )
+            {
+                const auto tokens = string_split(
+                    vtk_object.attribute( "WholeExtent" ).value() );
+                if( tokens.size() != 6 )
+                {
+                    return std::nullopt;
+                }
+                Extent extent;
+                for( const auto d : LRange{ 3 } )
+                {
+                    for( const auto i : LRange{ 2 } )
+                    {
+                        if( !absl::SimpleAtoi(
+                                tokens[2 * d + i], &extent[d][i] ) )
+                        {
+                            return std::nullopt;
+                        }
+                    }
+                    if( extent[d][1] < extent[d][0] )
+                    {
+                        return std::nullopt;
+                    }
+                }
+                return extent;
+            }
+
             static GridAttributes read_grid_attributes(
                 const pugi::xml_node& vtk_object )
             {
@@ -144,8 +179,14 @@ namespace geode
             void is_vtk_object_loadable( const pugi::xml_node& vtk_object,
                 std::vector< Percentage >& percentages ) const final
             {
-                const auto grid_attributes = read_grid_attributes( vtk_object );
-                const auto nb_cells_3d = grid_attributes.cells_number[2];
+                const auto extent = read_whole_extent( vtk_object );
+                if( !extent )
+                {
+                    percentages.emplace_back( 0 );
+                    return;
+                }
+                const auto nb_cells_3d =
+                    extent.value()[2][1] - extent.value()[2][0];
                 percentages.emplace_back(
                     dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0 );
             }

@@ -32,8 +32,10 @@
 #include <geode/geometry/vector.hpp>
 
 #include <geode/mesh/builder/regular_grid_solid_builder.hpp>
+#include <geode/mesh/builder/regular_grid_surface_builder.hpp>
 #include <geode/mesh/core/light_regular_grid.hpp>
 #include <geode/mesh/core/regular_grid_solid.hpp>
+#include <geode/mesh/core/regular_grid_surface.hpp>
 #include <geode/mesh/io/light_regular_grid_input.hpp>
 #include <geode/mesh/io/light_regular_grid_output.hpp>
 #include <geode/mesh/io/regular_grid_input.hpp>
@@ -139,6 +141,40 @@ void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
     geode::save_light_regular_grid( reload_grid, "test4.vti" );
 }
 
+void test_loadability()
+{
+    auto grid2d = geode::RegularGrid2D::create();
+    auto builder2d = geode::RegularGridBuilder2D::create( *grid2d );
+    builder2d->initialize_grid( geode::Point2D{ { 1, 2 } }, { 10, 20 }, 1 );
+    geode::save_regular_grid( *grid2d, "loadability2d.vti" );
+    auto grid3d = geode::RegularGrid3D::create();
+    auto builder3d = geode::RegularGridBuilder3D::create( *grid3d );
+    builder3d->initialize_grid(
+        geode::Point3D{ { 1, 2, 3 } }, { 10, 20, 30 }, 1 );
+    geode::save_regular_grid( *grid3d, "loadability3d.vti" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_regular_grid_loadable< 2 >( "loadability2d.vti" ).value()
+            == 1,
+        "2D grid should be loadable in 2D" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_regular_grid_loadable< 3 >( "loadability2d.vti" ).value()
+            == 0,
+        "2D grid should not be loadable in 3D" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_regular_grid_loadable< 2 >( "loadability3d.vti" ).value()
+            == 0,
+        "3D grid should not be loadable in 2D" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_light_regular_grid_loadable< 2 >( "loadability3d.vti" )
+                .value()
+            == 0,
+        "3D grid should not be loadable as 2D light grid" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_regular_grid_loadable< 3 >( "loadability3d.vti" ).value()
+            == 1,
+        "3D grid should be loadable in 3D" );
+}
+
 int main()
 {
     try
@@ -156,6 +192,8 @@ int main()
             { 10, 20, 30 }, { 1, 1, 1 } };
         put_attributes_on_grid( lgrid );
         test_light_regular_grid( lgrid );
+
+        test_loadability();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
