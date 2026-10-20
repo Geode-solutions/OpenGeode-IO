@@ -63,7 +63,8 @@ namespace
             auto point_data = piece.append_child( "PointData" );
             point_data.append_attribute( "Scalars" ).set_value( "Color" );
             std::vector< uint8_t > values;
-            values.reserve( 3 * this->mesh().nb_cells() );
+            values.reserve(
+                static_cast< size_t >( this->mesh().nb_cells() ) * 3 );
             for( const auto c : geode::Range{ this->mesh().nb_cells() } )
             {
                 const auto& color = this->mesh().color( c );
