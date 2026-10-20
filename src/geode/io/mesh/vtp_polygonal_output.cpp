@@ -39,7 +39,7 @@ namespace geode
                 this->filename(), surface
             };
             impl.write_file();
-            return { to_string( this->filename() ) };
+            return impl.written_files();
         }
 
         template class VTPPolygonalOutput< 2 >;

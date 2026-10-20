@@ -34,8 +34,12 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/image/core/raster_image.hpp>
+
 #include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/texture2d.hpp>
+#include <geode/mesh/core/texture_manager.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
 
@@ -395,6 +399,34 @@ void test_duplicated_names()
         "[TEST] Attributes with the same name should get unique names" );
 }
 
+void test_texture_files()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    builder->create_polygon( { 0, 1, 2 } );
+    auto& texture =
+        surface->texture_manager().find_or_create_texture( "dir/texture" );
+    texture.set_image( geode::RasterImage2D{ { 2, 2 } } );
+    for( const auto v : geode::LRange{ 3 } )
+    {
+        texture.set_texture_coordinates(
+            { 0, v }, geode::Point2D{ { 0.5 * v, 0.25 * v } } );
+    }
+    const auto files =
+        geode::save_polygonal_surface( *surface, "textured.vtp" );
+    geode::OpenGeodeIOMeshException::test( files.size() == 2,
+        "[TEST] Texture image file should be returned, got ", files.size(),
+        " files" );
+    geode::OpenGeodeIOMeshException::test(
+        files[1] == "textured_dir_texture.vti",
+        "[TEST] Wrong texture image file: ", files[1] );
+    geode::OpenGeodeIOMeshException::test( std::filesystem::exists( files[1] ),
+        "[TEST] Texture image file should exist" );
+}
+
 bool save_throws(
     const geode::PolygonalSurface3D& surface, std::string_view filename )
 {
@@ -459,6 +491,7 @@ int main()
         test_time_series();
         test_write_errors();
         test_duplicated_names();
+        test_texture_files();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

@@ -25,6 +25,8 @@
 
 #include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
+#include <absl/strings/ascii.h>
+
 #include <geode/basic/filename.hpp>
 
 #include <geode/image/core/raster_image.hpp>
@@ -59,6 +61,17 @@ namespace geode
                 }
             }
 
+            // Files written by write_file(): the VTP file then the texture
+            // images
+            std::vector< std::string > written_files() const
+            {
+                std::vector< std::string > files{ to_string(
+                    this->filename() ) };
+                files.insert(
+                    files.end(), image_files_.begin(), image_files_.end() );
+                return files;
+            }
+
         private:
             void append_number_elements( pugi::xml_node& piece ) override
             {
@@ -66,7 +79,25 @@ namespace geode
                     .set_value( this->mesh().nb_polygons() );
             }
 
-            void save_images() const
+            // Texture names are free strings, keep only characters safe
+            // for a file name
+            static std::string texture_file_suffix( std::string_view name )
+            {
+                std::string suffix{ name };
+                for( auto& character : suffix )
+                {
+                    if( !absl::ascii_isalnum(
+                            static_cast< unsigned char >( character ) )
+                        && character != '-' && character != '_'
+                        && character != '.' )
+                    {
+                        character = '_';
+                    }
+                }
+                return suffix;
+            }
+
+            void save_images()
             {
                 const auto path =
                     filepath_without_extension( this->filename() ).string();
@@ -75,8 +106,13 @@ namespace geode
                     const auto& image = texture.second.get().image();
                     if( image.nb_cells() > 0 )
                     {
-                        save_raster_image( image,
-                            absl::StrCat( path, "_", texture.first, ".vti" ) );
+                        auto files = save_raster_image(
+                            image, absl::StrCat( path, "_",
+                                       texture_file_suffix( texture.first ),
+                                       ".vti" ) );
+                        image_files_.insert( image_files_.end(),
+                            std::make_move_iterator( files.begin() ),
+                            std::make_move_iterator( files.end() ) );
                     }
                 }
             }
@@ -202,6 +238,7 @@ namespace geode
             std::vector< absl::flat_hash_map< index_t, index_t > >
                 vertex_mapping_;
             std::vector< PolygonVertex > unique_texture_vertices_;
+            std::vector< std::string > image_files_;
         };
     } // namespace detail
 } // namespace geode
