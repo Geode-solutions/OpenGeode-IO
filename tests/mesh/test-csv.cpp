@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <limits>
 
 #include <geode/basic/assert.hpp>
 #include <geode/basic/attribute_manager.hpp>
@@ -216,6 +217,38 @@ namespace
             "[quoted fields] Wrong attribute values" );
     }
 
+    void test_headers()
+    {
+        auto point_set = read_csv( write_csv( "csv_headers",
+            "\xEF\xBB\xBF\"id\", x , y ,z, v ,v\n"
+            "10,0,0,0,1,2,3,4\n"
+            "11,1,1,1,5,6,,,8\n",
+            R"({
+  "firstRow": 1, "headerRow": 0, "separator": ",",
+  "xColumn": 1, "yColumn": 2, "zColumn": 3
+})" ) );
+        check_nb_vertices( *point_set, 2, "headers" );
+        const auto check_values = [&point_set]( std::string_view name,
+                                      double value0, double value1 ) {
+            const auto attribute = find_double_attribute( *point_set, name );
+            const auto same = []( double value, double expected ) {
+                return std::isnan( expected ) ? std::isnan( value )
+                                              : value == expected;
+            };
+            geode::OpenGeodeIOMeshException::test(
+                same( attribute->value( 0 ), value0 )
+                    && same( attribute->value( 1 ), value1 ),
+                "[headers] Wrong values for attribute ", name );
+        };
+        const auto nan = std::numeric_limits< double >::quiet_NaN();
+        check_values( "id", 10, 11 );
+        check_values( "v", 1, 5 );
+        check_values( "v_5", 2, 6 );
+        check_values( "column_6", 3, nan );
+        check_values( "column_7", 4, nan );
+        check_values( "column_8", nan, 8 );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -329,6 +362,7 @@ int main()
         test_attribute_no_value();
         test_invalid_attribute_values();
         test_quoted_fields();
+        test_headers();
         return 0;
     }
     catch( ... )
