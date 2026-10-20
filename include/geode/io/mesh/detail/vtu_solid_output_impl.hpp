@@ -51,7 +51,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& /*unused*/,
                 std::vector< int64_t >& /*unused*/,
-                index_t& /*unused*/ ) const override
+                int64_t& /*unused*/ ) const override
             {
                 cell_types.push_back( VTK_TETRAHEDRON_TYPE );
             }
@@ -71,7 +71,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& /*unused*/,
                 std::vector< int64_t >& /*unused*/,
-                index_t& /*unused*/ ) const override
+                int64_t& /*unused*/ ) const override
             {
                 const auto nb_vertices =
                     this->mesh().nb_polyhedron_vertices( p );
@@ -98,7 +98,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& cell_faces,
                 std::vector< int64_t >& cell_face_offsets,
-                index_t& face_offset ) const override
+                int64_t& face_offset ) const override
             {
                 add_cell_type( p, cell_types );
                 const auto nb_faces = this->mesh().nb_polyhedron_facets( p );

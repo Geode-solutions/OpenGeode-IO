@@ -190,10 +190,12 @@ namespace geode
                 auto polys = piece.append_child( "Polys" );
                 const auto nb_polys = this->mesh().nb_polygons();
                 std::vector< int64_t > poly_connectivity;
-                poly_connectivity.reserve( nb_polys * 3 );
+                poly_connectivity.reserve(
+                    static_cast< size_t >( nb_polys ) * 3 );
                 std::vector< int64_t > poly_offsets;
                 poly_offsets.reserve( nb_polys );
-                index_t vertex_count{ 0 };
+                // 64-bit accumulator: offsets may exceed index_t range
+                int64_t vertex_count{ 0 };
                 for( const auto p : Range{ nb_polys } )
                 {
                     const auto nb_polygon_vertices =
