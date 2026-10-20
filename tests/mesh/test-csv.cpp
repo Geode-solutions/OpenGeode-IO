@@ -23,6 +23,7 @@
 
 #include <geode/tests_config.hpp>
 
+#include <cmath>
 #include <fstream>
 
 #include <geode/basic/assert.hpp>
@@ -174,6 +175,28 @@ namespace
             "[attribute no value] Vertex 3 should not have a value" );
     }
 
+    void test_invalid_attribute_values()
+    {
+        const auto point_set =
+            read_csv( write_csv( "csv_invalid_attribute_values",
+                "x,y,z,v,w\n"
+                "0,0,0,1,10\n"
+                "1,1,1,,11\n"
+                "2,2,2,abc,12\n"
+                "3,3,3,4,13\n",
+                VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 4, "invalid attribute values" );
+        const auto attribute = find_double_attribute( *point_set, "v" );
+        geode::OpenGeodeIOMeshException::test(
+            attribute->value( 0 ) == 1 && std::isnan( attribute->value( 1 ) )
+                && std::isnan( attribute->value( 2 ) )
+                && attribute->value( 3 ) == 4,
+            "[invalid attribute values] Wrong attribute values" );
+        geode::OpenGeodeIOMeshException::test(
+            find_double_attribute( *point_set, "w" )->value( 2 ) == 12,
+            "[invalid attribute values] Wrong w attribute value" );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -285,6 +308,7 @@ int main()
         test_blank_and_short_rows();
         test_invalid_coordinates();
         test_attribute_no_value();
+        test_invalid_attribute_values();
         return 0;
     }
     catch( ... )

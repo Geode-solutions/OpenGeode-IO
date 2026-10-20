@@ -165,6 +165,13 @@ namespace geode
                     filename_, " (rows: ", absl::StrJoin( invalid_rows, ", " ),
                     nb_invalid_rows > invalid_rows.size() ? ", ..." : "", ")" );
             }
+            for( const auto& [col, nb_invalid] : invalid_cells_ )
+            {
+                Logger::warning( "[CSVInput] ", nb_invalid,
+                    " non numeric values of attribute \"",
+                    attribute_names_.at( col ), "\" replaced by NaN in file ",
+                    filename_ );
+            }
             return point_set;
         }
 
@@ -234,6 +241,7 @@ namespace geode
                         attribute_manager
                             .find_attribute< VariableAttribute, double >(
                                 attribute_id );
+                    attribute_names_[col] = attribute_name;
                 }
             }
             for( const auto col : geode::Range{ line_values.size() } )
@@ -242,15 +250,27 @@ namespace geode
                 {
                     continue;
                 }
-                if( double_attrs.contains( col ) )
+                const auto attribute_it = double_attrs.find( col );
+                if( attribute_it == double_attrs.end() )
                 {
-                    double_attrs[col]->set_value(
-                        vertex_id, string_to_double( line_values[col] ) );
+                    continue;
+                }
+                double value;
+                if( absl::SimpleAtod( line_values[col], &value ) )
+                {
+                    attribute_it->second->set_value( vertex_id, value );
+                }
+                else
+                {
+                    // The vertex keeps the NaN default value
+                    invalid_cells_[col]++;
                 }
             }
         }
 
     private:
+        absl::flat_hash_map< index_t, index_t > invalid_cells_;
+        absl::flat_hash_map< index_t, std::string > attribute_names_;
         std::string filename_;
         std::ifstream file_;
         char separator_{ ',' };
