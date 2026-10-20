@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 
 #include <absl/strings/str_split.h>
@@ -61,25 +62,32 @@ namespace geode
                 for( const auto p : Range{ nb_points } )
                 {
                     geode_unused( p );
-                    tokens();
+                    if( tokens().empty() )
+                    {
+                        return Percentage{ 0 };
+                    }
                 }
                 absl::flat_hash_map< index_t, index_t > elements;
                 const auto nb_elements = read_count( "elements" );
+                index_t nb_read_elements{ 0 };
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
-                    check_nb_tokens( values, 1, "an element" );
+                    if( values.empty() )
+                    {
+                        break;
+                    }
                     elements[parse_index( values[0] )]++;
+                    nb_read_elements++;
                 }
                 const auto element_it = elements.find( element );
                 if( element_it == elements.end() )
                 {
-                    return geode::Percentage{ 0 };
+                    return Percentage{ 0 };
                 }
-                return geode::Percentage{
-                    static_cast< double >( element_it->second ) / nb_elements
-                };
+                return Percentage{ static_cast< double >( element_it->second )
+                                   / nb_read_elements };
             }
 
             void read_file()
@@ -103,30 +111,70 @@ namespace geode
                     "[SMESHInput] No point in file ", filename_,
                     ": points stored in a separate .node file are not "
                     "supported" );
-                builder_->create_vertices( nb_points );
+                // The header count may be corrupted: never trust it more than
+                // the number of lines the file can hold
+                std::vector< Point3D > points;
+                points.reserve( std::min< std::uintmax_t >(
+                    nb_points, max_nb_data_lines() ) );
                 for( const auto p : Range{ nb_points } )
                 {
+                    geode_unused( p );
                     const auto values = tokens();
+                    if( is_truncated( values, 4 ) )
+                    {
+                        Logger::warning( "[SMESHInput] File ", filename_,
+                            " is truncated: read ", points.size(), " of ",
+                            nb_points, " points" );
+                        break;
+                    }
                     check_nb_tokens( values, 4, "a point" );
-                    vertices_.emplace( parse_index( values[0] ), p );
+                    vertices_.emplace( parse_index( values[0] ),
+                        static_cast< index_t >( points.size() ) );
                     Point3D point;
                     for( const auto d : LRange{ 3 } )
                     {
                         point.set_value( d, parse_double( values[d + 1] ) );
                     }
-                    builder_->set_point( p, point );
+                    points.push_back( point );
+                }
+                builder_->create_vertices(
+                    static_cast< index_t >( points.size() ) );
+                for( const auto p : Indices{ points } )
+                {
+                    builder_->set_point( p, points[p] );
                 }
             }
 
             void read_elements()
             {
-                const auto nb_elements = read_count( "elements" );
+                const auto header = tokens();
+                if( is_truncated( header, 1 ) )
+                {
+                    Logger::warning( "[SMESHInput] File ", filename_,
+                        " is truncated: no element read" );
+                    return;
+                }
+                check_nb_tokens( header, 1, "the number of elements" );
+                const auto nb_elements = parse_index( header.front() );
+                index_t nb_read_elements{ 0 };
                 index_t nb_wrong_size{ 0 };
                 index_t nb_unknown_vertex{ 0 };
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
+                    if( values.empty()
+                        || ( file_.eof()
+                             && ( values.size() < 2
+                                  || values.size()
+                                         < parse_index( values[0] ) + 1 ) ) )
+                    {
+                        Logger::warning( "[SMESHInput] File ", filename_,
+                            " is truncated: read ", nb_read_elements, " of ",
+                            nb_elements, " elements" );
+                        break;
+                    }
+                    nb_read_elements++;
                     check_nb_tokens( values, 1, "an element" );
                     const auto nb_element_vertices = parse_index( values[0] );
                     check_nb_tokens(
@@ -167,17 +215,40 @@ namespace geode
                     return;
                 }
                 OpenGeodeIOMeshException::check_exception(
-                    nb_wrong_size != nb_elements, nullptr,
+                    nb_wrong_size != nb_read_elements, nullptr,
                     OpenGeodeException::TYPE::data, "[SMESHInput] None of the ",
-                    nb_elements, " elements of file ", filename_, " has ",
+                    nb_read_elements, " elements of file ", filename_, " has ",
                     element, " vertices" );
                 Logger::warning( "[SMESHInput] Skipped ", nb_wrong_size, " of ",
-                    nb_elements, " elements not having ", element,
+                    nb_read_elements, " elements not having ", element,
                     " vertices in file ", filename_ );
             }
 
             virtual void create_element(
                 const std::array< index_t, element >& vertices ) = 0;
+
+            /*!
+             * A missing or incomplete last line means that the file was cut
+             */
+            bool is_truncated( const std::vector< std::string_view >& values,
+                size_t nb_expected ) const
+            {
+                return values.size() < nb_expected && file_.eof();
+            }
+
+            std::uintmax_t max_nb_data_lines() const
+            {
+                std::error_code error;
+                const auto size =
+                    std::filesystem::file_size( filename_, error );
+                if( error )
+                {
+                    return 0;
+                }
+                // Shortest point line: "0 0 0 0\n"
+                static constexpr std::uintmax_t MIN_LINE_SIZE{ 8 };
+                return size / MIN_LINE_SIZE;
+            }
 
             index_t read_count( std::string_view what )
             {

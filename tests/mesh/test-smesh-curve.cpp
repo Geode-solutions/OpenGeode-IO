@@ -197,6 +197,31 @@ namespace
             "2 1 2\n",
             ".node file" );
     }
+
+    void test_truncated()
+    {
+        const auto truncated_points =
+            load_from_string( "smesh_truncated_points", "5 3 0 0\n"
+                                                        "0 0.0 0.0 0.0\n"
+                                                        "1 1.0 0.0 0.0\n"
+                                                        "2 2.0 1." );
+        check_curve( *truncated_points, 2, 0, "truncated points" );
+        const auto truncated_elements =
+            load_from_string( "smesh_truncated_elements", "3 3 0 0\n"
+                                                          "0 0.0 0.0 0.0\n"
+                                                          "1 1.0 0.0 0.0\n"
+                                                          "2 2.0 1.0 0.0\n"
+                                                          "3 0\n"
+                                                          "2 0 1\n"
+                                                          "2 1" );
+        check_curve( *truncated_elements, 3, 1, "truncated elements" );
+        // Corrupted header count must not allocate billions of vertices
+        const auto huge_count =
+            load_from_string( "smesh_huge_count", "4000000000 3 0 0\n"
+                                                  "0 0.0 0.0 0.0\n"
+                                                  "1 1.0 0.0 0.0\n" );
+        check_curve( *huge_count, 2, 0, "huge count" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -231,6 +256,7 @@ int main()
         test_short_lines();
         test_wrong_element_size();
         test_unknown_vertices();
+        test_truncated();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
