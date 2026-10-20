@@ -25,6 +25,8 @@
 
 #include <assimp/Importer.hpp>
 
+#include <type_traits>
+
 #include <async++.h>
 
 #include <absl/algorithm/container.h>
@@ -48,26 +50,65 @@
 namespace
 {
     template < typename Mesh >
-    std::unique_ptr< Mesh > build_mesh( const aiMesh& assimp_mesh )
+    bool is_face_supported( const aiFace& face )
+    {
+        if constexpr( std::is_same_v< Mesh, geode::TriangulatedSurface3D > )
+        {
+            return face.mNumIndices == 3;
+        }
+        return face.mNumIndices >= 3 && face.mNumIndices < geode::NO_LID;
+    }
+
+    template < typename Mesh >
+    std::unique_ptr< Mesh > build_mesh(
+        const aiMesh& assimp_mesh, geode::index_t& nb_skipped_faces )
     {
         auto mesh = Mesh::create();
         auto builder = Mesh::Builder::create( *mesh );
-        builder->create_vertices( assimp_mesh.mNumVertices );
+        std::vector< geode::index_t > new_vertices(
+            assimp_mesh.mNumVertices, geode::NO_ID );
+        geode::index_t nb_vertices{ 0 };
+        for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
+        {
+            const auto& face = assimp_mesh.mFaces[p];
+            if( !is_face_supported< Mesh >( face ) )
+            {
+                nb_skipped_faces++;
+                continue;
+            }
+            for( const auto i : geode::Range{ face.mNumIndices } )
+            {
+                auto& new_vertex = new_vertices[face.mIndices[i]];
+                if( new_vertex == geode::NO_ID )
+                {
+                    new_vertex = nb_vertices++;
+                }
+            }
+        }
+        builder->create_vertices( nb_vertices );
         async::parallel_for(
             async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
-            [&assimp_mesh, &builder]( geode::index_t v ) {
+            [&assimp_mesh, &builder, &new_vertices]( geode::index_t v ) {
+                if( new_vertices[v] == geode::NO_ID )
+                {
+                    return;
+                }
                 const auto& vertex = assimp_mesh.mVertices[v];
-                builder->set_point(
-                    v, geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
+                builder->set_point( new_vertices[v],
+                    geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
             } );
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
+            if( !is_face_supported< Mesh >( face ) )
+            {
+                continue;
+            }
             absl::FixedArray< geode::index_t > polygon_vertices(
                 face.mNumIndices );
             for( const auto i : geode::LIndices{ polygon_vertices } )
             {
-                polygon_vertices[i] = face.mIndices[i];
+                polygon_vertices[i] = new_vertices[face.mIndices[i]];
             }
             builder->create_polygon( polygon_vertices );
         }
@@ -119,17 +160,23 @@ namespace geode
                 const auto& material = materials_[assimp_mesh.mMaterialIndex];
                 auto& texture = mesh.texture_manager().find_or_create_texture(
                     material.first );
-                for( const auto p : Range{ assimp_mesh.mNumFaces } )
+                index_t polygon{ 0 };
+                for( const auto f : Range{ assimp_mesh.mNumFaces } )
                 {
-                    const auto& face = assimp_mesh.mFaces[p];
+                    const auto& face = assimp_mesh.mFaces[f];
+                    if( !is_face_supported< Mesh >( face ) )
+                    {
+                        continue;
+                    }
                     for( const auto v : LRange{ face.mNumIndices } )
                     {
                         const auto mesh_vertex = face.mIndices[v];
                         const auto& coord =
                             assimp_mesh.mTextureCoords[0][mesh_vertex];
                         texture.set_texture_coordinates(
-                            { p, v }, Point2D{ { coord.x, coord.y } } );
+                            { polygon, v }, Point2D{ { coord.x, coord.y } } );
                     }
+                    polygon++;
                 }
                 if( !material.second.empty() )
                 {
@@ -152,17 +199,33 @@ namespace geode
             surfaces_.resize( assimp_scene->mNumMeshes );
             absl::FixedArray< async::task< void > > tasks(
                 assimp_scene->mNumMeshes );
+            absl::FixedArray< index_t > nb_skipped_faces(
+                assimp_scene->mNumMeshes, 0 );
             for( const auto i : Range{ assimp_scene->mNumMeshes } )
             {
-                tasks[i] = async::spawn( [this, i, &assimp_scene] {
-                    surfaces_[i] =
-                        build_mesh< Mesh >( *assimp_scene->mMeshes[i] );
-                } );
+                tasks[i] =
+                    async::spawn( [this, i, &assimp_scene, &nb_skipped_faces] {
+                        surfaces_[i] = build_mesh< Mesh >(
+                            *assimp_scene->mMeshes[i], nb_skipped_faces[i] );
+                    } );
             }
             for( auto& task :
                 async::when_all( tasks.begin(), tasks.end() ).get() )
             {
                 task.get();
+            }
+            index_t total_skipped_faces{ 0 };
+            for( const auto nb : nb_skipped_faces )
+            {
+                total_skipped_faces += nb;
+            }
+            if( total_skipped_faces > 0 )
+            {
+                Logger::warning( "[AssimpMeshInput::read_meshes] Skipped ",
+                    total_skipped_faces,
+                    " unsupported faces (lines, points, empty faces or "
+                    "polygons with too many vertices) in file ",
+                    file_ );
             }
         }
 

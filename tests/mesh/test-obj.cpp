@@ -21,6 +21,8 @@
  *
  */
 
+#include <fstream>
+
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
@@ -121,6 +123,41 @@ namespace
                 "Wrong number of textured corners in duplicated_textured" );
         }
     }
+
+    void test_lines_and_points()
+    {
+        auto surface = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::DATA_PATH, "lines_points.obj" ) );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+            "Lines and points should not be loaded as polygons" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 3,
+            "Line and point vertices should not be loaded" );
+    }
+
+    void test_too_large_polygon()
+    {
+        const auto filename = "too_large_polygon.obj";
+        {
+            constexpr geode::index_t nb_vertices{ 300 };
+            std::ofstream file{ filename };
+            for( const auto v : geode::Range{ nb_vertices } )
+            {
+                file << "v " << v << " " << v * v << " 0\n";
+            }
+            file << "v 5 5 5\nv 6 5 5\nv 5 6 5\nf";
+            for( const auto v : geode::Range{ nb_vertices } )
+            {
+                file << " " << v + 1;
+            }
+            file << "\nf " << nb_vertices + 1 << " " << nb_vertices + 2 << " "
+                 << nb_vertices + 3 << "\n";
+        }
+        auto surface = geode::load_polygonal_surface< 3 >( filename );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+            "Too large polygon should be skipped" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 3,
+            "Too large polygon vertices should not be loaded" );
+    }
 } // namespace
 
 int main()
@@ -156,6 +193,8 @@ int main()
 
         test_untextured_then_textured_groups();
         test_duplicated_polygon_textures();
+        test_lines_and_points();
+        test_too_large_polygon();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
