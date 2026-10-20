@@ -26,11 +26,51 @@
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/geometry/point.hpp>
+
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
 #include <geode/mesh/core/triangulated_surface.hpp>
 #include <geode/mesh/io/triangulated_surface_input.hpp>
 #include <geode/mesh/io/triangulated_surface_output.hpp>
 
 #include <geode/io/mesh/common.hpp>
+
+namespace
+{
+    void test_large_coordinates()
+    {
+        auto surface = geode::TriangulatedSurface3D::create();
+        auto builder = geode::TriangulatedSurfaceBuilder3D::create( *surface );
+        const std::array< geode::Point3D, 3 > points{ {
+            geode::Point3D{ { 650000.123, 4100000.456, 100.789 } },
+            geode::Point3D{ { 650010.321, 4100000.654, 100.987 } },
+            geode::Point3D{ { 650000.111, 4100010.222, 101.333 } },
+        } };
+        for( const auto& point : points )
+        {
+            builder->create_point( point );
+        }
+        builder->create_triangle( { 0, 1, 2 } );
+        geode::save_triangulated_surface( *surface, "large_coordinates.stl" );
+        const auto reloaded =
+            geode::load_triangulated_surface< 3 >( "large_coordinates.stl" );
+        geode::OpenGeodeIOMeshException::test( reloaded->nb_vertices() == 3,
+            "Wrong number of vertices in reloaded large coordinates STL" );
+        for( const auto& point : points )
+        {
+            bool found{ false };
+            for( const auto v : geode::Range{ reloaded->nb_vertices() } )
+            {
+                if( reloaded->point( v ).inexact_equal( point ) )
+                {
+                    found = true;
+                }
+            }
+            geode::OpenGeodeIOMeshException::test( found, "Point ",
+                point.string(), " lost precision in STL round trip" );
+        }
+    }
+} // namespace
 
 int main()
 {
@@ -62,6 +102,8 @@ int main()
             reloaded_surface->nb_polygons() == 1027,
             "Number of polygons in the "
             "reloaded Surface is not correct" );
+
+        test_large_coordinates();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
