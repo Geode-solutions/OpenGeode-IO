@@ -32,6 +32,8 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace geode
 {
     namespace internal
@@ -43,7 +45,8 @@ namespace geode
             using Builder = typename Mesh::Builder;
 
             SMESHInputImpl( std::string_view filename, Mesh& mesh )
-                : mesh_( mesh ),
+                : filename_{ filename },
+                  mesh_( mesh ),
                   builder_{ Builder::create( mesh ) },
                   file_{ to_string( filename ) }
             {
@@ -53,19 +56,20 @@ namespace geode
 
             Percentage is_loadable()
             {
-                const auto nb_points = string_to_index( tokens().front() );
+                const auto nb_points = read_count( "points" );
                 for( const auto p : Range{ nb_points } )
                 {
                     geode_unused( p );
                     tokens();
                 }
                 absl::flat_hash_map< index_t, index_t > elements;
-                const auto nb_elements = string_to_index( tokens().front() );
+                const auto nb_elements = read_count( "elements" );
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
-                    elements[string_to_index( values[0] )]++;
+                    check_nb_tokens( values, 1, "an element" );
+                    elements[parse_index( values[0] )]++;
                 }
                 const auto element_it = elements.find( element );
                 if( element_it == elements.end() )
@@ -92,17 +96,17 @@ namespace geode
         private:
             void read_points()
             {
-                const auto header = tokens();
-                const auto nb_points = string_to_index( header.front() );
+                const auto nb_points = read_count( "points" );
                 builder_->create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
                     const auto values = tokens();
-                    vertices_.emplace( string_to_index( values[0] ), p );
+                    check_nb_tokens( values, 4, "a point" );
+                    vertices_.emplace( parse_index( values[0] ), p );
                     Point3D point;
                     for( const auto d : LRange{ 3 } )
                     {
-                        point.set_value( d, string_to_double( values[d + 1] ) );
+                        point.set_value( d, parse_double( values[d + 1] ) );
                     }
                     builder_->set_point( p, point );
                 }
@@ -110,17 +114,17 @@ namespace geode
 
             void read_elements()
             {
-                const auto header = tokens();
-                const auto nb_elements = string_to_index( header.front() );
+                const auto nb_elements = read_count( "elements" );
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
                     const auto values = tokens();
+                    check_nb_tokens( values, element + 1, "an element" );
                     std::array< index_t, element > vertices;
                     for( const auto d : LRange{ element } )
                     {
                         vertices[d] =
-                            vertices_.at( string_to_index( values[d + 1] ) );
+                            vertices_.at( parse_index( values[d + 1] ) );
                     }
                     create_element( vertices );
                 }
@@ -128,6 +132,52 @@ namespace geode
 
             virtual void create_element(
                 const std::array< index_t, element >& vertices ) = 0;
+
+            index_t read_count( std::string_view what )
+            {
+                const auto header = tokens();
+                check_nb_tokens(
+                    header, 1, absl::StrCat( "the number of ", what ) );
+                return parse_index( header.front() );
+            }
+
+            void check_nb_tokens( const std::vector< std::string_view >& values,
+                size_t nb_expected,
+                std::string_view what ) const
+            {
+                OpenGeodeIOMeshException::check_exception(
+                    values.size() >= nb_expected, nullptr,
+                    OpenGeodeException::TYPE::data, "[SMESHInput] ",
+                    values.empty() ? "Unexpected end of file "
+                                   : "Not enough values ",
+                    "while reading ", what, " (expected at least ", nb_expected,
+                    ", found ", values.size(), ") in file ", filename_,
+                    " at line ", line_number_ );
+            }
+
+            index_t parse_index( std::string_view token ) const
+            {
+                index_t value{ 0 };
+                OpenGeodeIOMeshException::check_exception(
+                    absl::SimpleAtoi( token, &value ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[SMESHInput] Cannot convert \"", token,
+                    "\" to index in file ", filename_, " at line ",
+                    line_number_ );
+                return value;
+            }
+
+            double parse_double( std::string_view token ) const
+            {
+                double value{ 0 };
+                OpenGeodeIOMeshException::check_exception(
+                    absl::SimpleAtod( token, &value ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[SMESHInput] Cannot convert \"", token,
+                    "\" to number in file ", filename_, " at line ",
+                    line_number_ );
+                return value;
+            }
 
             /*!
              * Read the next line holding data, skipping blank lines and
@@ -153,6 +203,7 @@ namespace geode
             }
 
         private:
+            std::string filename_;
             Mesh& mesh_;
             std::unique_ptr< Builder > builder_;
             std::ifstream file_;

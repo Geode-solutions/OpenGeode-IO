@@ -29,6 +29,7 @@
 #include <geode/basic/logger.hpp>
 
 #include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/io/edged_curve_input.hpp>
 
 #include <geode/io/mesh/common.hpp>
@@ -94,6 +95,67 @@ namespace
             "0\n" );
         check_curve( *curve, 3, 2, "comments" );
     }
+
+    void check_load_error( std::string_view name,
+        std::string_view content,
+        std::string_view expected_message )
+    {
+        // Use the reader directly: load_edged_curve hides the error message
+        const auto filename = absl::StrCat( name, ".smesh" );
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << content;
+        }
+        try
+        {
+            auto reader =
+                geode::EdgedCurveInputFactory< 3 >::create( "smesh", filename );
+            const auto curve = reader->read( geode::MeshFactory::default_impl(
+                geode::EdgedCurve3D::type_name_static() ) );
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            const std::string message{ exception.what() };
+            const auto found =
+                message.find( expected_message ) != std::string::npos;
+            geode::OpenGeodeIOMeshException::test( found, "[", name,
+                "] Wrong error message: ", message, " (expected \"",
+                expected_message, "\")" );
+            return;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            false, "[", name, "] Loading should have failed" );
+    }
+
+    void test_short_lines()
+    {
+        check_load_error( "smesh_short_point",
+            "3 3 0 0\n"
+            "0 0.0 0.0 0.0\n"
+            "1 1.0 0.0\n"
+            "2 2.0 0.0 0.0\n"
+            "2 0\n"
+            "2 0 1\n"
+            "2 1 2\n",
+            "at line 3" );
+        check_load_error( "smesh_short_element",
+            "3 3 0 0\n"
+            "0 0.0 0.0 0.0\n"
+            "1 1.0 0.0 0.0\n"
+            "2 2.0 0.0 0.0\n"
+            "2 0\n"
+            "2 0 1\n"
+            "2 1\n"
+            "2 0 2\n",
+            "at line 7" );
+        check_load_error( "smesh_bad_number",
+            "2 3 0 0\n"
+            "0 0.0 0.0 0.0\n"
+            "1 1.0 abc 0.0\n"
+            "1 0\n"
+            "2 0 1\n",
+            "at line 3" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -125,6 +187,7 @@ int main()
         test_is_loadable();
         test_whitespaces();
         test_comments();
+        test_short_lines();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
