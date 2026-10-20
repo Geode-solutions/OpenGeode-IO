@@ -47,6 +47,7 @@
 
 #include <geode/io/mesh/csv_input_helpers.hpp>
 #include <geode/mesh/builder/point_set_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
 
 namespace geode
@@ -55,7 +56,7 @@ namespace geode
     class CsvInputHelpers::Impl
     {
     public:
-        Impl( std::string_view filename )
+        explicit Impl( std::string_view filename )
             : filename_{ filename },
               file_{ geode::to_string( filename ), std::ios::binary }
         {
@@ -86,9 +87,12 @@ namespace geode
             first_row_ = first_row;
         }
 
-        std::unique_ptr< PointSet3D > create_point_set()
+        std::unique_ptr< PointSet3D > create_point_set( const MeshImpl& impl )
         {
-            auto point_set = PointSet3D::create();
+            OpenGeodeIOMeshException::check_exception( file_.good(), nullptr,
+                OpenGeodeException::TYPE::data, "[CSVInput] Cannot open file ",
+                filename_ );
+            auto point_set = PointSet3D::create( impl );
             auto builder = PointSetBuilder3D::create( *point_set );
             std::string line;
             index_t current_row{ 0 };
@@ -397,7 +401,14 @@ namespace geode
 
     std::unique_ptr< PointSet3D > CsvInputHelpers::create_point_set()
     {
-        return impl_->create_point_set();
+        return impl_->create_point_set(
+            MeshFactory::default_impl( PointSet3D::type_name_static() ) );
+    }
+
+    std::unique_ptr< PointSet3D > CsvInputHelpers::create_point_set(
+        const MeshImpl& impl )
+    {
+        return impl_->create_point_set( impl );
     }
 
 } // namespace geode

@@ -75,7 +75,8 @@ namespace
         {
         }
 
-        std::unique_ptr< geode::PointSet3D > point_set()
+        std::unique_ptr< geode::PointSet3D > point_set(
+            const geode::MeshImpl& impl )
         {
             const auto settings = read_settings();
             geode::CsvInputHelpers helpers{ filename_ };
@@ -85,7 +86,7 @@ namespace
             helpers.set_x_column( settings.x_column );
             helpers.set_y_column( settings.y_column );
             helpers.set_z_column( settings.z_column );
-            return helpers.create_point_set();
+            return helpers.create_point_set( impl );
         }
 
         geode::AdditionalFiles additional_files()
@@ -179,9 +180,8 @@ namespace geode::internal
 {
     std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
     {
-        geode_unused( impl );
         CSVInputImpl reader{ filename() };
-        return reader.point_set();
+        return reader.point_set( impl );
     }
 
     AdditionalFiles CSVInput::additional_files() const

@@ -249,6 +249,24 @@ namespace
         check_values( "column_8", nan, 8 );
     }
 
+    void test_missing_csv_file()
+    {
+        bool failed{ false };
+        try
+        {
+            geode::CsvInputHelpers helpers{ "csv_not_existing.csv" };
+            const auto point_set = helpers.create_point_set();
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            failed =
+                std::string{ exception.what() }.find( "csv_not_existing.csv" )
+                != std::string::npos;
+        }
+        geode::OpenGeodeIOMeshException::test( failed,
+            "[TEST: CSV input] Reading a missing CSV file should fail" );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -363,6 +381,7 @@ int main()
         test_invalid_attribute_values();
         test_quoted_fields();
         test_headers();
+        test_missing_csv_file();
         return 0;
     }
     catch( ... )
