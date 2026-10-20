@@ -51,6 +51,44 @@ namespace geode
 {
     namespace detail
     {
+        // Maps the elements of a VTK data array to the mesh elements
+        class DataMapping
+        {
+        public:
+            // Element i of the data array is mesh element offset + i
+            DataMapping( index_t nb_elements, index_t offset )
+                : nb_elements_{ nb_elements }, offset_{ offset }
+            {
+            }
+
+            // Element i of the data array is mesh element elements[i],
+            // NO_ID if it has no mesh element
+            explicit DataMapping( absl::Span< const index_t > elements )
+                : nb_elements_{ static_cast< index_t >( elements.size() ) },
+                  elements_{ elements }
+            {
+            }
+
+            index_t nb_elements() const
+            {
+                return nb_elements_;
+            }
+
+            index_t element( index_t data_element ) const
+            {
+                if( elements_.empty() )
+                {
+                    return offset_ + data_element;
+                }
+                return elements_[data_element];
+            }
+
+        private:
+            index_t nb_elements_;
+            index_t offset_{ 0 };
+            absl::Span< const index_t > elements_;
+        };
+
         template < typename Mesh >
         class VTKInputImpl
         {
@@ -195,13 +233,20 @@ namespace geode
                 std::string_view name,
                 absl::Span< const T > values,
                 index_t nb_components,
-                index_t offset )
+                const DataMapping& mapping )
             {
-                OpenGeodeIOMeshException::check_exception(
-                    values.size() % nb_components == 0, nullptr,
-                    OpenGeodeException::TYPE::data,
-                    "[VTKInput::build_attribute] Number of attribute "
-                    "values is not a multiple of number of components" );
+                if( values.size()
+                    != static_cast< size_t >( nb_components )
+                           * mapping.nb_elements() )
+                {
+                    Logger::warning( "[VTKInput::build_attribute] DataArray ",
+                        name, " has ", values.size(), " values instead of ",
+                        static_cast< size_t >( nb_components )
+                            * mapping.nb_elements(),
+                        " (", mapping.nb_elements(), " elements with ",
+                        nb_components, " components) and has been skipped" );
+                    return;
+                }
                 if( nb_components == 1 )
                 {
                     AttributeValues< T > default_values;
@@ -219,7 +264,11 @@ namespace geode
                             attribute_id );
                     for( const auto i : Indices{ values } )
                     {
-                        attribute->set_value( i + offset, values[i] );
+                        const auto element = mapping.element( i );
+                        if( element != NO_ID )
+                        {
+                            attribute->set_value( element, values[i] );
+                        }
                     }
                 }
                 else if( nb_components == 2 )
@@ -227,21 +276,21 @@ namespace geode
                     std::array< T, 2 > no_value;
                     no_value.fill( missing_value< T >() );
                     create_attribute< std::array< T, 2 >, T >( manager, {},
-                        no_value, values, nb_components, name, offset );
+                        no_value, values, nb_components, name, mapping );
                 }
                 else if( nb_components == 3 )
                 {
                     std::array< T, 3 > no_value;
                     no_value.fill( missing_value< T >() );
                     create_attribute< std::array< T, 3 >, T >( manager, {},
-                        no_value, values, nb_components, name, offset );
+                        no_value, values, nb_components, name, mapping );
                 }
                 else
                 {
                     create_attribute< std::vector< T >, T >( manager,
                         std::vector< T >( nb_components ),
                         std::vector< T >( nb_components, missing_value< T >() ),
-                        values, nb_components, name, offset );
+                        values, nb_components, name, mapping );
                 }
             }
 
@@ -264,7 +313,7 @@ namespace geode
                 std::string_view name,
                 absl::Span< const int64_t > values,
                 index_t nb_components,
-                index_t offset )
+                const DataMapping& mapping )
             {
                 const auto [min, max] = absl::c_minmax_element( values );
                 if( values.empty()
@@ -272,23 +321,23 @@ namespace geode
                          && *max <= std::numeric_limits< index_t >::max() ) )
                 {
                     build_attribute< index_t >( manager, name,
-                        cast_to< index_t >( values ), nb_components, offset );
+                        cast_to< index_t >( values ), nb_components, mapping );
                 }
                 else if( *min >= std::numeric_limits< int >::lowest()
                          && *max <= std::numeric_limits< int >::max() )
                 {
                     build_attribute< int >( manager, name,
-                        cast_to< int >( values ), nb_components, offset );
+                        cast_to< int >( values ), nb_components, mapping );
                 }
                 else
                 {
                     build_attribute< int64_t >( manager, name,
-                        cast_to< int64_t >( values ), nb_components, offset );
+                        cast_to< int64_t >( values ), nb_components, mapping );
                 }
             }
 
             void read_attribute_data( const pugi::xml_node& data,
-                index_t offset,
+                const DataMapping& mapping,
                 AttributeManager& attribute_manager )
             {
                 const auto data_array_name = data.attribute( "Name" ).value();
@@ -322,14 +371,14 @@ namespace geode
                         read_data_array< double >( data );
                     build_attribute< double >( attribute_manager,
                         data_array_name, attribute_values, nb_components,
-                        offset );
+                        mapping );
                 }
                 else if( is_integer_type( data_array_type ) )
                 {
                     const auto attribute_values =
                         read_data_array< int64_t >( data );
                     build_integer_attribute( attribute_manager, data_array_name,
-                        attribute_values, nb_components, offset );
+                        attribute_values, nb_components, mapping );
                 }
                 else
                 {
@@ -340,12 +389,12 @@ namespace geode
             }
 
             void read_data( const pugi::xml_node& point_data,
-                index_t offset,
+                const DataMapping& mapping,
                 AttributeManager& attribute_manager )
             {
                 for( const auto& data : point_data.children( "DataArray" ) )
                 {
-                    read_attribute_data( data, offset, attribute_manager );
+                    read_attribute_data( data, mapping, attribute_manager );
                 }
             }
 
@@ -381,7 +430,7 @@ namespace geode
                 absl::Span< const T > values,
                 index_t nb_components,
                 std::string_view name,
-                index_t offset )
+                const DataMapping& mapping )
             {
                 AttributeValues< Container > default_values;
                 default_values.default_value = default_value;
@@ -398,11 +447,16 @@ namespace geode
                         attribute_id );
                 for( const auto i : Range{ values.size() / nb_components } )
                 {
+                    const auto element = mapping.element( i );
+                    if( element == NO_ID )
+                    {
+                        continue;
+                    }
                     for( const auto c : Range{ nb_components } )
                     {
                         const auto& new_value = values[nb_components * i + c];
                         attribute->modify_value(
-                            i + offset, [&new_value, &c]( Container& value ) {
+                            element, [&new_value, &c]( Container& value ) {
                                 value[c] = new_value;
                             } );
                     }

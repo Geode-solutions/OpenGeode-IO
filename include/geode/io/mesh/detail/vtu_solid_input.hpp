@@ -91,10 +91,11 @@ namespace geode
             {
                 const auto nb_polyhedra =
                     this->read_attribute( piece, "NumberOfCells" );
-                const auto polyhedron_offset =
+                const auto cell_polyhedra =
                     build_polyhedra( piece, nb_polyhedra );
                 this->builder().compute_polyhedron_adjacencies();
-                this->read_data( piece.child( "CellData" ), polyhedron_offset,
+                this->read_data( piece.child( "CellData" ),
+                    DataMapping{ cell_polyhedra },
                     this->mesh().polyhedron_attribute_manager() );
             }
 
@@ -117,12 +118,14 @@ namespace geode
                                    / nb_polyhedra };
             }
 
-            index_t build_polyhedra(
+            // Returns the polyhedron created for each cell, NO_ID if none
+            std::vector< index_t > build_polyhedra(
                 const pugi::xml_node& piece, index_t nb_polyhedra )
             {
                 const auto [polyhedron_vertices, types] =
                     this->read_cells( piece, nb_polyhedra );
-                const auto polyhedra_offset = this->mesh().nb_polyhedra();
+                std::vector< index_t > cell_polyhedra(
+                    polyhedron_vertices.size(), NO_ID );
                 index_t nb_invalid_polyhedra{ 0 };
                 for( const auto p : Indices{ polyhedron_vertices } )
                 {
@@ -137,11 +140,11 @@ namespace geode
                         nb_invalid_polyhedra++;
                         continue;
                     }
-                    this->builder().create_polyhedron(
+                    cell_polyhedra[p] = this->builder().create_polyhedron(
                         polyhedron_vertices[p], it->second );
                 }
                 this->warn_invalid_cells( nb_invalid_polyhedra );
-                return polyhedra_offset;
+                return cell_polyhedra;
             }
 
         private:

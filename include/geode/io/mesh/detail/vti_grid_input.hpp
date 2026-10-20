@@ -132,9 +132,11 @@ namespace geode
                 build_grid( vtk_object );
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
-                    this->read_data( piece.child( "PointData" ), 0,
+                    this->read_data( piece.child( "PointData" ),
+                        DataMapping{ this->mesh().nb_grid_vertices(), 0 },
                         this->mesh().grid_vertex_attribute_manager() );
-                    this->read_data( piece.child( "CellData" ), 0,
+                    this->read_data( piece.child( "CellData" ),
+                        DataMapping{ this->mesh().nb_cells(), 0 },
                         this->mesh().cell_attribute_manager() );
                 }
             }

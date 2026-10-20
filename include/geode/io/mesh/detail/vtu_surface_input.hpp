@@ -54,10 +54,10 @@ namespace geode
             {
                 const auto nb_polygons =
                     this->read_attribute( piece, "NumberOfCells" );
-                const auto polygon_offset =
-                    build_polygons( piece, nb_polygons );
+                const auto cell_polygons = build_polygons( piece, nb_polygons );
                 this->builder().compute_polygon_adjacencies();
-                this->read_data( piece.child( "CellData" ), polygon_offset,
+                this->read_data( piece.child( "CellData" ),
+                    DataMapping{ cell_polygons },
                     this->mesh().polygon_attribute_manager() );
             }
 
@@ -79,12 +79,14 @@ namespace geode
                                    / nb_polygons };
             }
 
-            index_t build_polygons(
+            // Returns the polygon created for each cell, NO_ID if none
+            std::vector< index_t > build_polygons(
                 const pugi::xml_node& piece, index_t nb_polygons )
             {
                 const auto [polygon_vertices, types] =
                     this->read_cells( piece, nb_polygons );
-                const auto polygons_offset = this->mesh().nb_polygons();
+                std::vector< index_t > cell_polygons(
+                    polygon_vertices.size(), NO_ID );
                 index_t nb_invalid_polygons{ 0 };
                 for( const auto p : Indices{ polygon_vertices } )
                 {
@@ -99,10 +101,11 @@ namespace geode
                         nb_invalid_polygons++;
                         continue;
                     }
-                    this->builder().create_polygon( polygon_vertices[p] );
+                    cell_polygons[p] =
+                        this->builder().create_polygon( polygon_vertices[p] );
                 }
                 this->warn_invalid_cells( nb_invalid_polygons );
-                return polygons_offset;
+                return cell_polygons;
             }
 
         private:

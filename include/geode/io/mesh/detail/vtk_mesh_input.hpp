@@ -136,7 +136,8 @@ namespace geode
                 const auto nb_points =
                     this->read_attribute( piece, "NumberOfPoints" );
                 const auto vertex_offset = build_points( piece, nb_points );
-                this->read_data( piece.child( "PointData" ), vertex_offset,
+                this->read_data( piece.child( "PointData" ),
+                    DataMapping{ nb_points, vertex_offset },
                     this->mesh().vertex_attribute_manager() );
             }
 

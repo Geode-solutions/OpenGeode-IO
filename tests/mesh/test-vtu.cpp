@@ -26,6 +26,7 @@
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
 
 #include <geode/mesh/core/hybrid_solid.hpp>
@@ -210,6 +211,37 @@ void test_wrong_number_of_types()
         vtu_file( vtu_piece( 2, "0 1 2 1 3 2", "3", "5 5" ) ) );
 }
 
+bool has_attribute(
+    const geode::AttributeManager& manager, std::string_view name )
+{
+    const auto ids = manager.attribute_ids_matching_name( name );
+    return ids && !ids->empty();
+}
+
+void test_cell_data_with_skipped_cells()
+{
+    // Second cell is a VTK_LINE: it is not loaded in a TriangulatedSurface
+    write_file( "cell_data_skipped_cells.vtu",
+        vtu_file( vtu_piece( 3, "0 1 2 1 3 1 3 2", "3 5 8", "5 3 5",
+            "<PointData><DataArray type=\"Float64\" Name=\"too_short\" "
+            "format=\"ascii\">1 2 3</DataArray></PointData>\n"
+            "<CellData><DataArray type=\"Int32\" Name=\"id\" "
+            "format=\"ascii\">10 20 30</DataArray></CellData>\n" ) ) );
+    const auto surface =
+        geode::load_triangulated_surface< 3 >( "cell_data_skipped_cells.vtu" );
+    check( *surface, { 8, 2 } );
+    const auto& manager = surface->polygon_attribute_manager();
+    const auto attribute = manager.find_generic_attribute(
+        manager.attribute_ids_matching_name( "id" )->at( 0 ) );
+    geode::OpenGeodeIOMeshException::test(
+        attribute->generic_value( 0 ) == 10.f
+            && attribute->generic_value( 1 ) == 30.f,
+        "Cell data should be transferred to the loaded triangles" );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->vertex_attribute_manager(), "too_short" ),
+        "Data array with wrong number of values should be skipped" );
+}
+
 int main()
 {
     try
@@ -218,6 +250,7 @@ int main()
         geode::Logger::set_level( geode::Logger::LEVEL::debug );
 
         test_wrong_number_of_types();
+        test_cell_data_with_skipped_cells();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
