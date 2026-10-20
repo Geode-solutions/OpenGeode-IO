@@ -270,6 +270,33 @@ namespace
             geode::is_edged_curve_loadable< 3 >( filename ).value() == 1,
             "[is_loadable sample] File should be loadable" );
     }
+    void check_not_loadable( std::string_view name, std::string_view content )
+    {
+        const auto filename = absl::StrCat( name, ".smesh" );
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << content;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            geode::is_edged_curve_loadable< 3 >( filename ).value() == 0, "[",
+            name, "] File should not be loadable" );
+    }
+
+    void test_is_loadable_invalid()
+    {
+        // is_loadable reports invalid files instead of throwing
+        check_not_loadable( "smesh_not_loadable_header", "three 3 0 0\n" );
+        check_not_loadable( "smesh_not_loadable_element", "2 3 0 0\n"
+                                                          "0 0.0 0.0 0.0\n"
+                                                          "1 1.0 0.0 0.0\n"
+                                                          "1\n"
+                                                          "two 0 1\n" );
+        // Points stored in a separate .node file are not supported by read
+        check_not_loadable( "smesh_not_loadable_no_point", "0 3 0 0\n"
+                                                           "1\n"
+                                                           "2 0 1\n" );
+    }
+
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -307,6 +334,7 @@ int main()
         test_truncated();
         test_duplicates();
         test_is_loadable_samples_elements();
+        test_is_loadable_invalid();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

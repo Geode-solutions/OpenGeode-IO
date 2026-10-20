@@ -26,6 +26,9 @@
 #include <filesystem>
 #include <fstream>
 
+#include <absl/container/flat_hash_map.h>
+#include <absl/strings/numbers.h>
+#include <absl/strings/str_cat.h>
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/filename.hpp>
@@ -58,7 +61,37 @@ namespace geode
 
             Percentage is_loadable()
             {
+                try
+                {
+                    return compute_loadable();
+                }
+                catch( const OpenGeodeException& )
+                {
+                    return Percentage{ 0 };
+                }
+            }
+
+            void read_file()
+            {
+                read_points();
+                read_elements();
+            }
+
+        protected:
+            Builder& builder()
+            {
+                return *builder_;
+            }
+
+        private:
+            Percentage compute_loadable()
+            {
                 const auto nb_points = read_count( "points" );
+                // Points stored in a separate .node file are not supported
+                if( nb_points == 0 )
+                {
+                    return Percentage{ 0 };
+                }
                 for( const auto p : Range{ nb_points } )
                 {
                     geode_unused( p );
@@ -93,19 +126,6 @@ namespace geode
                                    / nb_read_elements };
             }
 
-            void read_file()
-            {
-                read_points();
-                read_elements();
-            }
-
-        protected:
-            Builder& builder()
-            {
-                return *builder_;
-            }
-
-        private:
             void read_points()
             {
                 const auto nb_points = read_count( "points" );
