@@ -22,6 +22,7 @@
  */
 
 #include <fstream>
+#include <iterator>
 
 #include <geode/tests_config.hpp>
 
@@ -383,6 +384,54 @@ void test_hexahedron_and_voxel()
     check_unit_cubes( *polyhedral, expected_volume );
 }
 
+void test_vtk_polyhedron()
+{
+    // Cell 0: cube, cell 1: prism, both as VTK_POLYHEDRON with outward faces
+    // Cell 2: tetrahedron
+    write_file( "vtk_polyhedron.vtu",
+        vtu_file( vtu_piece( 3, "0 1 2 3 4 5 6 7 0 1 2 4 5 6 0 1 2 4",
+            "8 14 18", "42 42 10",
+            "<CellData><DataArray type=\"Int32\" Name=\"id\" "
+            "format=\"ascii\">10 20 30</DataArray></CellData>\n" ) ) );
+    // Insert faces and faceoffsets in Cells
+    std::ifstream input{ "vtk_polyhedron.vtu" };
+    std::string content{ std::istreambuf_iterator< char >{ input }, {} };
+    input.close();
+    const auto position = content.find( "</Cells>" );
+    content.insert( position,
+        "<DataArray type=\"Int64\" Name=\"faces\" format=\"ascii\">"
+        "6 4 0 2 3 1 4 4 5 7 6 4 0 1 5 4 4 2 6 7 3 4 0 4 6 2 4 1 3 7 5 "
+        "5 3 0 2 1 3 4 5 6 4 0 1 5 4 4 0 4 6 2 4 1 2 6 5</DataArray>\n"
+        "<DataArray type=\"Int64\" Name=\"faceoffsets\" "
+        "format=\"ascii\">31 55 -1</DataArray>\n" );
+    write_file( "vtk_polyhedron.vtu", content );
+
+    const auto polyhedral =
+        geode::load_polyhedral_solid< 3 >( "vtk_polyhedron.vtu" );
+    check( *polyhedral, { 8, 3 } );
+    const std::array< double, 3 > volumes{ 1, 0.5, 1. / 6 };
+    const std::array< geode::local_index_t, 3 > nb_facets{ 6, 5, 4 };
+    const auto& manager = polyhedral->polyhedron_attribute_manager();
+    const auto attribute = manager.find_generic_attribute(
+        manager.attribute_ids_matching_name( "id" )->at( 0 ) );
+    for( const auto p : geode::Range{ 3 } )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            std::fabs( polyhedral->polyhedron_volume( p ) - volumes[p] )
+                < geode::GLOBAL_EPSILON,
+            "Wrong volume for polyhedron ", p, ": should be ", volumes[p],
+            ", get ", polyhedral->polyhedron_volume( p ) );
+        geode::OpenGeodeIOMeshException::test(
+            polyhedral->nb_polyhedron_facets( p ) == nb_facets[p],
+            "Wrong number of facets for polyhedron ", p );
+        geode::OpenGeodeIOMeshException::test(
+            attribute->generic_value( p ) == 10.f * ( p + 1 ),
+            "Wrong cell data for polyhedron ", p );
+    }
+    const auto hybrid = geode::load_hybrid_solid< 3 >( "vtk_polyhedron.vtu" );
+    check( *hybrid, { 8, 1 } );
+}
+
 int main()
 {
     try
@@ -396,6 +445,7 @@ int main()
         test_no_cell();
         test_cells_with_wrong_number_of_vertices();
         test_hexahedron_and_voxel();
+        test_vtk_polyhedron();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );
