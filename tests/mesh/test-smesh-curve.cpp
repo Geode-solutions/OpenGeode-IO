@@ -178,6 +178,25 @@ namespace
                                                       "2 1 2\n" );
         check_curve( *curve, 3, 2, "mixed elements" );
     }
+
+    void test_unknown_vertices()
+    {
+        const auto curve =
+            load_from_string( "smesh_unknown_vertex", "3 3 0 0\n"
+                                                      "1 0.0 0.0 0.0\n"
+                                                      "2 1.0 0.0 0.0\n"
+                                                      "3 2.0 1.0 0.0\n"
+                                                      "3 0\n"
+                                                      "2 1 2\n"
+                                                      "2 3 4\n"
+                                                      "2 2 3\n" );
+        check_curve( *curve, 3, 2, "unknown vertices" );
+        check_load_error( "smesh_node_file",
+            "0 3 0 0\n"
+            "1 0\n"
+            "2 1 2\n",
+            ".node file" );
+    }
     void test_load()
     {
         auto curve = geode::load_edged_curve< 3 >(
@@ -211,6 +230,7 @@ int main()
         test_comments();
         test_short_lines();
         test_wrong_element_size();
+        test_unknown_vertices();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

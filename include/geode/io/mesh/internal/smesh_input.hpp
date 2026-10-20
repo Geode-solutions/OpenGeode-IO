@@ -98,6 +98,11 @@ namespace geode
             void read_points()
             {
                 const auto nb_points = read_count( "points" );
+                OpenGeodeIOMeshException::check_exception( nb_points != 0,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[SMESHInput] No point in file ", filename_,
+                    ": points stored in a separate .node file are not "
+                    "supported" );
                 builder_->create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
@@ -117,6 +122,7 @@ namespace geode
             {
                 const auto nb_elements = read_count( "elements" );
                 index_t nb_wrong_size{ 0 };
+                index_t nb_unknown_vertex{ 0 };
                 for( const auto e : Range{ nb_elements } )
                 {
                     geode_unused( e );
@@ -131,12 +137,30 @@ namespace geode
                         continue;
                     }
                     std::array< index_t, element > vertices;
+                    bool known_vertices{ true };
                     for( const auto d : LRange{ element } )
                     {
-                        vertices[d] =
-                            vertices_.at( parse_index( values[d + 1] ) );
+                        const auto vertex_it =
+                            vertices_.find( parse_index( values[d + 1] ) );
+                        if( vertex_it == vertices_.end() )
+                        {
+                            known_vertices = false;
+                            break;
+                        }
+                        vertices[d] = vertex_it->second;
+                    }
+                    if( !known_vertices )
+                    {
+                        nb_unknown_vertex++;
+                        continue;
                     }
                     create_element( vertices );
+                }
+                if( nb_unknown_vertex != 0 )
+                {
+                    Logger::warning( "[SMESHInput] Skipped ", nb_unknown_vertex,
+                        " elements referencing unknown point ids in file ",
+                        filename_ );
                 }
                 if( nb_wrong_size == 0 )
                 {
