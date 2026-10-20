@@ -93,10 +93,13 @@ namespace
         for( const auto p : geode::Range{ mesh.nb_polygons() } )
         {
             neigh << p;
-            for( const auto e : geode::LRange{ 3 } )
+            // Triangle convention: i-th neighbor is opposite the i-th corner,
+            // i.e. across the OpenGeode edge (i+1)%3
+            for( const auto corner : geode::LRange{ 3 } )
             {
                 neigh << SPACE;
-                if( const auto adj = mesh.polygon_adjacent( { p, e } ) )
+                const geode::local_index_t edge = ( corner + 1 ) % 3;
+                if( const auto adj = mesh.polygon_adjacent( { p, edge } ) )
                 {
                     neigh << adj.value();
                 }

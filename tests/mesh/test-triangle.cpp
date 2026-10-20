@@ -22,6 +22,9 @@
  */
 
 #include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #include <geode/tests_config.hpp>
 
@@ -68,6 +71,29 @@ namespace
         geode::OpenGeodeIOMeshException::test(
             has_thrown, "Writing an unwritable Triangle file should throw" );
     }
+
+    std::vector< std::string > read_lines( const std::string& filename )
+    {
+        std::ifstream file{ filename };
+        std::vector< std::string > lines;
+        std::string line;
+        while( std::getline( file, line ) )
+        {
+            lines.push_back( line );
+        }
+        return lines;
+    }
+
+    void test_neighbors( const geode::TriangulatedSurface2D& surface )
+    {
+        geode::save_triangulated_surface( surface, "neighbors.triangle" );
+        const auto lines = read_lines( "neighbors.neigh" );
+        // Triangle convention: i-th neighbor is opposite the i-th corner
+        geode::OpenGeodeIOMeshException::test(
+            lines.size() == 3 && lines[0] == "2 3" && lines[1] == "0 -1 1 -1"
+                && lines[2] == "1 -1 -1 0",
+            "Wrong neighbors in Triangle .neigh file" );
+    }
 } // namespace
 
 int main()
@@ -77,6 +103,7 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         const auto surface = create_surface();
         test_unwritable_file( *surface );
+        test_neighbors( *surface );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
