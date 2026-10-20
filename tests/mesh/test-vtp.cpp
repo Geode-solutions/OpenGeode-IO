@@ -469,6 +469,25 @@ void test_zero_components()
         "Valid array should be loaded" );
 }
 
+void test_unsupported_array_type()
+{
+    const auto surface = load_file( "unsupported_array_type.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"1\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ),
+                "<CellData><DataArray type=\"String\" Name=\"names\" "
+                "format=\"ascii\">97 0</DataArray><DataArray "
+                "type=\"Int32\" Name=\"valid\" format=\"ascii\">"
+                "1</DataArray></CellData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+        "Surface with String array should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->polygon_attribute_manager(), "names" ),
+        "String array should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->polygon_attribute_manager(), "valid" ),
+        "Valid array should be loaded" );
+}
+
 int main()
 {
     try
@@ -478,6 +497,7 @@ int main()
         test_invalid_offsets();
         test_wrong_number_of_offsets();
         test_zero_components();
+        test_unsupported_array_type();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;

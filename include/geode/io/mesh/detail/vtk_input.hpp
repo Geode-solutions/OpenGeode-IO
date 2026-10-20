@@ -325,10 +325,9 @@ namespace geode
                 }
                 else
                 {
-                    throw OpenGeodeIOMeshException{ nullptr,
-                        OpenGeodeException::TYPE::internal,
-                        "[VTKInput::read_data] Attribute of type ",
-                        data_array_type, " is not supported" };
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name, " of type ", data_array_type,
+                        " is not supported and has been skipped" );
                 }
             }
 
