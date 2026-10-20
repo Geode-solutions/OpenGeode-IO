@@ -595,32 +595,79 @@ namespace geode
                 {
                     return {};
                 }
-                const auto block_size =
+                OpenGeodeIOMeshException::check_exception(
+                    nb_blocks <= input.size() / sizeof( UInt ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Wrong number of compressed "
+                    "blocks: ",
+                    nb_blocks );
+                const uint64_t block_size =
                     read_raw_value< UInt >( input, sizeof( UInt ) );
-                const auto last_block_size =
+                const uint64_t last_block_size =
                     read_raw_value< UInt >( input, 2 * sizeof( UInt ) );
                 const auto last_size =
                     last_block_size == 0 ? block_size : last_block_size;
-                storage.resize( ( nb_blocks - 1 ) * block_size + last_size );
+                OpenGeodeIOMeshException::check_exception(
+                    block_size > 0 && last_size <= block_size, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Last compressed block is "
+                    "larger than other blocks" );
+                const uint64_t data_begin =
+                    ( 3 + static_cast< uint64_t >( nb_blocks ) )
+                    * sizeof( UInt );
+                uint64_t total_compressed_size{ 0 };
+                for( const auto b : Range{ nb_blocks } )
+                {
+                    const uint64_t compressed_size = read_raw_value< UInt >(
+                        input, ( 3 + b ) * sizeof( UInt ) );
+                    OpenGeodeIOMeshException::check_exception(
+                        compressed_size <= input.size()
+                            && total_compressed_size
+                                   <= input.size() - compressed_size,
+                        nullptr, OpenGeodeException::TYPE::data,
+                        "[VTKInput::raw_block_data] Unexpected end of data "
+                        "block" );
+                    total_compressed_size += compressed_size;
+                }
+                OpenGeodeIOMeshException::check_exception(
+                    data_begin <= input.size()
+                        && total_compressed_size <= input.size() - data_begin,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Unexpected end of data "
+                    "block" );
+                // zlib cannot compress data with a ratio higher than 1032:1
+                static constexpr uint64_t MAX_ZLIB_RATIO{ 1032 };
+                const auto max_nb_bytes =
+                    total_compressed_size * MAX_ZLIB_RATIO;
+                OpenGeodeIOMeshException::check_exception(
+                    max_nb_bytes >= block_size
+                        && nb_blocks - 1 <= max_nb_bytes / block_size,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Compressed block sizes are "
+                    "inconsistent with compressed data size" );
+                const auto nb_bytes =
+                    ( nb_blocks - 1 ) * block_size + last_size;
+                OpenGeodeIOMeshException::check_exception(
+                    nb_bytes <= max_nb_bytes, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Compressed block sizes are "
+                    "inconsistent with compressed data size" );
+                storage.resize( static_cast< size_t >( nb_bytes ) );
                 auto* output = reinterpret_cast< Bytef* >( storage.data() );
-                auto data_position = ( 3 + nb_blocks ) * sizeof( UInt );
+                auto data_position = static_cast< size_t >( data_begin );
                 for( const auto b : Range{ nb_blocks } )
                 {
                     const auto compressed_size = read_raw_value< UInt >(
                         input, ( 3 + b ) * sizeof( UInt ) );
-                    OpenGeodeIOMeshException::check_exception(
-                        data_position + compressed_size <= input.size(),
-                        nullptr, OpenGeodeException::TYPE::data,
-                        "[VTKInput::raw_block_data] Unexpected end of data "
-                        "block" );
                     const auto expected_size =
                         b + 1 == nb_blocks ? last_size : block_size;
-                    uLongf uncompressed_size = expected_size;
+                    uLongf uncompressed_size =
+                        static_cast< uLongf >( expected_size );
                     const auto uncompress_result =
                         uncompress( output + b * block_size, &uncompressed_size,
                             reinterpret_cast< const Bytef* >(
                                 input.data() + data_position ),
-                            compressed_size );
+                            static_cast< uLong >( compressed_size ) );
                     OpenGeodeIOMeshException::check_exception(
                         uncompress_result == Z_OK
                             && uncompressed_size == expected_size,

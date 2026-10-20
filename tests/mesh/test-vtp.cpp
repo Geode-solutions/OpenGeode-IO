@@ -21,6 +21,8 @@
  *
  */
 
+#include <fstream>
+
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
@@ -349,11 +351,67 @@ void test_time_series()
     }
 }
 
+void write_file( std::string_view filename, std::string_view content )
+{
+    std::ofstream file{ geode::to_string( filename ), std::ios::binary };
+    file << content;
+}
+
+std::string vtp_file( std::string_view header_attributes,
+    std::string_view piece_attributes,
+    std::string_view piece_content )
+{
+    return absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                         "version=\"1.0\" byte_order=\"LittleEndian\" ",
+        header_attributes, ">\n<PolyData>\n<Piece ", piece_attributes, ">\n",
+        piece_content, "</Piece>\n</PolyData>\n</VTKFile>\n" );
+}
+
+std::string_view ascii_points()
+{
+    return "<Points><DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+           "format=\"ascii\">0 0 0 1 0 0 0 1 0 1 1 0</DataArray></Points>\n";
+}
+
+void check_load_fails( std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading malformed file ", filename );
+        geode::load_polygonal_surface< 3 >( filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading malformed file ", filename, " should fail" );
+}
+
+void test_zlib_header_overflow()
+{
+    // Compressed header with 2 blocks of 2^31 bytes: total size overflows
+    // a 32-bit integer
+    const auto content = vtp_file(
+        "header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\"",
+        "NumberOfPoints=\"3\" NumberOfPolys=\"1\"",
+        "<Points><DataArray type=\"Float32\" NumberOfComponents=\"3\" "
+        "format=\"binary\">AgAAAAAAAIAAAACAGgAAABoAAAA="
+        "eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAF4nO3BAQ0AAADCoPdPbQ8HFAAAAPBuEAAA"
+        "AQ==</DataArray></Points>\n"
+        "<Polys><DataArray type=\"Int64\" Name=\"connectivity\" "
+        "format=\"ascii\">0 1 2</DataArray>\n<DataArray type=\"Int64\" "
+        "Name=\"offsets\" format=\"ascii\">3</DataArray></Polys>\n" );
+    check_load_fails( "zlib_header_overflow.vtp", content );
+}
+
 int main()
 {
     try
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
+        test_zlib_header_overflow();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;
