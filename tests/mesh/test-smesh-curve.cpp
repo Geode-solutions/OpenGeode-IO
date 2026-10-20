@@ -31,12 +31,10 @@
 
 #include <geode/io/mesh/common.hpp>
 
-int main()
+namespace
 {
-    try
+    void test_load()
     {
-        geode::OpenGeodeIOMeshLibrary::initialize();
-        // Load file
         auto curve = geode::load_edged_curve< 3 >(
             absl::StrCat( geode::DATA_PATH, "curve.smesh" ) );
         geode::OpenGeodeIOMeshException::test( curve->nb_vertices() == 1023,
@@ -44,6 +42,26 @@ int main()
             "loaded EdgedCurve is not correct" );
         geode::OpenGeodeIOMeshException::test( curve->nb_edges() == 1022,
             "Number of edges in the loaded EdgedCurve is not correct" );
+    }
+
+    void test_is_loadable()
+    {
+        geode::OpenGeodeIOMeshException::test(
+            geode::is_edged_curve_loadable< 3 >(
+                absl::StrCat( geode::DATA_PATH, "curve.smesh" ) )
+                    .value()
+                == 1,
+            "Edge smesh file should be loadable as EdgedCurve" );
+    }
+} // namespace
+
+int main()
+{
+    try
+    {
+        geode::OpenGeodeIOMeshLibrary::initialize();
+        test_load();
+        test_is_loadable();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
