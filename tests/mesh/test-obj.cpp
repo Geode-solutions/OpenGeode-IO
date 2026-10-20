@@ -31,6 +31,7 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
@@ -43,6 +44,29 @@
 
 namespace
 {
+    void check_adjacencies( const geode::PolygonalSurface3D& surface )
+    {
+        auto reference = surface.clone();
+        geode::PolygonalSurfaceBuilder3D::create( *reference )
+            ->compute_polygon_adjacencies();
+        geode::index_t nb_adjacencies{ 0 };
+        for( const auto p : geode::Range{ surface.nb_polygons() } )
+        {
+            for( const auto e : geode::LRange{ surface.nb_polygon_edges( p ) } )
+            {
+                const auto adjacent = surface.polygon_adjacent( { p, e } );
+                geode::OpenGeodeIOMeshException::test(
+                    adjacent == reference->polygon_adjacent( { p, e } ),
+                    "Wrong adjacency on polygon ", p, " edge ", e );
+                if( adjacent )
+                {
+                    nb_adjacencies++;
+                }
+            }
+        }
+        geode::OpenGeodeIOMeshException::test(
+            nb_adjacencies > 0, "Loaded surface should have adjacencies" );
+    }
     struct CornerUV
     {
         geode::Point3D point;
@@ -261,6 +285,7 @@ int main()
             "Number of polygons in the "
             "reloaded Surface is not correct" );
 
+        check_adjacencies( *surface );
         test_untextured_then_textured_groups();
         test_duplicated_polygon_textures();
         test_lines_and_points();

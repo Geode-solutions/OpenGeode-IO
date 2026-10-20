@@ -69,6 +69,7 @@ namespace
         std::vector< geode::index_t > new_vertices(
             assimp_mesh.mNumVertices, geode::NO_ID );
         geode::index_t nb_vertices{ 0 };
+        bool has_shared_vertices{ false };
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
@@ -83,6 +84,10 @@ namespace
                 if( new_vertex == geode::NO_ID )
                 {
                     new_vertex = nb_vertices++;
+                }
+                else
+                {
+                    has_shared_vertices = true;
                 }
             }
         }
@@ -113,7 +118,12 @@ namespace
             }
             builder->create_polygon( polygon_vertices );
         }
-        builder->compute_polygon_adjacencies();
+        // Without shared vertices (e.g. OBJ, STL or DXF importers) there is no
+        // adjacency to compute
+        if( has_shared_vertices )
+        {
+            builder->compute_polygon_adjacencies();
+        }
         return mesh;
     }
 } // namespace
@@ -143,6 +153,7 @@ namespace geode
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
             read_textures( assimp_scene );
+            importer.FreeScene();
             return merge_meshes();
         }
 
