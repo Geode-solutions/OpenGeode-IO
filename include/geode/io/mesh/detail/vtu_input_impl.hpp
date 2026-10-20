@@ -63,10 +63,8 @@ namespace geode
                 return types_values;
             }
 
-            std::tuple< absl::FixedArray< std::vector< index_t > >,
-                std::vector< uint8_t > >
-                read_cells(
-                    const pugi::xml_node& piece, index_t nb_cells ) const
+            std::tuple< VTKCells, std::vector< uint8_t > > read_cells(
+                const pugi::xml_node& piece, index_t nb_cells ) const
             {
                 std::vector< int64_t > offsets_values;
                 std::vector< int64_t > connectivity_values;
@@ -103,8 +101,8 @@ namespace geode
                     OpenGeodeException::TYPE::data,
                     "[VTUInputImpl::read_cells] Wrong number of types: ",
                     types_values.size(), " instead of ", nb_cells );
-                return std::tuple{ this->get_cell_vertices(
-                                       connectivity_values, offsets_values ),
+                return std::tuple{ this->get_cell_vertices( connectivity_values,
+                                       std::move( offsets_values ) ),
                     types_values };
             }
         };

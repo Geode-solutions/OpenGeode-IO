@@ -60,7 +60,7 @@ namespace
             return geode::Percentage{ 1 };
         }
 
-        absl::FixedArray< std::vector< geode::index_t > > read_polygons(
+        geode::detail::VTKCells read_polygons(
             const pugi::xml_node& piece, geode::index_t nb_polygons ) const
         {
             std::vector< int64_t > offsets_values;
@@ -83,12 +83,13 @@ namespace
                 geode::OpenGeodeException::TYPE::data,
                 "[VTPInput::read_polygons] Wrong number of offsets: ",
                 offsets_values.size(), " instead of ", nb_polygons );
-            return get_cell_vertices( connectivity_values, offsets_values );
+            return get_cell_vertices(
+                connectivity_values, std::move( offsets_values ) );
         }
 
         // Returns the polygon created for each cell, NO_ID if none
         std::vector< geode::index_t > build_polygons(
-            absl::Span< const std::vector< geode::index_t > > polygon_vertices )
+            const geode::detail::VTKCells& polygon_vertices )
         {
             std::vector< geode::index_t > cell_polygons(
                 polygon_vertices.size(), geode::NO_ID );
@@ -96,7 +97,7 @@ namespace
             geode::index_t nb_degenerated_polygons{ 0 };
             for( const auto p : geode::Indices{ polygon_vertices } )
             {
-                const auto& pv = polygon_vertices[p];
+                const auto pv = polygon_vertices[p];
                 if( pv.size() < 3 )
                 {
                     nb_degenerated_polygons++;
