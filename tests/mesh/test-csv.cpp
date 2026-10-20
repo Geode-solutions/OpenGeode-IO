@@ -197,6 +197,25 @@ namespace
             "[invalid attribute values] Wrong w attribute value" );
     }
 
+    void test_quoted_fields()
+    {
+        const auto point_set = read_csv( write_csv( "csv_quoted_fields",
+            "\"x\",\"y\",\"z\",\"a,b\",\"my \"\"v\"\"\",w\r\n"
+            "\"1.5\",2,3,\"5\",6,7\r\n"
+            "4,5,6,8,9,10\r\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 2, "quoted fields" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 0 ) == geode::Point3D{ { 1.5, 2, 3 } },
+            "[quoted fields] Wrong first point" );
+        geode::OpenGeodeIOMeshException::test(
+            find_double_attribute( *point_set, "a,b" )->value( 0 ) == 5
+                && find_double_attribute( *point_set, "my \"v\"" )->value( 0 )
+                       == 6
+                && find_double_attribute( *point_set, "w" )->value( 1 ) == 10,
+            "[quoted fields] Wrong attribute values" );
+    }
+
     void test_invalid_settings()
     {
         constexpr auto CSV = "x,y,z\n1,2,3\n";
@@ -309,6 +328,7 @@ int main()
         test_invalid_coordinates();
         test_attribute_no_value();
         test_invalid_attribute_values();
+        test_quoted_fields();
         return 0;
     }
     catch( ... )

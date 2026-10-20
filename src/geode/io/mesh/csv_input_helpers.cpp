@@ -195,10 +195,48 @@ namespace geode
             return point;
         }
 
-        std::vector< std::string > split_line( const std::string& line )
+        /*!
+         * Split a row on the separator, following RFC 4180 quoting: a field
+         * may be enclosed in double quotes to hold separators, and a double
+         * quote inside a quoted field is escaped by doubling it.
+         */
+        std::vector< std::string > split_line( std::string_view line ) const
         {
-            return absl::StrSplit( absl::StripAsciiWhitespace( line ),
-                absl::ByChar( separator_ ) );
+            line = absl::StripTrailingAsciiWhitespace( line );
+            if( line.find( '"' ) == std::string_view::npos )
+            {
+                return absl::StrSplit( line, absl::ByChar( separator_ ) );
+            }
+            std::vector< std::string > fields;
+            std::string field;
+            bool in_quotes{ false };
+            for( size_t i = 0; i < line.size(); i++ )
+            {
+                const auto character = line[i];
+                if( character == '"' )
+                {
+                    if( in_quotes && i + 1 < line.size() && line[i + 1] == '"' )
+                    {
+                        field.push_back( '"' );
+                        i++;
+                    }
+                    else
+                    {
+                        in_quotes = !in_quotes;
+                    }
+                }
+                else if( character == separator_ && !in_quotes )
+                {
+                    fields.push_back( std::move( field ) );
+                    field.clear();
+                }
+                else
+                {
+                    field.push_back( character );
+                }
+            }
+            fields.push_back( std::move( field ) );
+            return fields;
         }
 
         void set_attribute_on_vertex( const geode::index_t vertex_id,
