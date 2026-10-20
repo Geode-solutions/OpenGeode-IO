@@ -24,6 +24,8 @@
 #include <geode/io/mesh/internal/triangle_output.hpp>
 
 #include <fstream>
+#include <limits>
+#include <locale>
 #include <string>
 
 #include <absl/strings/str_cat.h>
@@ -45,6 +47,8 @@ namespace
         geode::OpenGeodeIOMeshException::check_exception( file.good(), nullptr,
             geode::OpenGeodeException::TYPE::data,
             "[TriangleOutput] Error while opening file: ", filename );
+        file.imbue( std::locale::classic() );
+        file.precision( std::numeric_limits< double >::max_digits10 );
         return file;
     }
 
@@ -63,7 +67,9 @@ namespace
         node << mesh.nb_vertices() << " 2 0 0" << EOL;
         for( const auto v : geode::Range{ mesh.nb_vertices() } )
         {
-            node << v << SPACE << mesh.point( v ).string() << EOL;
+            const auto& point = mesh.point( v );
+            node << v << SPACE << point.value( 0 ) << SPACE << point.value( 1 )
+                 << EOL;
         }
         close_file( node, filename );
     }

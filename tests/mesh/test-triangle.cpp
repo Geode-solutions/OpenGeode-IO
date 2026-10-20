@@ -94,6 +94,29 @@ namespace
                 && lines[2] == "1 -1 -1 0",
             "Wrong neighbors in Triangle .neigh file" );
     }
+
+    void test_precision()
+    {
+        const double x = 0.1 + 0.2;
+        const double y = 1. / 3.;
+        auto surface = geode::TriangulatedSurface2D::create();
+        auto builder = geode::TriangulatedSurfaceBuilder2D::create( *surface );
+        builder->create_point( geode::Point2D{ { x, y } } );
+        builder->create_point( geode::Point2D{ { 1, 0 } } );
+        builder->create_point( geode::Point2D{ { 1, 1 } } );
+        builder->create_triangle( { 0, 1, 2 } );
+        geode::save_triangulated_surface( *surface, "precision.triangle" );
+        std::ifstream node{ "precision.node" };
+        std::string header;
+        std::getline( node, header );
+        geode::index_t vertex;
+        double read_x;
+        double read_y;
+        node >> vertex >> read_x >> read_y;
+        geode::OpenGeodeIOMeshException::test(
+            vertex == 0 && read_x == x && read_y == y,
+            "Triangle .node coordinates should keep full double precision" );
+    }
 } // namespace
 
 int main()
@@ -104,6 +127,7 @@ int main()
         const auto surface = create_surface();
         test_unwritable_file( *surface );
         test_neighbors( *surface );
+        test_precision();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
