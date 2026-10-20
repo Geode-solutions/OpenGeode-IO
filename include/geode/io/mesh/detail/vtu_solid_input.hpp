@@ -104,6 +104,10 @@ namespace geode
             {
                 const auto nb_polyhedra =
                     this->read_attribute( piece, "NumberOfCells" );
+                if( nb_polyhedra == 0 )
+                {
+                    return Percentage{ 1 };
+                }
                 const auto [_, types] = this->read_cells( piece, nb_polyhedra );
                 index_t nb_loadable_polyhedra{ 0 };
                 for( const auto& type : types )

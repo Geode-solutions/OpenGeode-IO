@@ -285,6 +285,20 @@ void test_multiple_pieces()
         "Point data of each piece should be loaded" );
 }
 
+void test_no_cell()
+{
+    write_file( "no_cell.vtu", vtu_file( vtu_piece( 0, "", "", "" ) ) );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_triangulated_surface_loadable< 3 >( "no_cell.vtu" ).value()
+            == 1,
+        "VTU file without cell should be loadable as surface" );
+    geode::OpenGeodeIOMeshException::test(
+        geode::is_tetrahedral_solid_loadable< 3 >( "no_cell.vtu" ).value() == 1,
+        "VTU file without cell should be loadable as solid" );
+    const auto surface = geode::load_triangulated_surface< 3 >( "no_cell.vtu" );
+    check( *surface, { 8, 0 } );
+}
+
 int main()
 {
     try
@@ -295,6 +309,7 @@ int main()
         test_wrong_number_of_types();
         test_cell_data_with_skipped_cells();
         test_multiple_pieces();
+        test_no_cell();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );

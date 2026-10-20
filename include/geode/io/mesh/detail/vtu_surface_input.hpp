@@ -66,6 +66,10 @@ namespace geode
             {
                 const auto nb_polygons =
                     this->read_attribute( piece, "NumberOfCells" );
+                if( nb_polygons == 0 )
+                {
+                    return Percentage{ 1 };
+                }
                 const auto [_, types] = this->read_cells( piece, nb_polygons );
                 index_t nb_loadable_polygons{ 0 };
                 for( const auto& type : types )
