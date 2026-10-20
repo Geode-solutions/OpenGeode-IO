@@ -279,6 +279,64 @@ void run_attribute_types_test()
     }
 }
 
+void test_array_attributes()
+{
+    auto surface = geode::load_polygonal_surface< 3 >(
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    auto& manager = surface->polygon_attribute_manager();
+    std::array< double, 6 > no_tensor;
+    no_tensor.fill( std::nan( "" ) );
+    auto tensor = create_attribute< std::array< double, 6 > >(
+        manager, "tensor", no_tensor );
+    std::array< geode::index_t, 8 > no_ids;
+    no_ids.fill( geode::NO_ID );
+    auto ids = create_attribute< std::array< geode::index_t, 8 > >(
+        manager, "ids", no_ids );
+    for( const auto p : geode::Range{ surface->nb_polygons() } )
+    {
+        std::array< double, 6 > tensor_value;
+        for( const auto i : geode::LIndices{ tensor_value } )
+        {
+            tensor_value[i] = 1. + ( 6 * p + i ) * 1e-12;
+        }
+        tensor->set_value( p, tensor_value );
+        std::array< geode::index_t, 8 > ids_value;
+        for( const auto i : geode::LIndices{ ids_value } )
+        {
+            ids_value[i] = ( 1U << 24 ) + 8 * p + i + 1;
+        }
+        ids->set_value( p, ids_value );
+    }
+    geode::save_polygonal_surface( *surface, "array_attributes.vtp" );
+
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "array_attributes.vtp" );
+    const auto& reload_manager = reload->polygon_attribute_manager();
+    const auto reload_tensor =
+        reload_manager.find_read_only_attribute< std::vector< double > >(
+            reload_manager.attribute_ids_matching_name( "tensor" )->at( 0 ) );
+    const auto reload_ids =
+        reload_manager
+            .find_read_only_attribute< std::vector< geode::index_t > >(
+                reload_manager.attribute_ids_matching_name( "ids" )->at( 0 ) );
+    for( const auto p : geode::Range{ surface->nb_polygons() } )
+    {
+        const auto& tensor_value = tensor->value( p );
+        geode::OpenGeodeIOMeshException::test(
+            reload_tensor->value( p )
+                == std::vector< double >(
+                    tensor_value.begin(), tensor_value.end() ),
+            "[TEST] std::array< double, 6 > attribute was not saved exactly" );
+        const auto& ids_value = ids->value( p );
+        geode::OpenGeodeIOMeshException::test(
+            reload_ids->value( p )
+                == std::vector< geode::index_t >(
+                    ids_value.begin(), ids_value.end() ),
+            "[TEST] std::array< index_t, 8 > attribute was not saved "
+            "exactly" );
+    }
+}
+
 double temperature_value( double time, geode::index_t vertex )
 {
     return 10. * time + vertex;
@@ -488,6 +546,7 @@ int main()
 
         run_encoding_tests();
         run_attribute_types_test();
+        test_array_attributes();
         test_time_series();
         test_write_errors();
         test_duplicated_names();

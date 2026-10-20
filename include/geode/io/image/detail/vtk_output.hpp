@@ -32,6 +32,7 @@
 #include <fstream>
 #include <map>
 #include <sstream>
+#include <utility>
 
 #include <pugixml.hpp>
 
@@ -40,6 +41,7 @@
 #include <absl/container/flat_hash_set.h>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 
 #include <geode/geometry/point.hpp>
 #include <geode/geometry/vector.hpp>
@@ -141,10 +143,14 @@ namespace geode
         {
         };
 
+        template < typename Value, size_t... indices >
+        VTKAttributeTypeList< std::array< Value, indices + 1 >... >
+            vtk_attribute_arrays( std::index_sequence< indices... > );
+
+        // Arrays from 1 to 9 values (e.g. 3x3 tensors)
         template < typename Value >
-        using VTKAttributeArrays = VTKAttributeTypeList< std::array< Value, 2 >,
-            std::array< Value, 3 >,
-            std::array< Value, 4 > >;
+        using VTKAttributeArrays = decltype( vtk_attribute_arrays< Value >(
+            std::make_index_sequence< 9 >{} ) );
 
         // Attribute value types written with their own VTK type, other
         // genericable attributes are written as Float32
@@ -262,7 +268,11 @@ namespace geode
                     {
                         write_generic_attribute(
                             attribute_node, name, *attribute, elements );
+                        continue;
                     }
+                    Logger::warning( "[VTKOutput] Attribute \"", name,
+                        "\" is not exported: its type cannot be converted "
+                        "to numerical values" );
                 }
             }
 
