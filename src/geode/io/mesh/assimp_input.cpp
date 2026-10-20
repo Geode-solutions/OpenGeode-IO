@@ -201,11 +201,21 @@ namespace geode
                         {
                             continue;
                         }
+                        // The merged polygon may start on another vertex or
+                        // be reversed: match corners by their vertex
                         for( const auto v :
                             LRange{ mesh->nb_polygon_vertices( p ) } )
                         {
+                            const auto merged_vertex = merger.vertex_in_merged(
+                                s, mesh->polygon_vertex( { p, v } ) );
+                            const auto merged_v = merged->vertex_in_polygon(
+                                merged_polygon, merged_vertex );
+                            if( !merged_v )
+                            {
+                                continue;
+                            }
                             merged_texture.set_texture_coordinates(
-                                { merged_polygon, v },
+                                { merged_polygon, merged_v.value() },
                                 texture.texture_coordinates( { p, v } ) );
                         }
                     }

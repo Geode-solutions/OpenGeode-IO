@@ -100,6 +100,27 @@ namespace
                 == 3,
             "Wrong number of textured corners in two_groups_textured" );
     }
+
+    void test_duplicated_polygon_textures()
+    {
+        auto surface = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::DATA_PATH, "duplicated_textured.obj" ) );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+            "Number of polygons in duplicated_textured is not correct" );
+        const std::array< CornerUV, 3 > expected{ {
+            { geode::Point3D{ { 0, 0, 0 } }, geode::Point2D{ { 0.1, 0.2 } } },
+            { geode::Point3D{ { 1, 0, 0 } }, geode::Point2D{ { 0.3, 0.4 } } },
+            { geode::Point3D{ { 0, 1, 0 } }, geode::Point2D{ { 0.5, 0.6 } } },
+        } };
+        for( const auto& texture_name :
+            { "first_material", "second_material" } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                check_texture_coordinates( *surface, texture_name, expected )
+                    == 3,
+                "Wrong number of textured corners in duplicated_textured" );
+        }
+    }
 } // namespace
 
 int main()
@@ -134,6 +155,7 @@ int main()
             "reloaded Surface is not correct" );
 
         test_untextured_then_textured_groups();
+        test_duplicated_polygon_textures();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
