@@ -24,6 +24,7 @@
 #include <geode/tests_config.hpp>
 
 #include <filesystem>
+#include <fstream>
 
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
@@ -48,6 +49,36 @@ bool save_throws(
     return false;
 }
 
+std::string first_line( std::string_view filename )
+{
+    std::ifstream file{ geode::to_string( filename ) };
+    std::string line;
+    std::getline( file, line );
+    return line;
+}
+
+void test_graph_name()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_vertices( 3 );
+    builder->create_polygon( { 0, 1, 2 } );
+    geode::save_polygonal_surface( *surface, "unnamed.dot" );
+    const auto unnamed = first_line( "unnamed.dot" );
+    geode::OpenGeodeIOMeshException::test(
+        unnamed == absl::StrCat( "graph \"", surface->id().string(), "\" {" ),
+        "[TEST] Wrong graph identifier: ", unnamed );
+    geode::OpenGeodeIOMeshException::test( !surface->are_edges_enabled(),
+        "[TEST] Saving should not enable edges on the surface" );
+
+    builder->set_name( "my \"surface\"" );
+    geode::save_polygonal_surface( *surface, "named.dot" );
+    const auto named = first_line( "named.dot" );
+    geode::OpenGeodeIOMeshException::test(
+        named == "graph \"my \\\"surface\\\"\" {",
+        "[TEST] Wrong graph identifier: ", named );
+}
+
 int main()
 {
     try
@@ -59,6 +90,7 @@ int main()
         builder->create_vertices( 3 );
         builder->create_polygon( { 0, 1, 2 } );
         geode::save_polygonal_surface( *surface, "test.dot" );
+        test_graph_name();
 
         // A directory cannot be opened as an output file
         std::filesystem::create_directories( "directory.dot" );
