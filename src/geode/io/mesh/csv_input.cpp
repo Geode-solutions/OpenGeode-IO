@@ -81,14 +81,10 @@ namespace
 
         geode::AdditionalFiles additional_files()
         {
-            geode::AdditionalFiles missing;
-            if( is_loadable().value() == 0 )
-            {
-                missing.mandatory_files.emplace_back( json_filename_, false );
-                return missing;
-            }
-            missing.mandatory_files.emplace_back( json_filename_, true );
-            return missing;
+            geode::AdditionalFiles files;
+            files.mandatory_files.emplace_back(
+                json_filename_, !geode::file_exists( json_filename_ ) );
+            return files;
         }
 
         geode::Percentage is_loadable()

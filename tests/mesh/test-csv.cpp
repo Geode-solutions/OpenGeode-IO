@@ -49,8 +49,8 @@ namespace
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 1,
             "[TEST: CSV input], The point set should be loadable" );
         geode::OpenGeodeIOMeshException::test(
-            additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be present" );
+            !additional_files.has_additional_files(),
+            "[TEST: CSV input], No additional file should be missing" );
         auto point_set = geode::load_point_set< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test(
             point_set->nb_vertices() == 103455,
@@ -68,28 +68,26 @@ namespace
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable" );
         geode::OpenGeodeIOMeshException::test(
-            !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "missing keyword" );
+            additional_files.has_additional_files(),
+            "[TEST: CSV input], The JSON file should be reported missing" );
     }
 
     void test_csv_input_with_missing_keyword()
     {
         const auto filepath =
-            absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
+            absl::StrCat( geode::DATA_PATH, "missing_keyword.csv" );
         const auto additional_files =
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable because "
+            "of a missing keyword" );
         geode::OpenGeodeIOMeshException::test(
             !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "missing keyword" );
+            "[TEST: CSV input], The JSON file is present and should not be "
+            "reported missing" );
     }
 
     void test_csv_input_with_wrong_value()
@@ -100,12 +98,12 @@ namespace
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable because "
+            "of a wrong value" );
         geode::OpenGeodeIOMeshException::test(
             !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "wrong value" );
+            "[TEST: CSV input], The JSON file is present and should not be "
+            "reported missing" );
     }
 } // namespace
 
