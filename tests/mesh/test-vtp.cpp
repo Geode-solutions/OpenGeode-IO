@@ -417,6 +417,13 @@ std::string ascii_polys(
         offsets, "</DataArray></Polys>\n" );
 }
 
+void test_wrong_number_of_offsets()
+{
+    check_load_fails( "wrong_number_of_offsets.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ) ) ) );
+}
+
 void test_invalid_offsets()
 {
     check_load_fails( "offsets_out_of_range.vtp",
@@ -436,6 +443,7 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         test_zlib_header_overflow();
         test_invalid_offsets();
+        test_wrong_number_of_offsets();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;

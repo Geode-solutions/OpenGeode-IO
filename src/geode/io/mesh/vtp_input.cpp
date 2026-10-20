@@ -70,10 +70,6 @@ namespace
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
                     offsets_values = read_data_array< int64_t >( data );
-                    geode::OpenGeodeIOMeshException::check_assertion(
-                        offsets_values.size() == nb_polygons, nullptr,
-                        geode::OpenGeodeException::TYPE::data,
-                        "[VTPInput::read_polygons] Wrong number of offsets" );
                 }
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
@@ -81,6 +77,11 @@ namespace
                     connectivity_values = read_data_array< int64_t >( data );
                 }
             }
+            geode::OpenGeodeIOMeshException::check_exception(
+                offsets_values.size() == nb_polygons, nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[VTPInput::read_polygons] Wrong number of offsets: ",
+                offsets_values.size(), " instead of ", nb_polygons );
             return get_cell_vertices( connectivity_values, offsets_values );
         }
 

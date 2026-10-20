@@ -21,6 +21,8 @@
  *
  */
 
+#include <fstream>
+
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
@@ -147,12 +149,75 @@ void run_surface_test( std::string_view filename,
         "File should be loadable" );
 }
 
+void write_file( std::string_view filename, std::string_view content )
+{
+    std::ofstream file{ geode::to_string( filename ), std::ios::binary };
+    file << content;
+}
+
+std::string vtu_file( std::string_view pieces )
+{
+    return absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile "
+                         "type=\"UnstructuredGrid\" version=\"1.0\" "
+                         "byte_order=\"LittleEndian\">\n<UnstructuredGrid>\n",
+        pieces, "</UnstructuredGrid>\n</VTKFile>\n" );
+}
+
+// Piece with the 8 vertices of the unit cube, in VTK_VOXEL order
+std::string vtu_piece( geode::index_t nb_cells,
+    std::string_view connectivity,
+    std::string_view offsets,
+    std::string_view types,
+    std::string_view additional_content = "" )
+{
+    return absl::StrCat( "<Piece NumberOfPoints=\"8\" NumberOfCells=\"",
+        nb_cells,
+        "\">\n<Points><DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+        "format=\"ascii\">0 0 0 1 0 0 0 1 0 1 1 0 0 0 1 1 0 1 0 1 1 1 1 "
+        "1</DataArray></Points>\n<Cells><DataArray type=\"Int64\" "
+        "Name=\"connectivity\" format=\"ascii\">",
+        connectivity,
+        "</DataArray>\n<DataArray type=\"Int64\" Name=\"offsets\" "
+        "format=\"ascii\">",
+        offsets,
+        "</DataArray>\n<DataArray type=\"UInt8\" Name=\"types\" "
+        "format=\"ascii\">",
+        types, "</DataArray></Cells>\n", additional_content, "</Piece>\n" );
+}
+
+void check_surface_load_fails(
+    std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading malformed file ", filename );
+        geode::load_triangulated_surface< 3 >( filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading malformed file ", filename, " should fail" );
+}
+
+void test_wrong_number_of_types()
+{
+    check_surface_load_fails( "wrong_number_of_types.vtu",
+        vtu_file( vtu_piece( 2, "0 1 2 1 3 2", "3 6", "5" ) ) );
+    check_surface_load_fails( "wrong_number_of_offsets.vtu",
+        vtu_file( vtu_piece( 2, "0 1 2 1 3 2", "3", "5 5" ) ) );
+}
+
 int main()
 {
     try
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         geode::Logger::set_level( geode::Logger::LEVEL::debug );
+
+        test_wrong_number_of_types();
 
         run_solid_test( "cone.vtu", { 580, 2197 }, 0.624858 );
         run_solid_test( "cone_append_encoded.vtu", { 580, 2197 }, 0.624858 );

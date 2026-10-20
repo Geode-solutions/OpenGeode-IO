@@ -55,10 +55,6 @@ namespace geode
                     {
                         offsets_values =
                             this->template read_data_array< int64_t >( data );
-                        OpenGeodeIOMeshException::check_assertion(
-                            offsets_values.size() == nb_cells,
-                            "[VTUInputImpl::read_cells] Wrong number of "
-                            "offsets" );
                     }
                     else if( this->match( data.attribute( "Name" ).value(),
                                  "connectivity" ) )
@@ -71,12 +67,18 @@ namespace geode
                     {
                         types_values =
                             this->template read_data_array< uint8_t >( data );
-                        OpenGeodeIOMeshException::check_assertion(
-                            types_values.size() == nb_cells,
-                            "[VTUInputImpl::read_cells] Wrong number of "
-                            "types" );
                     }
                 }
+                OpenGeodeIOMeshException::check_exception(
+                    offsets_values.size() == nb_cells, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTUInputImpl::read_cells] Wrong number of offsets: ",
+                    offsets_values.size(), " instead of ", nb_cells );
+                OpenGeodeIOMeshException::check_exception(
+                    types_values.size() == nb_cells, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTUInputImpl::read_cells] Wrong number of types: ",
+                    types_values.size(), " instead of ", nb_cells );
                 return std::tuple{ this->get_cell_vertices(
                                        connectivity_values, offsets_values ),
                     types_values };
