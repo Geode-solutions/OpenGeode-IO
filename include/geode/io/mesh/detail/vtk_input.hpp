@@ -282,8 +282,8 @@ namespace geode
                 }
                 else
                 {
-                    build_attribute< long int >( manager, name,
-                        cast_to< long int >( values ), nb_components, offset );
+                    build_attribute< int64_t >( manager, name,
+                        cast_to< int64_t >( values ), nb_components, offset );
                 }
             }
 
@@ -299,6 +299,14 @@ namespace geode
                 {
                     nb_components =
                         read_attribute( data, "NumberOfComponents" );
+                }
+                if( !is_appended_offset_valid( data ) )
+                {
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name,
+                        " has an invalid appended data offset and has been "
+                        "skipped" );
+                    return;
                 }
                 if( nb_components == 0 )
                 {
@@ -344,8 +352,25 @@ namespace geode
             std::string_view read_appended_data(
                 const pugi::xml_node& data ) const
             {
-                const auto offset = data.attribute( "offset" ).as_ullong();
-                return appended_data_.substr( offset );
+                OpenGeodeIOMeshException::check_exception(
+                    is_appended_offset_valid( data ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_appended_data] DataArray offset ",
+                    data.attribute( "offset" ).value(),
+                    " is outside of AppendedData (size: ",
+                    appended_data_.size(), ")" );
+                return appended_data_.substr(
+                    data.attribute( "offset" ).as_ullong() );
+            }
+
+            bool is_appended_offset_valid( const pugi::xml_node& data ) const
+            {
+                if( !match( data.attribute( "format" ).value(), "appended" ) )
+                {
+                    return true;
+                }
+                const auto offset = data.attribute( "offset" );
+                return offset && offset.as_ullong() < appended_data_.size();
             }
 
         private:

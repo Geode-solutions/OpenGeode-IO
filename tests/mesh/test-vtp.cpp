@@ -488,6 +488,38 @@ void test_unsupported_array_type()
         "Valid array should be loaded" );
 }
 
+void test_appended_offset_out_of_range()
+{
+    const auto appended_data =
+        "<AppendedData encoding=\"base64\">_CAAAAAAAAAAAAPA/</AppendedData>\n";
+    const auto surface = load_file( "appended_offset_out_of_range.vtp",
+        absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                      "version=\"1.0\" byte_order=\"LittleEndian\" "
+                      "header_type=\"UInt32\">\n<PolyData>\n<Piece "
+                      "NumberOfPoints=\"4\" NumberOfPolys=\"1\">\n",
+            ascii_points(), ascii_polys( "0 1 2", "3" ),
+            "<CellData><DataArray type=\"Float64\" Name=\"valid\" "
+            "format=\"appended\" offset=\"0\"/><DataArray "
+            "type=\"Float64\" Name=\"invalid\" format=\"appended\" "
+            "offset=\"99999\"/></CellData>\n</Piece>\n</PolyData>\n",
+            appended_data, "</VTKFile>\n" ) );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->polygon_attribute_manager(), "invalid" ),
+        "Array with invalid appended offset should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->polygon_attribute_manager(), "valid" ),
+        "Valid appended array should be loaded" );
+    check_load_fails( "appended_points_offset_out_of_range.vtp",
+        absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                      "version=\"1.0\" byte_order=\"LittleEndian\" "
+                      "header_type=\"UInt32\">\n<PolyData>\n<Piece "
+                      "NumberOfPoints=\"4\" NumberOfPolys=\"1\">\n",
+            "<Points><DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+            "format=\"appended\" offset=\"99999\"/></Points>\n",
+            ascii_polys( "0 1 2", "3" ), "</Piece>\n</PolyData>\n",
+            appended_data, "</VTKFile>\n" ) );
+}
+
 int main()
 {
     try
@@ -498,6 +530,7 @@ int main()
         test_wrong_number_of_offsets();
         test_zero_components();
         test_unsupported_array_type();
+        test_appended_offset_out_of_range();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;
