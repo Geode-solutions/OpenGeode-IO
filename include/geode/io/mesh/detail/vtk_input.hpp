@@ -41,6 +41,7 @@
 #include <absl/strings/str_cat.h>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 #include <geode/basic/string.hpp>
 #include <geode/basic/variable_attribute.hpp>
 
@@ -298,6 +299,13 @@ namespace geode
                 {
                     nb_components =
                         read_attribute( data, "NumberOfComponents" );
+                }
+                if( nb_components == 0 )
+                {
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name,
+                        " has no component and has been skipped" );
+                    return;
                 }
                 if( match( data_array_type, "Float64" )
                     || match( data_array_type, "Float32" ) )

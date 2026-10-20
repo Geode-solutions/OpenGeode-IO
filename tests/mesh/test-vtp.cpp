@@ -436,6 +436,39 @@ void test_invalid_offsets()
                 ascii_points(), ascii_polys( "0 1 2 1 3 2", "3 2" ) ) ) );
 }
 
+std::unique_ptr< geode::PolygonalSurface3D > load_file(
+    std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    return geode::load_polygonal_surface< 3 >( filename );
+}
+
+bool has_attribute(
+    const geode::AttributeManager& manager, std::string_view name )
+{
+    const auto ids = manager.attribute_ids_matching_name( name );
+    return ids && !ids->empty();
+}
+
+void test_zero_components()
+{
+    const auto surface = load_file( "zero_components.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"1\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ),
+                "<PointData><DataArray type=\"Float64\" Name=\"zero\" "
+                "NumberOfComponents=\"0\" format=\"ascii\">1 2 3 "
+                "4</DataArray><DataArray type=\"Float64\" Name=\"valid\" "
+                "format=\"ascii\">1 2 3 4</DataArray></PointData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+        "Surface with zero component array should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->vertex_attribute_manager(), "zero" ),
+        "Array with zero component should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->vertex_attribute_manager(), "valid" ),
+        "Valid array should be loaded" );
+}
+
 int main()
 {
     try
@@ -444,6 +477,7 @@ int main()
         test_zlib_header_overflow();
         test_invalid_offsets();
         test_wrong_number_of_offsets();
+        test_zero_components();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;
