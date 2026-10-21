@@ -75,6 +75,14 @@ add_geode_test(
         ${PROJECT_NAME}::mesh
 )
 add_geode_test(
+    SOURCE "test-triangle.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::geometry
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
+)
+add_geode_test(
     SOURCE "test-vti.cpp"
     DEPENDENCIES
         OpenGeode::basic

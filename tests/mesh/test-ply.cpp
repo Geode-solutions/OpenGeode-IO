@@ -26,11 +26,39 @@
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
 
 #include <geode/io/mesh/common.hpp>
+
+namespace
+{
+    void check_adjacencies( const geode::PolygonalSurface3D& surface )
+    {
+        auto reference = surface.clone();
+        geode::PolygonalSurfaceBuilder3D::create( *reference )
+            ->compute_polygon_adjacencies();
+        geode::index_t nb_adjacencies{ 0 };
+        for( const auto p : geode::Range{ surface.nb_polygons() } )
+        {
+            for( const auto e : geode::LRange{ surface.nb_polygon_edges( p ) } )
+            {
+                const auto adjacent = surface.polygon_adjacent( { p, e } );
+                geode::OpenGeodeIOMeshException::test(
+                    adjacent == reference->polygon_adjacent( { p, e } ),
+                    "Wrong adjacency on polygon ", p, " edge ", e );
+                if( adjacent )
+                {
+                    nb_adjacencies++;
+                }
+            }
+        }
+        geode::OpenGeodeIOMeshException::test(
+            nb_adjacencies > 0, "Loaded surface should have adjacencies" );
+    }
+} // namespace
 
 int main()
 {
@@ -44,6 +72,8 @@ int main()
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 345944,
             "Number of polygons in the loaded Surface is not correct" );
+
+        check_adjacencies( *surface );
 
         // Save file
         const auto output_file_og =

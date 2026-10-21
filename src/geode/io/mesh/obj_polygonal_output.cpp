@@ -38,7 +38,7 @@ namespace geode
             const PolygonalSurface3D &surface ) const
         {
             internal::AssimpMeshOutput< PolygonalSurface3D > impl{ filename(),
-                surface, "obj" };
+                surface, "objnomtl" };
             impl.build_assimp_scene();
             impl.write_file();
             return { to_string( filename() ) };

@@ -24,6 +24,8 @@
 #include <geode/io/mesh/internal/triangle_output.hpp>
 
 #include <fstream>
+#include <limits>
+#include <locale>
 #include <string>
 
 #include <absl/strings/str_cat.h>
@@ -32,27 +34,50 @@
 
 #include <geode/mesh/core/triangulated_surface.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace
 {
     static constexpr char EOL{ '\n' };
     static constexpr char SPACE{ ' ' };
 
+    std::ofstream open_file( const std::string& filename )
+    {
+        std::ofstream file{ filename };
+        geode::OpenGeodeIOMeshException::check_exception( file.good(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "[TriangleOutput] Error while opening file: ", filename );
+        file.imbue( std::locale::classic() );
+        file.precision( std::numeric_limits< double >::max_digits10 );
+        return file;
+    }
+
+    void close_file( std::ofstream& file, const std::string& filename )
+    {
+        file << std::flush;
+        geode::OpenGeodeIOMeshException::check_exception( file.good(), nullptr,
+            geode::OpenGeodeException::TYPE::data,
+            "[TriangleOutput] Error while writing file: ", filename );
+    }
+
     void write_node(
         const std::string& filename, const geode::TriangulatedSurface2D& mesh )
     {
-        std::ofstream node{ filename };
+        auto node = open_file( filename );
         node << mesh.nb_vertices() << " 2 0 0" << EOL;
         for( const auto v : geode::Range{ mesh.nb_vertices() } )
         {
-            node << v << SPACE << mesh.point( v ).string() << EOL;
+            const auto& point = mesh.point( v );
+            node << v << SPACE << point.value( 0 ) << SPACE << point.value( 1 )
+                 << EOL;
         }
-        node << std::flush;
+        close_file( node, filename );
     }
 
     void write_ele(
         const std::string& filename, const geode::TriangulatedSurface2D& mesh )
     {
-        std::ofstream ele{ filename };
+        auto ele = open_file( filename );
         ele << mesh.nb_polygons() << " 3 0" << EOL;
         for( const auto p : geode::Range{ mesh.nb_polygons() } )
         {
@@ -63,21 +88,24 @@ namespace
             }
             ele << EOL;
         }
-        ele << std::flush;
+        close_file( ele, filename );
     }
 
     void write_neigh(
         const std::string& filename, const geode::TriangulatedSurface2D& mesh )
     {
-        std::ofstream neigh{ filename };
+        auto neigh = open_file( filename );
         neigh << mesh.nb_polygons() << " 3" << EOL;
         for( const auto p : geode::Range{ mesh.nb_polygons() } )
         {
             neigh << p;
-            for( const auto e : geode::LRange{ 3 } )
+            // Triangle convention: i-th neighbor is opposite the i-th corner,
+            // i.e. across the OpenGeode edge (i+1)%3
+            for( const auto corner : geode::LRange{ 3 } )
             {
                 neigh << SPACE;
-                if( const auto adj = mesh.polygon_adjacent( { p, e } ) )
+                const geode::local_index_t edge = ( corner + 1 ) % 3;
+                if( const auto adj = mesh.polygon_adjacent( { p, edge } ) )
                 {
                     neigh << adj.value();
                 }
@@ -88,7 +116,7 @@ namespace
             }
             neigh << EOL;
         }
-        neigh << std::flush;
+        close_file( neigh, filename );
     }
 } // namespace
 
