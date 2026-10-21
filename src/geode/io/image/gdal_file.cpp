@@ -38,9 +38,9 @@ namespace geode
         class GDALFile::Impl
         {
         public:
-            Impl( std::string_view filename )
-                : dataset_{ GDALDataset::Open(
-                      geode::to_string( filename ).c_str(), GDAL_OF_READONLY ) }
+            Impl( std::string_view filename,
+                absl::Span< const char* const > allowed_drivers )
+                : dataset_{ open( filename, allowed_drivers ) }
             {
                 OpenGeodeIOImageException::check_exception( dataset_ != nullptr,
                     nullptr, OpenGeodeException::TYPE::data,
@@ -108,10 +108,31 @@ namespace geode
             }
 
         private:
+            static GDALDataset* open( std::string_view filename,
+                absl::Span< const char* const > allowed_drivers )
+            {
+                if( allowed_drivers.empty() )
+                {
+                    return GDALDataset::Open(
+                        geode::to_string( filename ).c_str(),
+                        GDAL_OF_READONLY );
+                }
+                std::vector< const char* > drivers{ allowed_drivers.begin(),
+                    allowed_drivers.end() };
+                drivers.push_back( nullptr );
+                return GDALDataset::Open( geode::to_string( filename ).c_str(),
+                    GDAL_OF_READONLY, drivers.data() );
+            }
+
+        private:
             GDALDatasetUniquePtr dataset_;
         };
 
-        GDALFile::GDALFile( std::string_view filename ) : impl_{ filename } {}
+        GDALFile::GDALFile( std::string_view filename,
+            absl::Span< const char* const > allowed_drivers )
+            : impl_{ filename, allowed_drivers }
+        {
+        }
 
         GDALFile::~GDALFile() = default;
 

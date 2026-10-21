@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <absl/types/span.h>
+
 #include <geode/basic/pimpl.hpp>
 
 #include <geode/io/image/common.hpp>
@@ -42,7 +44,12 @@ namespace geode
         class opengeode_io_image_api GDALFile
         {
         public:
-            GDALFile( std::string_view filename );
+            /*!
+             * @param[in] allowed_drivers Names of the GDAL drivers which can
+             * open the file, all the drivers if empty
+             */
+            explicit GDALFile( std::string_view filename,
+                absl::Span< const char* const > allowed_drivers = {} );
             ~GDALFile();
 
             CoordinateSystem2D read_coordinate_system();

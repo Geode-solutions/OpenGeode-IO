@@ -278,6 +278,23 @@ void test_additional_files()
         "[TEST] World file should be an additional file" );
 }
 
+void test_non_image_format_input()
+{
+    // A VRT file, referencing image_rgb.png, named as a PNG file
+    bool thrown{ false };
+    try
+    {
+        const auto raster = geode::load_raster_image< 2 >(
+            absl::StrCat( geode::DATA_PATH, "image_vrt.png" ) );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        thrown = true;
+    }
+    geode::OpenGeodeIOImageException::test(
+        thrown, "[TEST] Non image formats should not be loaded" );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -410,6 +427,7 @@ int main()
         test_palette_input();
         test_non_8_bit_input();
         test_additional_files();
+        test_non_image_format_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();

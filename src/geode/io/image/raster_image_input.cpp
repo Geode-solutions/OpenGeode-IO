@@ -42,6 +42,11 @@
 
 namespace
 {
+    // Image formats only: other GDAL formats (e.g. VRT) can reference any
+    // other file or URL
+    constexpr std::array< const char*, 4 > IMAGE_DRIVERS{ "PNG", "JPEG", "BMP",
+        "GTiff" };
+
     static_assert( sizeof( geode::RGBColor ) == 3,
         "[ImageInputImpl] Colors should be stored as 3 bytes" );
 
@@ -285,7 +290,7 @@ namespace geode
     namespace internal
     {
         ImageInputImpl::ImageInputImpl( std::string_view filename )
-            : detail::GDALFile{ filename }
+            : detail::GDALFile{ filename, IMAGE_DRIVERS }
         {
         }
 
