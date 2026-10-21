@@ -206,6 +206,11 @@ void test_untagged_bands_input()
     check_test_image_colors( "image_untagged_bands.tif", test_image_rgb );
 }
 
+void test_five_bands_input()
+{
+    check_test_image_colors( "image_five_bands.tif", test_image_rgb );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -334,6 +339,7 @@ int main()
         test_tiff_input();
         test_bmp_input();
         test_untagged_bands_input();
+        test_five_bands_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();

@@ -137,7 +137,7 @@ namespace geode
                 read_grey_band(
                     *gdal_data.GetRasterBand( 1 ), colors, width, height );
             }
-            else if( nb_color_components <= 4 )
+            else
             {
                 read_rgb_bands( gdal_data, get_rgb_indices( gdal_data ), colors,
                     width, height );
