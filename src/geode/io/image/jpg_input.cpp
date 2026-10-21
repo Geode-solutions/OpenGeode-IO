@@ -34,7 +34,7 @@ namespace geode
         RasterImage2D JPGInput::read()
         {
             ImageInputImpl reader{ filename() };
-            return reader.read_reversed_y_axis_file();
+            return reader.read_file();
         }
 
         auto JPGInput::additional_files() const -> AdditionalFiles

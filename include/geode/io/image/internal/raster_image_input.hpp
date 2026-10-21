@@ -44,8 +44,6 @@ namespace geode
 
             RasterImage2D read_file();
 
-            RasterImage2D read_reversed_y_axis_file();
-
             Percentage is_loadable();
         };
     } // namespace internal
