@@ -211,6 +211,18 @@ void test_five_bands_input()
     check_test_image_colors( "image_five_bands.tif", test_image_rgb );
 }
 
+void test_palette_input()
+{
+    check_test_image_colors( "image_palette.png", []( geode::index_t cell ) {
+        const auto pixel = test_image_pixel( cell );
+        const auto index = pixel[0] + TEST_IMAGE_WIDTH * pixel[1];
+        return geode::RGBColor{ static_cast< geode::local_index_t >(
+                                    20 * index ),
+            static_cast< geode::local_index_t >( 255 - 20 * index ),
+            static_cast< geode::local_index_t >( 5 * index ) };
+    } );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -340,6 +352,7 @@ int main()
         test_bmp_input();
         test_untagged_bands_input();
         test_five_bands_input();
+        test_palette_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();
