@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
@@ -65,6 +67,20 @@ int main()
 
         // Save file
         geode::save_graph( *graph, "graph.gexf" );
+
+        // A directory cannot be opened as an output file
+        std::filesystem::create_directories( "directory.gexf" );
+        bool throws{ false };
+        try
+        {
+            geode::save_graph( *graph, "directory.gexf" );
+        }
+        catch( const geode::OpenGeodeException& )
+        {
+            throws = true;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            throws, "[TEST] Saving into a directory should throw" );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

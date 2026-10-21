@@ -59,9 +59,9 @@ namespace
             std::vector< int64_t > vertex_offsets( nb_vertices );
             absl::c_iota( vertex_offsets, 1 );
             this->template write_data_array< int64_t >(
-                verts, "connectivity", vertex_connectivity );
+                verts, "connectivity", std::move( vertex_connectivity ) );
             this->template write_data_array< int64_t >(
-                verts, "offsets", vertex_offsets );
+                verts, "offsets", std::move( vertex_offsets ) );
             return verts;
         }
 

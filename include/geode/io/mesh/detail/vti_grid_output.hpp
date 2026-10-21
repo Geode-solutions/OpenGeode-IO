@@ -64,52 +64,52 @@ namespace geode
             {
                 const auto& coordinate_system =
                     this->mesh().grid_coordinate_system();
-                std::string origin_str;
-                absl::StrAppend(
-                    &origin_str, coordinate_system.origin().string() );
-                if( dimension == 2 )
-                {
-                    absl::StrAppend( &origin_str, " 0" );
-                }
-                header_node.append_attribute( "Origin" )
-                    .set_value( origin_str.c_str() );
-                std::string spacing_str;
+                std::vector< double > origin;
+                std::vector< double > spacing;
+                std::vector< double > directions;
                 for( const auto d : LRange{ dimension } )
                 {
-                    if( d != 0 )
-                    {
-                        absl::StrAppend( &spacing_str, " " );
-                    }
-                    absl::StrAppend( &spacing_str,
+                    origin.push_back( coordinate_system.origin().value( d ) );
+                    spacing.push_back(
                         this->mesh().cell_length_in_direction( d ) );
-                }
-                if( dimension == 2 )
-                {
-                    absl::StrAppend( &spacing_str, " 1" );
-                }
-                header_node.append_attribute( "Spacing" )
-                    .set_value( spacing_str.c_str() );
-                std::string direction_str;
-                for( const auto d1 : LRange{ dimension } )
-                {
-                    if( d1 != 0 )
-                    {
-                        absl::StrAppend( &direction_str, " " );
-                    }
                     const auto direction =
-                        coordinate_system.direction( d1 ).normalize();
-                    absl::StrAppend( &direction_str, direction.string() );
+                        coordinate_system.direction( d ).normalize();
+                    for( const auto i : LRange{ dimension } )
+                    {
+                        directions.push_back( direction.value( i ) );
+                    }
                     if( dimension == 2 )
                     {
-                        absl::StrAppend( &direction_str, " 0" );
+                        directions.push_back( 0 );
                     }
                 }
                 if( dimension == 2 )
                 {
-                    absl::StrAppend( &direction_str, " 0 0 1" );
+                    origin.push_back( 0 );
+                    spacing.push_back( 1 );
+                    directions.insert( directions.end(), { 0, 0, 1 } );
                 }
+                header_node.append_attribute( "Origin" )
+                    .set_value( to_vtk_string( origin ).c_str() );
+                header_node.append_attribute( "Spacing" )
+                    .set_value( to_vtk_string( spacing ).c_str() );
                 header_node.append_attribute( "Direction" )
-                    .set_value( direction_str.c_str() );
+                    .set_value( to_vtk_string( directions ).c_str() );
+            }
+
+            static std::string to_vtk_string(
+                absl::Span< const double > values )
+            {
+                std::string result;
+                for( const auto value : values )
+                {
+                    if( !result.empty() )
+                    {
+                        result.push_back( ' ' );
+                    }
+                    result.append( vtk_double_string( value ) );
+                }
+                return result;
             }
 
             void write_cell_data( pugi::xml_node& piece )

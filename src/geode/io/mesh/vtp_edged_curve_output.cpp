@@ -56,10 +56,11 @@ namespace
             auto lines = piece.append_child( "Lines" );
             const auto nb_edges = this->mesh().nb_edges();
             std::vector< int64_t > edge_connectivity;
-            edge_connectivity.reserve( nb_edges * 2 );
+            edge_connectivity.reserve( static_cast< size_t >( nb_edges ) * 2 );
             std::vector< int64_t > edge_offsets;
             edge_offsets.reserve( nb_edges );
-            geode::index_t vertex_count{ 0 };
+            // 64-bit accumulator: offsets may exceed index_t range
+            int64_t vertex_count{ 0 };
             for( const auto e : geode::Range{ nb_edges } )
             {
                 vertex_count += 2;
@@ -71,9 +72,9 @@ namespace
                 }
             }
             this->template write_data_array< int64_t >(
-                lines, "connectivity", edge_connectivity );
+                lines, "connectivity", std::move( edge_connectivity ) );
             this->template write_data_array< int64_t >(
-                lines, "offsets", edge_offsets );
+                lines, "offsets", std::move( edge_offsets ) );
             return lines;
         }
 

@@ -23,6 +23,11 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+#include <iterator>
+
+#include <absl/strings/match.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
@@ -141,6 +146,18 @@ void test_tiff_input()
     geode::save_raster_image( raster, "cea.vti" );
 }
 
+void test_empty_image_output()
+{
+    const geode::RasterImage2D raster;
+    geode::save_raster_image( raster, "empty.vti" );
+    std::ifstream file{ "empty.vti" };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    geode::OpenGeodeIOImageException::test(
+        absl::StrContains( content, "WholeExtent=\"0 -1 0 -1 0 0\"" ),
+        "[TEST] Wrong extent written for empty image" );
+}
+
 int main()
 {
     try
@@ -152,6 +169,7 @@ int main()
         test_jpg_from_paraview_input();
         test_png_input();
         test_tiff_input();
+        test_empty_image_output();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

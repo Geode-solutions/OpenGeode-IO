@@ -54,7 +54,9 @@ namespace geode
                     {
                         absl::StrAppend( &extent_str, " " );
                     }
-                    absl::StrAppend( &extent_str, "0 ", extent[d] - 1 );
+                    // An empty extent is written as "0 -1"
+                    absl::StrAppend( &extent_str, "0 ",
+                        static_cast< int64_t >( extent[d] ) - 1 );
                 }
                 if( dimension == 2 )
                 {

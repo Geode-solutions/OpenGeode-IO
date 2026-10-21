@@ -25,6 +25,10 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
+
+#include <absl/strings/match.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/logger.hpp>
@@ -32,8 +36,12 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/image/core/raster_image.hpp>
+
 #include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/texture2d.hpp>
+#include <geode/mesh/core/texture_manager.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
 
@@ -273,6 +281,64 @@ void run_attribute_types_test()
     }
 }
 
+void test_array_attributes()
+{
+    auto surface = geode::load_polygonal_surface< 3 >(
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    auto& manager = surface->polygon_attribute_manager();
+    std::array< double, 6 > no_tensor;
+    no_tensor.fill( std::nan( "" ) );
+    auto tensor = create_attribute< std::array< double, 6 > >(
+        manager, "tensor", no_tensor );
+    std::array< geode::index_t, 8 > no_ids;
+    no_ids.fill( geode::NO_ID );
+    auto ids = create_attribute< std::array< geode::index_t, 8 > >(
+        manager, "ids", no_ids );
+    for( const auto p : geode::Range{ surface->nb_polygons() } )
+    {
+        std::array< double, 6 > tensor_value;
+        for( const auto i : geode::LIndices{ tensor_value } )
+        {
+            tensor_value[i] = 1. + ( 6 * p + i ) * 1e-12;
+        }
+        tensor->set_value( p, tensor_value );
+        std::array< geode::index_t, 8 > ids_value;
+        for( const auto i : geode::LIndices{ ids_value } )
+        {
+            ids_value[i] = ( 1U << 24 ) + 8 * p + i + 1;
+        }
+        ids->set_value( p, ids_value );
+    }
+    geode::save_polygonal_surface( *surface, "array_attributes.vtp" );
+
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "array_attributes.vtp" );
+    const auto& reload_manager = reload->polygon_attribute_manager();
+    const auto reload_tensor =
+        reload_manager.find_read_only_attribute< std::vector< double > >(
+            reload_manager.attribute_ids_matching_name( "tensor" )->at( 0 ) );
+    const auto reload_ids =
+        reload_manager
+            .find_read_only_attribute< std::vector< geode::index_t > >(
+                reload_manager.attribute_ids_matching_name( "ids" )->at( 0 ) );
+    for( const auto p : geode::Range{ surface->nb_polygons() } )
+    {
+        const auto& tensor_value = tensor->value( p );
+        geode::OpenGeodeIOMeshException::test(
+            reload_tensor->value( p )
+                == std::vector< double >(
+                    tensor_value.begin(), tensor_value.end() ),
+            "[TEST] std::array< double, 6 > attribute was not saved exactly" );
+        const auto& ids_value = ids->value( p );
+        geode::OpenGeodeIOMeshException::test(
+            reload_ids->value( p )
+                == std::vector< geode::index_t >(
+                    ids_value.begin(), ids_value.end() ),
+            "[TEST] std::array< index_t, 8 > attribute was not saved "
+            "exactly" );
+    }
+}
+
 double temperature_value( double time, geode::index_t vertex )
 {
     return 10. * time + vertex;
@@ -349,6 +415,164 @@ void test_time_series()
                 "Wrong value of ", name, " at polygon ", polygon );
         }
     }
+}
+
+void test_duplicated_names()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    builder->create_polygon( { 0, 1, 2 } );
+    auto& manager = surface->polygon_attribute_manager();
+    for( const auto value : { 1., 2. } )
+    {
+        [[maybe_unused]] const auto id =
+            manager.create_attribute< geode::VariableAttribute, double >(
+                "value", { value, 0 }, {} );
+    }
+    [[maybe_unused]] const auto literal_id =
+        manager.create_attribute< geode::VariableAttribute, double >(
+            "value_0", { 3., 0 }, {} );
+    geode::save_polygonal_surface( *surface, "duplicated_names.vtp" );
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "duplicated_names.vtp" );
+    const auto& reload_manager = reload->polygon_attribute_manager();
+    const auto literal = reload_manager.find_read_only_attribute< double >(
+        reload_manager.attribute_ids_matching_name( "value_0" )->front() );
+    geode::OpenGeodeIOMeshException::test( literal->value( 0 ) == 3.,
+        "[TEST] Attribute value_0 should keep its name" );
+    std::vector< double > renamed_values;
+    for( const auto& id : reload_manager.attribute_ids() )
+    {
+        const auto attribute = reload_manager.find_generic_attribute( id );
+        const auto name = attribute->name().value();
+        if( name != "value_0" && absl::StartsWith( name, "value_" ) )
+        {
+            renamed_values.push_back( attribute->generic_value( 0 ) );
+        }
+    }
+    absl::c_sort( renamed_values );
+    geode::OpenGeodeIOMeshException::test(
+        renamed_values == std::vector< double >{ 1., 2. },
+        "[TEST] Attributes with the same name should get unique names" );
+}
+
+void test_texture_files()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    builder->create_polygon( { 0, 1, 2 } );
+    auto& texture =
+        surface->texture_manager().find_or_create_texture( "dir/texture" );
+    texture.set_image( geode::RasterImage2D{ { 2, 2 } } );
+    for( const auto v : geode::LRange{ 3 } )
+    {
+        texture.set_texture_coordinates(
+            { 0, v }, geode::Point2D{ { 0.5 * v, 0.25 * v } } );
+    }
+    const auto files =
+        geode::save_polygonal_surface( *surface, "textured.vtp" );
+    geode::OpenGeodeIOMeshException::test( files.size() == 2,
+        "[TEST] Texture image file should be returned, got ", files.size(),
+        " files" );
+    geode::OpenGeodeIOMeshException::test(
+        files[1] == "textured_dir_texture.vti",
+        "[TEST] Wrong texture image file: ", files[1] );
+    geode::OpenGeodeIOMeshException::test( std::filesystem::exists( files[1] ),
+        "[TEST] Texture image file should exist" );
+}
+
+void test_texture_split_vertices()
+{
+    auto surface = geode::PolygonalSurface3D::create();
+    auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+    builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+    builder->create_point( geode::Point3D{ { 1, 1, 0 } } );
+    builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+    // Vertex 1 is used twice by the first polygon
+    builder->create_polygon( { 0, 1, 2, 1 } );
+    builder->create_polygon( { 0, 2, 3 } );
+    auto& texture = surface->texture_manager().find_or_create_texture( "uv" );
+    const std::array< std::vector< geode::Point2D >, 2 > uvs{ {
+        { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 0 } },
+            geode::Point2D{ { 1, 1 } }, geode::Point2D{ { 0.5, 0.5 } } },
+        { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 0.2, 1 } },
+            geode::Point2D{ { 0, 1 } } },
+    } };
+    for( const auto p : geode::LIndices{ uvs } )
+    {
+        for( const auto v : geode::LIndices{ uvs[p] } )
+        {
+            texture.set_texture_coordinates( { p, v }, uvs[p][v] );
+        }
+    }
+    geode::save_polygonal_surface( *surface, "texture_split.vtp" );
+
+    const auto reload =
+        geode::load_polygonal_surface< 3 >( "texture_split.vtp" );
+    // Vertex 0 is shared with the same UV, vertex 1 has 2 UVs, vertex 2 has
+    // 2 UVs: 6 vertices
+    geode::OpenGeodeIOMeshException::test( reload->nb_vertices() == 6,
+        "[TEST] Wrong number of split vertices: ", reload->nb_vertices() );
+    const auto& manager = reload->vertex_attribute_manager();
+    const auto reload_uv =
+        manager.find_read_only_attribute< std::array< double, 2 > >(
+            manager.attribute_ids_matching_name( "uv" )->at( 0 ) );
+    for( const auto p : geode::LIndices{ uvs } )
+    {
+        for( const auto v : geode::LIndices{ uvs[p] } )
+        {
+            const geode::PolygonVertex pv{ p, v };
+            const auto vertex = reload->polygon_vertex( pv );
+            geode::OpenGeodeIOMeshException::test(
+                reload->point( vertex )
+                    == surface->point( surface->polygon_vertex( pv ) ),
+                "[TEST] Wrong point for polygon ", p, " corner ", v );
+            const auto& uv = reload_uv->value( vertex );
+            geode::OpenGeodeIOMeshException::test(
+                uv[0] == uvs[p][v].value( 0 ) && uv[1] == uvs[p][v].value( 1 ),
+                "[TEST] Wrong texture coordinates for polygon ", p, " corner ",
+                v );
+        }
+    }
+}
+
+bool save_throws(
+    const geode::PolygonalSurface3D& surface, std::string_view filename )
+{
+    try
+    {
+        geode::save_polygonal_surface( surface, filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return true;
+    }
+    return false;
+}
+
+void test_write_errors()
+{
+    const auto surface = geode::load_polygonal_surface< 3 >(
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    // A directory cannot be opened as an output file
+    std::filesystem::create_directories( "directory.vtp" );
+    geode::OpenGeodeIOMeshException::test(
+        save_throws( *surface, "directory.vtp" ),
+        "[TEST] Saving into a directory should throw" );
+#ifdef __linux__
+    // Writing into /dev/full always fails with ENOSPC
+    std::filesystem::remove( "full.vtp" );
+    std::filesystem::create_symlink( "/dev/full", "full.vtp" );
+    geode::OpenGeodeIOMeshException::test( save_throws( *surface, "full.vtp" ),
+        "[TEST] Saving into a full device should throw" );
+#endif
 }
 
 void write_file( std::string_view filename, std::string_view content )
@@ -575,7 +799,12 @@ int main()
 
         run_encoding_tests();
         run_attribute_types_test();
+        test_array_attributes();
         test_time_series();
+        test_write_errors();
+        test_duplicated_names();
+        test_texture_files();
+        test_texture_split_vertices();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
