@@ -259,6 +259,25 @@ void test_non_8_bit_input()
         } );
 }
 
+void test_additional_files()
+{
+    const auto no_files = geode::raster_image_additional_files< 2 >(
+        absl::StrCat( geode::DATA_PATH, "image_rgb.png" ) );
+    geode::OpenGeodeIOImageException::test(
+        no_files.optional_files.empty() && !no_files.has_additional_files(),
+        "[TEST] Image without associated file should have no additional "
+        "file" );
+    const auto files = geode::raster_image_additional_files< 2 >(
+        absl::StrCat( geode::DATA_PATH, "image_world_file.png" ) );
+    geode::OpenGeodeIOImageException::test(
+        files.optional_files.size() == 1 && !files.has_additional_files(),
+        "[TEST] Wrong additional files of image with world file" );
+    geode::OpenGeodeIOImageException::test(
+        absl::EndsWith(
+            files.optional_files.front().filename, "image_world_file.pgw" ),
+        "[TEST] World file should be an additional file" );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -390,6 +409,7 @@ int main()
         test_five_bands_input();
         test_palette_input();
         test_non_8_bit_input();
+        test_additional_files();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();

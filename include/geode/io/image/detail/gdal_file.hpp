@@ -49,6 +49,7 @@ namespace geode
 
             bool is_coordinate_system_loadable();
 
+            // Existing files used with the main file (e.g. world files)
             template < typename AdditionalFiles >
             AdditionalFiles additional_files()
             {
@@ -56,7 +57,7 @@ namespace geode
                 for( auto& file : associated_files() )
                 {
                     files.optional_files.emplace_back(
-                        std::move( file ), true );
+                        std::move( file ), false );
                 }
                 return files;
             }

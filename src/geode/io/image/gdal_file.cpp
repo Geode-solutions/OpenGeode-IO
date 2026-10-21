@@ -23,6 +23,8 @@
 
 #include <geode/io/image/detail/gdal_file.hpp>
 
+#include <filesystem>
+
 #include <gdal_priv.h>
 
 #include <geode/basic/pimpl_impl.hpp>
@@ -85,9 +87,20 @@ namespace geode
                 {
                     return {};
                 }
+                // The list starts with the main file, which is not associated
+                const std::filesystem::path main_file{
+                    dataset_->GetDescription()
+                };
                 std::vector< std::string > files;
                 for( int i = 0; papszFileList[i] != nullptr; i++ )
                 {
+                    std::error_code error;
+                    if( papszFileList[i] == main_file
+                        || std::filesystem::equivalent(
+                            papszFileList[i], main_file, error ) )
+                    {
+                        continue;
+                    }
                     files.emplace_back( papszFileList[i] );
                 }
                 CSLDestroy( papszFileList );
