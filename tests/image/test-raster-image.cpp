@@ -26,6 +26,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iterator>
 
 #include <absl/strings/match.h>
@@ -147,6 +148,57 @@ void test_tiff_input()
     }
 
     geode::save_raster_image( raster, "cea.vti" );
+}
+
+// Test images are 4x3 pixels, image row 0 being the top row
+constexpr geode::index_t TEST_IMAGE_WIDTH = 4;
+constexpr geode::index_t TEST_IMAGE_HEIGHT = 3;
+
+std::array< geode::index_t, 2 > test_image_pixel( geode::index_t cell )
+{
+    return { cell % TEST_IMAGE_WIDTH,
+        TEST_IMAGE_HEIGHT - 1 - cell / TEST_IMAGE_WIDTH };
+}
+
+geode::RasterImage2D load_test_image( std::string_view filename )
+{
+    auto raster = geode::load_raster_image< 2 >(
+        absl::StrCat( geode::DATA_PATH, filename ) );
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells_in_direction( 0 ) == TEST_IMAGE_WIDTH
+            && raster.nb_cells_in_direction( 1 ) == TEST_IMAGE_HEIGHT,
+        "[TEST] Wrong size for ", filename );
+    return raster;
+}
+
+// Colors of the bands of image_rgb files
+geode::RGBColor test_image_rgb( geode::index_t cell )
+{
+    const auto pixel = test_image_pixel( cell );
+    return { static_cast< geode::local_index_t >( 20 * pixel[0] ),
+        static_cast< geode::local_index_t >( 40 * pixel[1] ), 130 };
+}
+
+void check_test_image_colors( std::string_view filename,
+    const std::function< geode::RGBColor( geode::index_t ) >& expected )
+{
+    const auto raster = load_test_image( filename );
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto& color = raster.color( cell );
+        const auto expected_color = expected( cell );
+        geode::OpenGeodeIOImageException::test( color == expected_color,
+            "[TEST] Wrong color for cell ", cell, " of ", filename, ": (",
+            color.red(), ", ", color.green(), ", ", color.blue(),
+            ") instead of (", expected_color.red(), ", ",
+            expected_color.green(), ", ", expected_color.blue(), ")" );
+    }
+}
+
+void test_bmp_input()
+{
+    check_test_image_colors( "image_rgb.png", test_image_rgb );
+    check_test_image_colors( "image_rgb.bmp", test_image_rgb );
 }
 
 void test_empty_image_output()
@@ -275,6 +327,7 @@ int main()
         test_jpg_from_paraview_input();
         test_png_input();
         test_tiff_input();
+        test_bmp_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();

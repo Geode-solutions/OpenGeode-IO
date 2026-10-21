@@ -34,7 +34,7 @@ namespace geode
         RasterImage2D BMPInput::read()
         {
             ImageInputImpl reader{ filename() };
-            return reader.read_file();
+            return reader.read_reversed_y_axis_file();
         }
 
         auto BMPInput::additional_files() const -> AdditionalFiles
