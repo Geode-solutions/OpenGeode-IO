@@ -28,8 +28,9 @@
 #include <string>
 #include <string_view>
 
+#include <vector>
+
 #include <absl/container/flat_hash_set.h>
-#include <absl/functional/function_ref.h>
 #include <absl/types/span.h>
 
 #include <geode/io/time_series/common.hpp>
@@ -40,32 +41,38 @@ namespace geode
     FORWARD_DECLARATION_DIMENSION_CLASS( SolidMesh );
     ALIAS_3D( SolidMesh );
     class AttributeManager;
-    class BRep;
+    class ExternalTimeSeriesHelpers;
 } // namespace geode
 
 namespace geode::internal
 {
     class BRepTimeAttributesTransfer
     {
-        // Elements of one dataset of a time step and their mappings to
-        // the Block elements
+        // Helpers elements filled by a dataset and the mapping to them
+        struct MappedManager
+        {
+            AttributeManager& manager;
+            const GenericMapping< index_t >& mapping;
+        };
+
+        // Elements of one dataset of a time step and the helpers elements
+        // they fill
         struct DatasetElements
         {
             AttributeManager& manager;
-            const absl::flat_hash_map< uuid, GenericMapping< index_t > >&
-                block_mappings;
+            std::vector< MappedManager > targets;
         };
 
     public:
-        BRepTimeAttributesTransfer( BRep& brep,
+        BRepTimeAttributesTransfer( ExternalTimeSeriesHelpers& helpers,
             absl::Span< const std::string_view > ignored_attributes );
 
         /*!
          * Write the attributes of all the datasets of a time step (e.g. one
          * per GEOS region and per MPI rank) as time step attributes of the
-         * Block meshes.
+         * ExternalTimeSeriesHelpers (unique vertices and Block polyhedra).
          * Attributes sharing a name across the datasets are merged into a
-         * single time step attribute per Block.
+         * single time step attribute.
          * @warning The attributes of the given meshes are modified: those
          * sharing a name are given the same id.
          */
@@ -74,10 +81,8 @@ namespace geode::internal
             absl::Span< const SolidToBlocksMappings > mappings );
 
     private:
-        void write_elements_step( double time,
-            absl::Span< const DatasetElements > datasets,
-            absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
-                block_manager );
+        void write_elements_step(
+            double time, absl::Span< const DatasetElements > datasets );
 
         [[nodiscard]] absl::flat_hash_set< std::string > unify_attribute_ids(
             absl::Span< const DatasetElements > datasets );
@@ -85,13 +90,12 @@ namespace geode::internal
         [[nodiscard]] std::optional< std::string > transferred_name(
             const AttributeManager& manager, const uuid& attribute_id ) const;
 
-        void write_block_step( double time,
+        void write_target_step( double time,
             const AttributeManager& manager,
-            AttributeManager& block_manager,
-            const GenericMapping< index_t >& mesh2block );
+            const MappedManager& target );
 
     private:
-        BRep& brep_;
+        ExternalTimeSeriesHelpers& helpers_;
         absl::flat_hash_set< std::string > ignored_attributes_;
     };
 } // namespace geode::internal

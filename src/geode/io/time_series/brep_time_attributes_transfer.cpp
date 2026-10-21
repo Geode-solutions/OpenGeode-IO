@@ -33,8 +33,7 @@
 
 #include <geode/mesh/core/solid_mesh.hpp>
 
-#include <geode/model/mixin/core/block.hpp>
-#include <geode/model/representation/core/brep.hpp>
+#include <geode/model/helpers/external_time_series_helpers.hpp>
 
 namespace
 {
@@ -87,8 +86,9 @@ namespace
 namespace geode::internal
 {
     BRepTimeAttributesTransfer::BRepTimeAttributesTransfer(
-        BRep& brep, absl::Span< const std::string_view > ignored_attributes )
-        : brep_( brep ),
+        ExternalTimeSeriesHelpers& helpers,
+        absl::Span< const std::string_view > ignored_attributes )
+        : helpers_( helpers ),
           ignored_attributes_(
               ignored_attributes.begin(), ignored_attributes.end() )
     {
@@ -108,42 +108,43 @@ namespace geode::internal
         for( const auto dataset : Indices{ meshes } )
         {
             const auto& mesh = *meshes[dataset];
+            const auto& dataset_mappings = mappings[dataset];
             vertices.push_back( { mesh.vertex_attribute_manager(),
-                mappings[dataset].vertices } );
-            polyhedra.push_back( { mesh.polyhedron_attribute_manager(),
-                mappings[dataset].polyhedra } );
+                { { helpers_.unique_vertex_attribute_manager(),
+                    dataset_mappings.unique_vertices } } } );
+            auto& dataset_polyhedra = polyhedra.emplace_back(
+                DatasetElements{ mesh.polyhedron_attribute_manager(), {} } );
+            for( const auto& [block_id, mesh2block] :
+                dataset_mappings.polyhedra )
+            {
+                dataset_polyhedra.targets.push_back(
+                    { helpers_.block_polyhedron_attribute_manager( block_id ),
+                        mesh2block } );
+            }
         }
-        write_elements_step( time, vertices,
-            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
-                return block_mesh.vertex_attribute_manager();
-            } );
-        write_elements_step( time, polyhedra,
-            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
-                return block_mesh.polyhedron_attribute_manager();
-            } );
+        write_elements_step( time, vertices );
+        write_elements_step( time, polyhedra );
     }
 
-    void BRepTimeAttributesTransfer::write_elements_step( double time,
-        absl::Span< const DatasetElements > datasets,
-        absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
-            block_manager )
+    void BRepTimeAttributesTransfer::write_elements_step(
+        double time, absl::Span< const DatasetElements > datasets )
     {
         const auto names = unify_attribute_ids( datasets );
-        for( const auto& block : brep_.blocks() )
+        for( const auto& dataset : datasets )
         {
-            auto& manager = block_manager( block.mesh() );
-            for( const auto& name : names )
+            for( const auto& target : dataset.targets )
             {
-                delete_existing_step( manager, name, time );
+                for( const auto& name : names )
+                {
+                    delete_existing_step( target.manager, name, time );
+                }
             }
         }
         for( const auto& dataset : datasets )
         {
-            for( const auto& [block_id, mesh2block] : dataset.block_mappings )
+            for( const auto& target : dataset.targets )
             {
-                write_block_step( time, dataset.manager,
-                    block_manager( brep_.block( block_id ).mesh() ),
-                    mesh2block );
+                write_target_step( time, dataset.manager, target );
             }
         }
     }
@@ -190,10 +191,9 @@ namespace geode::internal
         return name;
     }
 
-    void BRepTimeAttributesTransfer::write_block_step( double time,
+    void BRepTimeAttributesTransfer::write_target_step( double time,
         const AttributeManager& manager,
-        AttributeManager& block_manager,
-        const GenericMapping< index_t >& mesh2block )
+        const MappedManager& target )
     {
         for( const auto& attribute_id : manager.attribute_ids() )
         {
@@ -204,8 +204,8 @@ namespace geode::internal
             auto properties =
                 manager.find_generic_attribute( attribute_id )->properties();
             properties.time = time;
-            block_manager.import( manager, mesh2block, attribute_id );
-            block_manager.set_attribute_properties( attribute_id, properties );
+            target.manager.import( manager, target.mapping, attribute_id );
+            target.manager.set_attribute_properties( attribute_id, properties );
         }
     }
 } // namespace geode::internal

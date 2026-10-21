@@ -67,21 +67,6 @@ namespace
         }
         return { closest, min_distance };
     }
-
-    void map_block_vertices( geode::internal::SolidToBlocksMappings& mappings,
-        absl::Span< const geode::ComponentMeshVertex > component_vertices,
-        geode::index_t solid_vertex )
-    {
-        for( const auto& component_vertex : component_vertices )
-        {
-            if( component_vertex.component_id.type
-                == geode::Block3D::component_type_static() )
-            {
-                mappings.vertices[component_vertex.component_id.id].map(
-                    solid_vertex, component_vertex.vertex );
-            }
-        }
-    }
 } // namespace
 
 namespace geode::internal
@@ -155,9 +140,7 @@ namespace geode::internal
                 const auto& point = block_mesh.point( block_vertex );
                 const auto [solid_vertex, distance] =
                     closest_polyhedron_vertex( solid, p, point );
-                map_block_vertices( mappings,
-                    brep_.component_mesh_vertices( unique_vertex ),
-                    solid_vertex );
+                mappings.unique_vertices.map( solid_vertex, unique_vertex );
             }
         }
         return mappings;

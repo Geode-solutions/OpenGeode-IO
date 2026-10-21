@@ -44,11 +44,12 @@ namespace geode
 
 namespace geode::internal
 {
-    // Solid elements to Block elements, per Block id
+    // Solid polyhedra to Block polyhedra per Block id, solid vertices to
+    // unique vertices
     struct SolidToBlocksMappings
     {
         absl::flat_hash_map< uuid, GenericMapping< index_t > > polyhedra;
-        absl::flat_hash_map< uuid, GenericMapping< index_t > > vertices;
+        GenericMapping< index_t > unique_vertices;
     };
 
     class BRepBlocksMatcher

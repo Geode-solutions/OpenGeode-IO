@@ -42,6 +42,7 @@
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
 
+#include <geode/model/helpers/external_time_series_helpers.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
 #include <geode/io/time_series/internal/brep_blocks_matcher.hpp>
@@ -199,6 +200,39 @@ namespace
         }
         return files;
     }
+
+    geode::ExternalTimeSeriesHelpers read_time_series(
+        const geode::BRep& brep, std::string_view filename )
+    {
+        geode::ExternalTimeSeriesHelpers helpers{ brep };
+        const geode::internal::BRepBlocksMatcher matcher{ brep };
+        geode::internal::BRepTimeAttributesTransfer transfer{ helpers,
+            GEOS_IGNORED_ATTRIBUTES };
+        std::vector< geode::internal::SolidToBlocksMappings > mappings;
+        for( const auto& dataset : read_pvd_collection( filename ) )
+        {
+            std::vector< std::unique_ptr< geode::SolidMesh3D > > meshes;
+            for( const auto& vtu : dataset_vtu_files( dataset.file ) )
+            {
+                meshes.push_back( geode::load_polyhedral_solid< 3 >( vtu ) );
+            }
+            if( mappings.empty() )
+            {
+                for( const auto& mesh : meshes )
+                {
+                    mappings.push_back( matcher.mappings( *mesh ) );
+                }
+            }
+            geode::OpenGeodeIOTimeSeriesException::check_exception(
+                meshes.size() == mappings.size(), nullptr,
+                geode::OpenGeodeException::TYPE::data, "[PVDInput] ",
+                dataset.file, " lists ", meshes.size(),
+                " datasets whereas the first time step lists ",
+                mappings.size() );
+            transfer.write_step( dataset.time, meshes, mappings );
+        }
+        return helpers;
+    }
 } // namespace
 
 namespace geode::internal
@@ -238,30 +272,6 @@ namespace geode::internal
 
     void PVDBRepTimeSeriesInput::read( BRep& brep )
     {
-        const BRepBlocksMatcher matcher{ brep };
-        BRepTimeAttributesTransfer transfer{ brep, GEOS_IGNORED_ATTRIBUTES };
-        std::vector< SolidToBlocksMappings > mappings;
-        for( const auto& dataset : read_pvd_collection( this->filename() ) )
-        {
-            std::vector< std::unique_ptr< SolidMesh3D > > meshes;
-            for( const auto& vtu : dataset_vtu_files( dataset.file ) )
-            {
-                meshes.push_back( load_polyhedral_solid< 3 >( vtu ) );
-            }
-            if( mappings.empty() )
-            {
-                for( const auto& mesh : meshes )
-                {
-                    mappings.push_back( matcher.mappings( *mesh ) );
-                }
-            }
-            OpenGeodeIOTimeSeriesException::check_exception(
-                meshes.size() == mappings.size(), nullptr,
-                OpenGeodeException::TYPE::data, "[PVDInput] ", dataset.file,
-                " lists ", meshes.size(),
-                " datasets whereas the first time step lists ",
-                mappings.size() );
-            transfer.write_step( dataset.time, meshes, mappings );
-        }
+        read_time_series( brep, this->filename() ).apply_to( brep );
     }
 } // namespace geode::internal
