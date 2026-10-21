@@ -97,7 +97,7 @@ namespace geode
                     write_point( coordinates, this->mesh().point( v ) );
                 }
                 this->template write_data_array< double >(
-                    points, "Points", coordinates, 3 );
+                    points, "Points", std::move( coordinates ), 3 );
                 return points;
             }
 

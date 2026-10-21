@@ -25,6 +25,8 @@
 
 #include <geode/io/mesh/detail/vtk_mesh_output.hpp>
 
+#include <absl/strings/ascii.h>
+
 #include <geode/basic/filename.hpp>
 
 #include <geode/image/core/raster_image.hpp>
@@ -53,10 +55,17 @@ namespace geode
                     textures_info_.emplace_back(
                         texture_name, manager.find_texture( texture_name ) );
                 }
-                if( !textures_info_.empty() )
-                {
-                    vertex_mapping_.resize( polygonal_surface.nb_vertices() );
-                }
+            }
+
+            // Files written by write_file(): the VTP file then the texture
+            // images
+            std::vector< std::string > written_files() const
+            {
+                std::vector< std::string > files{ to_string(
+                    this->filename() ) };
+                files.insert(
+                    files.end(), image_files_.begin(), image_files_.end() );
+                return files;
             }
 
         private:
@@ -66,7 +75,25 @@ namespace geode
                     .set_value( this->mesh().nb_polygons() );
             }
 
-            void save_images() const
+            // Texture names are free strings, keep only characters safe
+            // for a file name
+            static std::string texture_file_suffix( std::string_view name )
+            {
+                std::string suffix{ name };
+                for( auto& character : suffix )
+                {
+                    if( !absl::ascii_isalnum(
+                            static_cast< unsigned char >( character ) )
+                        && character != '-' && character != '_'
+                        && character != '.' )
+                    {
+                        character = '_';
+                    }
+                }
+                return suffix;
+            }
+
+            void save_images()
             {
                 const auto path =
                     filepath_without_extension( this->filename() ).string();
@@ -75,8 +102,13 @@ namespace geode
                     const auto& image = texture.second.get().image();
                     if( image.nb_cells() > 0 )
                     {
-                        save_raster_image( image,
-                            absl::StrCat( path, "_", texture.first, ".vti" ) );
+                        auto files = save_raster_image(
+                            image, absl::StrCat( path, "_",
+                                       texture_file_suffix( texture.first ),
+                                       ".vti" ) );
+                        image_files_.insert( image_files_.end(),
+                            std::make_move_iterator( files.begin() ),
+                            std::make_move_iterator( files.end() ) );
                     }
                 }
             }
@@ -100,8 +132,8 @@ namespace geode
                         values.push_back( coordinates.value( 0 ) );
                         values.push_back( coordinates.value( 1 ) );
                     }
-                    this->template write_data_array< double >(
-                        vertex_node, texture_info.first, values, 2 );
+                    this->template write_data_array< double >( vertex_node,
+                        texture_info.first, std::move( values ), 2 );
                 }
             }
 
@@ -112,13 +144,16 @@ namespace geode
                     return VTKMeshOutputImpl< Mesh,
                         dimension >::compute_vertices();
                 }
+                // A vertex is split into one output vertex per distinct set
+                // of texture coordinates. Output vertices of a same mesh
+                // vertex are chained to find an existing one.
                 const auto& mesh = this->mesh();
                 std::vector< index_t > vertices;
                 vertices.reserve( mesh.nb_vertices() );
-                using TextureCoords = absl::InlinedVector< Point2D, 1 >;
-                absl::FixedArray<
-                    absl::flat_hash_map< TextureCoords, index_t > >
-                    vertices_textures( mesh.nb_vertices() );
+                std::vector< index_t > first_output_vertex(
+                    mesh.nb_vertices(), NO_ID );
+                std::vector< index_t > next_output_vertex;
+                next_output_vertex.reserve( mesh.nb_vertices() );
                 for( const auto p : Range{ mesh.nb_polygons() } )
                 {
                     for( const auto v :
@@ -126,27 +161,48 @@ namespace geode
                     {
                         const PolygonVertex pv{ p, v };
                         const auto vertex = mesh.polygon_vertex( pv );
-                        auto& vertex_textures = vertices_textures[vertex];
-                        auto& mapping = vertex_mapping_[vertex];
-                        TextureCoords coords;
-                        coords.reserve( textures_info_.size() );
-                        for( const auto& texture : textures_info_ )
+                        auto output = first_output_vertex[vertex];
+                        auto previous = NO_ID;
+                        while( output != NO_ID
+                               && !same_texture_coordinates(
+                                   pv, unique_texture_vertices_[output] ) )
                         {
-                            coords.emplace_back(
-                                texture.second.get().texture_coordinates(
-                                    pv ) );
+                            previous = output;
+                            output = next_output_vertex[output];
                         }
-                        const auto it = vertex_textures.try_emplace(
-                            std::move( coords ), vertices.size() );
-                        if( it.second )
+                        if( output == NO_ID )
                         {
+                            output = vertices.size();
                             vertices.push_back( vertex );
                             unique_texture_vertices_.push_back( pv );
+                            next_output_vertex.push_back( NO_ID );
+                            if( previous == NO_ID )
+                            {
+                                first_output_vertex[vertex] = output;
+                            }
+                            else
+                            {
+                                next_output_vertex[previous] = output;
+                            }
                         }
-                        mapping[p] = it.first->second;
+                        corner_output_vertices_.push_back( output );
                     }
                 }
                 return vertices;
+            }
+
+            bool same_texture_coordinates(
+                const PolygonVertex& pv0, const PolygonVertex& pv1 ) const
+            {
+                for( const auto& texture : textures_info_ )
+                {
+                    if( texture.second.get().texture_coordinates( pv0 )
+                        != texture.second.get().texture_coordinates( pv1 ) )
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
 
             pugi::xml_node write_vtk_cells( pugi::xml_node& piece ) override
@@ -154,10 +210,13 @@ namespace geode
                 auto polys = piece.append_child( "Polys" );
                 const auto nb_polys = this->mesh().nb_polygons();
                 std::vector< int64_t > poly_connectivity;
-                poly_connectivity.reserve( nb_polys * 3 );
+                poly_connectivity.reserve(
+                    static_cast< size_t >( nb_polys ) * 3 );
                 std::vector< int64_t > poly_offsets;
                 poly_offsets.reserve( nb_polys );
-                index_t vertex_count{ 0 };
+                // 64-bit accumulator: offsets may exceed index_t range
+                int64_t vertex_count{ 0 };
+                index_t corner{ 0 };
                 for( const auto p : Range{ nb_polys } )
                 {
                     const auto nb_polygon_vertices =
@@ -166,23 +225,22 @@ namespace geode
                     poly_offsets.push_back( vertex_count );
                     for( const auto v : LRange{ nb_polygon_vertices } )
                     {
-                        const auto vertex =
-                            this->mesh().polygon_vertex( { p, v } );
-                        if( vertex_mapping_.empty() )
+                        if( corner_output_vertices_.empty() )
                         {
-                            poly_connectivity.push_back( vertex );
+                            poly_connectivity.push_back(
+                                this->mesh().polygon_vertex( { p, v } ) );
                         }
                         else
                         {
                             poly_connectivity.push_back(
-                                vertex_mapping_[vertex].at( p ) );
+                                corner_output_vertices_[corner++] );
                         }
                     }
                 }
                 this->template write_data_array< int64_t >(
-                    polys, "connectivity", poly_connectivity );
+                    polys, "connectivity", std::move( poly_connectivity ) );
                 this->template write_data_array< int64_t >(
-                    polys, "offsets", poly_offsets );
+                    polys, "offsets", std::move( poly_offsets ) );
                 return polys;
             }
 
@@ -199,9 +257,10 @@ namespace geode
             std::vector< std::pair< std::string,
                 std::reference_wrapper< const Texture2D > > >
                 textures_info_;
-            std::vector< absl::flat_hash_map< index_t, index_t > >
-                vertex_mapping_;
+            // Output vertex of each polygon corner, in polygon order
+            std::vector< index_t > corner_output_vertices_;
             std::vector< PolygonVertex > unique_texture_vertices_;
+            std::vector< std::string > image_files_;
         };
     } // namespace detail
 } // namespace geode

@@ -45,9 +45,10 @@ namespace
         void read_vtk_cells( const pugi::xml_node& piece ) override
         {
             const auto nb_polygons = read_attribute( piece, "NumberOfPolys" );
-            const auto polygon_offset =
+            const auto cell_polygons =
                 build_polygons( read_polygons( piece, nb_polygons ) );
-            this->read_data( piece.child( "CellData" ), polygon_offset,
+            this->read_data( piece.child( "CellData" ),
+                geode::detail::DataMapping{ cell_polygons },
                 this->mesh().polygon_attribute_manager() );
         }
 
@@ -59,7 +60,7 @@ namespace
             return geode::Percentage{ 1 };
         }
 
-        absl::FixedArray< std::vector< geode::index_t > > read_polygons(
+        geode::detail::VTKCells read_polygons(
             const pugi::xml_node& piece, geode::index_t nb_polygons ) const
         {
             std::vector< int64_t > offsets_values;
@@ -70,10 +71,6 @@ namespace
                 if( match( data.attribute( "Name" ).value(), "offsets" ) )
                 {
                     offsets_values = read_data_array< int64_t >( data );
-                    geode::OpenGeodeIOMeshException::check_assertion(
-                        offsets_values.size() == nb_polygons, nullptr,
-                        geode::OpenGeodeException::TYPE::data,
-                        "[VTPInput::read_polygons] Wrong number of offsets" );
                 }
                 else if( match( data.attribute( "Name" ).value(),
                              "connectivity" ) )
@@ -81,26 +78,47 @@ namespace
                     connectivity_values = read_data_array< int64_t >( data );
                 }
             }
-            return get_cell_vertices( connectivity_values, offsets_values );
+            geode::OpenGeodeIOMeshException::check_exception(
+                offsets_values.size() == nb_polygons, nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[VTPInput::read_polygons] Wrong number of offsets: ",
+                offsets_values.size(), " instead of ", nb_polygons );
+            return get_cell_vertices(
+                connectivity_values, std::move( offsets_values ) );
         }
 
-        geode::index_t build_polygons(
-            absl::Span< const std::vector< geode::index_t > > polygon_vertices )
+        // Returns the polygon created for each cell, NO_ID if none
+        std::vector< geode::index_t > build_polygons(
+            const geode::detail::VTKCells& polygon_vertices )
         {
-            const auto polygons_offset = mesh().nb_polygons();
+            std::vector< geode::index_t > cell_polygons(
+                polygon_vertices.size(), geode::NO_ID );
             geode::index_t nb_invalid_polygons{ 0 };
-            for( const auto& pv : polygon_vertices )
+            geode::index_t nb_degenerated_polygons{ 0 };
+            for( const auto p : geode::Indices{ polygon_vertices } )
             {
+                const auto pv = polygon_vertices[p];
+                if( pv.size() < 3 )
+                {
+                    nb_degenerated_polygons++;
+                    continue;
+                }
                 if( !are_cell_vertices_valid( pv ) )
                 {
                     nb_invalid_polygons++;
                     continue;
                 }
-                builder().create_polygon( pv );
+                cell_polygons[p] = builder().create_polygon( pv );
             }
             warn_invalid_cells( nb_invalid_polygons );
+            if( nb_degenerated_polygons > 0 )
+            {
+                geode::Logger::warning( "[VTPInput] ", nb_degenerated_polygons,
+                    " polygon(s) with less than 3 vertices have been "
+                    "skipped" );
+            }
             builder().compute_polygon_adjacencies();
-            return polygons_offset;
+            return cell_polygons;
         }
     };
 } // namespace

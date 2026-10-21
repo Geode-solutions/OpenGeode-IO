@@ -34,7 +34,7 @@ namespace geode
     class opengeode_io_mesh_api CsvInputHelpers
     {
     public:
-        CsvInputHelpers( std::string_view filename );
+        explicit CsvInputHelpers( std::string_view filename );
         CsvInputHelpers( CsvInputHelpers&& other );
         ~CsvInputHelpers();
 
@@ -48,7 +48,14 @@ namespace geode
 
         void set_first_row( index_t first_row );
 
-        std::unique_ptr< PointSet3D > create_point_set();
+        /*!
+         * Create the point set from the CSV file.
+         * @exception OpenGeodeException if the file cannot be opened.
+         */
+        [[nodiscard]] std::unique_ptr< PointSet3D > create_point_set();
+
+        [[nodiscard]] std::unique_ptr< PointSet3D > create_point_set(
+            const MeshImpl& impl );
 
     private:
         IMPLEMENTATION_MEMBER( impl_ );

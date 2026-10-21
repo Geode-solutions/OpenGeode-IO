@@ -51,7 +51,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& /*unused*/,
                 std::vector< int64_t >& /*unused*/,
-                index_t& /*unused*/ ) const override
+                int64_t& /*unused*/ ) const override
             {
                 cell_types.push_back( VTK_TETRAHEDRON_TYPE );
             }
@@ -71,7 +71,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& /*unused*/,
                 std::vector< int64_t >& /*unused*/,
-                index_t& /*unused*/ ) const override
+                int64_t& /*unused*/ ) const override
             {
                 const auto nb_vertices =
                     this->mesh().nb_polyhedron_vertices( p );
@@ -98,7 +98,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& cell_faces,
                 std::vector< int64_t >& cell_face_offsets,
-                index_t& face_offset ) const override
+                int64_t& face_offset ) const override
             {
                 add_cell_type( p, cell_types );
                 const auto nb_faces = this->mesh().nb_polyhedron_facets( p );
@@ -111,44 +111,70 @@ namespace geode
                         this->mesh().nb_polyhedron_facet_vertices( facet );
                     offset += nb_vertices + 1;
                     cell_faces.push_back( nb_vertices );
+                    // VTK faces are oriented outward, OpenGeode facets inward
                     for( const auto v : LRange{ nb_vertices } )
                     {
                         cell_faces.push_back(
                             this->mesh().polyhedron_facet_vertex(
-                                { facet, v } ) );
+                                { facet, static_cast< local_index_t >(
+                                             nb_vertices - 1 - v ) } ) );
                     }
                 }
                 face_offset += offset;
                 cell_face_offsets.push_back( face_offset );
             }
 
+            // Only tetrahedra with the VTK vertex order are written with their
+            // VTK type: other polyhedra are written as VTK_POLYHEDRON, defined
+            // by their faces, since their vertex order may differ from the
+            // VTK one
             void add_cell_type( index_t polyhedron_id,
                 std::vector< uint8_t >& cell_types ) const
             {
-                if( solid_polyhedron_is_a_tetrahedron(
-                        this->mesh(), polyhedron_id ) )
+                if( is_vtk_tetrahedron( polyhedron_id ) )
                 {
                     cell_types.push_back( VTK_TETRAHEDRON_TYPE );
                     return;
                 }
-                if( solid_polyhedron_is_a_prism( this->mesh(), polyhedron_id ) )
-                {
-                    cell_types.push_back( VTK_PRISM_TYPE );
-                    return;
-                }
-                if( solid_polyhedron_is_a_pyramid(
-                        this->mesh(), polyhedron_id ) )
-                {
-                    cell_types.push_back( VTK_PYRAMID_TYPE );
-                    return;
-                }
-                if( solid_polyhedron_is_a_hexaedron(
-                        this->mesh(), polyhedron_id ) )
-                {
-                    cell_types.push_back( VTK_HEXAHEDRON_TYPE );
-                    return;
-                }
                 cell_types.push_back( VTK_POLYHEDRON_TYPE );
+            }
+
+            // VTK_TETRA facet opposite to vertex 3 is (0, 1, 2)
+            bool is_vtk_tetrahedron( index_t polyhedron_id ) const
+            {
+                if( !solid_polyhedron_is_a_tetrahedron(
+                        this->mesh(), polyhedron_id ) )
+                {
+                    return false;
+                }
+                std::array< index_t, 4 > vertices;
+                for( const auto v : LIndices{ vertices } )
+                {
+                    vertices[v] =
+                        this->mesh().polyhedron_vertex( { polyhedron_id, v } );
+                }
+                for( const auto f : LRange{
+                         this->mesh().nb_polyhedron_facets( polyhedron_id ) } )
+                {
+                    const auto facet_vertices =
+                        this->mesh().polyhedron_facet_vertices(
+                            { polyhedron_id, f } );
+                    if( absl::c_linear_search( facet_vertices, vertices[3] ) )
+                    {
+                        continue;
+                    }
+                    for( const auto v : LRange{ 3 } )
+                    {
+                        if( facet_vertices[v] == vertices[0] )
+                        {
+                            return facet_vertices[( v + 1 ) % 3] == vertices[1]
+                                   && facet_vertices[( v + 2 ) % 3]
+                                          == vertices[2];
+                        }
+                    }
+                    return false;
+                }
+                return false;
             }
         };
     } // namespace detail
