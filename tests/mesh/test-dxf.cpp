@@ -50,6 +50,15 @@ int main()
             absl::StrCat( "dxf.", surface->native_extension() );
         geode::save_polygonal_surface( *surface, output_file_og );
 
+        auto face_and_line = geode::load_polygonal_surface< 3 >(
+            absl::StrCat( geode::DATA_PATH, "face_and_line.dxf" ) );
+        geode::OpenGeodeIOMeshException::test(
+            face_and_line->nb_polygons() == 1,
+            "DXF lines should not be loaded as polygons" );
+        geode::OpenGeodeIOMeshException::test(
+            face_and_line->nb_vertices() == 3,
+            "DXF line vertices should not be loaded" );
+
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

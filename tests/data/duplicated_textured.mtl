@@ -1,0 +1,5 @@
+newmtl first_material
+Kd 1.00 1.00 1.00
+
+newmtl second_material
+Kd 1.00 1.00 1.00

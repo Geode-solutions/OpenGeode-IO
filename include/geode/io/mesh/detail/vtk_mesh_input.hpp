@@ -40,6 +40,37 @@ namespace geode
 {
     namespace detail
     {
+        // Cells stored as flat vertices and end offsets
+        class VTKCells
+        {
+        public:
+            VTKCells( std::vector< index_t > vertices,
+                std::vector< int64_t > offsets )
+                : vertices_{ std::move( vertices ) },
+                  offsets_{ std::move( offsets ) }
+            {
+            }
+
+            index_t size() const
+            {
+                return static_cast< index_t >( offsets_.size() );
+            }
+
+            absl::Span< const index_t > operator[]( index_t cell ) const
+            {
+                const auto begin =
+                    cell == 0 ? size_t{ 0 }
+                              : static_cast< size_t >( offsets_[cell - 1] );
+                const auto end = static_cast< size_t >( offsets_[cell] );
+                return absl::MakeConstSpan( vertices_ )
+                    .subspan( begin, end - begin );
+            }
+
+        private:
+            std::vector< index_t > vertices_;
+            std::vector< int64_t > offsets_;
+        };
+
         template < typename Mesh >
         class VTKMeshInputImpl : public VTKInputImpl< Mesh >
         {
@@ -80,26 +111,55 @@ namespace geode
                     this->mesh().nb_vertices(), ") have been skipped" );
             }
 
-            absl::FixedArray< std::vector< index_t > > get_cell_vertices(
-                absl::Span< const int64_t > connectivity,
-                absl::Span< const int64_t > offsets ) const
+            void warn_wrong_size_cells( index_t nb_wrong_size_cells )
             {
-                absl::FixedArray< std::vector< index_t > > cell_vertices(
-                    offsets.size() );
+                if( nb_wrong_size_cells == 0 )
+                {
+                    return;
+                }
+                Logger::warning( "[VTKInput] ", nb_wrong_size_cells,
+                    " cell(s) with a number of vertices inconsistent with "
+                    "their type have been skipped" );
+            }
+
+            VTKCells get_cell_vertices(
+                absl::Span< const int64_t > connectivity,
+                std::vector< int64_t > offsets ) const
+            {
                 int64_t prev_offset{ 0 };
+                const auto nb_connectivity =
+                    static_cast< int64_t >( connectivity.size() );
                 for( const auto p : Indices{ offsets } )
                 {
                     const auto cur_offset = offsets[p];
-                    auto& vertices = cell_vertices[p];
-                    vertices.reserve( cur_offset - prev_offset );
-                    for( const auto v : Range{ prev_offset, cur_offset } )
-                    {
-                        vertices.push_back(
-                            static_cast< index_t >( connectivity[v] ) );
-                    }
+                    OpenGeodeIOMeshException::check_exception(
+                        cur_offset >= prev_offset
+                            && cur_offset <= nb_connectivity,
+                        nullptr, OpenGeodeException::TYPE::data,
+                        "[VTKInput::get_cell_vertices] Invalid offset ",
+                        cur_offset, " for cell ", p,
+                        " (previous offset: ", prev_offset,
+                        ", connectivity size: ", nb_connectivity, ")" );
                     prev_offset = cur_offset;
                 }
-                return cell_vertices;
+                std::vector< index_t > vertices(
+                    static_cast< size_t >( prev_offset ) );
+                for( const auto v : Indices{ vertices } )
+                {
+                    vertices[v] = piece_vertex( connectivity[v] );
+                }
+                return VTKCells{ std::move( vertices ), std::move( offsets ) };
+            }
+
+            // Converts a vertex index of the current piece into a mesh vertex
+            // index, NO_ID if the index is out of the piece range
+            index_t piece_vertex( int64_t vertex ) const
+            {
+                if( vertex < 0 || vertex >= piece_nb_vertices_ )
+                {
+                    return NO_ID;
+                }
+                return piece_vertex_offset_ + static_cast< index_t >( vertex );
             }
 
         private:
@@ -107,6 +167,7 @@ namespace geode
             {
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
+                    this->start_piece();
                     read_vtk_points( piece );
                     read_vtk_cells( piece );
                 }
@@ -126,7 +187,10 @@ namespace geode
                 const auto nb_points =
                     this->read_attribute( piece, "NumberOfPoints" );
                 const auto vertex_offset = build_points( piece, nb_points );
-                this->read_data( piece.child( "PointData" ), vertex_offset,
+                piece_vertex_offset_ = vertex_offset;
+                piece_nb_vertices_ = nb_points;
+                this->read_data( piece.child( "PointData" ),
+                    DataMapping{ nb_points, vertex_offset },
                     this->mesh().vertex_attribute_manager() );
             }
 
@@ -198,6 +262,8 @@ namespace geode
 
         private:
             std::unique_ptr< MeshBuilder > mesh_builder_;
+            index_t piece_vertex_offset_{ 0 };
+            int64_t piece_nb_vertices_{ std::numeric_limits< int64_t >::max() };
         }; // namespace detail
     } // namespace detail
 } // namespace geode

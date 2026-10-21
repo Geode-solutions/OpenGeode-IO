@@ -1,0 +1,3 @@
+newmtl textured_material
+Kd 1.00 1.00 1.00
+map_Kd grid_image.png

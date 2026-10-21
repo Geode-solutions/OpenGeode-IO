@@ -54,10 +54,10 @@ namespace geode
             {
                 const auto nb_polygons =
                     this->read_attribute( piece, "NumberOfCells" );
-                const auto polygon_offset =
-                    build_polygons( piece, nb_polygons );
+                const auto cell_polygons = build_polygons( piece, nb_polygons );
                 this->builder().compute_polygon_adjacencies();
-                this->read_data( piece.child( "CellData" ), polygon_offset,
+                this->read_data( piece.child( "CellData" ),
+                    DataMapping{ cell_polygons },
                     this->mesh().polygon_attribute_manager() );
             }
 
@@ -66,7 +66,11 @@ namespace geode
             {
                 const auto nb_polygons =
                     this->read_attribute( piece, "NumberOfCells" );
-                const auto [_, types] = this->read_cells( piece, nb_polygons );
+                if( nb_polygons == 0 )
+                {
+                    return Percentage{ 1 };
+                }
+                const auto types = this->read_cell_types( piece, nb_polygons );
                 index_t nb_loadable_polygons{ 0 };
                 for( const auto& type : types )
                 {
@@ -79,19 +83,26 @@ namespace geode
                                    / nb_polygons };
             }
 
-            index_t build_polygons(
+            // Returns the polygon created for each cell, NO_ID if none
+            std::vector< index_t > build_polygons(
                 const pugi::xml_node& piece, index_t nb_polygons )
             {
                 const auto [polygon_vertices, types] =
                     this->read_cells( piece, nb_polygons );
-                const auto polygons_offset = this->mesh().nb_polygons();
+                std::vector< index_t > cell_polygons(
+                    polygon_vertices.size(), NO_ID );
                 index_t nb_invalid_polygons{ 0 };
+                index_t nb_wrong_size_polygons{ 0 };
                 for( const auto p : Indices{ polygon_vertices } )
                 {
                     const auto it = elements_.find( types[p] );
-                    if( it == elements_.end()
-                        || it->second != polygon_vertices[p].size() )
+                    if( it == elements_.end() )
                     {
+                        continue;
+                    }
+                    if( it->second != polygon_vertices[p].size() )
+                    {
+                        nb_wrong_size_polygons++;
                         continue;
                     }
                     if( !this->are_cell_vertices_valid( polygon_vertices[p] ) )
@@ -99,10 +110,12 @@ namespace geode
                         nb_invalid_polygons++;
                         continue;
                     }
-                    this->builder().create_polygon( polygon_vertices[p] );
+                    cell_polygons[p] =
+                        this->builder().create_polygon( polygon_vertices[p] );
                 }
                 this->warn_invalid_cells( nb_invalid_polygons );
-                return polygons_offset;
+                this->warn_wrong_size_cells( nb_wrong_size_polygons );
+                return cell_polygons;
             }
 
         private:
