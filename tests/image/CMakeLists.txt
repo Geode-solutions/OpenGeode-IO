@@ -18,6 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# The test uses the VTK writer, which needs pugixml, also when the tests are
+# built against an installed OpenGeode-IO
+if(NOT TARGET pugixml::pugixml)
+    find_package(pugixml REQUIRED CONFIG)
+endif()
+
 add_geode_test(
     SOURCE "test-raster-image.cpp"
     DEPENDENCIES
