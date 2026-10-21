@@ -25,8 +25,10 @@
 
 #include <gdal_priv.h>
 
+#include <absl/algorithm/container.h>
 #include <absl/types/span.h>
 
+#include <geode/basic/logger.hpp>
 #include <geode/basic/percentage.hpp>
 
 #include <geode/image/core/raster_image.hpp>
@@ -100,6 +102,13 @@ namespace
             {
                 rgb_indices[2] = band_id;
             }
+        }
+        if( absl::c_linear_search( rgb_indices, 0 ) )
+        {
+            geode::Logger::warning( "[ImageInputImpl] Red, green and blue "
+                                    "bands are not identified: the first "
+                                    "three bands are used" );
+            return { 1, 2, 3 };
         }
         return rgb_indices;
     }
