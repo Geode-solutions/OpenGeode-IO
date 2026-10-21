@@ -23,6 +23,7 @@
 
 #include <geode/tests_config.hpp>
 
+#include <cmath>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -223,6 +224,41 @@ void test_palette_input()
     } );
 }
 
+geode::local_index_t rescaled( double value, double min, double max )
+{
+    return static_cast< geode::local_index_t >(
+        std::round( ( value - min ) * 255. / ( max - min ) ) );
+}
+
+void test_non_8_bit_input()
+{
+    const auto index = []( geode::index_t cell ) {
+        const auto pixel = test_image_pixel( cell );
+        return pixel[0] + TEST_IMAGE_WIDTH * pixel[1];
+    };
+    check_test_image_colors( "image_grey16.png", [&index](
+                                                     geode::index_t cell ) {
+        const auto grey = rescaled( 1000. + 100. * index( cell ), 1000, 2100 );
+        return geode::RGBColor{ grey, grey, grey };
+    } );
+    check_test_image_colors(
+        "image_rgb16.tif", [&index]( geode::index_t cell ) {
+            const auto value = 100. * index( cell );
+            return geode::RGBColor{ rescaled( 1000. + value, 1000, 4100 ),
+                rescaled( 2000. + value, 1000, 4100 ),
+                rescaled( 3000. + value, 1000, 4100 ) };
+        } );
+    // Pixel 5 has the nodata value and pixel 6 is NaN
+    check_test_image_colors(
+        "image_float.tif", [&index]( geode::index_t cell ) {
+            const auto pixel = index( cell );
+            const auto grey = pixel == 5 || pixel == 6
+                                  ? geode::local_index_t{ 0 }
+                                  : rescaled( 0.5 * pixel, 0, 5.5 );
+            return geode::RGBColor{ grey, grey, grey };
+        } );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -353,6 +389,7 @@ int main()
         test_untagged_bands_input();
         test_five_bands_input();
         test_palette_input();
+        test_non_8_bit_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();

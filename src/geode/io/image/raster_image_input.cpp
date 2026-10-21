@@ -23,6 +23,8 @@
 
 #include <geode/io/image/internal/raster_image_input.hpp>
 
+#include <cmath>
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -146,6 +148,106 @@ namespace
             nullptr ) );
     }
 
+    bool are_byte_bands( GDALDataset& dataset, absl::Span< const int > bands )
+    {
+        return absl::c_all_of( bands, [&dataset]( int band ) {
+            return dataset.GetRasterBand( band )->GetRasterDataType()
+                   == GDT_Byte;
+        } );
+    }
+
+    struct ValueRange
+    {
+        double min{ std::numeric_limits< double >::max() };
+        double max{ std::numeric_limits< double >::lowest() };
+    };
+
+    // Range of the band values, nodata values excluded
+    ValueRange bands_range(
+        GDALDataset& dataset, absl::Span< const int > bands )
+    {
+        ValueRange range;
+        for( const auto band : bands )
+        {
+            std::array< double, 2 > min_max;
+            if( dataset.GetRasterBand( band )->ComputeRasterMinMax(
+                    false, min_max.data() )
+                == CE_None )
+            {
+                range.min = std::min( range.min, min_max[0] );
+                range.max = std::max( range.max, min_max[1] );
+            }
+        }
+        return range;
+    }
+
+    void set_channel(
+        geode::RGBColor& color, size_t channel, geode::local_index_t value )
+    {
+        if( channel == 0 )
+        {
+            color.set_red( value );
+        }
+        else if( channel == 1 )
+        {
+            color.set_green( value );
+        }
+        else
+        {
+            color.set_blue( value );
+        }
+    }
+
+    // Values which are not 8-bit are linearly rescaled from the range of the
+    // values of all the bands to the color range, nodata values are black
+    void read_rescaled_bands( GDALDataset& dataset,
+        std::array< int, 3 > bands,
+        absl::Span< geode::RGBColor > colors,
+        int width,
+        int height )
+    {
+        const auto range = bands_range( dataset, bands );
+        const auto scale =
+            range.max > range.min
+                ? std::numeric_limits< geode::local_index_t >::max()
+                      / ( range.max - range.min )
+                : 0.;
+        std::vector< double > values( colors.size() );
+        constexpr auto VALUE_SIZE = static_cast< GSpacing >( sizeof( double ) );
+        for( const auto channel : geode::Indices{ bands } )
+        {
+            if( absl::c_find( bands, bands[channel] )
+                != bands.begin() + channel )
+            {
+                // Band already read for a previous channel
+                continue;
+            }
+            auto& band = *dataset.GetRasterBand( bands[channel] );
+            check_read( band.RasterIO( GF_Read, 0, 0, width, height,
+                values.data() + values.size() - width, width, height,
+                GDT_Float64, VALUE_SIZE, -VALUE_SIZE * width ) );
+            int has_nodata{ 0 };
+            const auto nodata = band.GetNoDataValue( &has_nodata );
+            for( const auto pixel : geode::Indices{ values } )
+            {
+                const auto value = values[pixel];
+                const auto is_nodata =
+                    std::isnan( value ) || ( has_nodata && value == nodata );
+                const auto channel_value =
+                    is_nodata ? geode::local_index_t{ 0 }
+                              : geode::detail::color_channel(
+                                    ( value - range.min ) * scale );
+                for( const auto other : geode::Indices{ bands } )
+                {
+                    if( bands[other] == bands[channel] )
+                    {
+                        set_channel( colors[pixel], other, channel_value );
+                    }
+                }
+            }
+        }
+    }
+
     std::array< int, 3 > get_rgb_indices( GDALDataset& gdal_data )
     {
         std::array< int, 3 > rgb_indices{ 0, 0, 0 };
@@ -202,14 +304,24 @@ namespace geode
                 read_palette_band(
                     first_band, palette.value(), colors, width, height );
             }
-            else if( nb_color_components <= 2 )
-            {
-                read_grey_band( first_band, colors, width, height );
-            }
             else
             {
-                read_rgb_bands( gdal_data, get_rgb_indices( gdal_data ), colors,
-                    width, height );
+                const auto bands = nb_color_components <= 2
+                                       ? std::array< int, 3 >{ 1, 1, 1 }
+                                       : get_rgb_indices( gdal_data );
+                if( !are_byte_bands( gdal_data, bands ) )
+                {
+                    read_rescaled_bands(
+                        gdal_data, bands, colors, width, height );
+                }
+                else if( nb_color_components <= 2 )
+                {
+                    read_grey_band( first_band, colors, width, height );
+                }
+                else
+                {
+                    read_rgb_bands( gdal_data, bands, colors, width, height );
+                }
             }
             return raster;
         }
