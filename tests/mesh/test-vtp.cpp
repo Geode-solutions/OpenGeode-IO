@@ -21,6 +21,8 @@
  *
  */
 
+#include <fstream>
+
 #include <geode/tests_config.hpp>
 
 #include <geode/basic/assert.hpp>
@@ -349,11 +351,206 @@ void test_time_series()
     }
 }
 
+void write_file( std::string_view filename, std::string_view content )
+{
+    std::ofstream file{ geode::to_string( filename ), std::ios::binary };
+    file << content;
+}
+
+std::string vtp_file( std::string_view header_attributes,
+    std::string_view piece_attributes,
+    std::string_view piece_content )
+{
+    return absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                         "version=\"1.0\" byte_order=\"LittleEndian\" ",
+        header_attributes, ">\n<PolyData>\n<Piece ", piece_attributes, ">\n",
+        piece_content, "</Piece>\n</PolyData>\n</VTKFile>\n" );
+}
+
+std::string_view ascii_points()
+{
+    return "<Points><DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+           "format=\"ascii\">0 0 0 1 0 0 0 1 0 1 1 0</DataArray></Points>\n";
+}
+
+void check_load_fails( std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading malformed file ", filename );
+        geode::load_polygonal_surface< 3 >( filename );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading malformed file ", filename, " should fail" );
+}
+
+void test_zlib_header_overflow()
+{
+    // Compressed header with 2 blocks of 2^31 bytes: total size overflows
+    // a 32-bit integer
+    const auto content = vtp_file(
+        "header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\"",
+        "NumberOfPoints=\"3\" NumberOfPolys=\"1\"",
+        "<Points><DataArray type=\"Float32\" NumberOfComponents=\"3\" "
+        "format=\"binary\">AgAAAAAAAIAAAACAGgAAABoAAAA="
+        "eJztwQENAAAAwqD3T20PBxQAAADwbhAAAAF4nO3BAQ0AAADCoPdPbQ8HFAAAAPBuEAAA"
+        "AQ==</DataArray></Points>\n"
+        "<Polys><DataArray type=\"Int64\" Name=\"connectivity\" "
+        "format=\"ascii\">0 1 2</DataArray>\n<DataArray type=\"Int64\" "
+        "Name=\"offsets\" format=\"ascii\">3</DataArray></Polys>\n" );
+    check_load_fails( "zlib_header_overflow.vtp", content );
+}
+
+std::string ascii_polys(
+    std::string_view connectivity, std::string_view offsets )
+{
+    return absl::StrCat( "<Polys><DataArray type=\"Int64\" "
+                         "Name=\"connectivity\" format=\"ascii\">",
+        connectivity,
+        "</DataArray>\n<DataArray type=\"Int64\" Name=\"offsets\" "
+        "format=\"ascii\">",
+        offsets, "</DataArray></Polys>\n" );
+}
+
+void test_wrong_number_of_offsets()
+{
+    check_load_fails( "wrong_number_of_offsets.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ) ) ) );
+}
+
+void test_invalid_offsets()
+{
+    check_load_fails( "offsets_out_of_range.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat(
+                ascii_points(), ascii_polys( "0 1 2", "3 100000" ) ) ) );
+    check_load_fails( "offsets_decreasing.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"2\"",
+            absl::StrCat(
+                ascii_points(), ascii_polys( "0 1 2 1 3 2", "3 2" ) ) ) );
+}
+
+std::unique_ptr< geode::PolygonalSurface3D > load_file(
+    std::string_view filename, std::string_view content )
+{
+    write_file( filename, content );
+    return geode::load_polygonal_surface< 3 >( filename );
+}
+
+bool has_attribute(
+    const geode::AttributeManager& manager, std::string_view name )
+{
+    const auto ids = manager.attribute_ids_matching_name( name );
+    return ids && !ids->empty();
+}
+
+void test_zero_components()
+{
+    const auto surface = load_file( "zero_components.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"1\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ),
+                "<PointData><DataArray type=\"Float64\" Name=\"zero\" "
+                "NumberOfComponents=\"0\" format=\"ascii\">1 2 3 "
+                "4</DataArray><DataArray type=\"Float64\" Name=\"valid\" "
+                "format=\"ascii\">1 2 3 4</DataArray></PointData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+        "Surface with zero component array should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->vertex_attribute_manager(), "zero" ),
+        "Array with zero component should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->vertex_attribute_manager(), "valid" ),
+        "Valid array should be loaded" );
+}
+
+void test_unsupported_array_type()
+{
+    const auto surface = load_file( "unsupported_array_type.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"1\"",
+            absl::StrCat( ascii_points(), ascii_polys( "0 1 2", "3" ),
+                "<CellData><DataArray type=\"String\" Name=\"names\" "
+                "format=\"ascii\">97 0</DataArray><DataArray "
+                "type=\"Int32\" Name=\"valid\" format=\"ascii\">"
+                "1</DataArray></CellData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+        "Surface with String array should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->polygon_attribute_manager(), "names" ),
+        "String array should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->polygon_attribute_manager(), "valid" ),
+        "Valid array should be loaded" );
+}
+
+void test_appended_offset_out_of_range()
+{
+    const auto appended_data =
+        "<AppendedData encoding=\"base64\">_CAAAAAAAAAAAAPA/</AppendedData>\n";
+    const auto surface = load_file( "appended_offset_out_of_range.vtp",
+        absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                      "version=\"1.0\" byte_order=\"LittleEndian\" "
+                      "header_type=\"UInt32\">\n<PolyData>\n<Piece "
+                      "NumberOfPoints=\"4\" NumberOfPolys=\"1\">\n",
+            ascii_points(), ascii_polys( "0 1 2", "3" ),
+            "<CellData><DataArray type=\"Float64\" Name=\"valid\" "
+            "format=\"appended\" offset=\"0\"/><DataArray "
+            "type=\"Float64\" Name=\"invalid\" format=\"appended\" "
+            "offset=\"99999\"/></CellData>\n</Piece>\n</PolyData>\n",
+            appended_data, "</VTKFile>\n" ) );
+    geode::OpenGeodeIOMeshException::test(
+        !has_attribute( surface->polygon_attribute_manager(), "invalid" ),
+        "Array with invalid appended offset should be skipped" );
+    geode::OpenGeodeIOMeshException::test(
+        has_attribute( surface->polygon_attribute_manager(), "valid" ),
+        "Valid appended array should be loaded" );
+    check_load_fails( "appended_points_offset_out_of_range.vtp",
+        absl::StrCat( "<?xml version=\"1.0\"?>\n<VTKFile type=\"PolyData\" "
+                      "version=\"1.0\" byte_order=\"LittleEndian\" "
+                      "header_type=\"UInt32\">\n<PolyData>\n<Piece "
+                      "NumberOfPoints=\"4\" NumberOfPolys=\"1\">\n",
+            "<Points><DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+            "format=\"appended\" offset=\"99999\"/></Points>\n",
+            ascii_polys( "0 1 2", "3" ), "</Piece>\n</PolyData>\n",
+            appended_data, "</VTKFile>\n" ) );
+}
+
+void test_empty_polygon()
+{
+    const auto surface = load_file( "empty_polygon.vtp",
+        vtp_file( "", "NumberOfPoints=\"4\" NumberOfPolys=\"4\"",
+            absl::StrCat( ascii_points(),
+                ascii_polys( "0 1 2 1 3 1 3 2", "3 3 5 8" ),
+                "<CellData><DataArray type=\"Int32\" Name=\"id\" "
+                "format=\"ascii\">10 20 30 40</DataArray></CellData>\n" ) ) );
+    geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,
+        "Empty and degenerated polygons should be skipped" );
+    const auto& manager = surface->polygon_attribute_manager();
+    const auto attribute = manager.find_generic_attribute(
+        manager.attribute_ids_matching_name( "id" )->at( 0 ) );
+    geode::OpenGeodeIOMeshException::test(
+        attribute->generic_value( 0 ) == 10.f
+            && attribute->generic_value( 1 ) == 40.f,
+        "Cell data should be transferred to the valid polygons" );
+}
+
 int main()
 {
     try
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
+        test_zlib_header_overflow();
+        test_invalid_offsets();
+        test_wrong_number_of_offsets();
+        test_zero_components();
+        test_unsupported_array_type();
+        test_appended_offset_out_of_range();
+        test_empty_polygon();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;
