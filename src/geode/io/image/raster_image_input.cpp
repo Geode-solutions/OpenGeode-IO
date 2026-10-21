@@ -63,7 +63,8 @@ namespace
     {
         geode::OpenGeodeIOImageException::check_exception( status == CE_None,
             nullptr, geode::OpenGeodeException::TYPE::data,
-            "[ImageInputImpl] Failed to read image pixels" );
+            "[ImageInputImpl] Failed to read image pixels: ",
+            CPLGetLastErrorMsg() );
     }
 
     void read_grey_band( GDALRasterBand& band,
@@ -296,7 +297,12 @@ namespace geode
 
         RasterImage2D ImageInputImpl::read_file()
         {
+            const detail::GDALErrorScope errors;
             auto& gdal_data = dataset();
+            OpenGeodeIOImageException::check_exception(
+                gdal_data.GetRasterCount() > 0, nullptr,
+                OpenGeodeException::TYPE::data,
+                "[ImageInputImpl] No raster band in image file" );
             const auto width = gdal_data.GetRasterXSize();
             const auto height = gdal_data.GetRasterYSize();
             RasterImage2D raster{ { static_cast< index_t >( width ),
@@ -331,13 +337,21 @@ namespace geode
             return raster;
         }
 
-        Percentage ImageInputImpl::is_loadable()
+        Percentage ImageInputImpl::is_loadable( std::string_view filename )
         {
-            if( dataset().GetRasterCount() == 0 )
+            try
+            {
+                ImageInputImpl reader{ filename };
+                if( reader.dataset().GetRasterCount() == 0 )
+                {
+                    return Percentage{ 0 };
+                }
+                return Percentage{ 1 };
+            }
+            catch( const OpenGeodeException& )
             {
                 return Percentage{ 0 };
             }
-            return Percentage{ 1 };
         }
     } // namespace internal
 } // namespace geode

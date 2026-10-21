@@ -44,7 +44,8 @@ namespace geode
 
             RasterImage2D read_file();
 
-            Percentage is_loadable();
+            // Unreadable files are not loadable
+            static Percentage is_loadable( std::string_view filename );
         };
     } // namespace internal
 } // namespace geode

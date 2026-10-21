@@ -27,24 +27,55 @@
 
 #include <gdal_priv.h>
 
+#include <geode/basic/logger.hpp>
 #include <geode/basic/pimpl_impl.hpp>
 
 #include <geode/geometry/coordinate_system.hpp>
+
+namespace
+{
+    void CPL_STDCALL log_gdal_warnings(
+        CPLErr type, CPLErrorNum /*unused*/, const char* message )
+    {
+        if( type == CE_Warning )
+        {
+            geode::Logger::warning( "[GDAL] ", message );
+        }
+    }
+} // namespace
 
 namespace geode
 {
     namespace detail
     {
+        GDALErrorScope::GDALErrorScope()
+        {
+            CPLPushErrorHandler( log_gdal_warnings );
+            CPLErrorReset();
+        }
+
+        GDALErrorScope::~GDALErrorScope()
+        {
+            CPLPopErrorHandler();
+        }
+
+        std::string GDALErrorScope::last_error() const
+        {
+            return CPLGetLastErrorMsg();
+        }
+
         class GDALFile::Impl
         {
         public:
             Impl( std::string_view filename,
                 absl::Span< const char* const > allowed_drivers )
-                : dataset_{ open( filename, allowed_drivers ) }
             {
+                const GDALErrorScope errors;
+                dataset_.reset( open( filename, allowed_drivers ) );
                 OpenGeodeIOImageException::check_exception( dataset_ != nullptr,
                     nullptr, OpenGeodeException::TYPE::data,
-                    "[GDALFile] Failed to open file ", filename );
+                    "[GDALFile] Failed to open file ", filename, ": ",
+                    errors.last_error() );
             }
 
             GDALDataset& dataset()
@@ -115,13 +146,13 @@ namespace geode
                 {
                     return GDALDataset::Open(
                         geode::to_string( filename ).c_str(),
-                        GDAL_OF_READONLY );
+                        GDAL_OF_READONLY | GDAL_OF_VERBOSE_ERROR );
                 }
                 std::vector< const char* > drivers{ allowed_drivers.begin(),
                     allowed_drivers.end() };
                 drivers.push_back( nullptr );
                 return GDALDataset::Open( geode::to_string( filename ).c_str(),
-                    GDAL_OF_READONLY, drivers.data() );
+                    GDAL_OF_READONLY | GDAL_OF_VERBOSE_ERROR, drivers.data() );
             }
 
         private:

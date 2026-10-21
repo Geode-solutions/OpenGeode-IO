@@ -41,6 +41,23 @@ namespace geode
 {
     namespace detail
     {
+        /*!
+         * While alive, GDAL warnings are logged and GDAL errors are not
+         * printed: they should be reported with last_error()
+         */
+        class opengeode_io_image_api GDALErrorScope
+        {
+        public:
+            GDALErrorScope();
+            ~GDALErrorScope();
+            GDALErrorScope( const GDALErrorScope& ) = delete;
+            GDALErrorScope& operator=( const GDALErrorScope& ) = delete;
+            GDALErrorScope( GDALErrorScope&& ) = delete;
+            GDALErrorScope& operator=( GDALErrorScope&& ) = delete;
+
+            std::string last_error() const;
+        };
+
         class opengeode_io_image_api GDALFile
         {
         public:

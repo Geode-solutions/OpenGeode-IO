@@ -295,6 +295,26 @@ void test_non_image_format_input()
         thrown, "[TEST] Non image formats should not be loaded" );
 }
 
+void test_unreadable_input()
+{
+    const auto filename = absl::StrCat( geode::DATA_PATH, "image_garbage.png" );
+    geode::OpenGeodeIOImageException::test(
+        geode::is_raster_image_loadable< 2 >( filename ).value() == 0,
+        "[TEST] Unreadable image should not be loadable" );
+    std::string message;
+    try
+    {
+        const auto raster = geode::load_raster_image< 2 >( filename );
+    }
+    catch( const geode::OpenGeodeException& exception )
+    {
+        message = exception.what();
+    }
+    geode::OpenGeodeIOImageException::test(
+        absl::StrContains( message, "not recognized" ),
+        "[TEST] Load error should give the GDAL reason, got: ", message );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -428,6 +448,7 @@ int main()
         test_non_8_bit_input();
         test_additional_files();
         test_non_image_format_input();
+        test_unreadable_input();
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();
