@@ -29,6 +29,7 @@
 #include <charconv>
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -193,17 +194,37 @@ namespace geode
                 {
                     write_with_appended_data( root );
                 }
-                file_.flush();
-                OpenGeodeIOImageException::check_exception( file_.good(),
+                file_.close();
+                OpenGeodeIOImageException::check_exception( !file_.fail(),
                     nullptr, OpenGeodeException::TYPE::data,
                     "[VTKOutput] Error while writing file: ", filename_ );
+                written_ = true;
+                if( temporary_filename_.empty() )
+                {
+                    return;
+                }
+                std::error_code error;
+                std::filesystem::rename(
+                    temporary_filename_, target_filename_, error );
+                if( error )
+                {
+                    std::filesystem::remove( temporary_filename_, error );
+                    throw OpenGeodeIOImageException{ nullptr,
+                        OpenGeodeException::TYPE::data,
+                        "[VTKOutput] Error while writing file: ", filename_,
+                        " (", error.message(), ")" };
+                }
             }
 
         protected:
             VTKOutputImpl(
                 std::string_view filename, const Mesh& mesh, const char* type )
                 : filename_{ filename },
-                  file_{ to_string( filename ), std::ios::binary },
+                  target_filename_{ target_file( filename ) },
+                  temporary_filename_{ temporary_file( target_filename_ ) },
+                  file_{ temporary_filename_.empty() ? target_filename_
+                                                     : temporary_filename_,
+                      std::ios::binary },
                   mesh_( mesh ),
                   type_{ type }
             {
@@ -212,7 +233,49 @@ namespace geode
                     "[VTKOutput] Error while writing file: ", filename );
             }
 
-            virtual ~VTKOutputImpl() {}
+            // The file is written in a temporary file which replaces the
+            // output file once complete: a failure never leaves a truncated
+            // file nor erases an existing one
+            virtual ~VTKOutputImpl()
+            {
+                if( written_ || temporary_filename_.empty() )
+                {
+                    return;
+                }
+                file_.close();
+                std::error_code error;
+                std::filesystem::remove( temporary_filename_, error );
+            }
+
+            // Symbolic links are followed to replace their target
+            static std::string target_file( std::string_view filename )
+            {
+                const std::filesystem::path path{ to_string( filename ) };
+                std::error_code error;
+                if( std::filesystem::is_symlink( path, error ) )
+                {
+                    const auto target =
+                        std::filesystem::canonical( path, error );
+                    if( !error )
+                    {
+                        return target.string();
+                    }
+                }
+                return path.string();
+            }
+
+            // Special files (e.g. devices) cannot be replaced: they are written
+            // directly, without temporary file
+            static std::string temporary_file( const std::string& target )
+            {
+                std::error_code error;
+                const auto status = std::filesystem::status( target, error );
+                if( std::filesystem::is_other( status ) )
+                {
+                    return {};
+                }
+                return absl::StrCat( target, ".tmp" );
+            }
 
             const Mesh& mesh() const
             {
@@ -583,7 +646,10 @@ namespace geode
 
         private:
             std::string_view filename_;
+            std::string target_filename_;
+            std::string temporary_filename_;
             std::ofstream file_;
+            bool written_{ false };
             const Mesh& mesh_;
             pugi::xml_document document_;
             const char* type_;

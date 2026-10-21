@@ -23,6 +23,7 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 
@@ -42,6 +43,7 @@
 #include <geode/mesh/io/regular_grid_output.hpp>
 
 #include <geode/io/image/common.hpp>
+#include <geode/io/image/detail/vti_output_impl.hpp>
 #include <geode/io/mesh/common.hpp>
 
 void test_jpg_from_gimp_input()
@@ -158,6 +160,72 @@ void test_empty_image_output()
         "[TEST] Wrong extent written for empty image" );
 }
 
+class FailingVTIOutput
+    : public geode::detail::VTIOutputImpl< geode::RasterImage2D >
+{
+public:
+    FailingVTIOutput(
+        const geode::RasterImage2D& raster, std::string_view filename )
+        : geode::detail::VTIOutputImpl< geode::RasterImage2D >{ raster,
+              filename }
+    {
+    }
+
+private:
+    void write_piece( pugi::xml_node& /*unused*/ ) final
+    {
+        throw geode::OpenGeodeIOImageException{ nullptr,
+            geode::OpenGeodeException::TYPE::data, "Failure while writing" };
+    }
+};
+
+void test_failed_output_keeps_existing_file()
+{
+    const auto filename = "existing.vti";
+    std::ofstream{ filename } << "previous content";
+    const geode::RasterImage2D raster{ { 2, 2 } };
+    bool thrown{ false };
+    try
+    {
+        FailingVTIOutput output{ raster, filename };
+        output.write_file();
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        thrown = true;
+    }
+    geode::OpenGeodeIOImageException::test(
+        thrown, "[TEST] Failing output should throw" );
+    std::ifstream file{ filename };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    geode::OpenGeodeIOImageException::test( content == "previous content",
+        "[TEST] Failing output should keep the existing file" );
+    geode::OpenGeodeIOImageException::test(
+        !std::filesystem::exists( absl::StrCat( filename, ".tmp" ) ),
+        "[TEST] Failing output should not leave a temporary file" );
+}
+
+void test_output_through_symbolic_link()
+{
+#ifdef __linux__
+    std::filesystem::remove( "link.vti" );
+    std::ofstream{ "link_target.vti" } << "previous content";
+    std::filesystem::create_symlink( "link_target.vti", "link.vti" );
+    const geode::RasterImage2D raster{ { 2, 2 } };
+    geode::save_raster_image( raster, "link.vti" );
+    geode::OpenGeodeIOImageException::test(
+        std::filesystem::is_symlink( "link.vti" ),
+        "[TEST] Output should keep the symbolic link" );
+    std::ifstream file{ "link_target.vti" };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    geode::OpenGeodeIOImageException::test(
+        absl::StrContains( content, "VTKFile" ),
+        "[TEST] Output should be written in the symbolic link target" );
+#endif
+}
+
 int main()
 {
     try
@@ -170,6 +238,8 @@ int main()
         test_png_input();
         test_tiff_input();
         test_empty_image_output();
+        test_failed_output_keeps_existing_file();
+        test_output_through_symbolic_link();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
