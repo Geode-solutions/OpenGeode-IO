@@ -46,6 +46,7 @@ namespace
             enable_hexahedron();
             enable_prism();
             enable_pyramid();
+            enable_polyhedron();
         }
     };
 } // namespace

@@ -25,10 +25,14 @@
 
 #include <fstream>
 
+#include <absl/strings/str_replace.h>
+
 #include <geode/basic/filename.hpp>
 #include <geode/basic/uuid.hpp>
 
 #include <geode/mesh/core/surface_edges.hpp>
+
+#include <geode/io/mesh/common.hpp>
 
 namespace geode
 {
@@ -42,16 +46,38 @@ namespace geode
                 std::string_view filename, const Mesh& surface )
                 : filename_( filename ),
                   file_( to_string( filename ) ),
-                  surface_( surface )
+                  surface_( surface ),
+                  edges_were_enabled_( surface.are_edges_enabled() )
             {
+                OpenGeodeIOMeshException::check_exception( file_.good(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[DotOutput] Error while opening file: ", filename_ );
                 surface_.enable_edges();
             }
 
+            ~DotSurfaceOutputImpl()
+            {
+                // Edges are only enabled for the export, restore the
+                // caller's mesh state
+                if( !edges_were_enabled_ )
+                {
+                    surface_.disable_edges();
+                }
+            }
+
+            DotSurfaceOutputImpl( const DotSurfaceOutputImpl& ) = delete;
+            DotSurfaceOutputImpl& operator=(
+                const DotSurfaceOutputImpl& ) = delete;
+
             void write_file()
             {
-                file_ << "graph "
-                      << surface_.name().value_or( surface_.id().string() )
-                      << " {\n";
+                // Quoted identifier: names may contain any character
+                const auto name =
+                    surface_.name().value_or( surface_.id().string() );
+                file_ << "graph \""
+                      << absl::StrReplaceAll(
+                             name, { { "\\", "\\\\" }, { "\"", "\\\"" } } )
+                      << "\" {\n";
                 const auto& edges = surface_.edges();
                 for( const auto edge : Range{ edges.nb_edges() } )
                 {
@@ -61,12 +87,16 @@ namespace geode
                 }
                 file_ << "}\n";
                 file_.close();
+                OpenGeodeIOMeshException::check_exception( !file_.fail(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[DotOutput] Error while writing file: ", filename_ );
             }
 
         private:
             std::string_view filename_;
             std::ofstream file_;
             const Mesh& surface_;
+            bool edges_were_enabled_;
         };
     } // namespace detail
 } // namespace geode
