@@ -23,21 +23,278 @@
 
 #include <geode/tests_config.hpp>
 
+#include <cmath>
+#include <fstream>
+#include <limits>
+
 #include <geode/basic/assert.hpp>
+#include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/input.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/variable_attribute.hpp>
 
 #include <geode/geometry/point.hpp>
 
 #include <geode/io/mesh/common.hpp>
 #include <geode/io/mesh/csv_input_helpers.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/io/point_set_input.hpp>
 #include <geode/mesh/io/point_set_output.hpp>
 
 namespace
 {
+    std::string write_csv( std::string_view name,
+        std::string_view csv_content,
+        std::string_view json_content )
+    {
+        const auto filename = absl::StrCat( name, ".csv" );
+        {
+            std::ofstream file{ filename, std::ios::binary };
+            file << csv_content;
+        }
+        std::ofstream json{ absl::StrCat( name, ".json" ), std::ios::binary };
+        json << json_content;
+        return filename;
+    }
+
+    std::unique_ptr< geode::PointSet3D > read_csv( const std::string& filename )
+    {
+        // Use the reader directly: load_point_set hides the error message
+        auto reader =
+            geode::PointSetInputFactory< 3 >::create( "csv", filename );
+        return reader->read( geode::MeshFactory::default_impl(
+            geode::PointSet3D::type_name_static() ) );
+    }
+
+    void check_read_error(
+        const std::string& filename, std::string_view expected_message )
+    {
+        try
+        {
+            read_csv( filename );
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            const std::string message{ exception.what() };
+            geode::OpenGeodeIOMeshException::test(
+                message.find( expected_message ) != std::string::npos, "[",
+                filename, "] Wrong error message: ", message, " (expected \"",
+                expected_message, "\")" );
+            return;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            false, "[", filename, "] Reading should have failed" );
+    }
+
+    constexpr auto VALID_SETTINGS = R"({
+  "firstRow": 1,
+  "headerRow": 0,
+  "separator": ",",
+  "xColumn": 0,
+  "yColumn": 1,
+  "zColumn": 2
+})";
+
+    void check_nb_vertices( const geode::PointSet3D& point_set,
+        geode::index_t expected,
+        std::string_view test )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            point_set.nb_vertices() == expected, "[", test,
+            "] Wrong number of vertices: ", point_set.nb_vertices(),
+            " instead of ", expected );
+    }
+
+    void test_blank_and_short_rows()
+    {
+        const auto point_set = read_csv( write_csv( "csv_short_rows",
+            "x,y,z,v\r\n"
+            "0,0,0,1\r\n"
+            "\r\n"
+            "1,1\r\n"
+            "   \r\n"
+            "2,2,2,3\r\n"
+            "3,3,3\r\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 3, "short rows" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 2 ) == geode::Point3D{ { 3, 3, 3 } },
+            "[short rows] Wrong last point" );
+    }
+
+    void test_invalid_coordinates()
+    {
+        const auto point_set = read_csv( write_csv( "csv_invalid_coordinates",
+            "x,y,z\n"
+            "0,0,0\n"
+            "nan,1,1\n"
+            "2,inf,2\n"
+            "3,3,abc\n"
+            "4,,4\n"
+            "5,5,5\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 2, "invalid coordinates" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 1 ) == geode::Point3D{ { 5, 5, 5 } },
+            "[invalid coordinates] Wrong last point" );
+    }
+
+    std::shared_ptr< geode::VariableAttribute< double > > find_double_attribute(
+        geode::PointSet3D& point_set, std::string_view name )
+    {
+        auto& manager = point_set.vertex_attribute_manager();
+        const auto ids = manager.attribute_ids_matching_name( name );
+        geode::OpenGeodeIOMeshException::test(
+            ids.has_value() && ids->size() == 1, "[TEST: CSV input] Attribute ",
+            name, " should exist once" );
+        return manager.find_attribute< geode::VariableAttribute, double >(
+            ids->front() );
+    }
+
+    void test_attribute_no_value()
+    {
+        const auto point_set = read_csv( write_csv( "csv_attribute_no_value",
+            "x,y,z,v\n"
+            "0,0,0,7\n"
+            "1,1,1,7\n"
+            "2,2,2,3\n"
+            "3,3,3\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 4, "attribute no value" );
+        const auto attribute = find_double_attribute( *point_set, "v" );
+        for( const auto v : geode::Range{ 3 } )
+        {
+            geode::OpenGeodeIOMeshException::test( attribute->has_value( v ),
+                "[attribute no value] Vertex ", v, " should have a value" );
+        }
+        geode::OpenGeodeIOMeshException::test(
+            attribute->value( 0 ) == 7 && attribute->value( 2 ) == 3,
+            "[attribute no value] Wrong attribute values" );
+        geode::OpenGeodeIOMeshException::test( !attribute->has_value( 3 ),
+            "[attribute no value] Vertex 3 should not have a value" );
+    }
+
+    void test_invalid_attribute_values()
+    {
+        const auto point_set =
+            read_csv( write_csv( "csv_invalid_attribute_values",
+                "x,y,z,v,w\n"
+                "0,0,0,1,10\n"
+                "1,1,1,,11\n"
+                "2,2,2,abc,12\n"
+                "3,3,3,4,13\n",
+                VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 4, "invalid attribute values" );
+        const auto attribute = find_double_attribute( *point_set, "v" );
+        geode::OpenGeodeIOMeshException::test(
+            attribute->value( 0 ) == 1 && std::isnan( attribute->value( 1 ) )
+                && std::isnan( attribute->value( 2 ) )
+                && attribute->value( 3 ) == 4,
+            "[invalid attribute values] Wrong attribute values" );
+        geode::OpenGeodeIOMeshException::test(
+            find_double_attribute( *point_set, "w" )->value( 2 ) == 12,
+            "[invalid attribute values] Wrong w attribute value" );
+    }
+
+    void test_quoted_fields()
+    {
+        const auto point_set = read_csv( write_csv( "csv_quoted_fields",
+            "\"x\",\"y\",\"z\",\"a,b\",\"my \"\"v\"\"\",w\r\n"
+            "\"1.5\",2,3,\"5\",6,7\r\n"
+            "4,5,6,8,9,10\r\n",
+            VALID_SETTINGS ) );
+        check_nb_vertices( *point_set, 2, "quoted fields" );
+        geode::OpenGeodeIOMeshException::test(
+            point_set->point( 0 ) == geode::Point3D{ { 1.5, 2, 3 } },
+            "[quoted fields] Wrong first point" );
+        geode::OpenGeodeIOMeshException::test(
+            find_double_attribute( *point_set, "a,b" )->value( 0 ) == 5
+                && find_double_attribute( *point_set, "my \"v\"" )->value( 0 )
+                       == 6
+                && find_double_attribute( *point_set, "w" )->value( 1 ) == 10,
+            "[quoted fields] Wrong attribute values" );
+    }
+
+    void test_headers()
+    {
+        auto point_set = read_csv( write_csv( "csv_headers",
+            "\xEF\xBB\xBF\"id\", x , y ,z, v ,v\n"
+            "10,0,0,0,1,2,3,4\n"
+            "11,1,1,1,5,6,,,8\n",
+            R"({
+  "firstRow": 1, "headerRow": 0, "separator": ",",
+  "xColumn": 1, "yColumn": 2, "zColumn": 3
+})" ) );
+        check_nb_vertices( *point_set, 2, "headers" );
+        const auto check_values = [&point_set]( std::string_view name,
+                                      double value0, double value1 ) {
+            const auto attribute = find_double_attribute( *point_set, name );
+            const auto same = []( double value, double expected ) {
+                return std::isnan( expected ) ? std::isnan( value )
+                                              : value == expected;
+            };
+            geode::OpenGeodeIOMeshException::test(
+                same( attribute->value( 0 ), value0 )
+                    && same( attribute->value( 1 ), value1 ),
+                "[headers] Wrong values for attribute ", name );
+        };
+        const auto nan = std::numeric_limits< double >::quiet_NaN();
+        check_values( "id", 10, 11 );
+        check_values( "v", 1, 5 );
+        check_values( "v_5", 2, 6 );
+        check_values( "column_6", 3, nan );
+        check_values( "column_7", 4, nan );
+        check_values( "column_8", nan, 8 );
+    }
+
+    void test_missing_csv_file()
+    {
+        bool failed{ false };
+        try
+        {
+            geode::CsvInputHelpers helpers{ "csv_not_existing.csv" };
+            const auto point_set = helpers.create_point_set();
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            failed =
+                std::string{ exception.what() }.find( "csv_not_existing.csv" )
+                != std::string::npos;
+        }
+        geode::OpenGeodeIOMeshException::test( failed,
+            "[TEST: CSV input] Reading a missing CSV file should fail" );
+    }
+
+    void test_invalid_settings()
+    {
+        constexpr auto CSV = "x,y,z\n1,2,3\n";
+        check_read_error( write_csv( "csv_no_separator", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "xColumn": 0, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"separator\" is missing in settings file csv_no_separator.json" );
+        check_read_error( write_csv( "csv_empty_separator", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "separator": "",
+  "xColumn": 0, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"separator\" of settings file csv_empty_separator.json" );
+        check_read_error( write_csv( "csv_negative_column", CSV, R"({
+  "firstRow": 1, "headerRow": 0, "separator": ",",
+  "xColumn": -1, "yColumn": 1, "zColumn": 2
+})" ),
+            "\"xColumn\" of settings file csv_negative_column.json" );
+        const auto malformed =
+            write_csv( "csv_malformed_json", CSV, R"({ "firstRow": 1, )" );
+        check_read_error( malformed, "csv_malformed_json.json" );
+        geode::OpenGeodeIOMeshException::test(
+            geode::is_point_set_loadable< 3 >( malformed ).value() == 0,
+            "[TEST: CSV input] Malformed JSON should not be loadable" );
+        geode::OpenGeodeIOMeshException::test(
+            !geode::point_set_additional_files< 3 >( malformed )
+                .has_additional_files(),
+            "[TEST: CSV input] Malformed JSON is not missing" );
+    }
 
     void test_csv_input()
     {
@@ -49,8 +306,8 @@ namespace
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 1,
             "[TEST: CSV input], The point set should be loadable" );
         geode::OpenGeodeIOMeshException::test(
-            additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be present" );
+            !additional_files.has_additional_files(),
+            "[TEST: CSV input], No additional file should be missing" );
         auto point_set = geode::load_point_set< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test(
             point_set->nb_vertices() == 103455,
@@ -68,28 +325,26 @@ namespace
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable" );
         geode::OpenGeodeIOMeshException::test(
-            !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "missing keyword" );
+            additional_files.has_additional_files(),
+            "[TEST: CSV input], The JSON file should be reported missing" );
     }
 
     void test_csv_input_with_missing_keyword()
     {
         const auto filepath =
-            absl::StrCat( geode::DATA_PATH, "mising_keyword.csv" );
+            absl::StrCat( geode::DATA_PATH, "missing_keyword.csv" );
         const auto additional_files =
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable because "
+            "of a missing keyword" );
         geode::OpenGeodeIOMeshException::test(
             !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "missing keyword" );
+            "[TEST: CSV input], The JSON file is present and should not be "
+            "reported missing" );
     }
 
     void test_csv_input_with_wrong_value()
@@ -100,12 +355,12 @@ namespace
             geode::point_set_additional_files< 3 >( filepath );
         const auto is_loadable = geode::is_point_set_loadable< 3 >( filepath );
         geode::OpenGeodeIOMeshException::test( is_loadable.value() == 0,
-            "[TEST: CSV input], The point set should be loadable" );
+            "[TEST: CSV input], The point set should not be loadable because "
+            "of a wrong value" );
         geode::OpenGeodeIOMeshException::test(
             !additional_files.has_additional_files(),
-            "[TEST: CSV input], Additional files should be missing because of "
-            "a "
-            "wrong value" );
+            "[TEST: CSV input], The JSON file is present and should not be "
+            "reported missing" );
     }
 } // namespace
 
@@ -119,6 +374,14 @@ int main()
         test_csv_input_with_missing_json();
         test_csv_input_with_missing_keyword();
         test_csv_input_with_wrong_value();
+        test_invalid_settings();
+        test_blank_and_short_rows();
+        test_invalid_coordinates();
+        test_attribute_no_value();
+        test_invalid_attribute_values();
+        test_quoted_fields();
+        test_headers();
+        test_missing_csv_file();
         return 0;
     }
     catch( ... )
