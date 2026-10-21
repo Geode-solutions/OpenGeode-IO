@@ -25,6 +25,9 @@
 
 #include <array>
 #include <fstream>
+#include <optional>
+
+#include <absl/strings/numbers.h>
 
 #include <geode/basic/string.hpp>
 
@@ -68,53 +71,90 @@ namespace geode
             };
 
         protected:
+            using Extent = std::array< std::array< int64_t, 2 >, 3 >;
+
+            // Reads the [start, end] point indices in each direction, nullopt
+            // if WholeExtent is missing or malformed
+            static std::optional< Extent > read_whole_extent(
+                const pugi::xml_node& vtk_object )
+            {
+                const auto tokens = string_split(
+                    vtk_object.attribute( "WholeExtent" ).value() );
+                if( tokens.size() != 6 )
+                {
+                    return std::nullopt;
+                }
+                Extent extent;
+                for( const auto d : LRange{ 3 } )
+                {
+                    for( const auto i : LRange{ 2 } )
+                    {
+                        if( !absl::SimpleAtoi(
+                                tokens[2 * d + i], &extent[d][i] ) )
+                        {
+                            return std::nullopt;
+                        }
+                    }
+                    if( extent[d][1] < extent[d][0] )
+                    {
+                        return std::nullopt;
+                    }
+                }
+                return extent;
+            }
+
             static GridAttributes read_grid_attributes(
                 const pugi::xml_node& vtk_object )
             {
                 GridAttributes grid_attributes;
-                for( const auto& attribute : vtk_object.attributes() )
+                const auto extent = read_whole_extent( vtk_object );
+                OpenGeodeIOMeshException::check_exception( extent.has_value(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTIInput::read_grid_attributes] Missing or malformed "
+                    "WholeExtent: ",
+                    vtk_object.attribute( "WholeExtent" ).value() );
+                for( const auto d : LRange{ dimension } )
                 {
-                    if( std::strcmp( attribute.name(), "WholeExtent" ) == 0 )
+                    const auto nb_cells =
+                        extent.value()[d][1] - extent.value()[d][0];
+                    OpenGeodeIOMeshException::check_exception( nb_cells < NO_ID,
+                        nullptr, OpenGeodeException::TYPE::data,
+                        "[VTIInput::read_grid_attributes] Too many cells in "
+                        "direction ",
+                        d );
+                    grid_attributes.cells_number[d] =
+                        static_cast< index_t >( nb_cells );
+                }
+                if( const auto origin = vtk_object.attribute( "Origin" ) )
+                {
+                    const auto tokens =
+                        read_values( origin.value(), dimension, "Origin" );
+                    for( const auto d : LRange{ dimension } )
                     {
-                        const auto tokens = string_split( attribute.value() );
-                        for( const auto d : LRange{ dimension } )
-                        {
-                            const auto start = string_to_index( tokens[2 * d] );
-                            const auto end =
-                                string_to_index( tokens[2 * d + 1] );
-                            grid_attributes.cells_number[d] = end - start;
-                        }
+                        grid_attributes.origin.set_value( d, tokens[d] );
                     }
-                    else if( std::strcmp( attribute.name(), "Origin" ) == 0 )
+                }
+                if( const auto spacing = vtk_object.attribute( "Spacing" ) )
+                {
+                    const auto tokens =
+                        read_values( spacing.value(), dimension, "Spacing" );
+                    for( const auto d : LRange{ dimension } )
                     {
-                        const auto tokens = string_split( attribute.value() );
-                        for( const auto d : LRange{ dimension } )
-                        {
-                            grid_attributes.origin.set_value(
-                                d, string_to_double( tokens[d] ) );
-                        }
+                        grid_attributes.cells_length[d] = tokens[d];
                     }
-                    else if( std::strcmp( attribute.name(), "Spacing" ) == 0 )
+                }
+                if( const auto direction_attribute =
+                        vtk_object.attribute( "Direction" ) )
+                {
+                    const auto tokens =
+                        read_values( direction_attribute.value(), 3 * dimension,
+                            "Direction" );
+                    for( const auto d : LRange{ dimension } )
                     {
-                        const auto tokens = string_split( attribute.value() );
-                        for( const auto d : LRange{ dimension } )
+                        auto& direction = grid_attributes.cell_directions[d];
+                        for( const auto i : LRange{ dimension } )
                         {
-                            grid_attributes.cells_length[d] =
-                                string_to_double( tokens[d] );
-                        }
-                    }
-                    else if( std::strcmp( attribute.name(), "Direction" ) == 0 )
-                    {
-                        const auto tokens = string_split( attribute.value() );
-                        for( const auto d : LRange{ dimension } )
-                        {
-                            auto& direction =
-                                grid_attributes.cell_directions[d];
-                            for( const auto i : LRange{ dimension } )
-                            {
-                                direction.set_value(
-                                    i, string_to_double( tokens[3 * d + i] ) );
-                            }
+                            direction.set_value( i, tokens[3 * d + i] );
                         }
                     }
                 }
@@ -123,7 +163,33 @@ namespace geode
                     grid_attributes.cell_directions[d] *=
                         grid_attributes.cells_length[d];
                 }
+                // Points are numbered from the extent start, not from 0
+                for( const auto d : LRange{ dimension } )
+                {
+                    grid_attributes.origin +=
+                        grid_attributes.cell_directions[d]
+                        * static_cast< double >( extent.value()[d][0] );
+                }
                 return grid_attributes;
+            }
+
+            static std::vector< double > read_values( std::string_view value,
+                index_t nb_values,
+                std::string_view attribute_name )
+            {
+                const auto tokens = string_split( value );
+                OpenGeodeIOMeshException::check_exception(
+                    tokens.size() >= nb_values, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTIInput::read_grid_attributes] Expected ", nb_values,
+                    " values for ", attribute_name, ", got ", tokens.size() );
+                std::vector< double > values;
+                values.reserve( tokens.size() );
+                for( const auto& token : tokens )
+                {
+                    values.push_back( string_to_double( token ) );
+                }
+                return values;
             }
 
         private:
@@ -132,9 +198,11 @@ namespace geode
                 build_grid( vtk_object );
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
-                    this->read_data( piece.child( "PointData" ), 0,
+                    this->read_data( piece.child( "PointData" ),
+                        DataMapping{ this->mesh().nb_grid_vertices(), 0 },
                         this->mesh().grid_vertex_attribute_manager() );
-                    this->read_data( piece.child( "CellData" ), 0,
+                    this->read_data( piece.child( "CellData" ),
+                        DataMapping{ this->mesh().nb_cells(), 0 },
                         this->mesh().cell_attribute_manager() );
                 }
             }
@@ -142,8 +210,14 @@ namespace geode
             void is_vtk_object_loadable( const pugi::xml_node& vtk_object,
                 std::vector< Percentage >& percentages ) const final
             {
-                const auto grid_attributes = read_grid_attributes( vtk_object );
-                const auto nb_cells_3d = grid_attributes.cells_number[2];
+                const auto extent = read_whole_extent( vtk_object );
+                if( !extent )
+                {
+                    percentages.emplace_back( 0 );
+                    return;
+                }
+                const auto nb_cells_3d =
+                    extent.value()[2][1] - extent.value()[2][0];
                 percentages.emplace_back(
                     dimension == 2 ? nb_cells_3d == 0 : nb_cells_3d > 0 );
             }

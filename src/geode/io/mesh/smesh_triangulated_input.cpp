@@ -74,8 +74,8 @@ namespace geode
 
         Percentage SMESHTriangulatedInput::is_loadable() const
         {
-            auto curve = EdgedCurve3D::create();
-            SMESHCurveInputImpl reader{ filename(), *curve };
+            auto surface = TriangulatedSurface3D::create();
+            SMESHTriangulatedInputImpl reader{ filename(), *surface };
             return reader.is_loadable();
         }
     } // namespace internal
