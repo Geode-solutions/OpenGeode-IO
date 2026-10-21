@@ -362,6 +362,22 @@ namespace geode
                 std::vector< T >&& values,
                 local_index_t nb_components = 1 )
             {
+                auto owner =
+                    std::make_shared< std::vector< T > >( std::move( values ) );
+                auto data_array = write_external_data_array< T >(
+                    parent, name, *owner, nb_components );
+                appended_blocks_.back().owner = std::move( owner );
+                return data_array;
+            }
+
+            // Same as above, the values are neither copied nor owned: they
+            // must stay alive until the file is written
+            template < typename T >
+            pugi::xml_node write_external_data_array( pugi::xml_node& parent,
+                std::string_view name,
+                absl::Span< const T > values,
+                local_index_t nb_components = 1 )
+            {
                 auto data_array = parent.append_child( "DataArray" );
                 data_array.append_attribute( "type" ).set_value(
                     vtk_data_type< T >() );
@@ -370,16 +386,13 @@ namespace geode
                 data_array.append_attribute( "format" ).set_value( "appended" );
                 data_array.append_attribute( "NumberOfComponents" )
                     .set_value( nb_components );
-                write_range( data_array, absl::Span< const T >{ values } );
+                write_range( data_array, values );
                 data_array.append_attribute( "offset" )
                     .set_value( appended_size_ );
-                auto owner =
-                    std::make_shared< std::vector< T > >( std::move( values ) );
                 AppendedBlock block;
-                block.nb_bytes = owner->size() * sizeof( T );
+                block.nb_bytes = values.size() * sizeof( T );
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                block.data = reinterpret_cast< const char* >( owner->data() );
-                block.owner = std::move( owner );
+                block.data = reinterpret_cast< const char* >( values.data() );
                 appended_size_ += sizeof( HeaderType ) + block.nb_bytes;
                 appended_blocks_.push_back( std::move( block ) );
                 return data_array;

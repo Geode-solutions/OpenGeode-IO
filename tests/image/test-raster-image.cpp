@@ -23,6 +23,7 @@
 
 #include <geode/tests_config.hpp>
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -160,6 +161,43 @@ void test_empty_image_output()
         "[TEST] Wrong extent written for empty image" );
 }
 
+void test_vti_colors_output()
+{
+    geode::RasterImage2D raster{ { 3, 2 } };
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto value = static_cast< geode::local_index_t >( 10 * cell );
+        raster.set_color(
+            cell, { value, static_cast< geode::local_index_t >( value + 1 ),
+                      static_cast< geode::local_index_t >( value + 2 ) } );
+    }
+    geode::save_raster_image( raster, "colors.vti" );
+    std::ifstream file{ "colors.vti", std::ios::binary };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    const auto start = content.find( "<AppendedData encoding=\"raw\">" );
+    geode::OpenGeodeIOImageException::test(
+        start != std::string::npos, "[TEST] No appended data in VTI file" );
+    const auto data = content.find( '_', start ) + 1;
+    std::uint64_t nb_bytes{ 0 };
+    std::memcpy( &nb_bytes, content.data() + data, sizeof( nb_bytes ) );
+    geode::OpenGeodeIOImageException::test(
+        nb_bytes == 3 * raster.nb_cells(), "[TEST] Wrong VTI colors size" );
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto* color =
+            content.data() + data + sizeof( nb_bytes ) + 3 * cell;
+        const auto& expected = raster.color( cell );
+        geode::OpenGeodeIOImageException::test(
+            static_cast< geode::local_index_t >( color[0] ) == expected.red()
+                && static_cast< geode::local_index_t >( color[1] )
+                       == expected.green()
+                && static_cast< geode::local_index_t >( color[2] )
+                       == expected.blue(),
+            "[TEST] Wrong VTI color for cell ", cell );
+    }
+}
+
 class FailingVTIOutput
     : public geode::detail::VTIOutputImpl< geode::RasterImage2D >
 {
@@ -240,6 +278,7 @@ int main()
         test_empty_image_output();
         test_failed_output_keeps_existing_file();
         test_output_through_symbolic_link();
+        test_vti_colors_output();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
