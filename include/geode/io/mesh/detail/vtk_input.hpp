@@ -35,12 +35,14 @@
 #include <zlib.h>
 
 #include <absl/algorithm/container.h>
+#include <absl/container/flat_hash_map.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/escaping.h>
 #include <absl/strings/match.h>
 #include <absl/strings/str_cat.h>
 
 #include <geode/basic/attribute_manager.hpp>
+#include <geode/basic/logger.hpp>
 #include <geode/basic/string.hpp>
 #include <geode/basic/variable_attribute.hpp>
 
@@ -50,6 +52,44 @@ namespace geode
 {
     namespace detail
     {
+        // Maps the elements of a VTK data array to the mesh elements
+        class DataMapping
+        {
+        public:
+            // Element i of the data array is mesh element offset + i
+            DataMapping( index_t nb_elements, index_t offset )
+                : nb_elements_{ nb_elements }, offset_{ offset }
+            {
+            }
+
+            // Element i of the data array is mesh element elements[i],
+            // NO_ID if it has no mesh element
+            explicit DataMapping( absl::Span< const index_t > elements )
+                : nb_elements_{ static_cast< index_t >( elements.size() ) },
+                  elements_{ elements }
+            {
+            }
+
+            index_t nb_elements() const
+            {
+                return nb_elements_;
+            }
+
+            index_t element( index_t data_element ) const
+            {
+                if( elements_.empty() )
+                {
+                    return offset_ + data_element;
+                }
+                return elements_[data_element];
+            }
+
+        private:
+            index_t nb_elements_;
+            index_t offset_{ 0 };
+            absl::Span< const index_t > elements_;
+        };
+
         template < typename Mesh >
         class VTKInputImpl
         {
@@ -59,10 +99,17 @@ namespace geode
             std::unique_ptr< Mesh > read_file()
             {
                 read_common_data();
+                OpenGeodeIOMeshException::check_exception( root_.child( type_ ),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_file] No ", type_,
+                    " element found in file" );
                 for( const auto& vtk_object : root_.children( type_ ) )
                 {
                     read_vtk_object( vtk_object );
                 }
+                OpenGeodeIOMeshException::check_exception( mesh_ != nullptr,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_file] No mesh could be read" );
                 return std::move( mesh_ );
             }
 
@@ -115,6 +162,13 @@ namespace geode
             {
                 read_root_attributes();
                 read_appended_data();
+            }
+
+            // To be called before reading each piece: data arrays are then
+            // gathered with the arrays of the same name in previous pieces
+            void start_piece()
+            {
+                current_piece_++;
             }
 
             void initialize_mesh( std::unique_ptr< Mesh >&& mesh )
@@ -194,13 +248,20 @@ namespace geode
                 std::string_view name,
                 absl::Span< const T > values,
                 index_t nb_components,
-                index_t offset )
+                const DataMapping& mapping )
             {
-                OpenGeodeIOMeshException::check_exception(
-                    values.size() % nb_components == 0, nullptr,
-                    OpenGeodeException::TYPE::data,
-                    "[VTKInput::build_attribute] Number of attribute "
-                    "values is not a multiple of number of components" );
+                if( values.size()
+                    != static_cast< size_t >( nb_components )
+                           * mapping.nb_elements() )
+                {
+                    Logger::warning( "[VTKInput::build_attribute] DataArray ",
+                        name, " has ", values.size(), " values instead of ",
+                        static_cast< size_t >( nb_components )
+                            * mapping.nb_elements(),
+                        " (", mapping.nb_elements(), " elements with ",
+                        nb_components, " components) and has been skipped" );
+                    return;
+                }
                 if( nb_components == 1 )
                 {
                     AttributeValues< T > default_values;
@@ -210,15 +271,15 @@ namespace geode
                     properties.assignable = false;
                     properties.interpolable = false;
                     properties.transferable = true;
-                    auto attribute_id =
-                        manager.create_attribute< VariableAttribute, T >(
-                            name, default_values, properties );
-                    auto attribute =
-                        manager.find_attribute< VariableAttribute, T >(
-                            attribute_id );
+                    auto attribute = find_or_create_attribute< T >(
+                        manager, name, default_values, properties );
                     for( const auto i : Indices{ values } )
                     {
-                        attribute->set_value( i + offset, values[i] );
+                        const auto element = mapping.element( i );
+                        if( element != NO_ID )
+                        {
+                            attribute->set_value( element, values[i] );
+                        }
                     }
                 }
                 else if( nb_components == 2 )
@@ -226,21 +287,21 @@ namespace geode
                     std::array< T, 2 > no_value;
                     no_value.fill( missing_value< T >() );
                     create_attribute< std::array< T, 2 >, T >( manager, {},
-                        no_value, values, nb_components, name, offset );
+                        no_value, values, nb_components, name, mapping );
                 }
                 else if( nb_components == 3 )
                 {
                     std::array< T, 3 > no_value;
                     no_value.fill( missing_value< T >() );
                     create_attribute< std::array< T, 3 >, T >( manager, {},
-                        no_value, values, nb_components, name, offset );
+                        no_value, values, nb_components, name, mapping );
                 }
                 else
                 {
                     create_attribute< std::vector< T >, T >( manager,
                         std::vector< T >( nb_components ),
                         std::vector< T >( nb_components, missing_value< T >() ),
-                        values, nb_components, name, offset );
+                        values, nb_components, name, mapping );
                 }
             }
 
@@ -263,7 +324,7 @@ namespace geode
                 std::string_view name,
                 absl::Span< const int64_t > values,
                 index_t nb_components,
-                index_t offset )
+                const DataMapping& mapping )
             {
                 const auto [min, max] = absl::c_minmax_element( values );
                 if( values.empty()
@@ -271,23 +332,23 @@ namespace geode
                          && *max <= std::numeric_limits< index_t >::max() ) )
                 {
                     build_attribute< index_t >( manager, name,
-                        cast_to< index_t >( values ), nb_components, offset );
+                        cast_to< index_t >( values ), nb_components, mapping );
                 }
                 else if( *min >= std::numeric_limits< int >::lowest()
                          && *max <= std::numeric_limits< int >::max() )
                 {
                     build_attribute< int >( manager, name,
-                        cast_to< int >( values ), nb_components, offset );
+                        cast_to< int >( values ), nb_components, mapping );
                 }
                 else
                 {
-                    build_attribute< long int >( manager, name,
-                        cast_to< long int >( values ), nb_components, offset );
+                    build_attribute< int64_t >( manager, name,
+                        cast_to< int64_t >( values ), nb_components, mapping );
                 }
             }
 
             void read_attribute_data( const pugi::xml_node& data,
-                index_t offset,
+                const DataMapping& mapping,
                 AttributeManager& attribute_manager )
             {
                 const auto data_array_name = data.attribute( "Name" ).value();
@@ -299,6 +360,21 @@ namespace geode
                     nb_components =
                         read_attribute( data, "NumberOfComponents" );
                 }
+                if( !is_appended_offset_valid( data ) )
+                {
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name,
+                        " has an invalid appended data offset and has been "
+                        "skipped" );
+                    return;
+                }
+                if( nb_components == 0 )
+                {
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name,
+                        " has no component and has been skipped" );
+                    return;
+                }
                 if( match( data_array_type, "Float64" )
                     || match( data_array_type, "Float32" ) )
                 {
@@ -306,42 +382,92 @@ namespace geode
                         read_data_array< double >( data );
                     build_attribute< double >( attribute_manager,
                         data_array_name, attribute_values, nb_components,
-                        offset );
+                        mapping );
                 }
                 else if( is_integer_type( data_array_type ) )
                 {
                     const auto attribute_values =
                         read_data_array< int64_t >( data );
                     build_integer_attribute( attribute_manager, data_array_name,
-                        attribute_values, nb_components, offset );
+                        attribute_values, nb_components, mapping );
                 }
                 else
                 {
-                    throw OpenGeodeIOMeshException{ nullptr,
-                        OpenGeodeException::TYPE::internal,
-                        "[VTKInput::read_data] Attribute of type ",
-                        data_array_type, " is not supported" };
+                    Logger::warning( "[VTKInput::read_data] DataArray ",
+                        data_array_name, " of type ", data_array_type,
+                        " is not supported and has been skipped" );
                 }
             }
 
             void read_data( const pugi::xml_node& point_data,
-                index_t offset,
+                const DataMapping& mapping,
                 AttributeManager& attribute_manager )
             {
                 for( const auto& data : point_data.children( "DataArray" ) )
                 {
-                    read_attribute_data( data, offset, attribute_manager );
+                    read_attribute_data( data, mapping, attribute_manager );
                 }
             }
 
             std::string_view read_appended_data(
                 const pugi::xml_node& data ) const
             {
-                const auto offset = data.attribute( "offset" ).as_ullong();
-                return appended_data_.substr( offset );
+                OpenGeodeIOMeshException::check_exception(
+                    is_appended_offset_valid( data ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::read_appended_data] DataArray offset ",
+                    data.attribute( "offset" ).value(),
+                    " is outside of AppendedData (size: ",
+                    appended_data_.size(), ")" );
+                return appended_data_.substr(
+                    data.attribute( "offset" ).as_ullong() );
+            }
+
+            bool is_appended_offset_valid( const pugi::xml_node& data ) const
+            {
+                if( !match( data.attribute( "format" ).value(), "appended" ) )
+                {
+                    return true;
+                }
+                const auto offset = data.attribute( "offset" );
+                return offset && offset.as_ullong() < appended_data_.size();
             }
 
         private:
+            // Reuses the attribute of the same name and type created while
+            // reading a previous piece, creates a new one otherwise
+            template < typename T >
+            std::shared_ptr< VariableAttribute< T > > find_or_create_attribute(
+                AttributeManager& manager,
+                std::string_view name,
+                AttributeValues< T > default_values,
+                AttributeProperties properties )
+            {
+                const std::pair< const AttributeManager*, std::string > key{
+                    &manager, to_string( name )
+                };
+                const auto it = created_attributes_.find( key );
+                if( it != created_attributes_.end()
+                    && it->second.second != current_piece_ )
+                {
+                    if( auto attribute =
+                            std::dynamic_pointer_cast< VariableAttribute< T > >(
+                                manager.find_generic_attribute(
+                                    it->second.first ) ) )
+                    {
+                        it->second.second = current_piece_;
+                        return attribute;
+                    }
+                }
+                const auto attribute_id =
+                    manager.create_attribute< VariableAttribute, T >( name,
+                        std::move( default_values ), std::move( properties ) );
+                created_attributes_.insert_or_assign(
+                    key, std::pair{ attribute_id, current_piece_ } );
+                return manager.find_attribute< VariableAttribute, T >(
+                    attribute_id );
+            }
+
             template < typename Container, typename T >
             void create_attribute( AttributeManager& manager,
                 const Container& default_value,
@@ -349,7 +475,7 @@ namespace geode
                 absl::Span< const T > values,
                 index_t nb_components,
                 std::string_view name,
-                index_t offset )
+                const DataMapping& mapping )
             {
                 AttributeValues< Container > default_values;
                 default_values.default_value = default_value;
@@ -358,19 +484,20 @@ namespace geode
                 properties.assignable = false;
                 properties.interpolable = false;
                 properties.transferable = true;
-                const auto attribute_id =
-                    manager.create_attribute< VariableAttribute, Container >(
-                        name, default_values, properties );
-                auto attribute =
-                    manager.find_attribute< VariableAttribute, Container >(
-                        attribute_id );
+                auto attribute = find_or_create_attribute< Container >(
+                    manager, name, default_values, properties );
                 for( const auto i : Range{ values.size() / nb_components } )
                 {
+                    const auto element = mapping.element( i );
+                    if( element == NO_ID )
+                    {
+                        continue;
+                    }
                     for( const auto c : Range{ nb_components } )
                     {
                         const auto& new_value = values[nb_components * i + c];
                         attribute->modify_value(
-                            i + offset, [&new_value, &c]( Container& value ) {
+                            element, [&new_value, &c]( Container& value ) {
                                 value[c] = new_value;
                             } );
                     }
@@ -595,32 +722,79 @@ namespace geode
                 {
                     return {};
                 }
-                const auto block_size =
+                OpenGeodeIOMeshException::check_exception(
+                    nb_blocks <= input.size() / sizeof( UInt ), nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Wrong number of compressed "
+                    "blocks: ",
+                    nb_blocks );
+                const uint64_t block_size =
                     read_raw_value< UInt >( input, sizeof( UInt ) );
-                const auto last_block_size =
+                const uint64_t last_block_size =
                     read_raw_value< UInt >( input, 2 * sizeof( UInt ) );
                 const auto last_size =
                     last_block_size == 0 ? block_size : last_block_size;
-                storage.resize( ( nb_blocks - 1 ) * block_size + last_size );
+                OpenGeodeIOMeshException::check_exception(
+                    block_size > 0 && last_size <= block_size, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Last compressed block is "
+                    "larger than other blocks" );
+                const uint64_t data_begin =
+                    ( 3 + static_cast< uint64_t >( nb_blocks ) )
+                    * sizeof( UInt );
+                uint64_t total_compressed_size{ 0 };
+                for( const auto b : Range{ nb_blocks } )
+                {
+                    const uint64_t compressed_size = read_raw_value< UInt >(
+                        input, ( 3 + b ) * sizeof( UInt ) );
+                    OpenGeodeIOMeshException::check_exception(
+                        compressed_size <= input.size()
+                            && total_compressed_size
+                                   <= input.size() - compressed_size,
+                        nullptr, OpenGeodeException::TYPE::data,
+                        "[VTKInput::raw_block_data] Unexpected end of data "
+                        "block" );
+                    total_compressed_size += compressed_size;
+                }
+                OpenGeodeIOMeshException::check_exception(
+                    data_begin <= input.size()
+                        && total_compressed_size <= input.size() - data_begin,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Unexpected end of data "
+                    "block" );
+                // zlib cannot compress data with a ratio higher than 1032:1
+                static constexpr uint64_t MAX_ZLIB_RATIO{ 1032 };
+                const auto max_nb_bytes =
+                    total_compressed_size * MAX_ZLIB_RATIO;
+                OpenGeodeIOMeshException::check_exception(
+                    max_nb_bytes >= block_size
+                        && nb_blocks - 1 <= max_nb_bytes / block_size,
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Compressed block sizes are "
+                    "inconsistent with compressed data size" );
+                const auto nb_bytes =
+                    ( nb_blocks - 1 ) * block_size + last_size;
+                OpenGeodeIOMeshException::check_exception(
+                    nb_bytes <= max_nb_bytes, nullptr,
+                    OpenGeodeException::TYPE::data,
+                    "[VTKInput::raw_block_data] Compressed block sizes are "
+                    "inconsistent with compressed data size" );
+                storage.resize( static_cast< size_t >( nb_bytes ) );
                 auto* output = reinterpret_cast< Bytef* >( storage.data() );
-                auto data_position = ( 3 + nb_blocks ) * sizeof( UInt );
+                auto data_position = static_cast< size_t >( data_begin );
                 for( const auto b : Range{ nb_blocks } )
                 {
                     const auto compressed_size = read_raw_value< UInt >(
                         input, ( 3 + b ) * sizeof( UInt ) );
-                    OpenGeodeIOMeshException::check_exception(
-                        data_position + compressed_size <= input.size(),
-                        nullptr, OpenGeodeException::TYPE::data,
-                        "[VTKInput::raw_block_data] Unexpected end of data "
-                        "block" );
                     const auto expected_size =
                         b + 1 == nb_blocks ? last_size : block_size;
-                    uLongf uncompressed_size = expected_size;
+                    uLongf uncompressed_size =
+                        static_cast< uLongf >( expected_size );
                     const auto uncompress_result =
                         uncompress( output + b * block_size, &uncompressed_size,
                             reinterpret_cast< const Bytef* >(
                                 input.data() + data_position ),
-                            compressed_size );
+                            static_cast< uLong >( compressed_size ) );
                     OpenGeodeIOMeshException::check_exception(
                         uncompress_result == Z_OK
                             && uncompressed_size == expected_size,
@@ -786,6 +960,11 @@ namespace geode
             std::string file_content_;
             std::string_view raw_appended_data_;
             std::string_view appended_data_;
+            index_t current_piece_{ 0 };
+            absl::flat_hash_map<
+                std::pair< const AttributeManager*, std::string >,
+                std::pair< uuid, index_t > >
+                created_attributes_;
         }; // namespace detail
     } // namespace detail
 } // namespace geode

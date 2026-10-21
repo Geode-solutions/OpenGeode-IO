@@ -25,9 +25,13 @@
 
 #include <assimp/Importer.hpp>
 
+#include <filesystem>
+#include <type_traits>
+
 #include <async++.h>
 
 #include <absl/algorithm/container.h>
+#include <absl/container/flat_hash_set.h>
 
 #include <geode/basic/common.hpp>
 #include <geode/basic/filename.hpp>
@@ -48,30 +52,97 @@
 namespace
 {
     template < typename Mesh >
-    std::unique_ptr< Mesh > build_mesh( const aiMesh& assimp_mesh )
+    bool is_face_supported( const aiFace& face )
+    {
+        if constexpr( std::is_same_v< Mesh, geode::TriangulatedSurface3D > )
+        {
+            return face.mNumIndices == 3;
+        }
+        return face.mNumIndices >= 3 && face.mNumIndices < geode::NO_LID;
+    }
+
+    template < typename Mesh >
+    std::unique_ptr< Mesh > build_mesh( const aiMesh& assimp_mesh,
+        std::string_view texture_name,
+        geode::index_t& nb_skipped_faces )
     {
         auto mesh = Mesh::create();
         auto builder = Mesh::Builder::create( *mesh );
-        builder->create_vertices( assimp_mesh.mNumVertices );
-        async::parallel_for(
-            async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
-            [&assimp_mesh, &builder]( geode::index_t v ) {
-                const auto& vertex = assimp_mesh.mVertices[v];
-                builder->set_point(
-                    v, geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
-            } );
+        std::vector< geode::index_t > new_vertices(
+            assimp_mesh.mNumVertices, geode::NO_ID );
+        geode::index_t nb_vertices{ 0 };
+        bool has_shared_vertices{ false };
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
+            if( !is_face_supported< Mesh >( face ) )
+            {
+                nb_skipped_faces++;
+                continue;
+            }
+            for( const auto i : geode::Range{ face.mNumIndices } )
+            {
+                auto& new_vertex = new_vertices[face.mIndices[i]];
+                if( new_vertex == geode::NO_ID )
+                {
+                    new_vertex = nb_vertices++;
+                }
+                else
+                {
+                    has_shared_vertices = true;
+                }
+            }
+        }
+        builder->create_vertices( nb_vertices );
+        async::parallel_for(
+            async::irange( geode::index_t{ 0 }, assimp_mesh.mNumVertices ),
+            [&assimp_mesh, &builder, &new_vertices]( geode::index_t v ) {
+                if( new_vertices[v] == geode::NO_ID )
+                {
+                    return;
+                }
+                const auto& vertex = assimp_mesh.mVertices[v];
+                builder->set_point( new_vertices[v],
+                    geode::Point3D{ { vertex.x, vertex.y, vertex.z } } );
+            } );
+        geode::Texture2D* texture{ nullptr };
+        if( assimp_mesh.HasTextureCoords( 0 ) )
+        {
+            texture =
+                &mesh->texture_manager().find_or_create_texture( texture_name );
+        }
+        for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
+        {
+            const auto& face = assimp_mesh.mFaces[p];
+            if( !is_face_supported< Mesh >( face ) )
+            {
+                continue;
+            }
             absl::FixedArray< geode::index_t > polygon_vertices(
                 face.mNumIndices );
             for( const auto i : geode::LIndices{ polygon_vertices } )
             {
-                polygon_vertices[i] = face.mIndices[i];
+                polygon_vertices[i] = new_vertices[face.mIndices[i]];
             }
-            builder->create_polygon( polygon_vertices );
+            const auto polygon = builder->create_polygon( polygon_vertices );
+            if( !texture )
+            {
+                continue;
+            }
+            for( const auto i : geode::LIndices{ polygon_vertices } )
+            {
+                const auto& coord =
+                    assimp_mesh.mTextureCoords[0][face.mIndices[i]];
+                texture->set_texture_coordinates(
+                    { polygon, i }, geode::Point2D{ { coord.x, coord.y } } );
+            }
         }
-        builder->compute_polygon_adjacencies();
+        // Without shared vertices (e.g. OBJ, STL or DXF importers) there is no
+        // adjacency to compute
+        if( has_shared_vertices )
+        {
+            builder->compute_polygon_adjacencies();
+        }
         return mesh;
     }
 } // namespace
@@ -100,50 +171,8 @@ namespace geode
                 importer.GetErrorString() );
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
-            read_textures( assimp_scene );
+            importer.FreeScene();
             return merge_meshes();
-        }
-
-        template < typename Mesh >
-        void AssimpMeshInput< Mesh >::read_textures(
-            const aiScene* assimp_scene )
-        {
-            for( const auto i : Range{ assimp_scene->mNumMeshes } )
-            {
-                const auto& assimp_mesh = *assimp_scene->mMeshes[i];
-                if( !assimp_mesh.HasTextureCoords( 0 ) )
-                {
-                    return;
-                }
-                const auto& mesh = *surfaces_[i];
-                const auto& material = materials_[assimp_mesh.mMaterialIndex];
-                auto& texture = mesh.texture_manager().find_or_create_texture(
-                    material.first );
-                for( const auto p : Range{ assimp_mesh.mNumFaces } )
-                {
-                    const auto& face = assimp_mesh.mFaces[p];
-                    for( const auto v : LRange{ face.mNumIndices } )
-                    {
-                        const auto mesh_vertex = face.mIndices[v];
-                        const auto& coord =
-                            assimp_mesh.mTextureCoords[0][mesh_vertex];
-                        texture.set_texture_coordinates(
-                            { p, v }, Point2D{ { coord.x, coord.y } } );
-                    }
-                }
-                if( !material.second.empty() )
-                {
-                    try
-                    {
-                        texture.set_image(
-                            load_raster_image< 2 >( material.second ) );
-                    }
-                    catch( const OpenGeodeException& e )
-                    {
-                        Logger::warning( e.what() );
-                    }
-                }
-            }
         }
 
         template < typename Mesh >
@@ -152,17 +181,37 @@ namespace geode
             surfaces_.resize( assimp_scene->mNumMeshes );
             absl::FixedArray< async::task< void > > tasks(
                 assimp_scene->mNumMeshes );
+            absl::FixedArray< index_t > nb_skipped_faces(
+                assimp_scene->mNumMeshes, 0 );
             for( const auto i : Range{ assimp_scene->mNumMeshes } )
             {
-                tasks[i] = async::spawn( [this, i, &assimp_scene] {
-                    surfaces_[i] =
-                        build_mesh< Mesh >( *assimp_scene->mMeshes[i] );
-                } );
+                tasks[i] =
+                    async::spawn( [this, i, &assimp_scene, &nb_skipped_faces] {
+                        const auto& assimp_mesh = *assimp_scene->mMeshes[i];
+                        surfaces_[i] = build_mesh< Mesh >( assimp_mesh,
+                            materials_[assimp_mesh.mMaterialIndex].first,
+                            nb_skipped_faces[i] );
+                    } );
             }
             for( auto& task :
                 async::when_all( tasks.begin(), tasks.end() ).get() )
             {
                 task.get();
+            }
+            index_t total_skipped_faces{ 0 };
+            for( const auto nb : nb_skipped_faces )
+            {
+                total_skipped_faces += nb;
+            }
+            if( total_skipped_faces > 0 )
+            {
+                Logger::warning( "[AssimpMeshInput::read_meshes] Skipped ",
+                    total_skipped_faces, " unsupported faces (",
+                    std::is_same_v< Mesh, TriangulatedSurface3D >
+                        ? "non-triangle faces"
+                        : "lines, points, empty faces or polygons with too "
+                          "many vertices",
+                    ") in file ", file_ );
             }
         }
 
@@ -192,7 +241,6 @@ namespace geode
                     const auto& texture = manager.find_texture( name );
                     auto& merged_texture =
                         merged_manager.find_or_create_texture( name );
-                    merged_texture.set_image( texture.image().clone() );
                     for( const auto p : Range{ mesh->nb_polygons() } )
                     {
                         const auto merged_polygon =
@@ -201,14 +249,43 @@ namespace geode
                         {
                             continue;
                         }
+                        // The merged polygon may start on another vertex or
+                        // be reversed: match corners by their vertex
                         for( const auto v :
                             LRange{ mesh->nb_polygon_vertices( p ) } )
                         {
+                            const auto merged_vertex = merger.vertex_in_merged(
+                                s, mesh->polygon_vertex( { p, v } ) );
+                            const auto merged_v = merged->vertex_in_polygon(
+                                merged_polygon, merged_vertex );
+                            if( !merged_v )
+                            {
+                                continue;
+                            }
                             merged_texture.set_texture_coordinates(
-                                { merged_polygon, v },
+                                { merged_polygon, merged_v.value() },
                                 texture.texture_coordinates( { p, v } ) );
                         }
                     }
+                }
+            }
+            // Load each texture image once, directly in the merged mesh
+            absl::flat_hash_set< std::string_view > loaded_textures;
+            for( const auto& [name, image_path] : materials_ )
+            {
+                if( image_path.empty() || !merged_manager.texture_exists( name )
+                    || !loaded_textures.emplace( name ).second )
+                {
+                    continue;
+                }
+                try
+                {
+                    merged_manager.find_or_create_texture( name ).set_image(
+                        load_raster_image< 2 >( image_path ) );
+                }
+                catch( const OpenGeodeException& e )
+                {
+                    Logger::warning( e.what() );
                 }
             }
             return merged;
@@ -236,9 +313,13 @@ namespace geode
                         nullptr, nullptr, nullptr, nullptr, nullptr )
                     == AI_SUCCESS )
                 {
-                    materials_[i].second = absl::StrCat(
-                        filepath_without_filename( file_ ).string(),
-                        Path.C_Str() );
+                    std::filesystem::path texture_path{ Path.C_Str() };
+                    if( texture_path.is_relative() )
+                    {
+                        texture_path =
+                            filepath_without_filename( file_ ) / texture_path;
+                    }
+                    materials_[i].second = texture_path.string();
                 }
             }
         }

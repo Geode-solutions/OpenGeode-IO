@@ -98,15 +98,17 @@ namespace geode
                 const auto nb_polyhedra = this->mesh().nb_polyhedra();
                 const auto nb_cells = nb_polyhedra + nb_additional_polygons();
                 std::vector< int64_t > cell_connectivity;
-                cell_connectivity.reserve( nb_cells * 4 );
+                cell_connectivity.reserve(
+                    static_cast< size_t >( nb_cells ) * 4 );
                 std::vector< int64_t > cell_offsets;
                 cell_offsets.reserve( nb_cells );
                 std::vector< uint8_t > cell_types;
                 cell_types.reserve( nb_cells );
                 std::vector< int64_t > cell_faces;
                 std::vector< int64_t > cell_face_offsets;
-                index_t vertex_offset{ 0 };
-                index_t face_offset{ 0 };
+                // 64-bit accumulators: offsets may exceed index_t range
+                int64_t vertex_offset{ 0 };
+                int64_t face_offset{ 0 };
                 for( const auto p : Range{ nb_polyhedra } )
                 {
                     const auto nb_vertices =
@@ -131,20 +133,20 @@ namespace geode
 
                 auto cells = piece.append_child( "Cells" );
                 this->template write_data_array< int64_t >(
-                    cells, "connectivity", cell_connectivity );
+                    cells, "connectivity", std::move( cell_connectivity ) );
                 this->template write_data_array< int64_t >(
-                    cells, "offsets", cell_offsets );
+                    cells, "offsets", std::move( cell_offsets ) );
                 this->template write_data_array< uint8_t >(
-                    cells, "types", cell_types );
+                    cells, "types", std::move( cell_types ) );
                 if( !cell_faces.empty() )
                 {
                     this->template write_data_array< int64_t >(
-                        cells, "faces", cell_faces );
+                        cells, "faces", std::move( cell_faces ) );
                 }
                 if( !cell_face_offsets.empty() )
                 {
                     this->template write_data_array< int64_t >(
-                        cells, "faceoffsets", cell_face_offsets );
+                        cells, "faceoffsets", std::move( cell_face_offsets ) );
                 }
                 return cells;
             }
@@ -170,7 +172,7 @@ namespace geode
                 std::vector< uint8_t >& cell_types,
                 std::vector< int64_t >& cell_faces,
                 std::vector< int64_t >& cell_face_offsets,
-                index_t& face_offset ) const = 0;
+                int64_t& face_offset ) const = 0;
 
             pugi::xml_node write_vtk_cell_attributes(
                 pugi::xml_node& piece ) override

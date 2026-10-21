@@ -38,7 +38,7 @@ namespace geode
             const TriangulatedSurface3D &surface ) const
         {
             internal::AssimpMeshOutput< TriangulatedSurface3D > impl{
-                filename(), surface, "obj"
+                filename(), surface, "objnomtl"
             };
             impl.build_assimp_scene();
             impl.write_file();

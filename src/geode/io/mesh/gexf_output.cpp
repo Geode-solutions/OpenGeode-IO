@@ -30,6 +30,8 @@
 
 #include <geode/mesh/core/graph.hpp>
 
+#include <geode/io/mesh/common.hpp>
+
 namespace
 {
     pugi::xml_node write_header( pugi::xml_document &doc )
@@ -80,8 +82,11 @@ namespace geode
             auto graph_node = write_header( doc );
             write_nodes( graph_node, graph );
             write_edges( graph_node, graph );
-            doc.save_file( to_string( filename() ).c_str(),
+            const auto saved = doc.save_file( to_string( filename() ).c_str(),
                 PUGIXML_TEXT( "    " ), pugi::format_indent_attributes );
+            OpenGeodeIOMeshException::check_exception( saved, nullptr,
+                OpenGeodeException::TYPE::data,
+                "[GEXFOutput] Error while writing file: ", filename() );
             return { to_string( filename() ) };
         }
     } // namespace internal
