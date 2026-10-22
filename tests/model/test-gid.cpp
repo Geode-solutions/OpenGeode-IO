@@ -349,6 +349,32 @@ namespace
         builder.add_line_surface_boundary_relationship( line, surface );
     }
 
+    void test_wrong_material_type()
+    {
+        const auto brep =
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+        add_material_attributes( brep );
+        geode::AttributeValues< double > default_values;
+        default_values.default_value = 1;
+        default_values.no_value = -1;
+        for( const auto& block : brep.blocks() )
+        {
+            auto& manager = block.mesh().polyhedron_attribute_manager();
+            manager.delete_attribute(
+                manager.attribute_ids_matching_name( "material_number" )
+                    .value()
+                    .at( 0 ) );
+            [[maybe_unused]] auto attribute =
+                manager.create_attribute< geode::ConstantAttribute, double >(
+                    "material_number", default_values,
+                    geode::AttributeProperties{} );
+        }
+        geode::OpenGeodeIOModelException::test(
+            !geode::is_brep_saveable( brep, "wrong_type.gid_msh" ),
+            "A material number which is not an index_t should not be "
+            "saveable" );
+    }
+
     void test_fracture_outside_blocks()
     {
         auto brep =
@@ -367,6 +393,7 @@ int main()
         geode::OpenGeodeIOModelLibrary::initialize();
         run_test( "mss", &test_brep_mss );
         test_fracture_outside_blocks();
+        test_wrong_material_type();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

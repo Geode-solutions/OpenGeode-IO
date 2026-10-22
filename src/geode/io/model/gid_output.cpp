@@ -48,38 +48,45 @@ namespace
     constexpr geode::index_t NODE_OFFSET = 1;
     constexpr geode::index_t ELEMENT_OFFSET = 1;
 
-    geode::index_t get_material_number_value( const geode::Surface3D& surface )
+    std::shared_ptr< geode::ReadOnlyAttribute< geode::index_t > >
+        material_number_attribute( const geode::AttributeManager& manager )
     {
         const auto attribute_ids =
-            surface.mesh()
-                .polygon_attribute_manager()
-                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-        geode::OpenGeodeIOModelException::check_exception(
-            attribute_ids.has_value(), nullptr,
-            geode::OpenGeodeException::TYPE::data,
-            "The surface does not have a material number attribute" );
-        auto attribute = surface.mesh()
-                             .polygon_attribute_manager()
-                             .find_read_only_attribute< geode::index_t >(
-                                 attribute_ids.value().at( 0 ) );
+            manager.attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        if( !attribute_ids )
+        {
+            return nullptr;
+        }
+        return std::dynamic_pointer_cast<
+            geode::ReadOnlyAttribute< geode::index_t > >(
+            manager.find_generic_attribute( attribute_ids.value().at( 0 ) ) );
+    }
+
+    geode::index_t get_material_number_value(
+        const geode::AttributeManager& manager, std::string_view component )
+    {
+        const auto attribute = material_number_attribute( manager );
+        geode::OpenGeodeIOModelException::check_exception( attribute != nullptr,
+            nullptr, geode::OpenGeodeException::TYPE::data, "[GIDOutput] The ",
+            component, " does not have an index_t attribute named ",
+            FRACSIMA_ATTRIBUTE_NAME );
+        if( manager.nb_elements() == 0 )
+        {
+            return geode::NO_ID;
+        }
         return attribute->value( 0 );
+    }
+
+    geode::index_t get_material_number_value( const geode::Surface3D& surface )
+    {
+        return get_material_number_value(
+            surface.mesh().polygon_attribute_manager(), "Surface" );
     }
 
     geode::index_t get_material_number_value( const geode::Block3D& block )
     {
-        const auto attribute_ids =
-            block.mesh()
-                .polyhedron_attribute_manager()
-                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-        geode::OpenGeodeIOModelException::check_exception(
-            attribute_ids.has_value(), nullptr,
-            geode::OpenGeodeException::TYPE::data,
-            "The surface does not have a material number attribute" );
-        auto attribute = block.mesh()
-                             .polyhedron_attribute_manager()
-                             .find_read_only_attribute< geode::index_t >(
-                                 attribute_ids.value().at( 0 ) );
-        return attribute->value( 0 );
+        return get_material_number_value(
+            block.mesh().polyhedron_attribute_manager(), "Block" );
     }
 
     class GIDOutputImpl
@@ -280,11 +287,8 @@ namespace geode::internal
             {
                 return false;
             }
-            const auto attribute_ids =
-                surface.mesh()
-                    .polygon_attribute_manager()
-                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-            if( !attribute_ids )
+            if( !material_number_attribute(
+                    surface.mesh().polygon_attribute_manager() ) )
             {
                 return false;
             }
@@ -296,11 +300,8 @@ namespace geode::internal
             {
                 return false;
             }
-            const auto attribute_ids =
-                block.mesh()
-                    .polyhedron_attribute_manager()
-                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-            if( !attribute_ids )
+            if( !material_number_attribute(
+                    block.mesh().polyhedron_attribute_manager() ) )
             {
                 return false;
             }
