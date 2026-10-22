@@ -22,16 +22,16 @@ add_geode_library(
     NAME time_series
     FOLDER "geode/io/time_series"
     SOURCES
-        "brep_blocks_matcher.cpp"
         "common.cpp"
         "pvd_input.cpp"
-        "brep_time_attributes_transfer.cpp"
+        "pvd_attributes_transfer.cpp"
+        "pvd_point_sets.cpp"
     PUBLIC_HEADERS
         "common.hpp"
     INTERNAL_HEADERS
-        "internal/brep_blocks_matcher.hpp"
         "internal/pvd_input.hpp"
-        "internal/brep_time_attributes_transfer.hpp"
+        "internal/pvd_attributes_transfer.hpp"
+        "internal/pvd_point_sets.hpp"
     PRIVATE_DEPENDENCIES
         OpenGeode::basic
         OpenGeode::geometry
