@@ -71,8 +71,6 @@ namespace
         void write_blocks( pugi::xml_node& block_block )
         {
             geode::index_t counter{ 0 };
-            const auto level = geode::Logger::level();
-            geode::Logger::set_level( geode::Logger::LEVEL::warning );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
             absl::FixedArray< geode::uuid > block_ids(
                 this->mesh().nb_blocks() );
@@ -121,27 +119,31 @@ namespace
                             dynamic_cast< const geode::TetrahedralSolid3D* >(
                                 &mesh ) )
                     {
-                        geode::save_tetrahedral_solid(
+                        geode::detail::write_component_mesh<
+                            geode::TetrahedralSolidOutputFactory3D >(
                             *tetra, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* hybrid =
                                  dynamic_cast< const geode::HybridSolid3D* >(
                                      &mesh ) )
                     {
-                        geode::save_hybrid_solid(
+                        geode::detail::write_component_mesh<
+                            geode::HybridSolidOutputFactory3D >(
                             *hybrid, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* poly = dynamic_cast<
                                  const geode::PolyhedralSolid3D* >( &mesh ) )
                     {
-                        geode::save_polyhedral_solid(
+                        geode::detail::write_component_mesh<
+                            geode::PolyhedralSolidOutputFactory3D >(
                             *poly, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* grid =
                                  dynamic_cast< const geode::RegularGrid3D* >(
                                      &mesh ) )
                     {
-                        geode::save_regular_grid(
+                        geode::detail::write_component_mesh<
+                            geode::RegularGridOutputFactory3D >(
                             *grid, absl::StrCat( file, ".vti" ) );
                     }
                     else
@@ -155,7 +157,6 @@ namespace
             }
             auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
             all_tasks.wait();
-            geode::Logger::set_level( level );
             for( auto& task : all_tasks.get() )
             {
                 task.get();

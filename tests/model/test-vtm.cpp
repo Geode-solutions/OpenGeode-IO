@@ -23,10 +23,12 @@
 
 #include <geode/tests_config.hpp>
 
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <absl/strings/str_cat.h>
@@ -100,6 +102,29 @@ namespace
             nb_references != 0, "The .vtm file should reference files" );
     }
 
+    /// Saving must not change the global log level seen by other threads
+    void test_log_level( const geode::BRep& brep )
+    {
+        geode::Logger::set_level( geode::Logger::LEVEL::info );
+        std::atomic< bool > done{ false };
+        std::thread saver{ [&brep, &done] {
+            [[maybe_unused]] const auto files =
+                geode::save_brep( brep, "log_level.vtm" );
+            done = true;
+        } };
+        bool level_changed{ false };
+        while( !done )
+        {
+            if( geode::Logger::level() != geode::Logger::LEVEL::info )
+            {
+                level_changed = true;
+            }
+        }
+        saver.join();
+        geode::OpenGeodeIOModelException::test( !level_changed,
+            "Saving a VTM file should not change the global log level" );
+    }
+
     void test_regular_grids()
     {
         geode::Section section;
@@ -145,6 +170,7 @@ int main()
         check_vtm_references( filename );
         check_vtm_references( filename2 );
         test_regular_grids();
+        test_log_level( brep );
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

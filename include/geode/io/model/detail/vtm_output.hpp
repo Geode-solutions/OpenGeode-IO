@@ -33,6 +33,7 @@
 
 #include <absl/container/fixed_array.h>
 
+#include <geode/basic/detail/geode_output_impl.hpp>
 #include <geode/basic/filename.hpp>
 #include <geode/basic/uuid.hpp>
 
@@ -58,6 +59,16 @@ namespace geode
 {
     namespace detail
     {
+        /*!
+         * Writes a component mesh with its output factory: the save_*
+         * functions would log one message per component.
+         */
+        template < typename Factory, typename Mesh >
+        void write_component_mesh( const Mesh& mesh, std::string_view filename )
+        {
+            geode_object_output_writer< Factory >( filename )->write( mesh );
+        }
+
         template < typename Model, index_t dimension >
         class VTMOutputImpl : public VTKOutputImpl< Model >
         {
@@ -128,8 +139,6 @@ namespace geode
             void write_corners( pugi::xml_node& corner_block )
             {
                 index_t counter{ 0 };
-                const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_corners() );
                 absl::FixedArray< uuid > corner_ids(
@@ -173,12 +182,12 @@ namespace geode
                         const auto& mesh = corner.mesh();
                         const auto file = absl::StrCat( files_directory_,
                             "/Corner_", corner.id().string(), ".vtp" );
-                        save_point_set( mesh, file );
+                        write_component_mesh<
+                            PointSetOutputFactory< dimension > >( mesh, file );
                     } );
                 }
                 auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
                 all_tasks.wait();
-                Logger::set_level( level );
                 for( auto& task : all_tasks.get() )
                 {
                     task.get();
@@ -188,8 +197,6 @@ namespace geode
             void write_lines( pugi::xml_node& line_block )
             {
                 index_t counter{ 0 };
-                const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_lines() );
                 absl::FixedArray< uuid > line_ids( this->mesh().nb_lines() );
@@ -231,12 +238,13 @@ namespace geode
                         const auto& mesh = line.mesh();
                         const auto file = absl::StrCat( files_directory_,
                             "/Line_", line.id().string(), ".vtp" );
-                        save_edged_curve( mesh, file );
+                        write_component_mesh<
+                            EdgedCurveOutputFactory< dimension > >(
+                            mesh, file );
                     } );
                 }
                 auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
                 all_tasks.wait();
-                Logger::set_level( level );
                 for( auto& task : all_tasks.get() )
                 {
                     task.get();
@@ -246,8 +254,6 @@ namespace geode
             void write_surfaces( pugi::xml_node& surface_block )
             {
                 index_t counter{ 0 };
-                const auto level = Logger::level();
-                Logger::set_level( Logger::LEVEL::warning );
                 absl::FixedArray< async::task< void > > tasks(
                     this->mesh().nb_surfaces() );
                 absl::FixedArray< uuid > surface_ids(
@@ -301,19 +307,24 @@ namespace geode
                                 const TriangulatedSurface< dimension >* >(
                                 &mesh ) )
                         {
-                            save_triangulated_surface( *triangulated, file );
+                            write_component_mesh<
+                                TriangulatedSurfaceOutputFactory< dimension > >(
+                                *triangulated, file );
                         }
                         else if( const auto* polygonal = dynamic_cast<
                                      const PolygonalSurface< dimension >* >(
                                      &mesh ) )
                         {
-                            save_polygonal_surface( *polygonal, file );
+                            write_component_mesh<
+                                PolygonalSurfaceOutputFactory< dimension > >(
+                                *polygonal, file );
                         }
                         else if( const auto* grid =
                                      dynamic_cast< const RegularGrid2D* >(
                                          &mesh ) )
                         {
-                            save_regular_grid( *grid, file );
+                            write_component_mesh< RegularGridOutputFactory2D >(
+                                *grid, file );
                         }
                         else
                         {
@@ -326,7 +337,6 @@ namespace geode
                 }
                 auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
                 all_tasks.wait();
-                Logger::set_level( level );
                 for( auto& task : all_tasks.get() )
                 {
                     task.get();
