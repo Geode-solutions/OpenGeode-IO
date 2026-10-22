@@ -23,10 +23,16 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+
+#include <absl/container/flat_hash_set.h>
+#include <absl/strings/str_cat.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/constant_attribute.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/string.hpp>
 
 #include <geode/mesh/core/edged_curve.hpp>
 #include <geode/mesh/core/point_set.hpp>
@@ -171,6 +177,92 @@ namespace
         test_brep( mss_description );
     }
 
+    struct GidContent
+    {
+        absl::flat_hash_set< geode::index_t > nodes;
+        std::vector< geode::index_t > element_ids;
+        std::vector< geode::index_t > element_nodes;
+    };
+
+    GidContent read_gid_file( std::string_view filename )
+    {
+        std::ifstream file{ geode::to_string( filename ) };
+        geode::OpenGeodeIOModelException::test(
+            file.good(), "Cannot open ", filename );
+        GidContent content;
+        std::string line;
+        bool in_coordinates{ false };
+        bool in_elements{ false };
+        while( std::getline( file, line ) )
+        {
+            if( line == "Coordinates" || line == "Elements" )
+            {
+                in_coordinates = line == "Coordinates";
+                in_elements = line == "Elements";
+                continue;
+            }
+            if( geode::string_starts_with( line, "End" )
+                || geode::string_starts_with( line, "MESH" ) )
+            {
+                in_coordinates = false;
+                in_elements = false;
+                continue;
+            }
+            const auto tokens = geode::string_split( line );
+            if( in_coordinates )
+            {
+                content.nodes.insert( geode::string_to_index( tokens[0] ) );
+            }
+            else if( in_elements )
+            {
+                content.element_ids.push_back(
+                    geode::string_to_index( tokens[0] ) );
+                // Last value is the material number
+                for( const auto t : geode::Range{ 1, tokens.size() - 1 } )
+                {
+                    content.element_nodes.push_back(
+                        geode::string_to_index( tokens[t] ) );
+                }
+            }
+        }
+        return content;
+    }
+
+    void check_gid_file(
+        std::string_view filename, geode::index_t nb_expected_elements )
+    {
+        const auto content = read_gid_file( filename );
+        absl::flat_hash_set< geode::index_t > element_ids{
+            content.element_ids.begin(), content.element_ids.end()
+        };
+        geode::OpenGeodeIOModelException::test(
+            content.element_ids.size() == nb_expected_elements,
+            "Wrong number of elements in GiD file" );
+        geode::OpenGeodeIOModelException::test(
+            element_ids.size() == content.element_ids.size(),
+            "GiD element ids should be unique" );
+        for( const auto node : content.element_nodes )
+        {
+            geode::OpenGeodeIOModelException::test(
+                content.nodes.contains( node ), "GiD element node ", node,
+                " should have coordinates" );
+        }
+    }
+
+    geode::index_t nb_gid_elements( const geode::BRep& brep )
+    {
+        geode::index_t nb_elements{ 0 };
+        for( const auto& block : brep.blocks() )
+        {
+            nb_elements += block.mesh().nb_polyhedra();
+        }
+        for( const auto& surface : brep.surfaces() )
+        {
+            nb_elements += surface.mesh().nb_polygons();
+        }
+        return nb_elements;
+    }
+
     using test_function = void ( * )( const geode::BRep& );
 
     void run_test( std::string_view short_filename, test_function test )
@@ -207,6 +299,8 @@ namespace
         const auto filename_gid =
             absl::StrCat( short_filename, "_output.gid_msh" );
         geode::save_brep( brep, filename_gid );
+        check_gid_file( absl::StrCat( short_filename, "_output.gid.msh" ),
+            nb_gid_elements( brep ) );
     }
 } // namespace
 

@@ -147,7 +147,7 @@ namespace
                 for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
-                    file_ << polyhedron_id + ELEMENT_OFFSET;
+                    file_ << nb_tet + polyhedron_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
@@ -222,6 +222,7 @@ namespace
         void write_triangles( const geode::index_t nb_tet )
         {
             file_ << "Elements" << geode::EOL;
+            auto first_triangle = nb_tet;
             for( const auto& surface : brep_.surfaces() )
             {
                 const auto material_number =
@@ -230,7 +231,7 @@ namespace
                 for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
-                    file_ << nb_tet + facet_id + ELEMENT_OFFSET;
+                    file_ << first_triangle + facet_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 3 } )
                     {
                         const auto triangle_vertex =
@@ -242,6 +243,7 @@ namespace
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
                 }
+                first_triangle += surface.mesh().nb_polygons();
             }
             file_ << "End Elements" << geode::EOL;
         }
