@@ -23,8 +23,19 @@
 
 #include <geode/io/model/internal/svg_input.hpp>
 
-#include <cctype>
+#include <array>
+#include <cmath>
 #include <fstream>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <vector>
+
+#include <absl/algorithm/container.h>
+#include <absl/strings/ascii.h>
+#include <absl/strings/charconv.h>
+#include <absl/strings/match.h>
+#include <absl/types/span.h>
 
 #include <pugixml.hpp>
 
@@ -46,6 +57,37 @@ namespace
 {
     constexpr double FRACTION = 1e-5;
 
+    /// 2D affine transform (a c e / b d f / 0 0 1), as in SVG matrix()
+    struct Affine2D
+    {
+        Affine2D operator*( const Affine2D& other ) const
+        {
+            return { a * other.a + c * other.b, b * other.a + d * other.b,
+                a * other.c + c * other.d, b * other.c + d * other.d,
+                a * other.e + c * other.f + e, b * other.e + d * other.f + f };
+        }
+
+        geode::Point2D apply( const geode::Point2D& point ) const
+        {
+            const auto x = point.value( 0 );
+            const auto y = point.value( 1 );
+            return geode::Point2D{ { a * x + c * y + e, b * x + d * y + f } };
+        }
+
+        double a{ 1 };
+        double b{ 0 };
+        double c{ 0 };
+        double d{ 1 };
+        double e{ 0 };
+        double f{ 0 };
+    };
+
+    struct SVGPath
+    {
+        std::string data;
+        Affine2D transform;
+    };
+
     class SVGInputImpl
     {
     public:
@@ -66,24 +108,28 @@ namespace
 
         void read_file()
         {
-            for( const auto& group : document_.child( "svg" ).children( "g" ) )
-            {
-                read_group_paths( group );
-            }
+            const auto root = document_.child( "svg" );
+            geode::OpenGeodeIOModelException::check_exception( !root.empty(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] No <svg> root element" );
+            read_container_paths( root, read_transform( root ) );
         }
 
         void process_paths()
         {
-            for( auto& path : paths_ )
+            for( const auto& path : paths_ )
             {
-                format_path( path );
-                auto tokens = split_path( path );
-                process_tokens( tokens );
+                transform_ = path.transform;
+                process_tokens( split_path( path.data ) );
             }
         }
 
         void build_topology()
         {
+            if( potential_corners_.empty() )
+            {
+                return;
+            }
             const auto epsilon = compute_epsilon();
             const geode::NNSearch2D colocater( potential_corners_ );
             const auto colocated_info =
@@ -94,229 +140,390 @@ namespace
         }
 
     private:
-        struct Command
+        /*!
+         * Reads the paths rendered from a container element (svg, g, a).
+         * Other elements, such as defs or symbol, are not rendered by
+         * themselves and are ignored.
+         */
+        void read_container_paths(
+            const pugi::xml_node& container, const Affine2D& transform )
         {
-            Command() = default;
-
-            void update( const char token )
+            for( const auto& child : container.children() )
             {
-                letter = static_cast< char >(
-                    std::tolower( static_cast< unsigned char >( token ) ) );
-                absolute = static_cast< bool >(
-                    std::isupper( static_cast< unsigned char >( token ) ) );
-            }
-            [[nodiscard]] geode::Point2D apply_ml(
-                const geode::Point2D& position,
-                const std::vector< double >& params ) const
-            {
-                geode::Point2D step{ { params[0], params[1] } };
-                return absolute ? step : position + step;
-            }
-
-            [[nodiscard]] geode::Point2D apply_h(
-                const geode::Point2D& position,
-                const std::vector< double >& params ) const
-            {
-                const auto x = position.value( 0 );
-                const auto y = position.value( 1 );
-                return absolute ? geode::Point2D{ { params[0], y } }
-                                : geode::Point2D{ { x + params[0], y } };
-            }
-
-            [[nodiscard]] geode::Point2D apply_v(
-                const geode::Point2D& position,
-                const std::vector< double >& params ) const
-            {
-                const auto x = position.value( 0 );
-                const auto y = position.value( 1 );
-                return absolute ? geode::Point2D{ { x, params[0] } }
-                                : geode::Point2D{ { x, y + params[0] } };
-            }
-            [[nodiscard]] geode::Point2D apply( const geode::Point2D& position,
-                const std::vector< double >& params ) const
-            {
-                geode::OpenGeodeIOModelException::check_assertion(
-                    params.size() == get_nb_params(),
-                    "[SVGInput::Command::apply] Wrong number of parameters" );
-                if( letter == 'm' || letter == 'l' )
+                const std::string_view name{ child.name() };
+                if( name == "path" )
                 {
-                    return apply_ml( position, params );
+                    paths_.push_back( { child.attribute( "d" ).value(),
+                        transform * read_transform( child ) } );
                 }
-                if( letter == 'h' )
+                else if( name == "g" || name == "a" || name == "svg" )
                 {
-                    return apply_h( position, params );
+                    read_container_paths(
+                        child, transform * read_transform( child ) );
                 }
-                if( letter == 'v' )
-                {
-                    return apply_v( position, params );
-                }
-                throw geode::OpenGeodeIOModelException{ nullptr,
-                    geode::OpenGeodeException::TYPE::internal,
-                    "[SVGInput::Command::apply] Command not supported: ",
-                    std::string{ letter } };
-                return position;
             }
+        }
 
-            [[nodiscard]] geode::index_t get_nb_params() const
+        static bool is_command_letter( char character )
+        {
+            switch( character )
             {
-                return param_map.at( letter );
+                case 'M':
+                case 'm':
+                case 'L':
+                case 'l':
+                case 'H':
+                case 'h':
+                case 'V':
+                case 'v':
+                case 'Z':
+                case 'z':
+                case 'C':
+                case 'c':
+                case 'S':
+                case 's':
+                case 'Q':
+                case 'q':
+                case 'T':
+                case 't':
+                case 'A':
+                case 'a':
+                    return true;
+                default:
+                    return false;
             }
+        }
 
-            const absl::flat_hash_map< char, geode::index_t > param_map{
-                { 'm', 2 }, { 'l', 2 }, { 'h', 1 }, { 'v', 1 }, { 'z', 0 }
+        static bool is_separator( char character )
+        {
+            return character == ',' || character == ' ' || character == '\t'
+                   || character == '\n' || character == '\r'
+                   || character == '\f';
+        }
+
+        /*!
+         * Splits the path data in a single pass: each command letter is a
+         * token, numbers are separated by whitespaces, commas, or by the
+         * start of the next number in compact data ("10-5", ".5.5").
+         */
+        static std::vector< std::string_view > split_path(
+            std::string_view path )
+        {
+            std::vector< std::string_view > tokens;
+            std::size_t start{ 0 };
+            bool in_token{ false };
+            bool has_dot{ false };
+            bool has_exponent{ false };
+            const auto flush = [&]( std::size_t end ) {
+                if( in_token )
+                {
+                    tokens.push_back( path.substr( start, end - start ) );
+                    in_token = false;
+                }
             };
+            for( const auto c : geode::Range{ path.size() } )
+            {
+                const auto character = path[c];
+                if( is_separator( character ) )
+                {
+                    flush( c );
+                    continue;
+                }
+                if( is_command_letter( character ) )
+                {
+                    flush( c );
+                    tokens.push_back( path.substr( c, 1 ) );
+                    continue;
+                }
+                if( in_token )
+                {
+                    const auto previous = path[c - 1];
+                    const auto is_sign = character == '-' || character == '+';
+                    const auto after_exponent =
+                        previous == 'e' || previous == 'E';
+                    const auto new_number =
+                        ( is_sign && !after_exponent )
+                        || ( character == '.' && ( has_dot || has_exponent ) );
+                    if( !new_number )
+                    {
+                        has_dot = has_dot || character == '.';
+                        has_exponent = has_exponent || character == 'e'
+                                       || character == 'E';
+                        continue;
+                    }
+                    flush( c );
+                }
+                start = c;
+                in_token = true;
+                has_dot = character == '.';
+                has_exponent = false;
+            }
+            flush( path.size() );
+            return tokens;
+        }
 
-            char letter{ 'l' };
+        static Affine2D transform_function(
+            std::string_view name, absl::Span< const double > args )
+        {
+            const auto check_nb_args = [&]( std::size_t min, std::size_t max ) {
+                geode::OpenGeodeIOModelException::check_exception(
+                    args.size() >= min && args.size() <= max, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] Wrong number of parameters for transform ",
+                    name );
+            };
+            static constexpr double DEGREES_TO_RADIANS{ 3.14159265358979323846
+                                                        / 180. };
+            if( name == "matrix" )
+            {
+                check_nb_args( 6, 6 );
+                return { args[0], args[1], args[2], args[3], args[4], args[5] };
+            }
+            if( name == "translate" )
+            {
+                check_nb_args( 1, 2 );
+                return { 1, 0, 0, 1, args[0], args.size() == 2 ? args[1] : 0. };
+            }
+            if( name == "scale" )
+            {
+                check_nb_args( 1, 2 );
+                return { args[0], 0, 0, args.size() == 2 ? args[1] : args[0], 0,
+                    0 };
+            }
+            if( name == "rotate" )
+            {
+                check_nb_args( 1, 3 );
+                geode::OpenGeodeIOModelException::check_exception(
+                    args.size() != 2, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] rotate() takes 1 or 3 parameters" );
+                const auto angle = args[0] * DEGREES_TO_RADIANS;
+                const Affine2D rotation{ std::cos( angle ), std::sin( angle ),
+                    -std::sin( angle ), std::cos( angle ), 0, 0 };
+                if( args.size() == 1 )
+                {
+                    return rotation;
+                }
+                return Affine2D{ 1, 0, 0, 1, args[1], args[2] } * rotation
+                       * Affine2D{ 1, 0, 0, 1, -args[1], -args[2] };
+            }
+            if( name == "skewX" )
+            {
+                check_nb_args( 1, 1 );
+                return { 1, 0, std::tan( args[0] * DEGREES_TO_RADIANS ), 1, 0,
+                    0 };
+            }
+            if( name == "skewY" )
+            {
+                check_nb_args( 1, 1 );
+                return { 1, std::tan( args[0] * DEGREES_TO_RADIANS ), 0, 1, 0,
+                    0 };
+            }
+            throw geode::OpenGeodeIOModelException{ nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] Unknown transform function: ", name };
+        }
+
+        /*!
+         * Reads the transform attribute of an element, such as
+         * "translate(10, 20) rotate(45)".
+         */
+        static Affine2D read_transform( const pugi::xml_node& node )
+        {
+            std::string_view transform{ node.attribute( "transform" ).value() };
+            Affine2D result;
+            while( true )
+            {
+                while( !transform.empty()
+                       && ( is_separator( transform.front() ) ) )
+                {
+                    transform.remove_prefix( 1 );
+                }
+                if( transform.empty() )
+                {
+                    return result;
+                }
+                const auto open = transform.find( '(' );
+                const auto close = transform.find( ')' );
+                geode::OpenGeodeIOModelException::check_exception(
+                    open != std::string_view::npos
+                        && close != std::string_view::npos && open < close,
+                    nullptr, geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] Invalid transform attribute: ",
+                    node.attribute( "transform" ).value() );
+                const auto name =
+                    absl::StripAsciiWhitespace( transform.substr( 0, open ) );
+                std::vector< double > args;
+                for( const auto& token : split_path(
+                         transform.substr( open + 1, close - open - 1 ) ) )
+                {
+                    args.push_back( read_number( token ) );
+                }
+                result = result * transform_function( name, args );
+                transform.remove_prefix( close + 1 );
+            }
+        }
+
+        struct PathState
+        {
+            char command{ 0 };
             bool absolute{ true };
+            geode::Point2D current;
+            geode::Point2D subpath_start;
+            std::vector< geode::Point2D > vertices;
         };
 
-        void read_group_paths( const pugi::xml_node& group )
+        static geode::index_t nb_parameters( char command )
         {
-            for( const auto& path : group.children( "path" ) )
+            switch( command )
             {
-                paths_.emplace_back( path.attribute( "d" ).value() );
-            }
-            for( const auto& child_group : group.children( "g" ) )
-            {
-                read_group_paths( child_group );
-            }
-        }
-
-        void format_path( std::string& path ) const
-        {
-            remove_commas( path );
-            add_space_around_letters( path );
-        }
-
-        std::vector< std::string > split_path( const std::string& path ) const
-        {
-            std::istringstream iss( path );
-            return { std::istream_iterator< std::string >( iss ), {} };
-        }
-
-        bool string_isalpha( const std::string& str ) const
-        {
-            return std::all_of(
-                str.begin(), str.end(), []( const char& character ) {
-                    return std::isalpha( character );
-                } );
-        }
-
-        void remove_commas( std::string& path ) const
-        {
-            std::replace( path.begin(), path.end(), ',', ' ' );
-        }
-
-        void add_spaces( std::string& path, char letter ) const
-        {
-            std::size_t start{ 0 };
-            std::size_t found{ std::numeric_limits< size_t >::max() };
-            while( ( found = path.find( letter, start ) ) != std::string::npos )
-            {
-                path.replace( found, 1,
-                    absl::StrCat( " ", std::string( 1, letter ), " " ) );
-                start = found + 3;
-            }
-        }
-
-        template < typename... Letters >
-        void add_spaces(
-            std::string& path, char letter, Letters... others ) const
-        {
-            add_spaces( path, letter );
-            add_spaces( path, others... );
-        }
-
-        void add_space_around_letters( std::string& path ) const
-        {
-            add_spaces(
-                path, 'M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'Z', 'z' );
-        }
-
-        std::vector< double > get_params(
-            const std::vector< std::string >& tokens,
-            geode::index_t first,
-            geode::index_t nb_params ) const
-        {
-            std::vector< double > params( nb_params );
-            for( const auto token_id : geode::Range{ nb_params } )
-            {
-                const auto& token = tokens[first + token_id];
-                try
-                {
-                    params[token_id] = std::stod( token );
-                }
-                catch( std::invalid_argument& /*unused*/ )
-                {
+                case 'm':
+                case 'l':
+                    return 2;
+                case 'h':
+                case 'v':
+                    return 1;
+                case 'z':
+                    return 0;
+                default:
                     throw geode::OpenGeodeIOModelException{ nullptr,
                         geode::OpenGeodeException::TYPE::data,
-                        "[SVGInputImpl::get_params] Path token is not a "
-                        "number: ",
-                        token };
+                        "[SVGInput] Unsupported path command '",
+                        std::string( 1, command ),
+                        "': only M, L, H, V and Z (and lower case) are "
+                        "supported" };
+            }
+        }
+
+        static double read_number( std::string_view token )
+        {
+            double value{ 0 };
+            // from_chars does not accept an explicit plus sign
+            const auto number =
+                absl::StartsWith( token, "+" ) ? token.substr( 1 ) : token;
+            const auto result = absl::from_chars(
+                number.data(), number.data() + number.size(), value );
+            // SVG numbers are decimal: no hexadecimal, nan or inf
+            const auto is_svg_number_character = []( char character ) {
+                return absl::ascii_isdigit(
+                           static_cast< unsigned char >( character ) )
+                       || character == '.' || character == 'e'
+                       || character == 'E' || character == '-'
+                       || character == '+';
+            };
+            geode::OpenGeodeIOModelException::check_exception(
+                absl::c_all_of( number, is_svg_number_character )
+                    && result.ec == std::errc{} && !number.empty()
+                    && result.ptr == number.data() + number.size()
+                    && std::isfinite( value ),
+                nullptr, geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] Path token is not a number: \"", token, "\"" );
+            return value;
+        }
+
+        void close_subpath( PathState& state )
+        {
+            if( state.vertices.size() > 1 )
+            {
+                if( state.vertices.back() != state.subpath_start )
+                {
+                    state.vertices.push_back( state.subpath_start );
                 }
+                create_line( state.vertices );
             }
-            return params;
+            state.vertices.clear();
+            state.current = state.subpath_start;
         }
 
-        geode::index_t update_command( const std::vector< std::string >& tokens,
+        /*!
+         * Applies one parameter group of the current command.
+         * @return the index of the token after the parameters
+         */
+        geode::index_t apply_command(
+            absl::Span< const std::string_view > tokens,
             geode::index_t token_id,
-            Command& command ) const
+            PathState& state )
         {
-            const auto& token = tokens[token_id];
-            if( string_isalpha( token ) )
+            const auto nb_params = nb_parameters( state.command );
+            geode::OpenGeodeIOModelException::check_exception(
+                token_id + nb_params <= tokens.size(), nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] Path command '", std::string( 1, state.command ),
+                "' misses parameters" );
+            std::array< double, 2 > params{ 0, 0 };
+            for( const auto p : geode::Range{ nb_params } )
             {
-                geode::OpenGeodeIOModelException::check_exception(
-                    token.size() == 1, nullptr,
-                    geode::OpenGeodeException::TYPE::data,
-                    "[SVGInputImpl::update_command] Command should be single "
-                    "letter" );
-                command.update( *token.c_str() );
-                return token_id + 1;
+                params[p] = read_number( tokens[token_id + p] );
             }
-
-            command.letter = 'l';
-            return token_id;
+            const auto x = state.current.value( 0 );
+            const auto y = state.current.value( 1 );
+            geode::Point2D next;
+            if( state.command == 'm' || state.command == 'l' )
+            {
+                next = state.absolute
+                           ? geode::Point2D{ { params[0], params[1] } }
+                           : geode::Point2D{ { x + params[0], y + params[1] } };
+            }
+            else if( state.command == 'h' )
+            {
+                next = geode::Point2D{
+                    { state.absolute ? params[0] : x + params[0], y }
+                };
+            }
+            else
+            {
+                next = geode::Point2D{ { x,
+                    state.absolute ? params[0] : y + params[0] } };
+            }
+            if( state.command == 'm' )
+            {
+                create_line( state.vertices );
+                state.vertices.clear();
+                state.subpath_start = next;
+                // Parameter groups after a moveto are implicit linetos
+                state.command = 'l';
+            }
+            else if( state.vertices.empty() )
+            {
+                // Drawing right after a closepath restarts at its start
+                state.vertices.push_back( state.current );
+            }
+            state.vertices.push_back( next );
+            state.current = next;
+            return token_id + nb_params;
         }
 
-        geode::index_t apply_command( const std::vector< std::string >& tokens,
-            geode::index_t token_id,
-            Command& command,
-            geode::Point2D& cur_position,
-            std::vector< geode::Point2D >& vertices )
+        void process_tokens( absl::Span< const std::string_view > tokens )
         {
-            const auto nb_params = command.get_nb_params();
-            const auto params = get_params( tokens, token_id, nb_params );
-            if( command.letter == 'z' )
-            {
-                vertices.push_back( vertices.front() );
-                create_line( vertices );
-                vertices.clear();
-                return token_id;
-            }
-            if( command.letter == 'm' && !vertices.empty() )
-            {
-                create_line( vertices );
-                vertices.clear();
-            }
-            cur_position = command.apply( cur_position, params );
-            vertices.push_back( cur_position );
-            return token_id + nb_params - 1;
-        }
-
-        void process_tokens( const std::vector< std::string >& tokens )
-        {
-            std::vector< geode::Point2D > vertices;
-            Command cur_command;
-            geode::Point2D cur_position;
+            PathState state;
             geode::index_t token_id{ 0 };
             while( token_id < tokens.size() )
             {
-                token_id = update_command( tokens, token_id, cur_command );
-                token_id = apply_command(
-                    tokens, token_id, cur_command, cur_position, vertices );
-                token_id++;
+                const auto& token = tokens[token_id];
+                if( token.size() == 1 && is_command_letter( token.front() ) )
+                {
+                    state.command = absl::ascii_tolower(
+                        static_cast< unsigned char >( token.front() ) );
+                    state.absolute = absl::ascii_isupper(
+                        static_cast< unsigned char >( token.front() ) );
+                    token_id++;
+                    if( state.command == 'z' )
+                    {
+                        close_subpath( state );
+                        continue;
+                    }
+                }
+                else
+                {
+                    geode::OpenGeodeIOModelException::check_exception(
+                        state.command != 0 && state.command != 'z', nullptr,
+                        geode::OpenGeodeException::TYPE::data,
+                        "[SVGInput] Path number \"", token,
+                        "\" is not preceded by a command" );
+                }
+                token_id = apply_command( tokens, token_id, state );
             }
-            create_line( vertices );
+            create_line( state.vertices );
         }
 
         void add_potential_corner( const geode::Point2D& point,
@@ -359,15 +566,16 @@ namespace
             const auto& line_id = builder_.add_line();
             const auto line_builder =
                 builder_.line_mesh_builder( section_.line( line_id ) );
-            line_builder->create_point( vertices.front() );
+            const auto first = transform_.apply( vertices.front() );
+            line_builder->create_point( first );
             for( const auto v : geode::Range{ 1, vertices.size() } )
             {
-                line_builder->create_point( vertices[v] );
+                line_builder->create_point( transform_.apply( vertices[v] ) );
                 line_builder->create_edge( v - 1, v );
             }
-            add_potential_corner( vertices.front(), line_id, 0 );
-            add_potential_corner(
-                vertices.back(), line_id, vertices.size() - 1 );
+            add_potential_corner( first, line_id, 0 );
+            add_potential_corner( transform_.apply( vertices.back() ), line_id,
+                vertices.size() - 1 );
         }
 
         std::vector< geode::uuid > create_corners(
@@ -435,7 +643,8 @@ namespace
         geode::Section& section_;
         geode::SectionBuilder builder_;
         pugi::xml_document document_;
-        std::vector< std::string > paths_;
+        std::vector< SVGPath > paths_;
+        Affine2D transform_;
         std::vector< geode::Point2D > potential_corners_;
         std::vector< geode::ComponentMeshVertex > potential_corner_cmv_;
     };

@@ -71,8 +71,6 @@ namespace
         void write_blocks( pugi::xml_node& block_block )
         {
             geode::index_t counter{ 0 };
-            const auto level = geode::Logger::level();
-            geode::Logger::set_level( geode::Logger::LEVEL::warning );
             absl::FixedArray< async::task< void > > tasks( mesh().nb_blocks() );
             absl::FixedArray< geode::uuid > block_ids(
                 this->mesh().nb_blocks() );
@@ -88,8 +86,13 @@ namespace
                 const auto& block = mesh().block( id );
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
+                // Regular grids are written as VTK image data
+                const auto* extension =
+                    dynamic_cast< const geode::RegularGrid3D* >( &block.mesh() )
+                        ? ".vti"
+                        : ".vtu";
                 const auto filename = absl::StrCat(
-                    prefix(), "/Block_", block.id().string(), ".vtu" );
+                    prefix(), "/Block_", block.id().string(), extension );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
                 const auto name = block.name().value_or( block.id().string() );
@@ -106,6 +109,8 @@ namespace
                 }
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
+                add_file( absl::StrCat( files_directory(), "/Block_",
+                    block.id().string(), extension ) );
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
                     const auto file = absl::StrCat(
@@ -114,27 +119,31 @@ namespace
                             dynamic_cast< const geode::TetrahedralSolid3D* >(
                                 &mesh ) )
                     {
-                        geode::save_tetrahedral_solid(
+                        geode::detail::write_component_mesh<
+                            geode::TetrahedralSolidOutputFactory3D >(
                             *tetra, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* hybrid =
                                  dynamic_cast< const geode::HybridSolid3D* >(
                                      &mesh ) )
                     {
-                        geode::save_hybrid_solid(
+                        geode::detail::write_component_mesh<
+                            geode::HybridSolidOutputFactory3D >(
                             *hybrid, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* poly = dynamic_cast<
                                  const geode::PolyhedralSolid3D* >( &mesh ) )
                     {
-                        geode::save_polyhedral_solid(
+                        geode::detail::write_component_mesh<
+                            geode::PolyhedralSolidOutputFactory3D >(
                             *poly, absl::StrCat( file, ".vtu" ) );
                     }
                     else if( const auto* grid =
                                  dynamic_cast< const geode::RegularGrid3D* >(
                                      &mesh ) )
                     {
-                        geode::save_regular_grid(
+                        geode::detail::write_component_mesh<
+                            geode::RegularGridOutputFactory3D >(
                             *grid, absl::StrCat( file, ".vti" ) );
                     }
                     else
@@ -148,7 +157,6 @@ namespace
             }
             auto all_tasks = async::when_all( tasks.begin(), tasks.end() );
             all_tasks.wait();
-            geode::Logger::set_level( level );
             for( auto& task : all_tasks.get() )
             {
                 task.get();
