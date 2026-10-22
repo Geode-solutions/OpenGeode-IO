@@ -23,6 +23,8 @@
 
 #include <geode/tests_config.hpp>
 
+#include <absl/container/flat_hash_set.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
@@ -153,8 +155,37 @@ namespace
         }
     }
 
+    template < typename Range >
+    void check_component_vertices( const geode::BRep& brep, Range components )
+    {
+        for( const auto& component : components )
+        {
+            absl::flat_hash_set< geode::index_t > unique_vertices;
+            for( const auto v : geode::Range{ component.mesh().nb_vertices() } )
+            {
+                const auto unique_vertex =
+                    brep.unique_vertex( { component.component_id(), v } );
+                geode::OpenGeodeIOModelException::test(
+                    unique_vertex != geode::NO_ID,
+                    "Component vertex should have a unique vertex" );
+                geode::OpenGeodeIOModelException::test(
+                    unique_vertices.insert( unique_vertex ).second,
+                    "Component vertices should not be duplicated" );
+            }
+        }
+    }
+
+    void check_unique_vertices( const geode::BRep& brep )
+    {
+        check_component_vertices( brep, brep.corners() );
+        check_component_vertices( brep, brep.lines() );
+        check_component_vertices( brep, brep.surfaces() );
+        check_component_vertices( brep, brep.blocks() );
+    }
+
     void test_brep( const BrepDescription& brep_description )
     {
+        check_unique_vertices( brep_description.brep );
         check_count_components( brep_description );
         check_corners( brep_description.brep );
         check_lines( brep_description.brep );

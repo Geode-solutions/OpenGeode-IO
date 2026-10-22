@@ -23,16 +23,13 @@
 
 #include <geode/io/model/internal/msh_input.hpp>
 
+#include <array>
 #include <fstream>
-#include <mutex>
-#include <numeric>
 
+#include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
 #include <absl/strings/str_split.h>
 
-#include <geode/basic/algorithm.hpp>
-#include <geode/basic/common.hpp>
-#include <geode/basic/factory.hpp>
 #include <geode/basic/file.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/string.hpp>
@@ -42,13 +39,14 @@
 
 #include <geode/mesh/builder/edged_curve_builder.hpp>
 #include <geode/mesh/builder/point_set_builder.hpp>
-#include <geode/mesh/builder/polygonal_surface_builder.hpp>
-#include <geode/mesh/builder/polyhedral_solid_builder.hpp>
+#include <geode/mesh/builder/solid_mesh_builder.hpp>
+#include <geode/mesh/builder/surface_mesh_builder.hpp>
 #include <geode/mesh/core/edged_curve.hpp>
 #include <geode/mesh/core/hybrid_solid.hpp>
 #include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
-#include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/solid_mesh.hpp>
+#include <geode/mesh/core/surface_mesh.hpp>
 
 #include <geode/model/helpers/detail/build_model_boundaries.hpp>
 #include <geode/model/mixin/core/block.hpp>
@@ -63,8 +61,85 @@
 
 namespace
 {
+    using Facets = std::vector< std::vector< geode::local_index_t > >;
+
+    struct GmshElementType
+    {
+        geode::local_index_t dimension;
+        geode::local_index_t nb_vertices;
+        const Facets* facets{ nullptr };
+    };
+
+    const Facets& tetrahedron_facets()
+    {
+        static const Facets facets{ { 0, 1, 2 }, { 0, 2, 3 }, { 1, 3, 2 },
+            { 0, 3, 1 } };
+        return facets;
+    }
+
+    const Facets& hexahedron_facets()
+    {
+        static const Facets facets{ { 0, 1, 2, 3 }, { 7, 6, 5, 4 },
+            { 0, 3, 7, 4 }, { 1, 5, 6, 2 }, { 2, 6, 7, 3 }, { 0, 4, 5, 1 } };
+        return facets;
+    }
+
+    const Facets& prism_facets()
+    {
+        static const Facets facets{ { 0, 1, 2 }, { 5, 4, 3 }, { 0, 2, 5, 3 },
+            { 0, 3, 4, 1 }, { 1, 4, 5, 2 } };
+        return facets;
+    }
+
+    const Facets& pyramid_facets()
+    {
+        static const Facets facets{ { 0, 3, 4 }, { 0, 4, 1 }, { 4, 3, 2 },
+            { 1, 4, 2 }, { 0, 1, 2, 3 } };
+        return facets;
+    }
+
+    // NOLINTBEGIN(*-magic-numbers)
+    GmshElementType gmsh_element_type( geode::index_t gmsh_type )
+    {
+        switch( gmsh_type )
+        {
+            case 15:
+                return { 0, 1 };
+            case 1:
+                return { 1, 2 };
+            case 2:
+                return { 2, 3 };
+            case 3:
+                return { 2, 4 };
+            case 4:
+                return { 3, 4, &tetrahedron_facets() };
+            case 5:
+                return { 3, 8, &hexahedron_facets() };
+            case 6:
+                return { 3, 6, &prism_facets() };
+            case 7:
+                return { 3, 5, &pyramid_facets() };
+            default:
+                throw geode::OpenGeodeIOModelException{ nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[MSHInput] Unsupported GMSH element type: ", gmsh_type };
+        }
+    }
+    // NOLINTEND(*-magic-numbers)
+
+    struct ComponentElements
+    {
+        geode::uuid id;
+        /// Gmsh type of each element
+        std::vector< geode::index_t > types;
+        /// Node indices of all elements, element after element
+        std::vector< geode::index_t > nodes;
+    };
+
     class MSHInputImpl
     {
+        static constexpr geode::local_index_t NB_DIMENSIONS{ 4 };
+
     public:
         MSHInputImpl( std::string_view filename, geode::BRep& brep )
             : file_{ geode::to_string( filename ) },
@@ -218,7 +293,6 @@ namespace
                 "versions 2 and 4 are supported for now." );
             if( geode::string_to_index( header_tokens[1] ) != 0 )
             {
-                binary_ = false;
                 throw geode::OpenGeodeIOModelException{ nullptr,
                     geode::OpenGeodeException::TYPE::internal,
                     "[MSHInput::set_msh_version] Binary format is not "
@@ -250,7 +324,52 @@ namespace
             }
         }
 
-        using MshId2Uuid = absl::flat_hash_map< geode::index_t, geode::uuid >;
+        absl::Span< const std::string_view > tokenize( std::string_view line )
+        {
+            tokens_.clear();
+            for( const auto token : absl::StrSplit(
+                     line, absl::ByAnyChar( " \t\r" ), absl::SkipEmpty() ) )
+            {
+                tokens_.push_back( token );
+            }
+            return tokens_;
+        }
+
+        ComponentElements& component_elements(
+            geode::local_index_t dimension, geode::index_t entity_tag )
+        {
+            auto [it, inserted] =
+                components_[dimension].try_emplace( entity_tag );
+            if( inserted )
+            {
+                it->second.id = create_component( dimension );
+            }
+            return it->second;
+        }
+
+        const geode::uuid& component_id(
+            geode::local_index_t dimension, geode::index_t entity_tag ) const
+        {
+            return components_[dimension].at( entity_tag ).id;
+        }
+
+        geode::uuid create_component( geode::local_index_t dimension )
+        {
+            if( dimension == 0 )
+            {
+                return builder_.add_corner();
+            }
+            if( dimension == 1 )
+            {
+                return builder_.add_line();
+            }
+            if( dimension == 2 )
+            {
+                return builder_.add_surface();
+            }
+            return builder_.add_block( geode::MeshFactory::default_impl(
+                geode::HybridSolid3D::type_name_static() ) );
+        }
 
         void read_entity_section()
         {
@@ -273,11 +392,8 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = geode::string_split( line );
-                const auto corner_uuid = builder_.add_corner();
-                gmsh_id2uuids_
-                    .elementary_ids[{ geode::Corner3D::component_type_static(),
-                        geode::string_to_index( tokens.at( 0 ) ) }] =
-                    corner_uuid;
+                component_elements(
+                    0, geode::string_to_index( tokens.at( 0 ) ) );
             }
         }
 
@@ -289,10 +405,9 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = geode::string_split( line );
-                const auto line_uuid = builder_.add_line();
-                gmsh_id2uuids_
-                    .elementary_ids[{ geode::Line3D::component_type_static(),
-                        geode::string_to_index( tokens.at( 0 ) ) }] = line_uuid;
+                const auto& line_uuid = component_elements(
+                    1, geode::string_to_index( tokens.at( 0 ) ) )
+                                            .id;
                 // TODO physical tags
                 const auto nb_physical_tags =
                     geode::string_to_index( tokens.at( 7 ) );
@@ -303,10 +418,9 @@ namespace
                         std::abs( geode::string_to_double(
                             tokens.at( 9 + nb_physical_tags + b ) ) );
                     builder_.add_corner_line_boundary_relationship(
-                        brep_.corner( gmsh_id2uuids_.elementary_ids.at(
-                            { geode::Corner3D::component_type_static(),
-                                static_cast< geode::index_t >(
-                                    boundary_msh_id ) } ) ),
+                        brep_.corner(
+                            component_id( 0, static_cast< geode::index_t >(
+                                                 boundary_msh_id ) ) ),
                         brep_.line( line_uuid ) );
                 }
             }
@@ -320,12 +434,10 @@ namespace
                 std::string file_line;
                 std::getline( file_, file_line );
                 const auto tokens = geode::string_split( file_line );
-                const auto surface_uuid = builder_.add_surface();
+                const auto& surface_uuid = component_elements(
+                    2, geode::string_to_index( tokens.at( 0 ) ) )
+                                               .id;
                 const auto& surface = brep_.surface( surface_uuid );
-                gmsh_id2uuids_
-                    .elementary_ids[{ geode::Surface3D::component_type_static(),
-                        geode::string_to_index( tokens.at( 0 ) ) }] =
-                    surface_uuid;
                 // TODO physical tags
                 absl::flat_hash_map< geode::index_t, geode::index_t >
                     boundary_counter;
@@ -348,9 +460,7 @@ namespace
                 for( const auto& boundary : boundary_counter )
                 {
                     const auto& line =
-                        brep_.line( gmsh_id2uuids_.elementary_ids.at(
-                            { geode::Line3D::component_type_static(),
-                                boundary.first } ) );
+                        brep_.line( component_id( 1, boundary.first ) );
                     if( boundary.second == 1 )
                     {
                         builder_.add_line_surface_boundary_relationship(
@@ -378,14 +488,9 @@ namespace
                 std::string line;
                 std::getline( file_, line );
                 const auto tokens = geode::string_split( line );
-
-                const auto block_uuid =
-                    builder_.add_block( geode::MeshFactory::default_impl(
-                        geode::HybridSolid3D::type_name_static() ) );
-                gmsh_id2uuids_
-                    .elementary_ids[{ geode::Block3D::component_type_static(),
-                        geode::string_to_index( tokens.at( 0 ) ) }] =
-                    block_uuid;
+                const auto& block_uuid = component_elements(
+                    3, geode::string_to_index( tokens.at( 0 ) ) )
+                                             .id;
                 // TODO physical tags
                 const auto nb_physical_tags =
                     geode::string_to_index( tokens.at( 7 ) );
@@ -395,10 +500,9 @@ namespace
                     const auto boundary_msh_id = std::abs( geode::string_to_int(
                         tokens.at( 9 + nb_physical_tags + b ) ) );
                     builder_.add_surface_block_boundary_relationship(
-                        brep_.surface( gmsh_id2uuids_.elementary_ids.at(
-                            { geode::Surface3D::component_type_static(),
-                                static_cast< geode::index_t >(
-                                    boundary_msh_id ) } ) ),
+                        brep_.surface(
+                            component_id( 2, static_cast< geode::index_t >(
+                                                 boundary_msh_id ) ) ),
                         brep_.block( block_uuid ) );
                 }
             }
@@ -425,22 +529,15 @@ namespace
             {
                 geode_unused( unused );
                 std::getline( file_, line );
-                geode::index_t node_id;
-                geode::Point3D node;
-                std::tie( node_id, node ) = read_node( line );
-                nodes_[node_id - geode::internal::GMSH_OFFSET_START] = node;
+                const auto node_tokens = tokenize( line );
+                const auto node_id =
+                    geode::string_to_index( node_tokens.at( 0 ) );
+                nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
+                    read_node_coordinates( node_tokens.at( 1 ),
+                        node_tokens.at( 2 ), node_tokens.at( 3 ) );
             }
             check_keyword( "$EndNodes" );
             builder_.create_unique_vertices( nb_nodes );
-        }
-
-        std::tuple< geode::index_t, geode::Point3D > read_node(
-            const std::string& line )
-        {
-            const auto tokens = geode::string_split( line );
-            return { geode::string_to_index( tokens.at( 0 ) ),
-                read_node_coordinates(
-                    tokens.at( 1 ), tokens.at( 2 ), tokens.at( 3 ) ) };
         }
 
         void read_node_section_v4()
@@ -484,13 +581,13 @@ namespace
             for( const auto n : geode::Range{ nb_nodes } )
             {
                 std::getline( file_, line );
-                const auto node_tokens = geode::string_split( line );
+                const auto node_tokens = tokenize( line );
                 node_ids[n] = geode::string_to_index( node_tokens.at( 0 ) );
             }
             for( const auto node_id : node_ids )
             {
                 std::getline( file_, line );
-                const auto node_tokens = geode::string_split( line );
+                const auto node_tokens = tokenize( line );
                 nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
                     read_node_coordinates( node_tokens.at( 0 ),
                         node_tokens.at( 1 ), node_tokens.at( 2 ) );
@@ -512,10 +609,23 @@ namespace
             check_keyword( "$EndElements" );
         }
 
+        void add_element( ComponentElements& component,
+            geode::index_t gmsh_type,
+            absl::Span< const std::string_view > node_tokens )
+        {
+            component.types.push_back( gmsh_type );
+            for( const auto& node : node_tokens )
+            {
+                component.nodes.push_back(
+                    geode::string_to_index( node )
+                    - geode::internal::GMSH_OFFSET_START );
+            }
+        }
+
         void read_element(
             geode::index_t expected_element_id, const std::string& line )
         {
-            const auto tokens = geode::string_split( line );
+            const auto tokens = tokenize( line );
             geode::index_t t{ 0 };
             geode::OpenGeodeIOModelException::check_exception(
                 expected_element_id
@@ -527,25 +637,26 @@ namespace
             // Element type
             const auto mesh_element_type_id =
                 geode::string_to_index( tokens.at( t++ ) );
+            const auto element_type = gmsh_element_type( mesh_element_type_id );
             // Tags
             const auto nb_tags = geode::string_to_index( tokens.at( t++ ) );
             geode::OpenGeodeIOModelException::check_exception( nb_tags >= 2,
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[MSHInput::read_element] Number of tags for an element should "
                 "be at least 2." );
-            const auto physical_entity =
-                geode::string_to_index( tokens.at( t++ ) );
+            t++; // physical entity
             const auto elementary_entity =
                 geode::string_to_index( tokens.at( t++ ) );
+            geode::OpenGeodeIOModelException::check_exception(
+                elementary_entity > 0, nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[MSHInput::read_element] GMSH tag for elementary entity "
+                "(second tag) should not be null" );
             t += nb_tags - 2;
-            // TODO: create relation to the parent
-            absl::Span< const std::string_view > vertex_ids(
-                &tokens[t], tokens.size() - t );
-
-            const auto element = geode::internal::GMSHElementFactory::create(
-                mesh_element_type_id, physical_entity, elementary_entity,
-                vertex_ids );
-            element->add_element( brep_, gmsh_id2uuids_ );
+            add_element(
+                component_elements( element_type.dimension, elementary_entity ),
+                mesh_element_type_id,
+                tokens.subspan( t, element_type.nb_vertices ) );
         }
 
         void read_element_section_v4()
@@ -582,221 +693,180 @@ namespace
             const auto entity_id = geode::string_to_index( tokens.at( 1 ) );
             const auto mesh_element_type_id =
                 geode::string_to_index( tokens.at( 2 ) );
-            for( const auto unused :
-                geode::Range{ geode::string_to_index( tokens.at( 3 ) ) } )
+            const auto element_type = gmsh_element_type( mesh_element_type_id );
+            auto& component =
+                component_elements( element_type.dimension, entity_id );
+            const auto nb_elements = geode::string_to_index( tokens.at( 3 ) );
+            component.types.reserve( component.types.size() + nb_elements );
+            component.nodes.reserve( component.nodes.size()
+                                     + nb_elements * element_type.nb_vertices );
+            for( const auto unused : geode::Range{ nb_elements } )
             {
                 geode_unused( unused );
                 std::getline( file_, line );
-                const auto line_tokens = geode::string_split( line );
-                absl::Span< const std::string_view > vertex_ids(
-                    &line_tokens[1], line_tokens.size() - 1 );
-                constexpr geode::index_t physical_entity{ 0 };
-                const auto element =
-                    geode::internal::GMSHElementFactory::create(
-                        mesh_element_type_id, physical_entity, entity_id,
-                        vertex_ids );
-                element->add_element( brep_, gmsh_id2uuids_ );
+                const auto line_tokens = tokenize( line );
+                add_element( component, mesh_element_type_id,
+                    line_tokens.subspan( 1, element_type.nb_vertices ) );
             }
+        }
+
+        /*!
+         * Creates the component mesh vertices: one vertex per distinct node,
+         * linked to its unique vertex.
+         * @return the component vertex of each element node
+         */
+        template < typename Component, typename MeshBuilder >
+        std::vector< geode::index_t > create_component_vertices(
+            const Component& component,
+            MeshBuilder& mesh_builder,
+            const ComponentElements& elements )
+        {
+            absl::flat_hash_map< geode::index_t, geode::index_t > node2vertex;
+            std::vector< geode::index_t > vertex2node;
+            std::vector< geode::index_t > element_vertices;
+            element_vertices.reserve( elements.nodes.size() );
+            for( const auto node : elements.nodes )
+            {
+                const auto [it, inserted] =
+                    node2vertex.try_emplace( node, vertex2node.size() );
+                if( inserted )
+                {
+                    vertex2node.push_back( node );
+                }
+                element_vertices.push_back( it->second );
+            }
+            const auto first_vertex =
+                mesh_builder.create_vertices( vertex2node.size() );
+            for( const auto v : geode::Indices{ vertex2node } )
+            {
+                const auto vertex = first_vertex + v;
+                mesh_builder.set_point( vertex, nodes_[vertex2node[v]] );
+                builder_.set_unique_vertex(
+                    { component.component_id(), vertex }, vertex2node[v] );
+            }
+            for( auto& vertex : element_vertices )
+            {
+                vertex += first_vertex;
+            }
+            return element_vertices;
         }
 
         void build_corners()
         {
-            for( const auto& c : brep_.corners() )
+            for( const auto& [tag, elements] : components_[0] )
             {
-                builder_.corner_mesh_builder( c )->set_point(
-                    0, nodes_[brep_.unique_vertex( { c.component_id(), 0 } )] );
+                const auto& corner = brep_.corner( elements.id );
+                auto mesh_builder = builder_.corner_mesh_builder( corner );
+                create_component_vertices( corner, *mesh_builder, elements );
             }
         }
 
         void build_lines()
         {
-            for( const auto& l : brep_.lines() )
+            for( const auto& [tag, elements] : components_[1] )
             {
-                filter_duplicated_line_vertices( l, brep_ );
-                auto line_builder = builder_.line_mesh_builder( l );
-                for( const auto v : geode::Range{ l.mesh().nb_vertices() } )
+                const auto& line = brep_.line( elements.id );
+                auto mesh_builder = builder_.line_mesh_builder( line );
+                const auto vertices =
+                    create_component_vertices( line, *mesh_builder, elements );
+                for( geode::index_t v = 0; v + 1 < vertices.size(); v += 2 )
                 {
-                    line_builder->set_point(
-                        v, nodes_[brep_.unique_vertex(
-                               { l.component_id(), v } )] );
+                    mesh_builder->create_edge( vertices[v], vertices[v + 1] );
                 }
             }
         }
 
         void build_surfaces()
         {
-            for( const auto& surface : brep_.surfaces() )
+            for( const auto& [tag, elements] : components_[2] )
             {
-                filter_duplicated_surface_vertices( surface, brep_ );
-                auto surface_builder = builder_.surface_mesh_builder( surface );
-                const auto& mesh = surface.mesh();
-                for( const auto v : geode::Range{ mesh.nb_vertices() } )
+                const auto& surface = brep_.surface( elements.id );
+                auto mesh_builder = builder_.surface_mesh_builder( surface );
+                const auto vertices = create_component_vertices(
+                    surface, *mesh_builder, elements );
+                absl::Span< const geode::index_t > remaining{ vertices };
+                for( const auto type : elements.types )
                 {
-                    surface_builder->set_point(
-                        v, nodes_[brep_.unique_vertex(
-                               { surface.component_id(), v } )] );
+                    const auto nb_vertices =
+                        gmsh_element_type( type ).nb_vertices;
+                    mesh_builder->create_polygon(
+                        remaining.subspan( 0, nb_vertices ) );
+                    remaining.remove_prefix( nb_vertices );
                 }
-                surface_builder->compute_polygon_adjacencies();
-                std::vector< geode::PolygonEdge > polygon_edges;
-                for( const auto& line : brep_.internal_lines( surface ) )
+                mesh_builder->compute_polygon_adjacencies();
+                unset_internal_line_adjacencies( surface, *mesh_builder );
+            }
+        }
+
+        void unset_internal_line_adjacencies( const geode::Surface3D& surface,
+            geode::SurfaceMeshBuilder3D& mesh_builder )
+        {
+            const auto& mesh = surface.mesh();
+            std::vector< geode::PolygonEdge > polygon_edges;
+            for( const auto& line : brep_.internal_lines( surface ) )
+            {
+                const auto& edges = line.mesh();
+                for( const auto edge_id : geode::Range{ edges.nb_edges() } )
                 {
-                    const auto& edges = line.mesh();
-                    for( const auto edge_id : geode::Range{ edges.nb_edges() } )
+                    const auto e0 = edges.edge_vertex( { edge_id, 0 } );
+                    const auto e1 = edges.edge_vertex( { edge_id, 1 } );
+                    const auto cmvs0 = brep_.component_mesh_vertices(
+                        brep_.unique_vertex( { line.component_id(), e0 } ) );
+                    const auto cmvs1 = brep_.component_mesh_vertices(
+                        brep_.unique_vertex( { line.component_id(), e1 } ) );
+                    for( const auto& cmv0 : cmvs0 )
                     {
-                        const auto e0 = edges.edge_vertex( { edge_id, 0 } );
-                        const auto e1 = edges.edge_vertex( { edge_id, 1 } );
-                        const auto cmvs0 =
-                            brep_.component_mesh_vertices( brep_.unique_vertex(
-                                { line.component_id(), e0 } ) );
-                        const auto cmvs1 =
-                            brep_.component_mesh_vertices( brep_.unique_vertex(
-                                { line.component_id(), e1 } ) );
-                        for( const auto& cmv0 : cmvs0 )
+                        if( cmv0.component_id.id != surface.id() )
                         {
-                            if( cmv0.component_id.id != surface.id() )
+                            continue;
+                        }
+                        for( const auto& cmv1 : cmvs1 )
+                        {
+                            if( cmv1.component_id.id != surface.id() )
                             {
                                 continue;
                             }
-                            for( const auto& cmv1 : cmvs1 )
+                            if( const auto edge0 =
+                                    mesh.polygon_edge_from_vertices(
+                                        cmv0.vertex, cmv1.vertex ) )
                             {
-                                if( cmv1.component_id.id != surface.id() )
-                                {
-                                    continue;
-                                }
-                                if( const auto edge0 =
-                                        mesh.polygon_edge_from_vertices(
-                                            cmv0.vertex, cmv1.vertex ) )
-                                {
-                                    polygon_edges.emplace_back( edge0.value() );
-                                }
-                                if( const auto edge1 =
-                                        mesh.polygon_edge_from_vertices(
-                                            cmv1.vertex, cmv0.vertex ) )
-                                {
-                                    polygon_edges.emplace_back( edge1.value() );
-                                }
+                                polygon_edges.emplace_back( edge0.value() );
+                            }
+                            if( const auto edge1 =
+                                    mesh.polygon_edge_from_vertices(
+                                        cmv1.vertex, cmv0.vertex ) )
+                            {
+                                polygon_edges.emplace_back( edge1.value() );
                             }
                         }
                     }
                 }
-                for( const auto& edge : polygon_edges )
-                {
-                    surface_builder->unset_polygon_adjacent( edge );
-                }
+            }
+            for( const auto& edge : polygon_edges )
+            {
+                mesh_builder.unset_polygon_adjacent( edge );
             }
         }
 
         void build_blocks()
         {
-            for( const auto& b : brep_.blocks() )
+            for( const auto& [tag, elements] : components_[3] )
             {
-                filter_duplicated_block_vertices( b, brep_ );
-                auto block_builder = builder_.block_mesh_builder( b );
-                for( const auto v : geode::Range{ b.mesh().nb_vertices() } )
+                const auto& block = brep_.block( elements.id );
+                auto mesh_builder = builder_.block_mesh_builder( block );
+                const auto vertices =
+                    create_component_vertices( block, *mesh_builder, elements );
+                absl::Span< const geode::index_t > remaining{ vertices };
+                for( const auto type : elements.types )
                 {
-                    block_builder->set_point(
-                        v, nodes_[brep_.unique_vertex(
-                               { b.component_id(), v } )] );
+                    const auto element_type = gmsh_element_type( type );
+                    mesh_builder->create_polyhedron(
+                        remaining.subspan( 0, element_type.nb_vertices ),
+                        *element_type.facets );
+                    remaining.remove_prefix( element_type.nb_vertices );
                 }
-                block_builder->compute_polyhedron_adjacencies();
+                mesh_builder->compute_polyhedron_adjacencies();
             }
-        }
-
-        void update_component_vertex( const geode::Line3D& line,
-            geode::EdgedCurveBuilder3D& mesh_builder,
-            geode::index_t old_line_vertex_id,
-            geode::index_t new_line_vertex_id )
-        {
-            const auto edges =
-                line.mesh().edges_around_vertex( old_line_vertex_id );
-            geode::OpenGeodeIOModelException::check_exception(
-                edges.size() == 1, nullptr,
-                geode::OpenGeodeException::TYPE::internal,
-                "By construction, there should be one and only one "
-                "edge pointing to each vertex at this point." );
-            mesh_builder.set_edge_vertex( edges[0], new_line_vertex_id );
-        }
-
-        void update_component_vertex( const geode::Surface3D& surface,
-            geode::SurfaceMeshBuilder3D& mesh_builder,
-            geode::index_t old_surface_vertex_id,
-            geode::index_t new_surface_vertex_id )
-        {
-            const auto polygons =
-                surface.mesh().polygons_around_vertex( old_surface_vertex_id );
-            geode::OpenGeodeIOModelException::check_exception(
-                polygons.size() == 1, nullptr,
-                geode::OpenGeodeException::TYPE::internal,
-                "By construction, there should be one and only one "
-                "polygon pointing to each vertex at this point." );
-            mesh_builder.set_polygon_vertex(
-                polygons[0], new_surface_vertex_id );
-        }
-
-        void update_component_vertex( const geode::Block3D& block,
-            geode::SolidMeshBuilder3D& mesh_builder,
-            geode::index_t old_block_vertex_id,
-            geode::index_t new_block_vertex_id )
-        {
-            const auto polyhedra =
-                block.mesh().polyhedra_around_vertex( old_block_vertex_id );
-            geode::OpenGeodeIOModelException::check_exception(
-                polyhedra.size() == 1, nullptr,
-                geode::OpenGeodeException::TYPE::internal,
-                "By construction, there should be one and only one "
-                "polyhedron pointing to each vertex at this point." );
-            mesh_builder.set_polyhedron_vertex(
-                polyhedra[0], new_block_vertex_id );
-        }
-
-        template < typename Component, typename ComponentMeshBuilder >
-        void filter_duplicated_vertices( const Component& component,
-            const geode::BRep& brep,
-            ComponentMeshBuilder& mesh_builder )
-        {
-            absl::flat_hash_map< geode::index_t, std::vector< geode::index_t > >
-                unique2component;
-            for( const auto v : geode::Range{ component.mesh().nb_vertices() } )
-            {
-                unique2component[brep.unique_vertex(
-                                     { component.component_id(), v } )]
-                    .emplace_back( v );
-            }
-            for( const auto& uv : unique2component )
-            {
-                for( const auto i : geode::Range{ 1, uv.second.size() } )
-                {
-                    update_component_vertex(
-                        component, mesh_builder, uv.second[i], uv.second[0] );
-                }
-            }
-
-            const auto old2new = mesh_builder.delete_isolated_vertices();
-            builder_.update_unique_vertices(
-                component.component_id(), old2new );
-        }
-
-        void filter_duplicated_line_vertices(
-            const geode::Line3D& line, geode::BRep& brep )
-        {
-            auto builder = geode::BRepBuilder{ brep }.line_mesh_builder( line );
-            filter_duplicated_vertices( line, brep, *builder );
-        }
-
-        void filter_duplicated_surface_vertices(
-            const geode::Surface3D& surface, geode::BRep& brep )
-        {
-            auto builder =
-                geode::BRepBuilder{ brep }.surface_mesh_builder( surface );
-            filter_duplicated_vertices( surface, brep, *builder );
-        }
-
-        void filter_duplicated_block_vertices(
-            const geode::Block3D& block, geode::BRep& brep )
-        {
-            auto builder =
-                geode::BRepBuilder{ brep }.block_mesh_builder( block );
-            filter_duplicated_vertices( block, brep, *builder );
         }
 
         void add_potential_relationships(
@@ -897,11 +967,13 @@ namespace
         std::ifstream file_;
         geode::BRep& brep_;
         geode::BRepBuilder builder_;
-        bool binary_{ true };
         double version_{ 2 };
         std::vector< std::string > sections_;
         std::vector< geode::Point3D > nodes_;
-        geode::internal::GmshId2Uuids gmsh_id2uuids_;
+        std::array< absl::flat_hash_map< geode::index_t, ComponentElements >,
+            NB_DIMENSIONS >
+            components_;
+        std::vector< std::string_view > tokens_;
     };
 } // namespace
 
