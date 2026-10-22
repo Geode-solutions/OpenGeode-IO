@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <limits>
 #include <optional>
 
 #include <absl/container/flat_hash_map.h>
@@ -39,6 +40,7 @@
 #include <geode/basic/string.hpp>
 #include <geode/basic/uuid.hpp>
 
+#include <geode/geometry/distance.hpp>
 #include <geode/geometry/point.hpp>
 
 #include <geode/mesh/builder/edged_curve_builder.hpp>
@@ -65,6 +67,8 @@
 
 namespace
 {
+    constexpr geode::index_t POINT_TYPE{ 15 };
+
     /// Counts read from the file are not trusted to reserve memory
     constexpr geode::index_t MAX_RESERVE{ 1U << 24U };
 
@@ -110,7 +114,7 @@ namespace
     {
         switch( gmsh_type )
         {
-            case 15:
+            case POINT_TYPE:
                 return { 0, 1 };
             case 1:
                 return { 1, 2 };
@@ -141,6 +145,8 @@ namespace
         std::vector< geode::index_t > types;
         /// Node indices of all elements, element after element
         std::vector< geode::index_t > nodes;
+        /// Point given in the $Entities section (corners only)
+        std::optional< geode::Point3D > position;
     };
 
     /*!
@@ -275,6 +281,8 @@ namespace
 
         void build_geometry()
         {
+            complete_corners();
+            remove_empty_components();
             build_corners();
             build_lines();
             build_surfaces();
@@ -497,8 +505,11 @@ namespace
                 std::string line;
                 read_line( line );
                 const auto tokens = geode::string_split( line );
-                component_elements(
+                auto& corner = component_elements(
                     0, geode::string_to_index( token( tokens, 0 ) ) );
+                // MSH 4.1: tag X Y Z, MSH 4.0: tag minX minY minZ maxX...
+                corner.position = read_node_coordinates( token( tokens, 1 ),
+                    token( tokens, 2 ), token( tokens, 3 ) );
             }
         }
 
@@ -866,10 +877,100 @@ namespace
             return element_vertices;
         }
 
+        /*!
+         * Gmsh does not save the point elements of a model with physical
+         * groups if no physical group contains points. The corner node is
+         * then recovered from the incident lines, as the node closest to the
+         * point given in the $Entities section.
+         */
+        void complete_corners()
+        {
+            absl::flat_hash_map< geode::uuid, const ComponentElements* > lines;
+            for( const auto& [tag, elements] : components_[1] )
+            {
+                lines.emplace( elements.id, &elements );
+            }
+            for( auto& [tag, corner] : components_[0] )
+            {
+                if( !corner.nodes.empty() || !corner.position )
+                {
+                    continue;
+                }
+                std::optional< geode::index_t > closest_node;
+                auto min_distance = std::numeric_limits< double >::max();
+                for( const auto& line :
+                    brep_.incidences( brep_.corner( corner.id ) ) )
+                {
+                    for( const auto node : lines.at( line.id() )->nodes )
+                    {
+                        const auto distance = geode::point_point_distance(
+                            nodes_[node], corner.position.value() );
+                        if( distance < min_distance )
+                        {
+                            min_distance = distance;
+                            closest_node = node;
+                        }
+                    }
+                }
+                if( closest_node )
+                {
+                    corner.types.push_back( POINT_TYPE );
+                    corner.nodes.push_back( closest_node.value() );
+                }
+            }
+        }
+
+        template < typename Component >
+        void remove_empty_components( geode::local_index_t dimension,
+            std::string_view name,
+            void ( geode::BRepBuilder::*remove )( const Component& ),
+            const Component& ( geode::BRep::*component )( const geode::uuid& )
+                const )
+        {
+            std::vector< geode::index_t > empty_tags;
+            for( const auto& [tag, elements] : components_[dimension] )
+            {
+                if( elements.nodes.empty() )
+                {
+                    geode::Logger::warning( "[MSHInput] ", name, " ", tag,
+                        " has no element, it is removed" );
+                    ( builder_.*remove )( ( brep_.*component )( elements.id ) );
+                    empty_tags.push_back( tag );
+                }
+            }
+            for( const auto tag : empty_tags )
+            {
+                components_[dimension].erase( tag );
+            }
+        }
+
+        void remove_empty_components()
+        {
+            remove_empty_components< geode::Corner3D >( 0, "Point",
+                &geode::BRepBuilder::remove_corner, &geode::BRep::corner );
+            remove_empty_components< geode::Line3D >( 1, "Curve",
+                &geode::BRepBuilder::remove_line, &geode::BRep::line );
+            remove_empty_components< geode::Surface3D >( 2, "Surface",
+                &geode::BRepBuilder::remove_surface, &geode::BRep::surface );
+            remove_empty_components< geode::Block3D >( 3, "Volume",
+                &geode::BRepBuilder::remove_block, &geode::BRep::block );
+        }
+
         void build_corners()
         {
-            for( const auto& [tag, elements] : components_[0] )
+            for( auto& [tag, elements] : components_[0] )
             {
+                const auto first_node = elements.nodes.front();
+                if( absl::c_any_of(
+                        elements.nodes, [first_node]( geode::index_t node ) {
+                            return node != first_node;
+                        } ) )
+                {
+                    geode::Logger::warning( "[MSHInput] Point ", tag,
+                        " has several nodes, only the first one is kept" );
+                }
+                elements.types.resize( 1 );
+                elements.nodes.resize( 1 );
                 const auto& corner = brep_.corner( elements.id );
                 auto mesh_builder = builder_.corner_mesh_builder( corner );
                 create_component_vertices( corner, *mesh_builder, elements );

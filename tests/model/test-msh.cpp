@@ -486,6 +486,58 @@ namespace
             "Parametric coordinates should be ignored" );
     }
 
+    void test_corners_without_point_elements()
+    {
+        const auto brep = geode::load_brep( absl::StrCat(
+            geode::DATA_PATH, "cube_no_point_elements_v41.msh" ) );
+        test_brep_cube( brep );
+        for( const auto& corner : brep.corners() )
+        {
+            const auto& point = corner.mesh().point( 0 );
+            for( const auto d : geode::LRange{ 3 } )
+            {
+                geode::OpenGeodeIOModelException::test(
+                    point.value( d ) == 0 || point.value( d ) == 1,
+                    "Corner should be on a cube vertex" );
+            }
+        }
+    }
+
+    void test_empty_components()
+    {
+        write_file( "empty_components_v4.msh",
+            absl::StrCat( V4_HEADER,
+                "$Entities\n1 1 1 0\n"
+                "1 5 5 5 0\n"
+                "1 0 0 0 1 0 0 0 0\n"
+                "1 0 0 0 1 1 0 0 0\n"
+                "$EndEntities\n",
+                V4_TRIANGLE_NODES,
+                "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2 3\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "empty_components_v4.msh" );
+        geode::OpenGeodeIOModelException::test( brep.nb_corners() == 0,
+            "Corner without element should be removed" );
+        geode::OpenGeodeIOModelException::test(
+            brep.nb_lines() == 0, "Line without element should be removed" );
+        geode::OpenGeodeIOModelException::test(
+            brep.nb_surfaces() == 1, "Surface with elements should be kept" );
+    }
+
+    void test_corner_with_several_nodes()
+    {
+        write_file( "corner_several_nodes_v2.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n3\n1 15 2 0 1 1\n2 15 2 0 1 2\n"
+                "3 2 2 0 1 1 2 3\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "corner_several_nodes_v2.msh" );
+        for( const auto& corner : brep.corners() )
+        {
+            geode::OpenGeodeIOModelException::test(
+                corner.mesh().nb_vertices() == 1,
+                "Corner should have only one vertex" );
+        }
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -554,6 +606,9 @@ int main()
         test_node_tags();
         test_sparse_element_tags();
         test_parametric_nodes();
+        test_corners_without_point_elements();
+        test_empty_components();
+        test_corner_with_several_nodes();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
