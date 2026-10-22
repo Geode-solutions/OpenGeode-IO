@@ -126,6 +126,10 @@ namespace
 
         void build_topology()
         {
+            if( potential_corners_.empty() )
+            {
+                return;
+            }
             const auto epsilon = compute_epsilon();
             const geode::NNSearch2D colocater( potential_corners_ );
             const auto colocated_info =

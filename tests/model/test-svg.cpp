@@ -260,6 +260,18 @@ void test_transforms()
         "Loading an invalid transform should fail" };
 }
 
+void test_empty_svg()
+{
+    write_svg( "empty.svg", "" );
+    const auto empty = geode::load_section( "empty.svg" );
+    geode::OpenGeodeIOModelException::test(
+        empty.nb_lines() == 0 && empty.nb_corners() == 0,
+        "Empty SVG should give an empty section" );
+    const auto closepath_only = load_svg_path( "closepath_only.svg", "z" );
+    geode::OpenGeodeIOModelException::test( closepath_only.nb_lines() == 0,
+        "Path without points should give no line" );
+}
+
 int main()
 {
     try
@@ -283,6 +295,7 @@ int main()
         test_compact_numbers();
         test_path_containers();
         test_transforms();
+        test_empty_svg();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
