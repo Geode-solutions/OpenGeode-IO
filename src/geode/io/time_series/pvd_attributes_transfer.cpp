@@ -86,7 +86,7 @@ namespace geode::internal
     PVDAttributesTransfer::PVDAttributesTransfer(
         absl::Span< const std::string_view > ignored_attributes )
         : ignored_attributes_(
-            ignored_attributes.begin(), ignored_attributes.end() )
+              ignored_attributes.begin(), ignored_attributes.end() )
     {
     }
 
