@@ -502,8 +502,8 @@ namespace
                 const auto& token = tokens[token_id];
                 if( token.size() == 1 && is_command_letter( token.front() ) )
                 {
-                    state.command = static_cast< char >( absl::ascii_tolower(
-                        static_cast< unsigned char >( token.front() ) ) );
+                    state.command = absl::ascii_tolower(
+                        static_cast< unsigned char >( token.front() ) );
                     state.absolute = absl::ascii_isupper(
                         static_cast< unsigned char >( token.front() ) );
                     token_id++;
