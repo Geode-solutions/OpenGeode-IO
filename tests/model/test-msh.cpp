@@ -349,6 +349,57 @@ namespace
                                        "3 0 1 0\n"
                                        "$EndNodes\n";
 
+    constexpr auto V4_HEADER = "$MeshFormat\n4.1 0 8\n$EndMeshFormat\n";
+
+    constexpr auto V4_TRIANGLE_NODES = "$Nodes\n1 3 1 3\n2 1 0 3\n1\n2\n3\n"
+                                       "0 0 0\n"
+                                       "1 0 0\n"
+                                       "0 1 0\n"
+                                       "$EndNodes\n";
+
+    void test_load_failure(
+        std::string_view filename, std::string_view content )
+    {
+        write_file( filename, content );
+        try
+        {
+            const auto brep = geode::load_brep( filename );
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            geode::OpenGeodeIOModelException::test(
+                exception.type() == geode::OpenGeodeException::TYPE::data,
+                "Loading ", filename,
+                " should fail with a data error, not an internal one" );
+            return;
+        }
+        throw geode::OpenGeodeIOModelException{ nullptr,
+            geode::OpenGeodeException::TYPE::internal, "Loading ", filename,
+            " should fail" };
+    }
+
+    void test_truncated_lines()
+    {
+        test_load_failure(
+            "truncated_header.msh", "$MeshFormat\n2.2\n$EndMeshFormat\n" );
+        test_load_failure( "truncated_node.msh",
+            absl::StrCat( V2_HEADER, "$Nodes\n1\n1 0 0\n$EndNodes\n" ) );
+        test_load_failure( "truncated_file.msh",
+            absl::StrCat( V2_HEADER, "$Nodes\n3\n1 0 0 0\n" ) );
+        test_load_failure( "truncated_element_v2.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 1 2\n$EndElements\n" ) );
+        test_load_failure( "too_many_tags_v2.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 4294967295 0 1 1 2 3\n$EndElements\n" ) );
+        test_load_failure( "truncated_element_v4.msh",
+            absl::StrCat( V4_HEADER, V4_TRIANGLE_NODES,
+                "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2\n$EndElements\n" ) );
+        test_load_failure( "empty_element_v4.msh",
+            absl::StrCat( V4_HEADER, V4_TRIANGLE_NODES,
+                "$Elements\n1 1 1 1\n2 1 2 1\n\n$EndElements\n" ) );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -412,6 +463,7 @@ int main()
 
         test_is_loadable();
         test_skip_unknown_sections();
+        test_truncated_lines();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
