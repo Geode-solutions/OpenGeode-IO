@@ -106,6 +106,8 @@ namespace
                 }
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
+                add_file( absl::StrCat( files_directory(), "/Block_",
+                    block.id().string(), ".vtu" ) );
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
                     const auto file = absl::StrCat(

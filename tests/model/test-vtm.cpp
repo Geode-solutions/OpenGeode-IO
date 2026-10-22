@@ -23,9 +23,19 @@
 
 #include <geode/tests_config.hpp>
 
+#include <filesystem>
+#include <string>
+#include <vector>
+
+#include <absl/strings/str_cat.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/model/mixin/core/block.hpp>
+#include <geode/model/mixin/core/corner.hpp>
+#include <geode/model/mixin/core/line.hpp>
+#include <geode/model/mixin/core/surface.hpp>
 #include <geode/model/representation/core/brep.hpp>
 #include <geode/model/representation/core/section.hpp>
 #include <geode/model/representation/io/brep_input.hpp>
@@ -35,6 +45,25 @@
 
 #include <geode/io/mesh/common.hpp>
 #include <geode/io/model/common.hpp>
+
+namespace
+{
+    void check_files(
+        const std::vector< std::string >& files, geode::index_t nb_components )
+    {
+        geode::OpenGeodeIOModelException::test(
+            files.size() == nb_components + 1,
+            "VTM output should list the .vtm file and one file per "
+            "component, got ",
+            files.size(), " files for ", nb_components, " components" );
+        for( const auto& file : files )
+        {
+            geode::OpenGeodeIOModelException::test(
+                std::filesystem::exists( file ), "Listed file ", file,
+                " should exist" );
+        }
+    }
+} // namespace
 
 int main()
 {
@@ -46,11 +75,14 @@ int main()
         auto brep =
             geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
         const auto filename = absl::StrCat( "mss.vtm" );
-        geode::save_brep( brep, filename );
+        check_files( geode::save_brep( brep, filename ),
+            brep.nb_corners() + brep.nb_lines() + brep.nb_surfaces()
+                + brep.nb_blocks() );
         auto section = geode::load_section(
             absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
-        geode::save_section( section, filename2 );
+        check_files( geode::save_section( section, filename2 ),
+            section.nb_corners() + section.nb_lines() + section.nb_surfaces() );
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

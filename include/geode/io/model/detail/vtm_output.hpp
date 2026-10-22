@@ -166,6 +166,8 @@ namespace geode
                         prefix_, "/Corner_", corner.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
+                    add_file( absl::StrCat( files_directory_, "/Corner_",
+                        corner.id().string(), ".vtp" ) );
 
                     tasks[counter++] = async::spawn( [&corner, this] {
                         const auto& mesh = corner.mesh();
@@ -222,6 +224,8 @@ namespace geode
                         prefix_, "/Line_", line.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
+                    add_file( absl::StrCat( files_directory_, "/Line_",
+                        line.id().string(), ".vtp" ) );
 
                     tasks[counter++] = async::spawn( [&line, this] {
                         const auto& mesh = line.mesh();
@@ -280,6 +284,8 @@ namespace geode
                         prefix_, "/Surface_", surface.id().string(), ".vtp" );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
+                    add_file( absl::StrCat( files_directory_, "/Surface_",
+                        surface.id().string(), ".vtp" ) );
 
                     tasks[counter++] = async::spawn( [&surface, this] {
                         const auto& mesh = surface.mesh();
