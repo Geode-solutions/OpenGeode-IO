@@ -675,11 +675,7 @@ namespace
             read_line( line );
             const auto tokens = geode::string_split( line );
             const auto nb_nodes = geode::string_to_index( token( tokens, 3 ) );
-            geode::OpenGeodeIOModelException::check_exception(
-                geode::string_to_index( token( tokens, 2 ) ) == 0, nullptr,
-                geode::OpenGeodeException::TYPE::internal,
-                "[MSHInput::read_node_group] Parametric node coordinates "
-                "is not supported for now" );
+            // Parametric coordinates (tokens[2] == 1) follow x y z: ignored
             std::vector< geode::index_t > node_tags;
             node_tags.reserve( std::min( nb_nodes, MAX_RESERVE ) );
             if( is_v40() )

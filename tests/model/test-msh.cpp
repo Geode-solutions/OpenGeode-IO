@@ -471,6 +471,21 @@ namespace
             "Sparse element tags (v4) should give 2 polygons" );
     }
 
+    void test_parametric_nodes()
+    {
+        write_file( "parametric_nodes_v4.msh",
+            absl::StrCat( V4_HEADER,
+                "$Nodes\n1 3 1 3\n2 1 1 3\n1\n2\n3\n"
+                "0 0 0 0.1 0.2\n1 0 0 0.3 0.4\n0 1 0 0.5 0.6\n$EndNodes\n",
+                "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2 3\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "parametric_nodes_v4.msh" );
+        const auto& mesh = first_surface_mesh( brep );
+        geode::OpenGeodeIOModelException::test(
+            mesh.point( mesh.polygon_vertex( { 0, 1 } ) )
+                == geode::Point3D{ { 1, 0, 0 } },
+            "Parametric coordinates should be ignored" );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -538,6 +553,7 @@ int main()
         test_truncated_lines();
         test_node_tags();
         test_sparse_element_tags();
+        test_parametric_nodes();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
