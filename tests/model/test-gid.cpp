@@ -25,6 +25,7 @@
 
 #include <fstream>
 
+#include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
 #include <absl/strings/str_cat.h>
 
@@ -186,7 +187,7 @@ namespace
 
     struct GidContent
     {
-        absl::flat_hash_set< geode::index_t > nodes;
+        absl::flat_hash_map< geode::index_t, geode::Point3D > nodes;
         std::vector< geode::index_t > element_ids;
         std::vector< geode::index_t > element_nodes;
     };
@@ -218,7 +219,10 @@ namespace
             const auto tokens = geode::string_split( line );
             if( in_coordinates )
             {
-                content.nodes.insert( geode::string_to_index( tokens[0] ) );
+                content.nodes.emplace( geode::string_to_index( tokens[0] ),
+                    geode::Point3D{ { geode::string_to_double( tokens[1] ),
+                        geode::string_to_double( tokens[2] ),
+                        geode::string_to_double( tokens[3] ) } } );
             }
             else if( in_elements )
             {
@@ -235,10 +239,46 @@ namespace
         return content;
     }
 
-    void check_gid_file(
-        std::string_view filename, geode::index_t nb_expected_elements )
+    void check_gid_file( const geode::BRep& brep,
+        std::string_view filename,
+        geode::index_t nb_expected_elements )
     {
         const auto content = read_gid_file( filename );
+        for( const auto& [node, point] : content.nodes )
+        {
+            const auto& cmv = brep.component_mesh_vertices( node - 1 ).front();
+            geode::Point3D model_point;
+            if( cmv.component_id.type
+                == geode::Block3D::component_type_static() )
+            {
+                model_point = brep.block( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            else if( cmv.component_id.type
+                     == geode::Surface3D::component_type_static() )
+            {
+                model_point = brep.surface( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            else if( cmv.component_id.type
+                     == geode::Line3D::component_type_static() )
+            {
+                model_point =
+                    brep.line( cmv.component_id.id ).mesh().point( cmv.vertex );
+            }
+            else
+            {
+                model_point = brep.corner( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            geode::OpenGeodeIOModelException::test( point == model_point,
+                "GiD node ", node,
+                " coordinates should be exact: ", point.string(), " vs ",
+                model_point.string() );
+        }
         absl::flat_hash_set< geode::index_t > element_ids{
             content.element_ids.begin(), content.element_ids.end()
         };
@@ -311,7 +351,7 @@ namespace
         const auto filename_gid =
             absl::StrCat( short_filename, "_output.gid_msh" );
         geode::save_brep( brep, filename_gid );
-        check_gid_file( absl::StrCat( short_filename, "_output.gid.msh" ),
+        check_gid_file( brep, absl::StrCat( short_filename, "_output.gid.msh" ),
             nb_gid_elements( brep ) );
     }
 
@@ -382,7 +422,8 @@ namespace
         add_fracture( brep );
         add_material_attributes( brep );
         geode::save_brep( brep, "fracture_output.gid_msh" );
-        check_gid_file( "fracture_output.gid.msh", nb_gid_elements( brep ) );
+        check_gid_file(
+            brep, "fracture_output.gid.msh", nb_gid_elements( brep ) );
     }
 } // namespace
 

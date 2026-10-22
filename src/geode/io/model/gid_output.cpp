@@ -42,6 +42,9 @@
 #include <geode/model/mixin/core/surface.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
+#include <geode/io/model/common.hpp>
+#include <geode/io/model/internal/text_output.hpp>
+
 namespace
 {
     constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
@@ -111,6 +114,16 @@ namespace
         }
 
     private:
+        template < typename Component >
+        std::shared_ptr< geode::ReadOnlyAttribute< geode::index_t > >
+            unique_vertex_attribute( const Component& component ) const
+        {
+            return component.mesh()
+                .vertex_attribute_manager()
+                .template find_read_only_attribute< geode::index_t >(
+                    brep_.unique_vertex_attribute_id() );
+        }
+
         void write_header_block()
         {
             file_ << "MESH";
@@ -132,10 +145,10 @@ namespace
                         == geode::Block3D::component_type_static() )
                     {
                         file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                        file_ << brep_.block( cmv.component_id.id )
-                                     .mesh()
-                                     .point( cmv.vertex )
-                                     .string()
+                        file_ << geode::internal::point_string(
+                            coordinates_, brep_.block( cmv.component_id.id )
+                                              .mesh()
+                                              .point( cmv.vertex ) )
                               << geode::EOL;
                         break;
                     }
@@ -151,6 +164,7 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 const auto material_number = get_material_number_value( block );
+                const auto unique_vertices = unique_vertex_attribute( block );
                 for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
@@ -159,8 +173,7 @@ namespace
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
                             { polyhedron_id, vertex_lid } );
-                        const auto uid = brep_.unique_vertex(
-                            { block.component_id(), tet_vertex } );
+                        const auto uid = unique_vertices->value( tet_vertex );
                         file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
@@ -220,10 +233,10 @@ namespace
                         continue;
                     }
                     file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                    file_ << brep_.surface( cmv.component_id.id )
-                                 .mesh()
-                                 .point( cmv.vertex )
-                                 .string()
+                    file_ << geode::internal::point_string(
+                        coordinates_, brep_.surface( cmv.component_id.id )
+                                          .mesh()
+                                          .point( cmv.vertex ) )
                           << geode::EOL;
                     break;
                 }
@@ -240,6 +253,7 @@ namespace
                 const auto material_number =
                     get_material_number_value( surface );
 
+                const auto unique_vertices = unique_vertex_attribute( surface );
                 for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
@@ -249,8 +263,8 @@ namespace
                         const auto triangle_vertex =
                             surface.mesh().polygon_vertex(
                                 { facet_id, vertex_lid } );
-                        const auto uid = brep_.unique_vertex(
-                            { surface.component_id(), triangle_vertex } );
+                        const auto uid =
+                            unique_vertices->value( triangle_vertex );
                         file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
@@ -263,6 +277,7 @@ namespace
     private:
         std::ofstream file_;
         const geode::BRep& brep_;
+        std::string coordinates_;
     };
 } // namespace
 
