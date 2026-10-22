@@ -88,8 +88,13 @@ namespace
                 const auto& block = mesh().block( id );
                 auto dataset = block_block.append_child( "DataSet" );
                 dataset.append_attribute( "index" ).set_value( counter );
+                // Regular grids are written as VTK image data
+                const auto* extension =
+                    dynamic_cast< const geode::RegularGrid3D* >( &block.mesh() )
+                        ? ".vti"
+                        : ".vtu";
                 const auto filename = absl::StrCat(
-                    prefix(), "/Block_", block.id().string(), ".vtu" );
+                    prefix(), "/Block_", block.id().string(), extension );
                 dataset.append_attribute( "file" ).set_value(
                     filename.c_str() );
                 const auto name = block.name().value_or( block.id().string() );
@@ -107,7 +112,7 @@ namespace
                 dataset.append_attribute( "uuid" ).set_value(
                     block.id().string().c_str() );
                 add_file( absl::StrCat( files_directory(), "/Block_",
-                    block.id().string(), ".vtu" ) );
+                    block.id().string(), extension ) );
                 tasks[counter++] = async::spawn( [&block, this] {
                     const auto& mesh = block.mesh();
                     const auto file = absl::StrCat(

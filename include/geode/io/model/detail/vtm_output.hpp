@@ -280,17 +280,23 @@ namespace geode
                     }
                     dataset.append_attribute( "uuid" ).set_value(
                         surface.id().string().c_str() );
-                    const auto filename = absl::StrCat(
-                        prefix_, "/Surface_", surface.id().string(), ".vtp" );
+                    // Regular grids are written as VTK image data
+                    const auto* extension =
+                        dynamic_cast< const RegularGrid2D* >( &surface.mesh() )
+                            ? ".vti"
+                            : ".vtp";
+                    const auto filename = absl::StrCat( prefix_, "/Surface_",
+                        surface.id().string(), extension );
                     dataset.append_attribute( "file" ).set_value(
                         filename.c_str() );
                     add_file( absl::StrCat( files_directory_, "/Surface_",
-                        surface.id().string(), ".vtp" ) );
+                        surface.id().string(), extension ) );
 
-                    tasks[counter++] = async::spawn( [&surface, this] {
+                    tasks[counter++] = async::spawn( [&surface, extension,
+                                                         this] {
                         const auto& mesh = surface.mesh();
                         const auto file = absl::StrCat( files_directory_,
-                            "/Surface_", surface.id().string(), ".vtp" );
+                            "/Surface_", surface.id().string(), extension );
                         if( const auto* triangulated = dynamic_cast<
                                 const TriangulatedSurface< dimension >* >(
                                 &mesh ) )

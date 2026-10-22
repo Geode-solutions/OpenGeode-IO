@@ -24,6 +24,8 @@
 #include <geode/tests_config.hpp>
 
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -32,10 +34,21 @@
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 
+#include <geode/geometry/point.hpp>
+#include <geode/geometry/vector.hpp>
+
+#include <geode/mesh/builder/regular_grid_solid_builder.hpp>
+#include <geode/mesh/builder/regular_grid_surface_builder.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
+#include <geode/mesh/core/regular_grid_solid.hpp>
+#include <geode/mesh/core/regular_grid_surface.hpp>
+
 #include <geode/model/mixin/core/block.hpp>
 #include <geode/model/mixin/core/corner.hpp>
 #include <geode/model/mixin/core/line.hpp>
 #include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
+#include <geode/model/representation/builder/section_builder.hpp>
 #include <geode/model/representation/core/brep.hpp>
 #include <geode/model/representation/core/section.hpp>
 #include <geode/model/representation/io/brep_input.hpp>
@@ -63,6 +76,52 @@ namespace
                 " should exist" );
         }
     }
+    /// Checks that the files referenced by the .vtm file exist
+    void check_vtm_references( std::string_view vtm_filename )
+    {
+        std::ifstream file{ geode::to_string( vtm_filename ) };
+        const std::string content{ std::istreambuf_iterator< char >{ file },
+            std::istreambuf_iterator< char >{} };
+        constexpr std::string_view FILE_ATTRIBUTE{ "file=\"" };
+        geode::index_t nb_references{ 0 };
+        auto start = content.find( FILE_ATTRIBUTE );
+        while( start != std::string::npos )
+        {
+            start += FILE_ATTRIBUTE.size();
+            const auto end = content.find( '"', start );
+            const auto referenced = content.substr( start, end - start );
+            geode::OpenGeodeIOModelException::test(
+                std::filesystem::exists( referenced ), "Referenced file ",
+                referenced, " should exist" );
+            nb_references++;
+            start = content.find( FILE_ATTRIBUTE, end );
+        }
+        geode::OpenGeodeIOModelException::test(
+            nb_references != 0, "The .vtm file should reference files" );
+    }
+
+    void test_regular_grids()
+    {
+        geode::Section section;
+        geode::SectionBuilder section_builder{ section };
+        const auto& surface = section.surface(
+            section_builder.add_surface( geode::MeshFactory::default_impl(
+                geode::RegularGrid2D::type_name_static() ) ) );
+        section_builder.surface_mesh_builder< geode::RegularGrid2D >( surface )
+            ->initialize_grid( geode::Point2D{ { 0, 0 } }, { 2, 2 }, 1 );
+        check_files( geode::save_section( section, "grid_section.vtm" ), 1 );
+        check_vtm_references( "grid_section.vtm" );
+
+        geode::BRep brep;
+        geode::BRepBuilder brep_builder{ brep };
+        const auto& block = brep.block(
+            brep_builder.add_block( geode::MeshFactory::default_impl(
+                geode::RegularGrid3D::type_name_static() ) ) );
+        brep_builder.block_mesh_builder< geode::RegularGrid3D >( block )
+            ->initialize_grid( geode::Point3D{ { 0, 0, 0 } }, { 2, 2, 2 }, 1 );
+        check_files( geode::save_brep( brep, "grid_brep.vtm" ), 1 );
+        check_vtm_references( "grid_brep.vtm" );
+    }
 } // namespace
 
 int main()
@@ -83,6 +142,10 @@ int main()
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
         check_files( geode::save_section( section, filename2 ),
             section.nb_corners() + section.nb_lines() + section.nb_surfaces() );
+        check_vtm_references( filename );
+        check_vtm_references( filename2 );
+        test_regular_grids();
+
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }
