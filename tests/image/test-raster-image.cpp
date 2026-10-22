@@ -23,7 +23,11 @@
 
 #include <geode/tests_config.hpp>
 
+#include <cmath>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iterator>
 
 #include <absl/strings/match.h>
@@ -42,6 +46,7 @@
 #include <geode/mesh/io/regular_grid_output.hpp>
 
 #include <geode/io/image/common.hpp>
+#include <geode/io/image/detail/vti_output_impl.hpp>
 #include <geode/io/mesh/common.hpp>
 
 void test_jpg_from_gimp_input()
@@ -146,6 +151,170 @@ void test_tiff_input()
     geode::save_raster_image( raster, "cea.vti" );
 }
 
+// Test images are 4x3 pixels, image row 0 being the top row
+constexpr geode::index_t TEST_IMAGE_WIDTH = 4;
+constexpr geode::index_t TEST_IMAGE_HEIGHT = 3;
+
+std::array< geode::index_t, 2 > test_image_pixel( geode::index_t cell )
+{
+    return { cell % TEST_IMAGE_WIDTH,
+        TEST_IMAGE_HEIGHT - 1 - cell / TEST_IMAGE_WIDTH };
+}
+
+geode::RasterImage2D load_test_image( std::string_view filename )
+{
+    auto raster = geode::load_raster_image< 2 >(
+        absl::StrCat( geode::DATA_PATH, filename ) );
+    geode::OpenGeodeIOImageException::test(
+        raster.nb_cells_in_direction( 0 ) == TEST_IMAGE_WIDTH
+            && raster.nb_cells_in_direction( 1 ) == TEST_IMAGE_HEIGHT,
+        "[TEST] Wrong size for ", filename );
+    return raster;
+}
+
+// Colors of the bands of image_rgb files
+geode::RGBColor test_image_rgb( geode::index_t cell )
+{
+    const auto pixel = test_image_pixel( cell );
+    return { static_cast< geode::local_index_t >( 20 * pixel[0] ),
+        static_cast< geode::local_index_t >( 40 * pixel[1] ), 130 };
+}
+
+void check_test_image_colors( std::string_view filename,
+    const std::function< geode::RGBColor( geode::index_t ) >& expected )
+{
+    const auto raster = load_test_image( filename );
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto& color = raster.color( cell );
+        const auto expected_color = expected( cell );
+        geode::OpenGeodeIOImageException::test( color == expected_color,
+            "[TEST] Wrong color for cell ", cell, " of ", filename, ": (",
+            color.red(), ", ", color.green(), ", ", color.blue(),
+            ") instead of (", expected_color.red(), ", ",
+            expected_color.green(), ", ", expected_color.blue(), ")" );
+    }
+}
+
+void test_bmp_input()
+{
+    check_test_image_colors( "image_rgb.png", test_image_rgb );
+    check_test_image_colors( "image_rgb.bmp", test_image_rgb );
+}
+
+void test_untagged_bands_input()
+{
+    check_test_image_colors( "image_untagged_bands.tif", test_image_rgb );
+}
+
+void test_five_bands_input()
+{
+    check_test_image_colors( "image_five_bands.tif", test_image_rgb );
+}
+
+void test_palette_input()
+{
+    check_test_image_colors( "image_palette.png", []( geode::index_t cell ) {
+        const auto pixel = test_image_pixel( cell );
+        const auto index = pixel[0] + TEST_IMAGE_WIDTH * pixel[1];
+        return geode::RGBColor{ static_cast< geode::local_index_t >(
+                                    20 * index ),
+            static_cast< geode::local_index_t >( 255 - 20 * index ),
+            static_cast< geode::local_index_t >( 5 * index ) };
+    } );
+}
+
+geode::local_index_t rescaled( double value, double min, double max )
+{
+    return static_cast< geode::local_index_t >(
+        std::round( ( value - min ) * 255. / ( max - min ) ) );
+}
+
+void test_non_8_bit_input()
+{
+    const auto index = []( geode::index_t cell ) {
+        const auto pixel = test_image_pixel( cell );
+        return pixel[0] + TEST_IMAGE_WIDTH * pixel[1];
+    };
+    check_test_image_colors( "image_grey16.png", [&index](
+                                                     geode::index_t cell ) {
+        const auto grey = rescaled( 1000. + 100. * index( cell ), 1000, 2100 );
+        return geode::RGBColor{ grey, grey, grey };
+    } );
+    check_test_image_colors(
+        "image_rgb16.tif", [&index]( geode::index_t cell ) {
+            const auto value = 100. * index( cell );
+            return geode::RGBColor{ rescaled( 1000. + value, 1000, 4100 ),
+                rescaled( 2000. + value, 1000, 4100 ),
+                rescaled( 3000. + value, 1000, 4100 ) };
+        } );
+    // Pixel 5 has the nodata value and pixel 6 is NaN
+    check_test_image_colors(
+        "image_float.tif", [&index]( geode::index_t cell ) {
+            const auto pixel = index( cell );
+            const auto grey = pixel == 5 || pixel == 6
+                                  ? geode::local_index_t{ 0 }
+                                  : rescaled( 0.5 * pixel, 0, 5.5 );
+            return geode::RGBColor{ grey, grey, grey };
+        } );
+}
+
+void test_additional_files()
+{
+    const auto no_files = geode::raster_image_additional_files< 2 >(
+        absl::StrCat( geode::DATA_PATH, "image_rgb.png" ) );
+    geode::OpenGeodeIOImageException::test(
+        no_files.optional_files.empty() && !no_files.has_additional_files(),
+        "[TEST] Image without associated file should have no additional "
+        "file" );
+    const auto files = geode::raster_image_additional_files< 2 >(
+        absl::StrCat( geode::DATA_PATH, "image_world_file.png" ) );
+    geode::OpenGeodeIOImageException::test(
+        files.optional_files.size() == 1 && !files.has_additional_files(),
+        "[TEST] Wrong additional files of image with world file" );
+    geode::OpenGeodeIOImageException::test(
+        absl::EndsWith(
+            files.optional_files.front().filename, "image_world_file.pgw" ),
+        "[TEST] World file should be an additional file" );
+}
+
+void test_non_image_format_input()
+{
+    // A VRT file, referencing image_rgb.png, named as a PNG file
+    bool thrown{ false };
+    try
+    {
+        const auto raster = geode::load_raster_image< 2 >(
+            absl::StrCat( geode::DATA_PATH, "image_vrt.png" ) );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        thrown = true;
+    }
+    geode::OpenGeodeIOImageException::test(
+        thrown, "[TEST] Non image formats should not be loaded" );
+}
+
+void test_unreadable_input()
+{
+    const auto filename = absl::StrCat( geode::DATA_PATH, "image_garbage.png" );
+    geode::OpenGeodeIOImageException::test(
+        geode::is_raster_image_loadable< 2 >( filename ).value() == 0,
+        "[TEST] Unreadable image should not be loadable" );
+    std::string message;
+    try
+    {
+        const auto raster = geode::load_raster_image< 2 >( filename );
+    }
+    catch( const geode::OpenGeodeException& exception )
+    {
+        message = exception.what();
+    }
+    geode::OpenGeodeIOImageException::test(
+        absl::StrContains( message, "not recognized" ),
+        "[TEST] Load error should give the GDAL reason, got: ", message );
+}
+
 void test_empty_image_output()
 {
     const geode::RasterImage2D raster;
@@ -156,6 +325,109 @@ void test_empty_image_output()
     geode::OpenGeodeIOImageException::test(
         absl::StrContains( content, "WholeExtent=\"0 -1 0 -1 0 0\"" ),
         "[TEST] Wrong extent written for empty image" );
+}
+
+void test_vti_colors_output()
+{
+    geode::RasterImage2D raster{ { 3, 2 } };
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto value = static_cast< geode::local_index_t >( 10 * cell );
+        raster.set_color(
+            cell, { value, static_cast< geode::local_index_t >( value + 1 ),
+                      static_cast< geode::local_index_t >( value + 2 ) } );
+    }
+    geode::save_raster_image( raster, "colors.vti" );
+    std::ifstream file{ "colors.vti", std::ios::binary };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    const auto start = content.find( "<AppendedData encoding=\"raw\">" );
+    geode::OpenGeodeIOImageException::test(
+        start != std::string::npos, "[TEST] No appended data in VTI file" );
+    const auto data = content.find( '_', start ) + 1;
+    std::uint64_t nb_bytes{ 0 };
+    std::memcpy( &nb_bytes, content.data() + data, sizeof( nb_bytes ) );
+    geode::OpenGeodeIOImageException::test(
+        nb_bytes == 3 * raster.nb_cells(), "[TEST] Wrong VTI colors size" );
+    for( const auto cell : geode::Range{ raster.nb_cells() } )
+    {
+        const auto* color =
+            content.data() + data + sizeof( nb_bytes ) + 3 * cell;
+        const auto& expected = raster.color( cell );
+        geode::OpenGeodeIOImageException::test(
+            static_cast< geode::local_index_t >( color[0] ) == expected.red()
+                && static_cast< geode::local_index_t >( color[1] )
+                       == expected.green()
+                && static_cast< geode::local_index_t >( color[2] )
+                       == expected.blue(),
+            "[TEST] Wrong VTI color for cell ", cell );
+    }
+}
+
+class FailingVTIOutput
+    : public geode::detail::VTIOutputImpl< geode::RasterImage2D >
+{
+public:
+    FailingVTIOutput(
+        const geode::RasterImage2D& raster, std::string_view filename )
+        : geode::detail::VTIOutputImpl< geode::RasterImage2D >{ raster,
+              filename }
+    {
+    }
+
+private:
+    void write_piece( pugi::xml_node& /*unused*/ ) final
+    {
+        throw geode::OpenGeodeIOImageException{ nullptr,
+            geode::OpenGeodeException::TYPE::data, "Failure while writing" };
+    }
+};
+
+void test_failed_output_keeps_existing_file()
+{
+    const auto filename = "existing.vti";
+    std::ofstream{ filename } << "previous content";
+    const geode::RasterImage2D raster{ { 2, 2 } };
+    bool thrown{ false };
+    try
+    {
+        FailingVTIOutput output{ raster, filename };
+        output.write_file();
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        thrown = true;
+    }
+    geode::OpenGeodeIOImageException::test(
+        thrown, "[TEST] Failing output should throw" );
+    std::ifstream file{ filename };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    geode::OpenGeodeIOImageException::test( content == "previous content",
+        "[TEST] Failing output should keep the existing file" );
+    geode::OpenGeodeIOImageException::test(
+        !std::filesystem::exists( absl::StrCat( filename, ".tmp" ) ),
+        "[TEST] Failing output should not leave a temporary file" );
+}
+
+void test_output_through_symbolic_link()
+{
+#ifdef __linux__
+    std::filesystem::remove( "link.vti" );
+    std::ofstream{ "link_target.vti" } << "previous content";
+    std::filesystem::create_symlink( "link_target.vti", "link.vti" );
+    const geode::RasterImage2D raster{ { 2, 2 } };
+    geode::save_raster_image( raster, "link.vti" );
+    geode::OpenGeodeIOImageException::test(
+        std::filesystem::is_symlink( "link.vti" ),
+        "[TEST] Output should keep the symbolic link" );
+    std::ifstream file{ "link_target.vti" };
+    const std::string content{ std::istreambuf_iterator< char >{ file },
+        std::istreambuf_iterator< char >{} };
+    geode::OpenGeodeIOImageException::test(
+        absl::StrContains( content, "VTKFile" ),
+        "[TEST] Output should be written in the symbolic link target" );
+#endif
 }
 
 int main()
@@ -169,7 +441,18 @@ int main()
         test_jpg_from_paraview_input();
         test_png_input();
         test_tiff_input();
+        test_bmp_input();
+        test_untagged_bands_input();
+        test_five_bands_input();
+        test_palette_input();
+        test_non_8_bit_input();
+        test_additional_files();
+        test_non_image_format_input();
+        test_unreadable_input();
         test_empty_image_output();
+        test_failed_output_keeps_existing_file();
+        test_output_through_symbolic_link();
+        test_vti_colors_output();
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
     }

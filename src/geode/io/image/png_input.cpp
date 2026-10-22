@@ -34,7 +34,7 @@ namespace geode
         RasterImage2D PNGInput::read()
         {
             ImageInputImpl reader{ filename() };
-            return reader.read_reversed_y_axis_file();
+            return reader.read_file();
         }
 
         auto PNGInput::additional_files() const -> AdditionalFiles
@@ -45,8 +45,7 @@ namespace geode
 
         Percentage PNGInput::is_loadable() const
         {
-            ImageInputImpl reader{ filename() };
-            return reader.is_loadable();
+            return ImageInputImpl::is_loadable( filename() );
         }
     } // namespace internal
 } // namespace geode
