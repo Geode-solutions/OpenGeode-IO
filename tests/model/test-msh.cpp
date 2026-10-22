@@ -538,6 +538,19 @@ namespace
         }
     }
 
+    void test_unknown_bounding_entities()
+    {
+        // Gmsh writes an invalid bounding curve tag for the curve embedded in
+        // the bottom surface
+        const auto brep = geode::load_brep(
+            absl::StrCat( geode::DATA_PATH, "embedded_v41.msh" ) );
+        // NOLINTBEGIN(*-magic-numbers)
+        BrepDescription description{ brep, 14, 17, 7, 1 };
+        // NOLINTEND(*-magic-numbers)
+        check_count_components( description );
+        check_unique_vertices( brep );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -609,6 +622,7 @@ int main()
         test_corners_without_point_elements();
         test_empty_components();
         test_corner_with_several_nodes();
+        test_unknown_bounding_entities();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

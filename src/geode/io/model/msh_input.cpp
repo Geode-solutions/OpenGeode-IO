@@ -513,31 +513,55 @@ namespace
             }
         }
 
+        /*!
+         * Reads the bounding entities of a curve, surface or volume entity
+         * line: tag box(6) numPhysicalTags physicalTags... numBounding
+         * boundingTags... Unknown bounding entities are ignored: Gmsh may
+         * write invalid tags for embedded entities.
+         */
+        std::vector< geode::uuid > read_boundaries(
+            absl::Span< const std::string_view > tokens,
+            geode::local_index_t boundary_dimension )
+        {
+            const auto nb_physical_tags =
+                geode::string_to_index( token( tokens, 7 ) );
+            const auto nb_boundaries =
+                geode::string_to_index( token( tokens, 8 + nb_physical_tags ) );
+            std::vector< geode::uuid > boundaries;
+            for( const auto b : geode::Range{ nb_boundaries } )
+            {
+                const auto boundary_tag = static_cast< geode::index_t >(
+                    std::abs( geode::string_to_int(
+                        token( tokens, 9 + nb_physical_tags + b ) ) ) );
+                const auto it =
+                    components_[boundary_dimension].find( boundary_tag );
+                if( it == components_[boundary_dimension].end() )
+                {
+                    geode::Logger::warning( "[MSHInput] Line ", line_number_,
+                        ": unknown bounding entity ", boundary_tag,
+                        " of dimension ", boundary_dimension, " is ignored" );
+                    continue;
+                }
+                boundaries.push_back( it->second.id );
+            }
+            return boundaries;
+        }
+
         void create_lines( const geode::index_t nb_lines )
         {
             for( const auto unused : geode::Range{ nb_lines } )
             {
                 geode_unused( unused );
-                std::string line;
-                read_line( line );
-                const auto tokens = geode::string_split( line );
-                const auto& line_uuid = component_elements(
+                std::string file_line;
+                read_line( file_line );
+                const auto tokens = geode::string_split( file_line );
+                const auto& line = brep_.line( component_elements(
                     1, geode::string_to_index( token( tokens, 0 ) ) )
-                                            .id;
-                // TODO physical tags
-                const auto nb_physical_tags =
-                    geode::string_to_index( token( tokens, 7 ) );
-                for( const auto b : geode::Range{ geode::string_to_index(
-                         token( tokens, 8 + nb_physical_tags ) ) } )
+                        .id );
+                for( const auto& corner_id : read_boundaries( tokens, 0 ) )
                 {
-                    const auto boundary_msh_id =
-                        std::abs( geode::string_to_double(
-                            token( tokens, 9 + nb_physical_tags + b ) ) );
                     builder_.add_corner_line_boundary_relationship(
-                        brep_.corner(
-                            component_id( 0, static_cast< geode::index_t >(
-                                                 boundary_msh_id ) ) ),
-                        brep_.line( line_uuid ) );
+                        brep_.corner( corner_id ), line );
                 }
             }
         }
@@ -550,45 +574,26 @@ namespace
                 std::string file_line;
                 read_line( file_line );
                 const auto tokens = geode::string_split( file_line );
-                const auto& surface_uuid = component_elements(
+                const auto& surface = brep_.surface( component_elements(
                     2, geode::string_to_index( token( tokens, 0 ) ) )
-                                               .id;
-                const auto& surface = brep_.surface( surface_uuid );
-                // TODO physical tags
-                absl::flat_hash_map< geode::index_t, geode::index_t >
+                        .id );
+                absl::flat_hash_map< geode::uuid, geode::index_t >
                     boundary_counter;
-                const auto nb_physical_tags =
-                    geode::string_to_index( token( tokens, 7 ) );
-                for( const auto b : geode::Range{ geode::string_to_index(
-                         token( tokens, 8 + nb_physical_tags ) ) } )
+                for( const auto& line_id : read_boundaries( tokens, 1 ) )
                 {
-                    const auto boundary_msh_id = geode::string_to_double(
-                        token( tokens, 9 + nb_physical_tags + b ) );
-                    auto it = boundary_counter.emplace(
-                        static_cast< geode::index_t >(
-                            std::abs( boundary_msh_id ) ),
-                        1 );
-                    if( !it.second )
-                    {
-                        it.first->second++;
-                    }
+                    boundary_counter[line_id]++;
                 }
-                for( const auto& boundary : boundary_counter )
+                for( const auto& [line_id, count] : boundary_counter )
                 {
-                    const auto& line =
-                        brep_.line( component_id( 1, boundary.first ) );
-                    if( boundary.second == 1 )
+                    const auto& line = brep_.line( line_id );
+                    if( count == 1 )
                     {
                         builder_.add_line_surface_boundary_relationship(
                             line, surface );
                     }
                     else
                     {
-                        geode::OpenGeodeIOModelException::check_exception(
-                            boundary.second == 2, nullptr,
-                            geode::OpenGeodeException::TYPE::data,
-                            "[MSHInput::create_surfaces] Wrong Surface/Line "
-                            "relationship" );
+                        // A line bounding the surface on both sides
                         builder_.add_line_surface_internal_relationship(
                             line, surface );
                     }
@@ -601,25 +606,16 @@ namespace
             for( const auto unused : geode::Range{ nb_blocks } )
             {
                 geode_unused( unused );
-                std::string line;
-                read_line( line );
-                const auto tokens = geode::string_split( line );
-                const auto& block_uuid = component_elements(
+                std::string file_line;
+                read_line( file_line );
+                const auto tokens = geode::string_split( file_line );
+                const auto& block = brep_.block( component_elements(
                     3, geode::string_to_index( token( tokens, 0 ) ) )
-                                             .id;
-                // TODO physical tags
-                const auto nb_physical_tags =
-                    geode::string_to_index( token( tokens, 7 ) );
-                for( const auto b : geode::Range{ geode::string_to_index(
-                         token( tokens, 8 + nb_physical_tags ) ) } )
+                        .id );
+                for( const auto& surface_id : read_boundaries( tokens, 2 ) )
                 {
-                    const auto boundary_msh_id = std::abs( geode::string_to_int(
-                        token( tokens, 9 + nb_physical_tags + b ) ) );
                     builder_.add_surface_block_boundary_relationship(
-                        brep_.surface(
-                            component_id( 2, static_cast< geode::index_t >(
-                                                 boundary_msh_id ) ) ),
-                        brep_.block( block_uuid ) );
+                        brep_.surface( surface_id ), block );
                 }
             }
         }
