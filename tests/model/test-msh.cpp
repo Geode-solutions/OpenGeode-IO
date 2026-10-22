@@ -359,6 +359,16 @@ namespace
                                        "0 1 0\n"
                                        "$EndNodes\n";
 
+    const geode::SurfaceMesh3D& first_surface_mesh( const geode::BRep& brep )
+    {
+        for( const auto& surface : brep.surfaces() )
+        {
+            return surface.mesh();
+        }
+        throw geode::OpenGeodeIOModelException{ nullptr,
+            geode::OpenGeodeException::TYPE::internal, "No Surface in BRep" };
+    }
+
     void test_load_failure(
         std::string_view filename, std::string_view content )
     {
@@ -429,12 +439,36 @@ namespace
         const auto brep = geode::load_brep( "sparse_nodes_v2.msh" );
         geode::OpenGeodeIOModelException::test( brep.nb_unique_vertices() == 3,
             "Sparse node tags should give 3 unique vertices" );
-        const auto& surface = *brep.surfaces().begin();
-        const auto& mesh = surface.mesh();
+        const auto& mesh = first_surface_mesh( brep );
         geode::OpenGeodeIOModelException::test(
             mesh.point( mesh.polygon_vertex( { 0, 2 } ) )
                 == geode::Point3D{ { 0, 1, 0 } },
             "Sparse node tags should be mapped to the right coordinates" );
+    }
+
+    void test_sparse_element_tags()
+    {
+        write_file( "sparse_elements_v2.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n4\n1 0 0 0\n2 1 0 0\n3 0 1 0\n4 1 1 0\n"
+                "$EndNodes\n",
+                "$Elements\n2\n5 2 2 0 1 1 2 3\n42 2 2 0 1 2 4 3\n"
+                "$EndElements\n" ) );
+        const auto brep_v2 = geode::load_brep( "sparse_elements_v2.msh" );
+        geode::OpenGeodeIOModelException::test(
+            first_surface_mesh( brep_v2 ).nb_polygons() == 2,
+            "Sparse element tags (v2) should give 2 polygons" );
+
+        write_file( "sparse_elements_v4.msh",
+            absl::StrCat( V4_HEADER,
+                "$Nodes\n1 4 1 4\n2 1 0 4\n1\n2\n3\n4\n"
+                "0 0 0\n1 0 0\n0 1 0\n1 1 0\n$EndNodes\n",
+                "$Elements\n1 2 7 12\n2 1 2 2\n7 1 2 3\n12 2 4 3\n"
+                "$EndElements\n" ) );
+        const auto brep_v4 = geode::load_brep( "sparse_elements_v4.msh" );
+        geode::OpenGeodeIOModelException::test(
+            first_surface_mesh( brep_v4 ).nb_polygons() == 2,
+            "Sparse element tags (v4) should give 2 polygons" );
     }
 
     void test_is_loadable()
@@ -502,6 +536,7 @@ int main()
         test_skip_unknown_sections();
         test_truncated_lines();
         test_node_tags();
+        test_sparse_element_tags();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

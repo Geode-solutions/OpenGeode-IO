@@ -701,10 +701,11 @@ namespace
             const auto tokens = geode::string_split( line );
             const auto nb_elements =
                 geode::string_to_index( token( tokens, 0 ) );
-            for( auto e_id : geode::Range{ nb_elements } )
+            for( const auto unused : geode::Range{ nb_elements } )
             {
+                geode_unused( unused );
                 read_line( line );
-                read_element( e_id + geode::internal::GMSH_OFFSET_START, line );
+                read_element( line );
             }
             check_keyword( "$EndElements" );
         }
@@ -727,18 +728,11 @@ namespace
             }
         }
 
-        void read_element(
-            geode::index_t expected_element_id, const std::string& line )
+        void read_element( const std::string& line )
         {
             const auto tokens = tokenize( line );
-            geode::index_t t{ 0 };
-            geode::OpenGeodeIOModelException::check_exception(
-                expected_element_id
-                    == geode::string_to_index( token( tokens, t++ ) ),
-                nullptr, geode::OpenGeodeException::TYPE::data,
-                "[MSHInput::read_element] Element indices should be "
-                "continuous." );
-
+            // Element tags are not used: they do not need to be continuous
+            geode::index_t t{ 1 };
             // Element type
             const auto mesh_element_type_id =
                 geode::string_to_index( token( tokens, t++ ) );
@@ -774,17 +768,6 @@ namespace
             std::string line;
             read_line( line );
             const auto tokens = geode::string_split( line );
-            const auto nb_total_elements =
-                geode::string_to_index( token( tokens, 1 ) );
-            const auto min_element_id =
-                geode::string_to_index( token( tokens, 2 ) );
-            const auto max_element_id =
-                geode::string_to_index( token( tokens, 3 ) );
-            geode::OpenGeodeIOModelException::check_exception(
-                min_element_id == 1 && max_element_id == nb_total_elements,
-                nullptr, geode::OpenGeodeException::TYPE::internal,
-                "[MSHInput::read_element_section_v4] Non continuous element "
-                "indexing is not supported for now" );
             for( const auto unused :
                 geode::Range{ geode::string_to_index( token( tokens, 0 ) ) } )
             {
