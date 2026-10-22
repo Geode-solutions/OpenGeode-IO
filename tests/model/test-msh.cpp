@@ -23,7 +23,10 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+
 #include <absl/container/flat_hash_set.h>
+#include <absl/strings/str_cat.h>
 
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
@@ -332,6 +335,48 @@ namespace
         }
     }
 
+    void write_file( std::string_view filename, std::string_view content )
+    {
+        std::ofstream file{ geode::to_string( filename ) };
+        file << content;
+    }
+
+    constexpr auto V2_HEADER = "$MeshFormat\n2.2 0 8\n$EndMeshFormat\n";
+
+    constexpr auto V2_TRIANGLE_NODES = "$Nodes\n3\n"
+                                       "1 0 0 0\n"
+                                       "2 1 0 0\n"
+                                       "3 0 1 0\n"
+                                       "$EndNodes\n";
+
+    void test_is_loadable()
+    {
+        write_file( "unsupported_version.msh",
+            "$MeshFormat\n3.0 0 8\n$EndMeshFormat\n" );
+        geode::OpenGeodeIOModelException::test(
+            geode::is_brep_loadable( "unsupported_version.msh" ).value() == 0,
+            "MSH file with unsupported version should not be loadable" );
+        write_file( "header_only.msh", V2_HEADER );
+        geode::OpenGeodeIOModelException::test(
+            geode::is_brep_loadable( "header_only.msh" ).value() == 1,
+            "MSH file with a supported header should be loadable" );
+    }
+
+    void test_skip_unknown_sections()
+    {
+        write_file( "unknown_sections.msh",
+            absl::StrCat( V2_HEADER,
+                "$Comments\n$Nodes are described below\n$EndComments\n",
+                V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n",
+                "$NodeData\n1\n\"data\"\n$EndNodeData\n" ) );
+        const auto brep = geode::load_brep( "unknown_sections.msh" );
+        geode::OpenGeodeIOModelException::test(
+            brep.nb_surfaces() == 1, "Unknown sections should be skipped" );
+        geode::OpenGeodeIOModelException::test( brep.nb_unique_vertices() == 3,
+            "Nodes should be read from the $Nodes section" );
+    }
+
     using test_function = void ( * )( const geode::BRep& );
 
     void run_test( std::string_view short_filename, test_function test )
@@ -364,6 +409,9 @@ int main()
         run_test( "triangle_internal", &test_brep_internal );
         run_test( "cube_v22", &test_brep_cube );
         run_test( "cone_v4", &test_brep_cone );
+
+        test_is_loadable();
+        test_skip_unknown_sections();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

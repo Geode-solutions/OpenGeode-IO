@@ -28,6 +28,8 @@
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
+#include <absl/strings/ascii.h>
+#include <absl/strings/str_cat.h>
 #include <absl/strings/str_split.h>
 
 #include <geode/basic/file.hpp>
@@ -149,34 +151,64 @@ namespace
             geode::OpenGeodeIOModelException::check_exception( file_.good(),
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[MSHInput] Error while opening file: ", filename );
-            first_read( filename );
+        }
+
+        void read_header()
+        {
+            check_keyword( "$MeshFormat" );
+            std::string line;
+            std::getline( file_, line );
+            set_msh_version( line );
+            check_keyword( "$EndMeshFormat" );
         }
 
         void read_file()
         {
-            if( version() == 4
-                && ( absl::c_find( sections_, "$Entities" )
-                     != sections_.end() ) )
+            read_header();
+            bool nodes_read{ false };
+            bool elements_read{ false };
+            std::string line;
+            while( std::getline( file_, line ) )
             {
-                read_entity_section();
+                absl::StripAsciiWhitespace( &line );
+                if( line == "$Entities" && version() == 4 )
+                {
+                    has_entities_ = true;
+                    read_entity_section();
+                }
+                else if( line == "$Nodes" )
+                {
+                    if( version() == 2 )
+                    {
+                        read_node_section_v2();
+                    }
+                    else
+                    {
+                        read_node_section_v4();
+                    }
+                    nodes_read = true;
+                }
+                else if( line == "$Elements" )
+                {
+                    if( version() == 2 )
+                    {
+                        read_element_section_v2();
+                    }
+                    else
+                    {
+                        read_element_section_v4();
+                    }
+                    elements_read = true;
+                }
+                else if( geode::string_starts_with( line, "$" ) )
+                {
+                    skip_section( line );
+                }
             }
-            if( version() == 2 )
-            {
-                read_node_section_v2();
-                read_element_section_v2();
-            }
-            else if( version() == 4 )
-            {
-                read_node_section_v4();
-                read_element_section_v4();
-            }
-            else
-            {
-                throw geode::OpenGeodeIOModelException{ nullptr,
-                    geode::OpenGeodeException::TYPE::internal,
-                    "[MSHInput::read_file] Only MSH file format "
-                    "versions 2 and 4 are supported for now." };
-            }
+            geode::OpenGeodeIOModelException::check_exception(
+                nodes_read && elements_read, nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[MSHInput::read_file] Missing $Nodes or $Elements section" );
         }
 
         void build_geometry()
@@ -192,9 +224,7 @@ namespace
 
         void build_topology()
         {
-            if( version() == 4
-                && ( absl::c_find( sections_, "$Entities" )
-                     != sections_.end() ) )
+            if( has_entities_ )
             {
                 return;
             }
@@ -255,30 +285,26 @@ namespace
             return static_cast< geode::index_t >( std::floor( version_ ) );
         }
 
-        void first_read( std::string_view filename )
-        {
-            std::ifstream reader{ geode::to_string( filename ) };
-            read_header( reader );
-        }
-
         void check_keyword( const std::string& keyword )
         {
             geode::check_keyword( file_, keyword );
         }
 
-        void go_to_section( const std::string& section_header )
+        void skip_section( std::string_view section_header )
         {
+            const auto end_section =
+                absl::StrCat( "$End", section_header.substr( 1 ) );
             std::string line;
             while( std::getline( file_, line ) )
             {
-                if( geode::string_starts_with( line, section_header ) )
+                if( geode::string_starts_with( line, end_section ) )
                 {
                     return;
                 }
             }
             throw geode::OpenGeodeIOModelException{ nullptr,
                 geode::OpenGeodeException::TYPE::data,
-                "[MSHInput::go_to_section] Cannot find the section ",
+                "[MSHInput::skip_section] Cannot find the end of section ",
                 section_header };
         }
 
@@ -297,30 +323,6 @@ namespace
                     geode::OpenGeodeException::TYPE::internal,
                     "[MSHInput::set_msh_version] Binary format is not "
                     "supported for now." };
-            }
-        }
-
-        void read_header( std::ifstream& reader )
-        {
-            geode::check_keyword( reader, "$MeshFormat" );
-            std::string line;
-            std::getline( reader, line );
-            set_msh_version( line );
-            geode::check_keyword( reader, "$EndMeshFormat" );
-            read_section_names( reader );
-        }
-
-        void read_section_names( std::ifstream& reader )
-        {
-            std::string line;
-            while( std::getline( reader, line ) )
-            {
-                if( geode::string_starts_with( line, "$" )
-                    && !geode::string_starts_with( line, "$End" ) )
-                {
-                    absl::RemoveExtraAsciiWhitespace( &line );
-                    sections_.push_back( line );
-                }
             }
         }
 
@@ -373,7 +375,6 @@ namespace
 
         void read_entity_section()
         {
-            go_to_section( "$Entities" );
             std::string line;
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
@@ -519,7 +520,6 @@ namespace
 
         void read_node_section_v2()
         {
-            go_to_section( "$Nodes" );
             std::string line;
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
@@ -542,7 +542,6 @@ namespace
 
         void read_node_section_v4()
         {
-            go_to_section( "$Nodes" );
             std::string line;
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
@@ -596,7 +595,6 @@ namespace
 
         void read_element_section_v2()
         {
-            go_to_section( "$Elements" );
             std::string line;
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
@@ -661,7 +659,6 @@ namespace
 
         void read_element_section_v4()
         {
-            go_to_section( "$Elements" );
             std::string line;
             std::getline( file_, line );
             const auto tokens = geode::string_split( line );
@@ -968,7 +965,7 @@ namespace
         geode::BRep& brep_;
         geode::BRepBuilder builder_;
         double version_{ 2 };
-        std::vector< std::string > sections_;
+        bool has_entities_{ false };
         std::vector< geode::Point3D > nodes_;
         std::array< absl::flat_hash_map< geode::index_t, ComponentElements >,
             NB_DIMENSIONS >
@@ -994,7 +991,15 @@ namespace geode
         Percentage MSHInput::is_loadable() const
         {
             BRep brep;
-            MSHInputImpl impl( filename(), brep );
+            try
+            {
+                MSHInputImpl impl( filename(), brep );
+                impl.read_header();
+            }
+            catch( const OpenGeodeException& )
+            {
+                return Percentage{ 0 };
+            }
             return Percentage{ 1 };
         }
     } // namespace internal
