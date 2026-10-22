@@ -31,8 +31,10 @@
 #include <system_error>
 #include <vector>
 
+#include <absl/algorithm/container.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/charconv.h>
+#include <absl/strings/match.h>
 #include <absl/types/span.h>
 
 #include <pugixml.hpp>
@@ -152,7 +154,8 @@ namespace
 
         /*!
          * Splits the path data in a single pass: each command letter is a
-         * token, numbers are separated by whitespaces or commas.
+         * token, numbers are separated by whitespaces, commas, or by the
+         * start of the next number in compact data ("10-5", ".5.5").
          */
         static std::vector< std::string_view > split_path(
             std::string_view path )
@@ -160,6 +163,8 @@ namespace
             std::vector< std::string_view > tokens;
             std::size_t start{ 0 };
             bool in_token{ false };
+            bool has_dot{ false };
+            bool has_exponent{ false };
             const auto flush = [&]( std::size_t end ) {
                 if( in_token )
                 {
@@ -181,11 +186,28 @@ namespace
                     tokens.push_back( path.substr( c, 1 ) );
                     continue;
                 }
-                if( !in_token )
+                if( in_token )
                 {
-                    start = c;
-                    in_token = true;
+                    const auto previous = path[c - 1];
+                    const auto is_sign = character == '-' || character == '+';
+                    const auto after_exponent =
+                        previous == 'e' || previous == 'E';
+                    const auto new_number =
+                        ( is_sign && !after_exponent )
+                        || ( character == '.' && ( has_dot || has_exponent ) );
+                    if( !new_number )
+                    {
+                        has_dot = has_dot || character == '.';
+                        has_exponent = has_exponent || character == 'e'
+                                       || character == 'E';
+                        continue;
+                    }
+                    flush( c );
                 }
+                start = c;
+                in_token = true;
+                has_dot = character == '.';
+                has_exponent = false;
             }
             flush( path.size() );
             return tokens;
@@ -225,11 +247,23 @@ namespace
         static double read_number( std::string_view token )
         {
             double value{ 0 };
+            // from_chars does not accept an explicit plus sign
+            const auto number =
+                absl::StartsWith( token, "+" ) ? token.substr( 1 ) : token;
             const auto result = absl::from_chars(
-                token.data(), token.data() + token.size(), value );
+                number.data(), number.data() + number.size(), value );
+            // SVG numbers are decimal: no hexadecimal, nan or inf
+            const auto is_svg_number_character = []( char character ) {
+                return absl::ascii_isdigit(
+                           static_cast< unsigned char >( character ) )
+                       || character == '.' || character == 'e'
+                       || character == 'E' || character == '-'
+                       || character == '+';
+            };
             geode::OpenGeodeIOModelException::check_exception(
-                result.ec == std::errc{}
-                    && result.ptr == token.data() + token.size()
+                absl::c_all_of( number, is_svg_number_character )
+                    && result.ec == std::errc{} && !number.empty()
+                    && result.ptr == number.data() + number.size()
                     && std::isfinite( value ),
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[SVGInput] Path token is not a number: \"", token, "\"" );

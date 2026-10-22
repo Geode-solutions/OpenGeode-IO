@@ -195,6 +195,16 @@ void test_path_grammar()
     test_load_failure( "unsupported_command.svg", "M 0 0 C 1 1 2 2 3 3" );
 }
 
+void test_compact_numbers()
+{
+    check_lines( "compact_numbers.svg", "M10-5L.5.5",
+        { { geode::Point2D{ { 10, -5 } }, geode::Point2D{ { 0.5, 0.5 } } } } );
+    check_lines( "compact_exponents.svg", "M0,0L1e2-1e-1+2E+1-.5",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 100, -0.1 } },
+            geode::Point2D{ { 20, -0.5 } } } } );
+    test_load_failure( "not_a_number.svg", "M 0 0 L 1 0x5" );
+}
+
 int main()
 {
     try
@@ -215,6 +225,7 @@ int main()
 
         test_long_path();
         test_path_grammar();
+        test_compact_numbers();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
