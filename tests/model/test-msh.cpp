@@ -43,6 +43,7 @@
 #include <geode/model/mixin/core/corner.hpp>
 #include <geode/model/mixin/core/line.hpp>
 #include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
 #include <geode/model/representation/core/brep.hpp>
 #include <geode/model/representation/io/brep_input.hpp>
 #include <geode/model/representation/io/brep_output.hpp>
@@ -567,6 +568,30 @@ namespace
             "Line with only a degenerate edge should be removed" );
     }
 
+    void test_save_empty_corner()
+    {
+        write_file( "save_empty_corner.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
+        auto brep = geode::load_brep( "save_empty_corner.msh" );
+        geode::BRepBuilder builder{ brep };
+        [[maybe_unused]] const auto& corner_id = builder.add_corner();
+        geode::OpenGeodeIOModelException::test(
+            !geode::is_brep_saveable( brep, "empty_corner_output.msh" ),
+            "BRep with an empty corner should not be saveable in MSH" );
+        try
+        {
+            geode::save_brep( brep, "empty_corner_output.msh" );
+        }
+        catch( const geode::OpenGeodeException& /*unused*/ )
+        {
+            return;
+        }
+        throw geode::OpenGeodeIOModelException{ nullptr,
+            geode::OpenGeodeException::TYPE::internal,
+            "Saving an empty corner should fail" };
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -711,6 +736,7 @@ int main()
         test_corner_with_several_nodes();
         test_unknown_bounding_entities();
         test_degenerate_elements();
+        test_save_empty_corner();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

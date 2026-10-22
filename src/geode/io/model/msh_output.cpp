@@ -130,6 +130,11 @@ namespace
             geode::index_t count{ 1 };
             for( const auto& corner : brep_.corners() )
             {
+                geode::OpenGeodeIOModelException::check_exception(
+                    corner.mesh().nb_vertices() != 0, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[MSHOutput] Corner ", corner.id().string(),
+                    " has no vertex" );
                 const auto& point = corner.mesh().point( 0 );
                 file_ << count << geode::SPACE << point.string() << geode::SPACE
                       << DEFAULT_PHYSICAL_TAG << geode::EOL;
@@ -456,6 +461,13 @@ namespace geode::internal
 
     bool MSHOutput::is_saveable( const BRep& brep ) const
     {
+        for( const auto& corner : brep.corners() )
+        {
+            if( corner.mesh().nb_vertices() == 0 )
+            {
+                return false;
+            }
+        }
         for( const auto& surface : brep.surfaces() )
         {
             if( surface.mesh().type_name()
