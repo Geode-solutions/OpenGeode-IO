@@ -579,6 +579,75 @@ namespace
             "Nodes should be read from the $Nodes section" );
     }
 
+    void test_brep_embedded( const geode::BRep& brep )
+    {
+        // NOLINTBEGIN(*-magic-numbers)
+        BrepDescription description{ brep, 14, 17, 7, 1 };
+        test_brep( description );
+        geode::index_t nb_surfaces_with_internal_line{ 0 };
+        for( const auto& surface : brep.surfaces() )
+        {
+            if( brep.nb_internal_lines( surface ) != 1 )
+            {
+                continue;
+            }
+            nb_surfaces_with_internal_line++;
+            geode::index_t nb_expected_borders{ 0 };
+            for( const auto& line : brep.boundaries( surface ) )
+            {
+                nb_expected_borders += line.mesh().nb_edges();
+            }
+            for( const auto& line : brep.internal_lines( surface ) )
+            {
+                nb_expected_borders += 2 * line.mesh().nb_edges();
+            }
+            geode::OpenGeodeIOModelException::test(
+                count_surface_edge_on_border( surface.mesh() )
+                    == nb_expected_borders,
+                "Surface adjacencies should be cut along the internal line" );
+        }
+        geode::OpenGeodeIOModelException::test(
+            nb_surfaces_with_internal_line == 1,
+            "One surface should have an internal line" );
+        for( const auto& corner : brep.corners() )
+        {
+            geode::OpenGeodeIOModelException::test(
+                brep.nb_incidences( corner.id() ) >= 2
+                    || ( brep.nb_incidences( corner.id() ) == 1
+                         && brep.nb_embeddings( corner.id() ) == 0 ),
+                "Corner should bound lines" );
+        }
+        for( const auto& line : brep.lines() )
+        {
+            geode::OpenGeodeIOModelException::test(
+                brep.nb_boundaries( line.id() ) == 2,
+                "Line should have two boundary corners" );
+        }
+        for( const auto& block : brep.blocks() )
+        {
+            geode::OpenGeodeIOModelException::test(
+                brep.nb_boundaries( block.id() ) == 6,
+                "Block should have 6 boundary surfaces" );
+            geode::OpenGeodeIOModelException::test(
+                brep.nb_internal_surfaces( block ) == 1,
+                "Block should have 1 internal surface" );
+            geode::index_t nb_expected_borders{ 0 };
+            for( const auto& surface : brep.boundaries( block ) )
+            {
+                nb_expected_borders += surface.mesh().nb_polygons();
+            }
+            for( const auto& surface : brep.internal_surfaces( block ) )
+            {
+                nb_expected_borders += 2 * surface.mesh().nb_polygons();
+            }
+            geode::OpenGeodeIOModelException::test(
+                count_polyhedron_facet_on_borders( block.mesh() )
+                    == nb_expected_borders,
+                "Block adjacencies should be cut along the internal surface" );
+        }
+        // NOLINTEND(*-magic-numbers)
+    }
+
     using test_function = void ( * )( const geode::BRep& );
 
     void run_test( std::string_view short_filename, test_function test )
@@ -612,6 +681,8 @@ int main()
         run_test( "cube_v22", &test_brep_cube );
         run_test( "cone_v4", &test_brep_cone );
         run_test( "cube_v40", &test_brep_cube );
+        run_test( "embedded_v22", &test_brep_embedded );
+        run_test( "embedded_v41", &test_brep_embedded );
 
         test_is_loadable();
         test_skip_unknown_sections();

@@ -289,64 +289,17 @@ namespace
             build_blocks();
         }
 
-        using boundary_incidences_relations = absl::flat_hash_map< geode::uuid,
-            absl::flat_hash_set< geode::uuid > >;
-
         void build_topology()
         {
-            if( has_entities_ )
+            infer_corner_relations();
+            infer_line_relations();
+            infer_surface_relations();
+            if( !has_entities_ )
             {
-                return;
+                geode::detail::build_model_boundaries( brep_, builder_ );
             }
-            boundary_incidences_relations corner_line_relations;
-            boundary_incidences_relations line_surface_relations;
-            boundary_incidences_relations surface_block_relations;
-            for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
-            {
-                const auto cmv = get_component_mesh_vertices( uv );
-                add_potential_relationships( std::get< 0 >( cmv ),
-                    std::get< 1 >( cmv ), corner_line_relations );
-                add_potential_relationships( std::get< 1 >( cmv ),
-                    std::get< 2 >( cmv ), line_surface_relations );
-                add_potential_relationships( std::get< 2 >( cmv ),
-                    std::get< 3 >( cmv ), surface_block_relations );
-            }
-            for( const auto uv : geode::Range{ brep_.nb_unique_vertices() } )
-            {
-                const auto cmv = get_component_mesh_vertices( uv );
-                filter_potential_relationships( std::get< 0 >( cmv ),
-                    std::get< 1 >( cmv ), corner_line_relations );
-                filter_potential_relationships( std::get< 1 >( cmv ),
-                    std::get< 2 >( cmv ), line_surface_relations );
-                filter_potential_relationships( std::get< 2 >( cmv ),
-                    std::get< 3 >( cmv ), surface_block_relations );
-            }
-
-            for( const auto& c2l : corner_line_relations )
-            {
-                for( const auto& line_id : c2l.second )
-                {
-                    builder_.add_corner_line_boundary_relationship(
-                        brep_.corner( c2l.first ), brep_.line( line_id ) );
-                }
-            }
-            for( const auto& l2s : line_surface_relations )
-            {
-                for( const auto& surface_id : l2s.second )
-                {
-                    builder_.add_line_surface_boundary_relationship(
-                        brep_.line( l2s.first ), brep_.surface( surface_id ) );
-                }
-            }
-            for( const auto& s2b : surface_block_relations )
-            {
-                for( const auto& block_id : s2b.second )
-                {
-                    builder_.add_surface_block_boundary_relationship(
-                        brep_.surface( s2b.first ), brep_.block( block_id ) );
-                }
-            }
-            geode::detail::build_model_boundaries( brep_, builder_ );
+            unset_internal_line_adjacencies();
+            unset_internal_surface_adjacencies();
         }
 
     private:
@@ -612,10 +565,26 @@ namespace
                 const auto& block = brep_.block( component_elements(
                     3, geode::string_to_index( token( tokens, 0 ) ) )
                         .id );
+                absl::flat_hash_map< geode::uuid, geode::index_t >
+                    boundary_counter;
                 for( const auto& surface_id : read_boundaries( tokens, 2 ) )
                 {
-                    builder_.add_surface_block_boundary_relationship(
-                        brep_.surface( surface_id ), block );
+                    boundary_counter[surface_id]++;
+                }
+                for( const auto& [surface_id, count] : boundary_counter )
+                {
+                    const auto& surface = brep_.surface( surface_id );
+                    if( count == 1 )
+                    {
+                        builder_.add_surface_block_boundary_relationship(
+                            surface, block );
+                    }
+                    else
+                    {
+                        // A surface bounding the block on both sides
+                        builder_.add_surface_block_internal_relationship(
+                            surface, block );
+                    }
                 }
             }
         }
@@ -1006,57 +975,6 @@ namespace
                     remaining.remove_prefix( nb_vertices );
                 }
                 mesh_builder->compute_polygon_adjacencies();
-                unset_internal_line_adjacencies( surface, *mesh_builder );
-            }
-        }
-
-        void unset_internal_line_adjacencies( const geode::Surface3D& surface,
-            geode::SurfaceMeshBuilder3D& mesh_builder )
-        {
-            const auto& mesh = surface.mesh();
-            std::vector< geode::PolygonEdge > polygon_edges;
-            for( const auto& line : brep_.internal_lines( surface ) )
-            {
-                const auto& edges = line.mesh();
-                for( const auto edge_id : geode::Range{ edges.nb_edges() } )
-                {
-                    const auto e0 = edges.edge_vertex( { edge_id, 0 } );
-                    const auto e1 = edges.edge_vertex( { edge_id, 1 } );
-                    const auto cmvs0 = brep_.component_mesh_vertices(
-                        brep_.unique_vertex( { line.component_id(), e0 } ) );
-                    const auto cmvs1 = brep_.component_mesh_vertices(
-                        brep_.unique_vertex( { line.component_id(), e1 } ) );
-                    for( const auto& cmv0 : cmvs0 )
-                    {
-                        if( cmv0.component_id.id != surface.id() )
-                        {
-                            continue;
-                        }
-                        for( const auto& cmv1 : cmvs1 )
-                        {
-                            if( cmv1.component_id.id != surface.id() )
-                            {
-                                continue;
-                            }
-                            if( const auto edge0 =
-                                    mesh.polygon_edge_from_vertices(
-                                        cmv0.vertex, cmv1.vertex ) )
-                            {
-                                polygon_edges.emplace_back( edge0.value() );
-                            }
-                            if( const auto edge1 =
-                                    mesh.polygon_edge_from_vertices(
-                                        cmv1.vertex, cmv0.vertex ) )
-                            {
-                                polygon_edges.emplace_back( edge1.value() );
-                            }
-                        }
-                    }
-                }
-            }
-            for( const auto& edge : polygon_edges )
-            {
-                mesh_builder.unset_polygon_adjacent( edge );
             }
         }
 
@@ -1081,98 +999,390 @@ namespace
             }
         }
 
-        void add_potential_relationships(
-            const std::vector< geode::ComponentMeshVertex >&
-                boundary_type_vertices,
-            const std::vector< geode::ComponentMeshVertex >&
-                incidence_type_vertices,
-            boundary_incidences_relations& b2i_relations )
+        /*!
+         * Finds the vertex of a component that shares the unique vertex of a
+         * vertex of another component.
+         */
+        std::optional< geode::index_t > component_vertex(
+            const geode::ComponentID& from,
+            geode::index_t vertex,
+            const geode::uuid& to ) const
         {
-            for( const auto& boundary_vertex : boundary_type_vertices )
+            const auto unique_vertex = brep_.unique_vertex( { from, vertex } );
+            for( const auto& cmv :
+                brep_.component_mesh_vertices( unique_vertex ) )
             {
-                for( const auto& incidence_vertex : incidence_type_vertices )
+                if( cmv.component_id.id == to )
                 {
-                    b2i_relations[boundary_vertex.component_id.id].emplace(
-                        incidence_vertex.component_id.id );
+                    return cmv.vertex;
+                }
+            }
+            return std::nullopt;
+        }
+
+        absl::flat_hash_set< geode::uuid > components_around(
+            const geode::ComponentID& from,
+            geode::index_t vertex,
+            const geode::ComponentType& type ) const
+        {
+            absl::flat_hash_set< geode::uuid > components;
+            const auto unique_vertex = brep_.unique_vertex( { from, vertex } );
+            for( const auto& cmv :
+                brep_.component_mesh_vertices( unique_vertex ) )
+            {
+                if( cmv.component_id.type == type )
+                {
+                    components.insert( cmv.component_id.id );
+                }
+            }
+            return components;
+        }
+
+        bool is_corner_related( const geode::Corner3D& corner ) const
+        {
+            return brep_.nb_incidences( corner.id() ) != 0
+                   || brep_.nb_embeddings( corner.id() ) != 0;
+        }
+
+        /*!
+         * Relations between a corner and the lines going through it: boundary
+         * at the line ends, internal elsewhere.
+         */
+        void infer_corner_relations()
+        {
+            for( const auto& corner : brep_.corners() )
+            {
+                const auto lines = components_around( corner.component_id(), 0,
+                    geode::Line3D::component_type_static() );
+                for( const auto& line_id : lines )
+                {
+                    const auto& line = brep_.line( line_id );
+                    if( brep_.is_boundary( corner, line )
+                        || brep_.is_internal( corner, line ) )
+                    {
+                        continue;
+                    }
+                    const auto vertex =
+                        component_vertex( corner.component_id(), 0, line_id );
+                    const auto& mesh = line.mesh();
+                    if( mesh.edges_around_vertex( vertex.value() ).size() == 2
+                        && !is_closed( mesh ) )
+                    {
+                        builder_.add_corner_line_internal_relationship(
+                            corner, line );
+                    }
+                    else
+                    {
+                        builder_.add_corner_line_boundary_relationship(
+                            corner, line );
+                    }
+                }
+            }
+            for( const auto& corner : brep_.corners() )
+            {
+                if( is_corner_related( corner ) )
+                {
+                    continue;
+                }
+                for( const auto& surface_id :
+                    components_around( corner.component_id(), 0,
+                        geode::Surface3D::component_type_static() ) )
+                {
+                    builder_.add_corner_surface_internal_relationship(
+                        corner, brep_.surface( surface_id ) );
+                }
+                if( is_corner_related( corner ) )
+                {
+                    continue;
+                }
+                for( const auto& block_id :
+                    components_around( corner.component_id(), 0,
+                        geode::Block3D::component_type_static() ) )
+                {
+                    builder_.add_corner_block_internal_relationship(
+                        corner, brep_.block( block_id ) );
                 }
             }
         }
 
-        void filter_potential_relationships(
-            const std::vector< geode::ComponentMeshVertex >&
-                boundary_type_vertices,
-            const std::vector< geode::ComponentMeshVertex >&
-                incidence_type_vertices,
-            boundary_incidences_relations& b2i_relations )
+        static bool is_closed( const geode::EdgedCurve3D& mesh )
         {
-            for( const auto& boundary_vertex : boundary_type_vertices )
+            for( const auto v : geode::Range{ mesh.nb_vertices() } )
             {
-                if( b2i_relations.find( boundary_vertex.component_id.id )
-                    == b2i_relations.end() )
+                if( mesh.edges_around_vertex( v ).size() == 1 )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /*!
+         * @return the number of polygons around the first line edge in the
+         * surface, or nullopt if the line is not in the surface.
+         */
+        std::optional< geode::index_t > nb_polygons_around_line(
+            const geode::Line3D& line, const geode::Surface3D& surface ) const
+        {
+            if( !contains_all_vertices( line, surface.id() ) )
+            {
+                return std::nullopt;
+            }
+            const auto& line_mesh = line.mesh();
+            std::array< geode::index_t, 2 > edge_vertices;
+            for( const auto v : geode::LRange{ 2 } )
+            {
+                edge_vertices[v] = component_vertex( line.component_id(),
+                    line_mesh.edge_vertex( { 0, v } ), surface.id() )
+                                       .value();
+            }
+            const auto nb_polygons =
+                surface.mesh()
+                    .polygons_from_edge_vertices( edge_vertices )
+                    .size();
+            if( nb_polygons == 0 )
+            {
+                return std::nullopt;
+            }
+            return nb_polygons;
+        }
+
+        /*!
+         * Relations between a line and the surfaces containing all its edges:
+         * internal if the line is inside the surface, boundary otherwise.
+         * Lines inside no surface may be embedded in blocks.
+         */
+        void infer_line_relations()
+        {
+            for( const auto& line : brep_.lines() )
+            {
+                if( line.mesh().nb_edges() == 0 )
                 {
                     continue;
                 }
-                auto& incidences_in_relations =
-                    b2i_relations.at( boundary_vertex.component_id.id );
-
-                auto it = incidences_in_relations.cbegin();
-                while( it != incidences_in_relations.cend() )
+                const auto first_vertex = line.mesh().edge_vertex( { 0, 0 } );
+                for( const auto& surface_id :
+                    components_around( line.component_id(), first_vertex,
+                        geode::Surface3D::component_type_static() ) )
                 {
-                    const auto cur_it = it++;
-                    const auto& incidence_id = *cur_it;
-                    if( std::find_if( incidence_type_vertices.begin(),
-                            incidence_type_vertices.end(),
-                            [&incidence_id](
-                                const geode::ComponentMeshVertex& cmv ) {
-                                return cmv.component_id.id == incidence_id;
-                            } )
-                        == incidence_type_vertices.end() )
+                    const auto& surface = brep_.surface( surface_id );
+                    if( brep_.is_boundary( line, surface )
+                        || brep_.is_internal( line, surface ) )
                     {
-                        incidences_in_relations.erase( cur_it );
+                        continue;
+                    }
+                    const auto nb_polygons =
+                        nb_polygons_around_line( line, surface );
+                    if( !nb_polygons )
+                    {
+                        continue;
+                    }
+                    if( nb_polygons.value() == 2 )
+                    {
+                        builder_.add_line_surface_internal_relationship(
+                            line, surface );
+                    }
+                    else
+                    {
+                        builder_.add_line_surface_boundary_relationship(
+                            line, surface );
+                    }
+                }
+                if( brep_.nb_incidences( line.id() ) != 0
+                    || brep_.nb_embeddings( line.id() ) != 0 )
+                {
+                    continue;
+                }
+                for( const auto& block_id :
+                    components_around( line.component_id(), first_vertex,
+                        geode::Block3D::component_type_static() ) )
+                {
+                    if( contains_all_vertices( line, block_id ) )
+                    {
+                        builder_.add_line_block_internal_relationship(
+                            line, brep_.block( block_id ) );
                     }
                 }
             }
         }
 
-        std::tuple< std::vector< geode::ComponentMeshVertex >,
-            std::vector< geode::ComponentMeshVertex >,
-            std::vector< geode::ComponentMeshVertex >,
-            std::vector< geode::ComponentMeshVertex > >
-            get_component_mesh_vertices( geode::index_t uv )
+        template < typename Component >
+        bool contains_all_vertices(
+            const Component& component, const geode::uuid& other ) const
         {
-            std::vector< geode::ComponentMeshVertex > corners_vertices;
-            std::vector< geode::ComponentMeshVertex > lines_vertices;
-            std::vector< geode::ComponentMeshVertex > surfaces_vertices;
-            std::vector< geode::ComponentMeshVertex > blocks_vertices;
-            for( const auto& cmv : brep_.component_mesh_vertices( uv ) )
+            for( const auto v : geode::Range{ component.mesh().nb_vertices() } )
             {
-                if( cmv.component_id.type
-                    == geode::Corner3D::component_type_static() )
+                if( !component_vertex( component.component_id(), v, other ) )
                 {
-                    corners_vertices.push_back( cmv );
-                    continue;
-                }
-                if( cmv.component_id.type
-                    == geode::Line3D::component_type_static() )
-                {
-                    lines_vertices.push_back( cmv );
-                    continue;
-                }
-                if( cmv.component_id.type
-                    == geode::Surface3D::component_type_static() )
-                {
-                    surfaces_vertices.push_back( cmv );
-                    continue;
-                }
-                if( cmv.component_id.type
-                    == geode::Block3D::component_type_static() )
-                {
-                    blocks_vertices.push_back( cmv );
-                    continue;
+                    return false;
                 }
             }
-            return { corners_vertices, lines_vertices, surfaces_vertices,
-                blocks_vertices };
+            return true;
+        }
+
+        /*!
+         * @return the number of polyhedra around the first surface polygon in
+         * the block, or nullopt if the surface is not in the block.
+         */
+        std::optional< geode::index_t > nb_polyhedra_around_surface(
+            const geode::Surface3D& surface, const geode::Block3D& block ) const
+        {
+            if( !contains_all_vertices( surface, block.id() ) )
+            {
+                return std::nullopt;
+            }
+            const auto& surface_mesh = surface.mesh();
+            geode::PolyhedronFacetVertices facet_vertices;
+            for( const auto v :
+                geode::LRange{ surface_mesh.nb_polygon_vertices( 0 ) } )
+            {
+                facet_vertices.push_back(
+                    component_vertex( surface.component_id(),
+                        surface_mesh.polygon_vertex( { 0, v } ), block.id() )
+                        .value() );
+            }
+            const auto nb_polyhedra = block.mesh()
+                                          .polyhedra_from_facet_vertices(
+                                              std::move( facet_vertices ) )
+                                          .size();
+            if( nb_polyhedra == 0 )
+            {
+                return std::nullopt;
+            }
+            return nb_polyhedra;
+        }
+
+        /*!
+         * Relations between a surface and the blocks containing all its
+         * polygons: internal if the surface is inside the block, boundary
+         * otherwise.
+         */
+        void infer_surface_relations()
+        {
+            for( const auto& surface : brep_.surfaces() )
+            {
+                if( surface.mesh().nb_polygons() == 0 )
+                {
+                    continue;
+                }
+                const auto first_vertex =
+                    surface.mesh().polygon_vertex( { 0, 0 } );
+                for( const auto& block_id :
+                    components_around( surface.component_id(), first_vertex,
+                        geode::Block3D::component_type_static() ) )
+                {
+                    const auto& block = brep_.block( block_id );
+                    if( brep_.is_boundary( surface, block )
+                        || brep_.is_internal( surface, block ) )
+                    {
+                        continue;
+                    }
+                    const auto nb_polyhedra =
+                        nb_polyhedra_around_surface( surface, block );
+                    if( !nb_polyhedra )
+                    {
+                        continue;
+                    }
+                    if( nb_polyhedra.value() == 2 )
+                    {
+                        builder_.add_surface_block_internal_relationship(
+                            surface, block );
+                    }
+                    else
+                    {
+                        builder_.add_surface_block_boundary_relationship(
+                            surface, block );
+                    }
+                }
+            }
+        }
+
+        void unset_internal_line_adjacencies()
+        {
+            for( const auto& surface : brep_.surfaces() )
+            {
+                std::vector< geode::PolygonEdge > polygon_edges;
+                for( const auto& line : brep_.internal_lines( surface ) )
+                {
+                    const auto& line_mesh = line.mesh();
+                    for( const auto e : geode::Range{ line_mesh.nb_edges() } )
+                    {
+                        const auto v0 = component_vertex( line.component_id(),
+                            line_mesh.edge_vertex( { e, 0 } ), surface.id() );
+                        const auto v1 = component_vertex( line.component_id(),
+                            line_mesh.edge_vertex( { e, 1 } ), surface.id() );
+                        if( !v0 || !v1 )
+                        {
+                            continue;
+                        }
+                        for( const auto& edge :
+                            surface.mesh().polygons_from_edge_vertices(
+                                { v0.value(), v1.value() } ) )
+                        {
+                            polygon_edges.push_back( edge );
+                        }
+                    }
+                }
+                if( polygon_edges.empty() )
+                {
+                    continue;
+                }
+                auto mesh_builder = builder_.surface_mesh_builder( surface );
+                for( const auto& edge : polygon_edges )
+                {
+                    mesh_builder->unset_polygon_adjacent( edge );
+                }
+            }
+        }
+
+        void unset_internal_surface_adjacencies()
+        {
+            for( const auto& block : brep_.blocks() )
+            {
+                std::vector< geode::PolyhedronFacet > polyhedron_facets;
+                for( const auto& surface : brep_.internal_surfaces( block ) )
+                {
+                    const auto& surface_mesh = surface.mesh();
+                    for( const auto p :
+                        geode::Range{ surface_mesh.nb_polygons() } )
+                    {
+                        geode::PolyhedronFacetVertices facet_vertices;
+                        for( const auto v : geode::LRange{
+                                 surface_mesh.nb_polygon_vertices( p ) } )
+                        {
+                            const auto vertex =
+                                component_vertex( surface.component_id(),
+                                    surface_mesh.polygon_vertex( { p, v } ),
+                                    block.id() );
+                            if( !vertex )
+                            {
+                                break;
+                            }
+                            facet_vertices.push_back( vertex.value() );
+                        }
+                        if( facet_vertices.size()
+                            != surface_mesh.nb_polygon_vertices( p ) )
+                        {
+                            continue;
+                        }
+                        for( const auto& facet :
+                            block.mesh().polyhedra_from_facet_vertices(
+                                std::move( facet_vertices ) ) )
+                        {
+                            polyhedron_facets.push_back( facet );
+                        }
+                    }
+                }
+                if( polyhedron_facets.empty() )
+                {
+                    continue;
+                }
+                auto mesh_builder = builder_.block_mesh_builder( block );
+                for( const auto& facet : polyhedron_facets )
+                {
+                    mesh_builder->unset_polyhedron_adjacent( facet );
+                }
+            }
         }
 
     private:
