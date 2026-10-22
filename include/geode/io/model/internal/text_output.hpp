@@ -52,7 +52,8 @@ namespace geode
          * Appends the point coordinates separated by spaces.
          */
         template < index_t dimension >
-        void append_point( std::string& buffer, const Point< dimension >& point )
+        void append_point(
+            std::string& buffer, const Point< dimension >& point )
         {
             for( const auto d : LRange{ dimension } )
             {
