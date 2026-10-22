@@ -205,6 +205,19 @@ void test_compact_numbers()
     test_load_failure( "not_a_number.svg", "M 0 0 L 1 0x5" );
 }
 
+void test_path_containers()
+{
+    write_svg( "containers.svg",
+        "<path d=\"M 0 0 L 1 0\"/>"
+        "<a><path d=\"M 0 1 L 1 1\"/></a>"
+        "<svg><g><path d=\"M 0 2 L 1 2\"/></g></svg>"
+        "<defs><path id=\"unused\" d=\"M 0 3 L 1 3\"/></defs>" );
+    const auto section = geode::load_section( "containers.svg" );
+    geode::OpenGeodeIOModelException::test( section.nb_lines() == 3,
+        "Paths at the root, in links and in nested svg should be read, "
+        "paths in defs should not" );
+}
+
 int main()
 {
     try
@@ -226,6 +239,7 @@ int main()
         test_long_path();
         test_path_grammar();
         test_compact_numbers();
+        test_path_containers();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

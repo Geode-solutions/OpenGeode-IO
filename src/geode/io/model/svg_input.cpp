@@ -77,10 +77,11 @@ namespace
 
         void read_file()
         {
-            for( const auto& group : document_.child( "svg" ).children( "g" ) )
-            {
-                read_group_paths( group );
-            }
+            const auto root = document_.child( "svg" );
+            geode::OpenGeodeIOModelException::check_exception( !root.empty(),
+                nullptr, geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] No <svg> root element" );
+            read_container_paths( root );
         }
 
         void process_paths()
@@ -103,15 +104,24 @@ namespace
         }
 
     private:
-        void read_group_paths( const pugi::xml_node& group )
+        /*!
+         * Reads the paths rendered from a container element (svg, g, a).
+         * Other elements, such as defs or symbol, are not rendered by
+         * themselves and are ignored.
+         */
+        void read_container_paths( const pugi::xml_node& container )
         {
-            for( const auto& path : group.children( "path" ) )
+            for( const auto& child : container.children() )
             {
-                paths_.emplace_back( path.attribute( "d" ).value() );
-            }
-            for( const auto& child_group : group.children( "g" ) )
-            {
-                read_group_paths( child_group );
+                const std::string_view name{ child.name() };
+                if( name == "path" )
+                {
+                    paths_.emplace_back( child.attribute( "d" ).value() );
+                }
+                else if( name == "g" || name == "a" || name == "svg" )
+                {
+                    read_container_paths( child );
+                }
             }
         }
 
