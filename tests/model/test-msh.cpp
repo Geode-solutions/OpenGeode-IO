@@ -531,6 +531,7 @@ int main()
         run_test( "triangle_internal", &test_brep_internal );
         run_test( "cube_v22", &test_brep_cube );
         run_test( "cone_v4", &test_brep_cone );
+        run_test( "cube_v40", &test_brep_cube );
 
         test_is_loadable();
         test_skip_unknown_sections();

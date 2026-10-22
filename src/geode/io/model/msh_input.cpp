@@ -342,6 +342,12 @@ namespace
         }
 
     private:
+        /// MSH 4.0 differs from 4.1 in the node and element block layouts
+        bool is_v40() const
+        {
+            return version() == 4 && version_ < 4.05; // NOLINT
+        }
+
         geode::index_t version() const
         {
             return static_cast< geode::index_t >( std::floor( version_ ) );
@@ -676,6 +682,22 @@ namespace
                 "is not supported for now" );
             std::vector< geode::index_t > node_tags;
             node_tags.reserve( std::min( nb_nodes, MAX_RESERVE ) );
+            if( is_v40() )
+            {
+                // MSH 4.0: "tag x y z" on each line
+                for( const auto n : geode::Range{ nb_nodes } )
+                {
+                    geode_unused( n );
+                    read_line( line );
+                    const auto node_tokens = tokenize( line );
+                    add_node( geode::string_to_index( token( node_tokens, 0 ) ),
+                        read_node_coordinates( token( node_tokens, 1 ),
+                            token( node_tokens, 2 ),
+                            token( node_tokens, 3 ) ) );
+                }
+                return;
+            }
+            // MSH 4.1: all the tags, then all the coordinates
             for( const auto n : geode::Range{ nb_nodes } )
             {
                 geode_unused( n );
@@ -782,7 +804,10 @@ namespace
             std::string line;
             read_line( line );
             const auto tokens = geode::string_split( line );
-            const auto entity_id = geode::string_to_index( token( tokens, 1 ) );
+            // MSH 4.0: tagEntity dimEntity typeEle numElements
+            // MSH 4.1: entityDim entityTag elementType numElementsInBlock
+            const auto entity_id =
+                geode::string_to_index( token( tokens, is_v40() ? 0 : 1 ) );
             const auto mesh_element_type_id =
                 geode::string_to_index( token( tokens, 2 ) );
             const auto element_type = gmsh_element_type( mesh_element_type_id );
