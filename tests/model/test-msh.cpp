@@ -31,6 +31,7 @@
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/string.hpp>
 
 #include <geode/geometry/point.hpp>
 
@@ -592,6 +593,28 @@ namespace
             "Saving an empty corner should fail" };
     }
 
+    void test_save_isolated_unique_vertex()
+    {
+        write_file( "isolated_unique_vertex.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
+        auto brep = geode::load_brep( "isolated_unique_vertex.msh" );
+        geode::BRepBuilder builder{ brep };
+        builder.create_unique_vertices( 2 );
+        geode::save_brep( brep, "isolated_unique_vertex_output.msh" );
+        std::ifstream file{ "isolated_unique_vertex_output.msh" };
+        std::string line;
+        while( std::getline( file, line ) && line != "$Nodes" )
+        {
+        }
+        std::getline( file, line );
+        const auto tokens = geode::string_split( line );
+        geode::OpenGeodeIOModelException::test(
+            tokens.size() == 4 && tokens[1] == "3" && tokens[2] == "1"
+                && tokens[3] == "3",
+            "$Nodes header should only count the written nodes, got: ", line );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -737,6 +760,7 @@ int main()
         test_unknown_bounding_entities();
         test_degenerate_elements();
         test_save_empty_corner();
+        test_save_isolated_unique_vertex();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

@@ -23,7 +23,9 @@
 
 #include <geode/io/model/internal/msh_output.hpp>
 
+#include <algorithm>
 #include <fstream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -211,34 +213,49 @@ namespace
             }
         }
 
-        template < typename Component >
-        void write_component_nodes( const Component& component,
-            absl::FixedArray< bool >& node_exported )
+        struct ComponentNodes
         {
+            geode::index_t dimension;
+            geode::index_t gmsh_id;
+            /// Pairs of component vertex and unique vertex
+            std::vector< std::pair< geode::index_t, geode::index_t > > nodes;
+        };
+
+        template < typename Component >
+        void add_component_nodes( const Component& component,
+            absl::FixedArray< bool >& node_exported,
+            std::vector< ComponentNodes >& blocks )
+        {
+            auto& block = blocks.emplace_back();
+            block.dimension =
+                component_type2dimension_[component.component_type()];
+            block.gmsh_id = uuid2gmsh_[component.id()].id;
             const auto nb_component_vertices = component.mesh().nb_vertices();
-            std::vector< std::pair< geode::index_t, geode::index_t > >
-                nodes_to_export;
-            nodes_to_export.reserve( nb_component_vertices );
             for( const auto v : geode::Range{ nb_component_vertices } )
             {
                 const auto uid =
                     brep_.unique_vertex( { component.component_id(), v } );
                 if( !node_exported[uid] )
                 {
-                    nodes_to_export.push_back( { v, uid } );
+                    node_exported[uid] = true;
+                    block.nodes.emplace_back( v, uid );
                 }
             }
-            file_ << component_type2dimension_[component.component_type()]
-                  << geode::SPACE << uuid2gmsh_[component.id()].id
-                  << geode::SPACE << 0 << geode::SPACE << nodes_to_export.size()
+        }
+
+        template < typename Component >
+        void write_component_nodes(
+            const Component& component, const ComponentNodes& block )
+        {
+            file_ << block.dimension << geode::SPACE << block.gmsh_id
+                  << geode::SPACE << 0 << geode::SPACE << block.nodes.size()
                   << geode::EOL;
-            for( const auto& vertex_pair : nodes_to_export )
+            for( const auto& vertex_pair : block.nodes )
             {
                 file_ << geode::internal::GMSH_OFFSET_START + vertex_pair.second
                       << geode::EOL;
-                node_exported[vertex_pair.second] = true;
             }
-            for( const auto& vertex_pair : nodes_to_export )
+            for( const auto& vertex_pair : block.nodes )
             {
                 file_ << component.mesh().point( vertex_pair.first ).string()
                       << geode::EOL;
@@ -247,30 +264,64 @@ namespace
 
         void write_nodes()
         {
-            file_ << "$Nodes" << geode::EOL;
-            file_ << brep_.nb_corners() + brep_.nb_lines() + brep_.nb_surfaces()
-                         + brep_.nb_blocks()
-                  << geode::SPACE << brep_.nb_unique_vertices() << geode::SPACE
-                  << geode::internal::GMSH_OFFSET_START << geode::SPACE
-                  << brep_.nb_unique_vertices() << geode::EOL;
             absl::FixedArray< bool > node_exported(
                 brep_.nb_unique_vertices(), false );
-
+            std::vector< ComponentNodes > blocks;
+            blocks.reserve( brep_.nb_corners() + brep_.nb_lines()
+                            + brep_.nb_surfaces() + brep_.nb_blocks() );
             for( const auto& corner : brep_.corners() )
             {
-                write_component_nodes( corner, node_exported );
+                add_component_nodes( corner, node_exported, blocks );
             }
             for( const auto& line : brep_.lines() )
             {
-                write_component_nodes( line, node_exported );
+                add_component_nodes( line, node_exported, blocks );
             }
             for( const auto& surface : brep_.surfaces() )
             {
-                write_component_nodes( surface, node_exported );
+                add_component_nodes( surface, node_exported, blocks );
             }
             for( const auto& block : brep_.blocks() )
             {
-                write_component_nodes( block, node_exported );
+                add_component_nodes( block, node_exported, blocks );
+            }
+            geode::index_t nb_nodes{ 0 };
+            auto min_tag = std::numeric_limits< geode::index_t >::max();
+            geode::index_t max_tag{ 0 };
+            for( const auto& block : blocks )
+            {
+                nb_nodes += block.nodes.size();
+                for( const auto& vertex_pair : block.nodes )
+                {
+                    const auto tag =
+                        vertex_pair.second + geode::internal::GMSH_OFFSET_START;
+                    min_tag = std::min( min_tag, tag );
+                    max_tag = std::max( max_tag, tag );
+                }
+            }
+            if( nb_nodes == 0 )
+            {
+                min_tag = 0;
+            }
+            file_ << "$Nodes" << geode::EOL;
+            file_ << blocks.size() << geode::SPACE << nb_nodes << geode::SPACE
+                  << min_tag << geode::SPACE << max_tag << geode::EOL;
+            auto block_it = blocks.begin();
+            for( const auto& corner : brep_.corners() )
+            {
+                write_component_nodes( corner, *block_it++ );
+            }
+            for( const auto& line : brep_.lines() )
+            {
+                write_component_nodes( line, *block_it++ );
+            }
+            for( const auto& surface : brep_.surfaces() )
+            {
+                write_component_nodes( surface, *block_it++ );
+            }
+            for( const auto& block : brep_.blocks() )
+            {
+                write_component_nodes( block, *block_it++ );
             }
             file_ << "$EndNodes" << geode::EOL;
         }
