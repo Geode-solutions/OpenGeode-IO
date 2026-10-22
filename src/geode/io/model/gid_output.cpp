@@ -207,6 +207,11 @@ namespace
                 for( const auto& cmv :
                     brep_.component_mesh_vertices( uv_index ) )
                 {
+                    if( cmv.component_id.type
+                        != geode::Surface3D::component_type_static() )
+                    {
+                        continue;
+                    }
                     file_ << uv_index + NODE_OFFSET << geode::SPACE;
                     file_ << brep_.surface( cmv.component_id.id )
                                  .mesh()

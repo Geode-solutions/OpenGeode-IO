@@ -34,15 +34,22 @@
 #include <geode/basic/range.hpp>
 #include <geode/basic/string.hpp>
 
+#include <geode/geometry/point.hpp>
+
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/builder/surface_mesh_builder.hpp>
 #include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
 #include <geode/model/mixin/core/block.hpp>
 #include <geode/model/mixin/core/corner.hpp>
 #include <geode/model/mixin/core/line.hpp>
 #include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
 #include <geode/model/representation/core/brep.hpp>
 #include <geode/model/representation/io/brep_input.hpp>
 #include <geode/model/representation/io/brep_output.hpp>
@@ -265,12 +272,8 @@ namespace
 
     using test_function = void ( * )( const geode::BRep& );
 
-    void run_test( std::string_view short_filename, test_function test )
+    void add_material_attributes( const geode::BRep& brep )
     {
-        // Load file
-        auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
-        test( brep );
         geode::AttributeValues< geode::index_t > default_values;
         default_values.default_value = 1;
         default_values.no_value = geode::NO_ID;
@@ -296,11 +299,64 @@ namespace
                         geode::index_t >(
                         "material_number", default_values, properties );
         }
+    }
+
+    void run_test( std::string_view short_filename, test_function test )
+    {
+        // Load file
+        auto brep = geode::load_brep(
+            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
+        test( brep );
+        add_material_attributes( brep );
         const auto filename_gid =
             absl::StrCat( short_filename, "_output.gid_msh" );
         geode::save_brep( brep, filename_gid );
         check_gid_file( absl::StrCat( short_filename, "_output.gid.msh" ),
             nb_gid_elements( brep ) );
+    }
+
+    /*!
+     * Adds a fracture surface outside of the blocks, bounded by a line whose
+     * vertices are registered before the surface ones.
+     */
+    void add_fracture( geode::BRep& brep )
+    {
+        geode::BRepBuilder builder{ brep };
+        const auto first_unique_vertex = builder.create_unique_vertices( 3 );
+        const auto& line = brep.line( builder.add_line() );
+        auto line_builder = builder.line_mesh_builder( line );
+        line_builder->create_point( geode::Point3D{ { 10, 10, 10 } } );
+        line_builder->create_point( geode::Point3D{ { 11, 10, 10 } } );
+        line_builder->create_edge( 0, 1 );
+        for( const auto v : geode::LRange{ 2 } )
+        {
+            builder.set_unique_vertex(
+                { line.component_id(), v }, first_unique_vertex + v );
+        }
+        const auto& surface =
+            brep.surface( builder.add_surface( geode::MeshFactory::default_impl(
+                geode::TriangulatedSurface3D::type_name_static() ) ) );
+        auto surface_builder = builder.surface_mesh_builder( surface );
+        surface_builder->create_point( geode::Point3D{ { 10, 10, 10 } } );
+        surface_builder->create_point( geode::Point3D{ { 11, 10, 10 } } );
+        surface_builder->create_point( geode::Point3D{ { 10, 11, 10 } } );
+        surface_builder->create_polygon( { 0, 1, 2 } );
+        for( const auto v : geode::LRange{ 3 } )
+        {
+            builder.set_unique_vertex(
+                { surface.component_id(), v }, first_unique_vertex + v );
+        }
+        builder.add_line_surface_boundary_relationship( line, surface );
+    }
+
+    void test_fracture_outside_blocks()
+    {
+        auto brep =
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+        add_fracture( brep );
+        add_material_attributes( brep );
+        geode::save_brep( brep, "fracture_output.gid_msh" );
+        check_gid_file( "fracture_output.gid.msh", nb_gid_elements( brep ) );
     }
 } // namespace
 
@@ -310,6 +366,7 @@ int main()
     {
         geode::OpenGeodeIOModelLibrary::initialize();
         run_test( "mss", &test_brep_mss );
+        test_fracture_outside_blocks();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
