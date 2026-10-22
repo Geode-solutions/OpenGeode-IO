@@ -32,6 +32,8 @@
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
 
+#include <geode/geometry/point.hpp>
+
 #include <geode/mesh/core/edged_curve.hpp>
 #include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
@@ -400,6 +402,41 @@ namespace
                 "$Elements\n1 1 1 1\n2 1 2 1\n\n$EndElements\n" ) );
     }
 
+    void test_node_tags()
+    {
+        test_load_failure( "unknown_node_v2.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 1 2 4\n$EndElements\n" ) );
+        test_load_failure( "null_node_v2.msh",
+            absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
+                "$Elements\n1\n1 2 2 0 1 0 2 3\n$EndElements\n" ) );
+        test_load_failure( "duplicated_node_v2.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n3\n1 0 0 0\n2 1 0 0\n2 0 1 0\n$EndNodes\n",
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
+        test_load_failure( "unknown_node_v4.msh",
+            absl::StrCat( V4_HEADER, V4_TRIANGLE_NODES,
+                "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2 7\n$EndElements\n" ) );
+        test_load_failure( "node_out_of_range_v2.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n3\n1 0 0 0\n2 1 0 0\n1000000 0 1 0\n$EndNodes\n",
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
+
+        write_file( "sparse_nodes_v2.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n3\n10 0 0 0\n5 1 0 0\n1000000 0 1 0\n$EndNodes\n",
+                "$Elements\n1\n1 2 2 0 1 10 5 1000000\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "sparse_nodes_v2.msh" );
+        geode::OpenGeodeIOModelException::test( brep.nb_unique_vertices() == 3,
+            "Sparse node tags should give 3 unique vertices" );
+        const auto& surface = *brep.surfaces().begin();
+        const auto& mesh = surface.mesh();
+        geode::OpenGeodeIOModelException::test(
+            mesh.point( mesh.polygon_vertex( { 0, 2 } ) )
+                == geode::Point3D{ { 0, 1, 0 } },
+            "Sparse node tags should be mapped to the right coordinates" );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -464,6 +501,7 @@ int main()
         test_is_loadable();
         test_skip_unknown_sections();
         test_truncated_lines();
+        test_node_tags();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

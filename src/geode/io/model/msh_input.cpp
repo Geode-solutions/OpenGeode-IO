@@ -23,8 +23,10 @@
 
 #include <geode/io/model/internal/msh_input.hpp>
 
+#include <algorithm>
 #include <array>
 #include <fstream>
+#include <optional>
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
@@ -63,6 +65,9 @@
 
 namespace
 {
+    /// Counts read from the file are not trusted to reserve memory
+    constexpr geode::index_t MAX_RESERVE{ 1U << 24U };
+
     using Facets = std::vector< std::vector< geode::local_index_t > >;
 
     struct GmshElementType
@@ -136,6 +141,63 @@ namespace
         std::vector< geode::index_t > types;
         /// Node indices of all elements, element after element
         std::vector< geode::index_t > nodes;
+    };
+
+    /*!
+     * Maps the GMSH node tags to the node indices.
+     * Tags 1 to n in order (the common case) need no storage.
+     */
+    class NodeTags
+    {
+    public:
+        void add( geode::index_t tag, geode::index_t node )
+        {
+            if( contiguous_
+                && tag == node + geode::internal::GMSH_OFFSET_START )
+            {
+                nb_contiguous_++;
+                return;
+            }
+            if( contiguous_ )
+            {
+                contiguous_ = false;
+                tag2node_.reserve( nb_contiguous_ + 1 );
+                for( const auto n : geode::Range{ nb_contiguous_ } )
+                {
+                    tag2node_.emplace(
+                        n + geode::internal::GMSH_OFFSET_START, n );
+                }
+            }
+            const auto inserted = tag2node_.emplace( tag, node ).second;
+            geode::OpenGeodeIOModelException::check_exception( inserted,
+                nullptr, geode::OpenGeodeException::TYPE::data,
+                "[MSHInput] Node tag ", tag, " is defined twice" );
+        }
+
+        std::optional< geode::index_t > node( geode::index_t tag ) const
+        {
+            if( contiguous_ )
+            {
+                if( tag < geode::internal::GMSH_OFFSET_START
+                    || tag - geode::internal::GMSH_OFFSET_START
+                           >= nb_contiguous_ )
+                {
+                    return std::nullopt;
+                }
+                return tag - geode::internal::GMSH_OFFSET_START;
+            }
+            const auto it = tag2node_.find( tag );
+            if( it == tag2node_.end() )
+            {
+                return std::nullopt;
+            }
+            return it->second;
+        }
+
+    private:
+        bool contiguous_{ true };
+        geode::index_t nb_contiguous_{ 0 };
+        absl::flat_hash_map< geode::index_t, geode::index_t > tag2node_;
     };
 
     class MSHInputImpl
@@ -554,26 +616,35 @@ namespace
                 geode::string_to_double( z_str ) } };
         }
 
+        void reserve_nodes( geode::index_t nb_nodes )
+        {
+            nodes_.reserve( std::min( nb_nodes, MAX_RESERVE ) );
+        }
+
+        void add_node( geode::index_t tag, const geode::Point3D& point )
+        {
+            node_tags_.add( tag, nodes_.size() );
+            nodes_.push_back( point );
+        }
+
         void read_node_section_v2()
         {
             std::string line;
             read_line( line );
             const auto tokens = geode::string_split( line );
             const auto nb_nodes = geode::string_to_index( token( tokens, 0 ) );
-            nodes_.resize( nb_nodes );
+            reserve_nodes( nb_nodes );
             for( const auto unused : geode::Range{ nb_nodes } )
             {
                 geode_unused( unused );
                 read_line( line );
                 const auto node_tokens = tokenize( line );
-                const auto node_id =
-                    geode::string_to_index( token( node_tokens, 0 ) );
-                nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
+                add_node( geode::string_to_index( token( node_tokens, 0 ) ),
                     read_node_coordinates( token( node_tokens, 1 ),
-                        token( node_tokens, 2 ), token( node_tokens, 3 ) );
+                        token( node_tokens, 2 ), token( node_tokens, 3 ) ) );
             }
             check_keyword( "$EndNodes" );
-            builder_.create_unique_vertices( nb_nodes );
+            builder_.create_unique_vertices( nodes_.size() );
         }
 
         void read_node_section_v4()
@@ -581,18 +652,7 @@ namespace
             std::string line;
             read_line( line );
             const auto tokens = geode::string_split( line );
-            const auto nb_total_nodes =
-                geode::string_to_index( token( tokens, 1 ) );
-            const auto min_node_id =
-                geode::string_to_index( token( tokens, 2 ) );
-            const auto max_node_id =
-                geode::string_to_index( token( tokens, 3 ) );
-            geode::OpenGeodeIOModelException::check_exception(
-                min_node_id == 1 && max_node_id == nb_total_nodes, nullptr,
-                geode::OpenGeodeException::TYPE::internal,
-                "[MSHInput::read_node_section_v4] Non continuous node indexing "
-                "is not supported for now" );
-            nodes_.resize( nb_total_nodes );
+            reserve_nodes( geode::string_to_index( token( tokens, 1 ) ) );
             for( const auto unused :
                 geode::Range{ geode::string_to_index( token( tokens, 0 ) ) } )
             {
@@ -600,7 +660,7 @@ namespace
                 read_node_group();
             }
             check_keyword( "$EndNodes" );
-            builder_.create_unique_vertices( nb_total_nodes );
+            builder_.create_unique_vertices( nodes_.size() );
         }
 
         void read_node_group()
@@ -614,20 +674,23 @@ namespace
                 geode::OpenGeodeException::TYPE::internal,
                 "[MSHInput::read_node_group] Parametric node coordinates "
                 "is not supported for now" );
-            absl::FixedArray< geode::index_t > node_ids( nb_nodes );
+            std::vector< geode::index_t > node_tags;
+            node_tags.reserve( std::min( nb_nodes, MAX_RESERVE ) );
             for( const auto n : geode::Range{ nb_nodes } )
             {
+                geode_unused( n );
                 read_line( line );
                 const auto node_tokens = tokenize( line );
-                node_ids[n] = geode::string_to_index( token( node_tokens, 0 ) );
+                node_tags.push_back(
+                    geode::string_to_index( token( node_tokens, 0 ) ) );
             }
-            for( const auto node_id : node_ids )
+            for( const auto node_tag : node_tags )
             {
                 read_line( line );
                 const auto node_tokens = tokenize( line );
-                nodes_[node_id - geode::internal::GMSH_OFFSET_START] =
+                add_node( node_tag,
                     read_node_coordinates( token( node_tokens, 0 ),
-                        token( node_tokens, 1 ), token( node_tokens, 2 ) );
+                        token( node_tokens, 1 ), token( node_tokens, 2 ) ) );
             }
         }
 
@@ -653,9 +716,14 @@ namespace
             component.types.push_back( gmsh_type );
             for( const auto& node : node_tokens )
             {
-                component.nodes.push_back(
-                    geode::string_to_index( node )
-                    - geode::internal::GMSH_OFFSET_START );
+                const auto node_tag = geode::string_to_index( node );
+                const auto node_id = node_tags_.node( node_tag );
+                geode::OpenGeodeIOModelException::check_exception(
+                    node_id.has_value(), nullptr,
+                    geode::OpenGeodeException::TYPE::data, "[MSHInput] Line ",
+                    line_number_, ": element refers to unknown node ",
+                    node_tag );
+                component.nodes.push_back( node_id.value() );
             }
         }
 
@@ -1014,6 +1082,7 @@ namespace
         bool has_entities_{ false };
         geode::index_t line_number_{ 0 };
         std::vector< geode::Point3D > nodes_;
+        NodeTags node_tags_;
         std::array< absl::flat_hash_map< geode::index_t, ComponentElements >,
             NB_DIMENSIONS >
             components_;
