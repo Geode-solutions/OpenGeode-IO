@@ -57,6 +57,37 @@ namespace
 {
     constexpr double FRACTION = 1e-5;
 
+    /// 2D affine transform (a c e / b d f / 0 0 1), as in SVG matrix()
+    struct Affine2D
+    {
+        Affine2D operator*( const Affine2D& other ) const
+        {
+            return { a * other.a + c * other.b, b * other.a + d * other.b,
+                a * other.c + c * other.d, b * other.c + d * other.d,
+                a * other.e + c * other.f + e, b * other.e + d * other.f + f };
+        }
+
+        geode::Point2D apply( const geode::Point2D& point ) const
+        {
+            const auto x = point.value( 0 );
+            const auto y = point.value( 1 );
+            return geode::Point2D{ { a * x + c * y + e, b * x + d * y + f } };
+        }
+
+        double a{ 1 };
+        double b{ 0 };
+        double c{ 0 };
+        double d{ 1 };
+        double e{ 0 };
+        double f{ 0 };
+    };
+
+    struct SVGPath
+    {
+        std::string data;
+        Affine2D transform;
+    };
+
     class SVGInputImpl
     {
     public:
@@ -81,14 +112,15 @@ namespace
             geode::OpenGeodeIOModelException::check_exception( !root.empty(),
                 nullptr, geode::OpenGeodeException::TYPE::data,
                 "[SVGInput] No <svg> root element" );
-            read_container_paths( root );
+            read_container_paths( root, read_transform( root ) );
         }
 
         void process_paths()
         {
             for( const auto& path : paths_ )
             {
-                process_tokens( split_path( path ) );
+                transform_ = path.transform;
+                process_tokens( split_path( path.data ) );
             }
         }
 
@@ -109,18 +141,21 @@ namespace
          * Other elements, such as defs or symbol, are not rendered by
          * themselves and are ignored.
          */
-        void read_container_paths( const pugi::xml_node& container )
+        void read_container_paths(
+            const pugi::xml_node& container, const Affine2D& transform )
         {
             for( const auto& child : container.children() )
             {
                 const std::string_view name{ child.name() };
                 if( name == "path" )
                 {
-                    paths_.emplace_back( child.attribute( "d" ).value() );
+                    paths_.push_back( { child.attribute( "d" ).value(),
+                        transform * read_transform( child ) } );
                 }
                 else if( name == "g" || name == "a" || name == "svg" )
                 {
-                    read_container_paths( child );
+                    read_container_paths(
+                        child, transform * read_transform( child ) );
                 }
             }
         }
@@ -221,6 +256,108 @@ namespace
             }
             flush( path.size() );
             return tokens;
+        }
+
+        static Affine2D transform_function(
+            std::string_view name, absl::Span< const double > args )
+        {
+            const auto check_nb_args = [&]( std::size_t min, std::size_t max ) {
+                geode::OpenGeodeIOModelException::check_exception(
+                    args.size() >= min && args.size() <= max, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] Wrong number of parameters for transform ",
+                    name );
+            };
+            static constexpr double DEGREES_TO_RADIANS{ 3.14159265358979323846
+                                                        / 180. };
+            if( name == "matrix" )
+            {
+                check_nb_args( 6, 6 );
+                return { args[0], args[1], args[2], args[3], args[4], args[5] };
+            }
+            if( name == "translate" )
+            {
+                check_nb_args( 1, 2 );
+                return { 1, 0, 0, 1, args[0], args.size() == 2 ? args[1] : 0. };
+            }
+            if( name == "scale" )
+            {
+                check_nb_args( 1, 2 );
+                return { args[0], 0, 0, args.size() == 2 ? args[1] : args[0], 0,
+                    0 };
+            }
+            if( name == "rotate" )
+            {
+                check_nb_args( 1, 3 );
+                geode::OpenGeodeIOModelException::check_exception(
+                    args.size() != 2, nullptr,
+                    geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] rotate() takes 1 or 3 parameters" );
+                const auto angle = args[0] * DEGREES_TO_RADIANS;
+                const Affine2D rotation{ std::cos( angle ), std::sin( angle ),
+                    -std::sin( angle ), std::cos( angle ), 0, 0 };
+                if( args.size() == 1 )
+                {
+                    return rotation;
+                }
+                return Affine2D{ 1, 0, 0, 1, args[1], args[2] } * rotation
+                       * Affine2D{ 1, 0, 0, 1, -args[1], -args[2] };
+            }
+            if( name == "skewX" )
+            {
+                check_nb_args( 1, 1 );
+                return { 1, 0, std::tan( args[0] * DEGREES_TO_RADIANS ), 1, 0,
+                    0 };
+            }
+            if( name == "skewY" )
+            {
+                check_nb_args( 1, 1 );
+                return { 1, std::tan( args[0] * DEGREES_TO_RADIANS ), 0, 1, 0,
+                    0 };
+            }
+            throw geode::OpenGeodeIOModelException{ nullptr,
+                geode::OpenGeodeException::TYPE::data,
+                "[SVGInput] Unknown transform function: ", name };
+        }
+
+        /*!
+         * Reads the transform attribute of an element, such as
+         * "translate(10, 20) rotate(45)".
+         */
+        static Affine2D read_transform( const pugi::xml_node& node )
+        {
+            std::string_view transform{ node.attribute( "transform" ).value() };
+            Affine2D result;
+            while( true )
+            {
+                while( !transform.empty()
+                       && ( is_separator( transform.front() ) ) )
+                {
+                    transform.remove_prefix( 1 );
+                }
+                if( transform.empty() )
+                {
+                    return result;
+                }
+                const auto open = transform.find( '(' );
+                const auto close = transform.find( ')' );
+                geode::OpenGeodeIOModelException::check_exception(
+                    open != std::string_view::npos
+                        && close != std::string_view::npos && open < close,
+                    nullptr, geode::OpenGeodeException::TYPE::data,
+                    "[SVGInput] Invalid transform attribute: ",
+                    node.attribute( "transform" ).value() );
+                const auto name =
+                    absl::StripAsciiWhitespace( transform.substr( 0, open ) );
+                std::vector< double > args;
+                for( const auto& token : split_path(
+                         transform.substr( open + 1, close - open - 1 ) ) )
+                {
+                    args.push_back( read_number( token ) );
+                }
+                result = result * transform_function( name, args );
+                transform.remove_prefix( close + 1 );
+            }
         }
 
         struct PathState
@@ -425,15 +562,16 @@ namespace
             const auto& line_id = builder_.add_line();
             const auto line_builder =
                 builder_.line_mesh_builder( section_.line( line_id ) );
-            line_builder->create_point( vertices.front() );
+            const auto first = transform_.apply( vertices.front() );
+            line_builder->create_point( first );
             for( const auto v : geode::Range{ 1, vertices.size() } )
             {
-                line_builder->create_point( vertices[v] );
+                line_builder->create_point( transform_.apply( vertices[v] ) );
                 line_builder->create_edge( v - 1, v );
             }
-            add_potential_corner( vertices.front(), line_id, 0 );
-            add_potential_corner(
-                vertices.back(), line_id, vertices.size() - 1 );
+            add_potential_corner( first, line_id, 0 );
+            add_potential_corner( transform_.apply( vertices.back() ), line_id,
+                vertices.size() - 1 );
         }
 
         std::vector< geode::uuid > create_corners(
@@ -501,7 +639,8 @@ namespace
         geode::Section& section_;
         geode::SectionBuilder builder_;
         pugi::xml_document document_;
-        std::vector< std::string > paths_;
+        std::vector< SVGPath > paths_;
+        Affine2D transform_;
         std::vector< geode::Point2D > potential_corners_;
         std::vector< geode::ComponentMeshVertex > potential_corner_cmv_;
     };

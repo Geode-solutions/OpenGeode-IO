@@ -218,6 +218,48 @@ void test_path_containers()
         "paths in defs should not" );
 }
 
+void test_transforms()
+{
+    write_svg( "transforms.svg",
+        "<g transform=\"translate(10,20)\">"
+        "<path d=\"M 0 0 L 1 0\" transform=\"scale(2)\"/>"
+        "<g transform=\"matrix(1 0 0 1 5 5) scale(3, 1)\">"
+        "<path d=\"M 0 1 L 1 1\"/></g></g>"
+        "<path d=\"M 1 0 L 2 0\" transform=\"rotate(90)\"/>" );
+    const auto lines = line_points( geode::load_section( "transforms.svg" ) );
+    std::vector< std::vector< geode::Point2D > > expected{
+        { geode::Point2D{ { 10, 20 } }, geode::Point2D{ { 12, 20 } } },
+        { geode::Point2D{ { 15, 26 } }, geode::Point2D{ { 18, 26 } } },
+        { geode::Point2D{ { 0, 1 } }, geode::Point2D{ { 0, 2 } } }
+    };
+    absl::c_sort( expected );
+    geode::OpenGeodeIOModelException::test(
+        lines.size() == expected.size(), "Wrong number of transformed lines" );
+    for( const auto l : geode::Indices{ lines } )
+    {
+        for( const auto p : geode::Indices{ lines[l] } )
+        {
+            geode::OpenGeodeIOModelException::test(
+                lines[l][p].inexact_equal( expected[l][p] ),
+                "Wrong transformed point ", lines[l][p].string(), ", expected ",
+                expected[l][p].string() );
+        }
+    }
+    write_svg( "bad_transform.svg",
+        "<path d=\"M 0 0 L 1 0\" transform=\"translate(1, 2, 3)\"/>" );
+    try
+    {
+        const auto section = geode::load_section( "bad_transform.svg" );
+    }
+    catch( const geode::OpenGeodeException& /*unused*/ )
+    {
+        return;
+    }
+    throw geode::OpenGeodeIOModelException{ nullptr,
+        geode::OpenGeodeException::TYPE::internal,
+        "Loading an invalid transform should fail" };
+}
+
 int main()
 {
     try
@@ -240,6 +282,7 @@ int main()
         test_path_grammar();
         test_compact_numbers();
         test_path_containers();
+        test_transforms();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
