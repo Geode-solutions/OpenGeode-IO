@@ -31,6 +31,7 @@
 
 #include <absl/container/flat_hash_map.h>
 
+#include <geode/basic/attribute_manager.hpp>
 #include <geode/basic/string.hpp>
 
 #include <geode/geometry/bounding_box.hpp>
@@ -51,6 +52,7 @@
 
 #include <geode/io/model/common.hpp>
 #include <geode/io/model/internal/msh_common.hpp>
+#include <geode/io/model/internal/text_output.hpp>
 
 namespace
 {
@@ -113,9 +115,9 @@ namespace
             const Component& component, geode::index_t gmsh_id )
         {
             const auto bbox = component.mesh().bounding_box();
-            file_ << gmsh_id << geode::SPACE << bbox.min().string()
-                  << geode::SPACE << bbox.max().string() << geode::SPACE
-                  << DEFAULT_PHYSICAL_TAG << geode::SPACE;
+            file_ << gmsh_id << geode::SPACE;
+            write_bounding_box( bbox );
+            file_ << geode::SPACE << DEFAULT_PHYSICAL_TAG << geode::SPACE;
             file_ << brep_.nb_boundaries( component.id() );
             for( const auto& boundary : brep_.boundaries( component ) )
             {
@@ -125,6 +127,23 @@ namespace
             uuid2gmsh_[component.id()] =
                 geode::internal::GmshElementID{ component.component_type(),
                     gmsh_id };
+        }
+
+        void write_bounding_box( const geode::BoundingBox3D& bbox )
+        {
+            file_ << geode::internal::point_string( coordinates_, bbox.min() );
+            file_ << geode::SPACE;
+            file_ << geode::internal::point_string( coordinates_, bbox.max() );
+        }
+
+        template < typename Component >
+        std::shared_ptr< geode::ReadOnlyAttribute< geode::index_t > >
+            unique_vertices( const Component& component ) const
+        {
+            return component.mesh()
+                .vertex_attribute_manager()
+                .template find_read_only_attribute< geode::index_t >(
+                    brep_.unique_vertex_attribute_id() );
         }
 
         void write_corners()
@@ -138,8 +157,9 @@ namespace
                     "[MSHOutput] Corner ", corner.id().string(),
                     " has no vertex" );
                 const auto& point = corner.mesh().point( 0 );
-                file_ << count << geode::SPACE << point.string() << geode::SPACE
-                      << DEFAULT_PHYSICAL_TAG << geode::EOL;
+                file_ << count << geode::SPACE
+                      << geode::internal::point_string( coordinates_, point )
+                      << geode::SPACE << DEFAULT_PHYSICAL_TAG << geode::EOL;
                 uuid2gmsh_[corner.id()] =
                     geode::internal::GmshElementID{ corner.component_type(),
                         count++ };
@@ -161,9 +181,9 @@ namespace
             for( const auto& surface : brep_.surfaces() )
             {
                 const auto bbox = surface.mesh().bounding_box();
-                file_ << count << geode::SPACE << bbox.min().string()
-                      << geode::SPACE << bbox.max().string() << geode::SPACE
-                      << DEFAULT_PHYSICAL_TAG << geode::SPACE;
+                file_ << count << geode::SPACE;
+                write_bounding_box( bbox );
+                file_ << geode::SPACE << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( surface.id() )
                              + ( 2 * brep_.nb_internal_lines( surface ) );
                 for( const auto& boundary : brep_.boundaries( surface ) )
@@ -190,9 +210,9 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 const auto bbox = block.mesh().bounding_box();
-                file_ << count << geode::SPACE << bbox.min().string()
-                      << geode::SPACE << bbox.max().string() << geode::SPACE
-                      << DEFAULT_PHYSICAL_TAG << geode::SPACE;
+                file_ << count << geode::SPACE;
+                write_bounding_box( bbox );
+                file_ << geode::SPACE << DEFAULT_PHYSICAL_TAG << geode::SPACE;
                 file_ << brep_.nb_boundaries( block.id() )
                              + ( 2 * brep_.nb_internal_surfaces( block ) );
                 for( const auto& boundary : brep_.boundaries( block ) )
@@ -231,10 +251,10 @@ namespace
                 component_type2dimension_[component.component_type()];
             block.gmsh_id = uuid2gmsh_[component.id()].id;
             const auto nb_component_vertices = component.mesh().nb_vertices();
+            const auto unique_vertex = unique_vertices( component );
             for( const auto v : geode::Range{ nb_component_vertices } )
             {
-                const auto uid =
-                    brep_.unique_vertex( { component.component_id(), v } );
+                const auto uid = unique_vertex->value( v );
                 if( !node_exported[uid] )
                 {
                     node_exported[uid] = true;
@@ -257,7 +277,8 @@ namespace
             }
             for( const auto& vertex_pair : block.nodes )
             {
-                file_ << component.mesh().point( vertex_pair.first ).string()
+                file_ << geode::internal::point_string(
+                    coordinates_, component.mesh().point( vertex_pair.first ) )
                       << geode::EOL;
             }
         }
@@ -358,11 +379,11 @@ namespace
                       << geode::SPACE << element2type_[GMSH_ELEMENT::point]
                       << geode::SPACE << corner.mesh().nb_vertices()
                       << geode::EOL;
+                const auto unique_vertex = unique_vertices( corner );
                 for( const auto v :
                     geode::Range{ corner.mesh().nb_vertices() } )
                 {
-                    const auto uid =
-                        brep_.unique_vertex( { corner.component_id(), v } );
+                    const auto uid = unique_vertex->value( v );
                     file_ << cur++ << geode::SPACE
                           << geode::internal::GMSH_OFFSET_START + uid
                           << geode::EOL;
@@ -380,6 +401,7 @@ namespace
                       << geode::SPACE << uuid2gmsh_[line.id()].id
                       << geode::SPACE << element2type_[GMSH_ELEMENT::edge]
                       << geode::SPACE << line.mesh().nb_edges() << geode::EOL;
+                const auto unique_vertex = unique_vertices( line );
                 for( const auto e : geode::Range{ line.mesh().nb_edges() } )
                 {
                     file_ << cur++;
@@ -387,8 +409,7 @@ namespace
                     {
                         const auto edge_vertex =
                             line.mesh().edge_vertex( { e, v } );
-                        const auto uid = brep_.unique_vertex(
-                            { line.component_id(), edge_vertex } );
+                        const auto uid = unique_vertex->value( edge_vertex );
                         file_ << geode::SPACE
                               << geode::internal::GMSH_OFFSET_START + uid;
                     }
@@ -409,6 +430,7 @@ namespace
                       << geode::SPACE << element2type_[GMSH_ELEMENT::triangle]
                       << geode::SPACE << surface.mesh().nb_polygons()
                       << geode::EOL;
+                const auto unique_vertex = unique_vertices( surface );
                 for( const auto p :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
@@ -417,8 +439,7 @@ namespace
                     {
                         const auto facet_vertex =
                             surface.mesh().polygon_vertex( { p, v } );
-                        const auto uid = brep_.unique_vertex(
-                            { surface.component_id(), facet_vertex } );
+                        const auto uid = unique_vertex->value( facet_vertex );
                         file_ << geode::SPACE
                               << geode::internal::GMSH_OFFSET_START + uid;
                     }
@@ -440,6 +461,7 @@ namespace
                       << element2type_[GMSH_ELEMENT::tetrahedron]
                       << geode::SPACE << block.mesh().nb_polyhedra()
                       << geode::EOL;
+                const auto unique_vertex = unique_vertices( block );
                 for( const auto p :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
@@ -448,8 +470,7 @@ namespace
                     {
                         const auto facet_vertex =
                             block.mesh().polyhedron_vertex( { p, v } );
-                        const auto uid = brep_.unique_vertex(
-                            { block.component_id(), facet_vertex } );
+                        const auto uid = unique_vertex->value( facet_vertex );
                         file_ << geode::SPACE
                               << geode::internal::GMSH_OFFSET_START + uid;
                     }
@@ -481,6 +502,7 @@ namespace
     private:
         std::ofstream file_;
         const geode::BRep& brep_;
+        std::string coordinates_;
         absl::flat_hash_map< geode::uuid, geode::internal::GmshElementID >
             uuid2gmsh_;
         absl::flat_hash_map< geode::ComponentType, geode::index_t >

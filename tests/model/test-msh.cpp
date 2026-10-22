@@ -615,6 +615,36 @@ namespace
             "$Nodes header should only count the written nodes, got: ", line );
     }
 
+    void test_save_exact_coordinates()
+    {
+        write_file( "exact_coordinates.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n3\n"
+                "1 0.30000000000000004 0.3333333333333333 1e-20\n"
+                "2 123456.78901234567 -2.5e+300 0\n"
+                "3 0.1 0.7 3.0000000000000004\n$EndNodes\n",
+                "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "exact_coordinates.msh" );
+        geode::save_brep( brep, "exact_coordinates_output.msh" );
+        const auto reloaded =
+            geode::load_brep( "exact_coordinates_output.msh" );
+        const auto& mesh = first_surface_mesh( brep );
+        const auto& reloaded_mesh = first_surface_mesh( reloaded );
+        for( const auto v : geode::LRange{ 3 } )
+        {
+            const auto& point = mesh.point( mesh.polygon_vertex( { 0, v } ) );
+            const auto& reloaded_point =
+                reloaded_mesh.point( reloaded_mesh.polygon_vertex( { 0, v } ) );
+            for( const auto d : geode::LRange{ 3 } )
+            {
+                geode::OpenGeodeIOModelException::test(
+                    point.value( d ) == reloaded_point.value( d ),
+                    "Saved coordinates should be exact: ", point.string(),
+                    " vs ", reloaded_point.string() );
+            }
+        }
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -761,6 +791,7 @@ int main()
         test_degenerate_elements();
         test_save_empty_corner();
         test_save_isolated_unique_vertex();
+        test_save_exact_coordinates();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
