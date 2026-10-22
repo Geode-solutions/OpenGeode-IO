@@ -31,6 +31,7 @@
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
+#include <absl/container/inlined_vector.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/str_cat.h>
 #include <absl/strings/str_split.h>
@@ -68,6 +69,7 @@
 namespace
 {
     constexpr geode::index_t POINT_TYPE{ 15 };
+    constexpr geode::index_t MAX_ELEMENT_NODES{ 8 };
 
     /// Counts read from the file are not trusted to reserve memory
     constexpr geode::index_t MAX_RESERVE{ 1U << 24U };
@@ -277,6 +279,11 @@ namespace
                 nodes_read && elements_read, nullptr,
                 geode::OpenGeodeException::TYPE::data,
                 "[MSHInput::read_file] Missing $Nodes or $Elements section" );
+            if( nb_degenerate_elements_ != 0 )
+            {
+                geode::Logger::warning( "[MSHInput] ", nb_degenerate_elements_,
+                    " elements with repeated nodes are ignored" );
+            }
         }
 
         void build_geometry()
@@ -708,7 +715,7 @@ namespace
             geode::index_t gmsh_type,
             absl::Span< const std::string_view > node_tokens )
         {
-            component.types.push_back( gmsh_type );
+            absl::InlinedVector< geode::index_t, MAX_ELEMENT_NODES > nodes;
             for( const auto& node : node_tokens )
             {
                 const auto node_tag = geode::string_to_index( node );
@@ -718,8 +725,16 @@ namespace
                     geode::OpenGeodeException::TYPE::data, "[MSHInput] Line ",
                     line_number_, ": element refers to unknown node ",
                     node_tag );
-                component.nodes.push_back( node_id.value() );
+                if( absl::c_linear_search( nodes, node_id.value() ) )
+                {
+                    nb_degenerate_elements_++;
+                    return;
+                }
+                nodes.push_back( node_id.value() );
             }
+            component.types.push_back( gmsh_type );
+            component.nodes.insert(
+                component.nodes.end(), nodes.begin(), nodes.end() );
         }
 
         void read_element( const std::string& line )
@@ -1392,6 +1407,7 @@ namespace
         double version_{ 2 };
         bool has_entities_{ false };
         geode::index_t line_number_{ 0 };
+        geode::index_t nb_degenerate_elements_{ 0 };
         std::vector< geode::Point3D > nodes_;
         NodeTags node_tags_;
         std::array< absl::flat_hash_map< geode::index_t, ComponentElements >,

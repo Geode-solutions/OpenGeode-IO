@@ -551,6 +551,22 @@ namespace
         check_unique_vertices( brep );
     }
 
+    void test_degenerate_elements()
+    {
+        write_file( "degenerate_elements_v2.msh",
+            absl::StrCat( V2_HEADER,
+                "$Nodes\n4\n1 0 0 0\n2 1 0 0\n3 0 1 0\n4 1 1 0\n"
+                "$EndNodes\n",
+                "$Elements\n3\n1 2 2 0 1 1 2 3\n2 2 2 0 1 2 4 2\n"
+                "3 1 2 0 2 4 4\n$EndElements\n" ) );
+        const auto brep = geode::load_brep( "degenerate_elements_v2.msh" );
+        geode::OpenGeodeIOModelException::test(
+            first_surface_mesh( brep ).nb_polygons() == 1,
+            "Degenerate polygon should be ignored" );
+        geode::OpenGeodeIOModelException::test( brep.nb_lines() == 0,
+            "Line with only a degenerate edge should be removed" );
+    }
+
     void test_is_loadable()
     {
         write_file( "unsupported_version.msh",
@@ -694,6 +710,7 @@ int main()
         test_empty_components();
         test_corner_with_several_nodes();
         test_unknown_bounding_entities();
+        test_degenerate_elements();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
