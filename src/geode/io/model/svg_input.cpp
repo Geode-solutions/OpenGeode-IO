@@ -25,6 +25,11 @@
 
 #include <cctype>
 #include <fstream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include <absl/types/span.h>
 
 #include <pugixml.hpp>
 
@@ -74,11 +79,9 @@ namespace
 
         void process_paths()
         {
-            for( auto& path : paths_ )
+            for( const auto& path : paths_ )
             {
-                format_path( path );
-                auto tokens = split_path( path );
-                process_tokens( tokens );
+                process_tokens( split_path( path ) );
             }
         }
 
@@ -182,59 +185,86 @@ namespace
             }
         }
 
-        void format_path( std::string& path ) const
+        static bool is_command_letter( char character )
         {
-            remove_commas( path );
-            add_space_around_letters( path );
-        }
-
-        std::vector< std::string > split_path( const std::string& path ) const
-        {
-            std::istringstream iss( path );
-            return { std::istream_iterator< std::string >( iss ), {} };
-        }
-
-        bool string_isalpha( const std::string& str ) const
-        {
-            return std::all_of(
-                str.begin(), str.end(), []( const char& character ) {
-                    return std::isalpha( character );
-                } );
-        }
-
-        void remove_commas( std::string& path ) const
-        {
-            std::replace( path.begin(), path.end(), ',', ' ' );
-        }
-
-        void add_spaces( std::string& path, char letter ) const
-        {
-            std::size_t start{ 0 };
-            std::size_t found{ std::numeric_limits< size_t >::max() };
-            while( ( found = path.find( letter, start ) ) != std::string::npos )
+            switch( character )
             {
-                path.replace( found, 1,
-                    absl::StrCat( " ", std::string( 1, letter ), " " ) );
-                start = found + 3;
+                case 'M':
+                case 'm':
+                case 'L':
+                case 'l':
+                case 'H':
+                case 'h':
+                case 'V':
+                case 'v':
+                case 'Z':
+                case 'z':
+                case 'C':
+                case 'c':
+                case 'S':
+                case 's':
+                case 'Q':
+                case 'q':
+                case 'T':
+                case 't':
+                case 'A':
+                case 'a':
+                    return true;
+                default:
+                    return false;
             }
         }
 
-        template < typename... Letters >
-        void add_spaces(
-            std::string& path, char letter, Letters... others ) const
+        static bool is_separator( char character )
         {
-            add_spaces( path, letter );
-            add_spaces( path, others... );
+            return character == ',' || character == ' ' || character == '\t'
+                   || character == '\n' || character == '\r'
+                   || character == '\f';
         }
 
-        void add_space_around_letters( std::string& path ) const
+        /*!
+         * Splits the path data in a single pass: each command letter is a
+         * token, numbers are separated by whitespaces or commas.
+         */
+        static std::vector< std::string_view > split_path(
+            std::string_view path )
         {
-            add_spaces(
-                path, 'M', 'm', 'L', 'l', 'H', 'h', 'V', 'v', 'Z', 'z' );
+            std::vector< std::string_view > tokens;
+            std::size_t start{ 0 };
+            bool in_token{ false };
+            const auto flush = [&]( std::size_t end ) {
+                if( in_token )
+                {
+                    tokens.push_back( path.substr( start, end - start ) );
+                    in_token = false;
+                }
+            };
+            for( const auto c : geode::Range{ path.size() } )
+            {
+                const auto character = path[c];
+                if( is_separator( character ) )
+                {
+                    flush( c );
+                    continue;
+                }
+                if( is_command_letter( character ) )
+                {
+                    flush( c );
+                    tokens.push_back( path.substr( c, 1 ) );
+                    continue;
+                }
+                if( !in_token )
+                {
+                    start = c;
+                    in_token = true;
+                }
+            }
+            flush( path.size() );
+            return tokens;
         }
 
         std::vector< double > get_params(
-            const std::vector< std::string >& tokens,
+            absl::Span< const std::string_view > tokens,
             geode::index_t first,
             geode::index_t nb_params ) const
         {
@@ -244,7 +274,7 @@ namespace
                 const auto& token = tokens[first + token_id];
                 try
                 {
-                    params[token_id] = std::stod( token );
+                    params[token_id] = std::stod( std::string{ token } );
                 }
                 catch( std::invalid_argument& /*unused*/ )
                 {
@@ -258,19 +288,15 @@ namespace
             return params;
         }
 
-        geode::index_t update_command( const std::vector< std::string >& tokens,
+        geode::index_t update_command(
+            absl::Span< const std::string_view > tokens,
             geode::index_t token_id,
             Command& command ) const
         {
             const auto& token = tokens[token_id];
-            if( string_isalpha( token ) )
+            if( token.size() == 1 && is_command_letter( token.front() ) )
             {
-                geode::OpenGeodeIOModelException::check_exception(
-                    token.size() == 1, nullptr,
-                    geode::OpenGeodeException::TYPE::data,
-                    "[SVGInputImpl::update_command] Command should be single "
-                    "letter" );
-                command.update( *token.c_str() );
+                command.update( token.front() );
                 return token_id + 1;
             }
 
@@ -278,7 +304,8 @@ namespace
             return token_id;
         }
 
-        geode::index_t apply_command( const std::vector< std::string >& tokens,
+        geode::index_t apply_command(
+            absl::Span< const std::string_view > tokens,
             geode::index_t token_id,
             Command& command,
             geode::Point2D& cur_position,
@@ -303,7 +330,7 @@ namespace
             return token_id + nb_params - 1;
         }
 
-        void process_tokens( const std::vector< std::string >& tokens )
+        void process_tokens( absl::Span< const std::string_view > tokens )
         {
             std::vector< geode::Point2D > vertices;
             Command cur_command;

@@ -23,6 +23,11 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+#include <string>
+
+#include <absl/strings/str_cat.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
@@ -72,6 +77,37 @@ void test_section( const geode::Section& section )
     }
 }
 
+void write_svg( std::string_view filename, std::string_view content )
+{
+    std::ofstream file{ geode::to_string( filename ) };
+    file << "<svg xmlns=\"http://www.w3.org/2000/svg\">" << content << "</svg>";
+}
+
+geode::Section load_svg_path( std::string_view filename, std::string_view path )
+{
+    write_svg( filename, absl::StrCat( "<g><path d=\"", path, "\"/></g>" ) );
+    return geode::load_section( filename );
+}
+
+void test_long_path()
+{
+    constexpr geode::index_t NB_SEGMENTS{ 20000 };
+    std::string path{ "M 0,0" };
+    for( const auto s : geode::Range{ 1, NB_SEGMENTS + 1 } )
+    {
+        absl::StrAppend( &path, "L", s, ",", s % 2 );
+    }
+    const auto section = load_svg_path( "long_path.svg", path );
+    geode::OpenGeodeIOModelException::test(
+        section.nb_lines() == 1, "Long path should give one line" );
+    for( const auto& line : section.lines() )
+    {
+        geode::OpenGeodeIOModelException::test(
+            line.mesh().nb_vertices() == NB_SEGMENTS + 1,
+            "Long path line should have one vertex per point" );
+    }
+}
+
 int main()
 {
     try
@@ -89,6 +125,8 @@ int main()
         geode::save_section( section, filename );
         auto reloaded_section = geode::load_section( filename );
         test_section( reloaded_section );
+
+        test_long_path();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
