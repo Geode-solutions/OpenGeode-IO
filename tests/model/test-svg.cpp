@@ -26,11 +26,15 @@
 #include <fstream>
 #include <string>
 
+#include <absl/algorithm/container.h>
+#include <absl/strings/match.h>
 #include <absl/strings/str_cat.h>
 
 #include <geode/basic/assert.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+
+#include <geode/geometry/point.hpp>
 
 #include <geode/mesh/core/edged_curve.hpp>
 #include <geode/mesh/core/point_set.hpp>
@@ -108,6 +112,89 @@ void test_long_path()
     }
 }
 
+void test_load_failure( std::string_view filename, std::string_view path )
+{
+    try
+    {
+        const auto section = load_svg_path( filename, path );
+    }
+    catch( const geode::OpenGeodeException& exception )
+    {
+        // load_section reports every error as internal: check that the
+        // reader detected the problem itself
+        geode::OpenGeodeIOModelException::test(
+            absl::StrContains( exception.what(), "[SVGInput]" ), "Loading ",
+            filename,
+            " should fail with an SVGInput error, got: ", exception.what() );
+        return;
+    }
+    throw geode::OpenGeodeIOModelException{ nullptr,
+        geode::OpenGeodeException::TYPE::internal, "Loading ", filename,
+        " should fail" };
+}
+
+std::vector< std::vector< geode::Point2D > > line_points(
+    const geode::Section& section )
+{
+    std::vector< std::vector< geode::Point2D > > lines;
+    for( const auto& line : section.lines() )
+    {
+        auto& points = lines.emplace_back();
+        const auto& mesh = line.mesh();
+        for( const auto v : geode::Range{ mesh.nb_vertices() } )
+        {
+            points.push_back( mesh.point( v ) );
+        }
+    }
+    absl::c_sort( lines );
+    return lines;
+}
+
+void check_lines( std::string_view filename,
+    std::string_view path,
+    const std::vector< std::vector< geode::Point2D > >& expected )
+{
+    const auto section = load_svg_path( filename, path );
+    auto sorted_expected = expected;
+    absl::c_sort( sorted_expected );
+    const auto lines = line_points( section );
+    geode::OpenGeodeIOModelException::test(
+        lines == sorted_expected, "Wrong lines for path \"", path, "\"" );
+}
+
+void test_path_grammar()
+{
+    // Closepath goes back to the subpath start and does not eat the next
+    // command
+    check_lines( "closepath.svg", "M 0 0 L 1 0 L 1 1 Z M 5 5 L 6 5",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 0 } },
+              geode::Point2D{ { 1, 1 } }, geode::Point2D{ { 0, 0 } } },
+            { geode::Point2D{ { 5, 5 } }, geode::Point2D{ { 6, 5 } } } } );
+    // Drawing after a closepath starts from the subpath start
+    check_lines( "after_closepath.svg", "M 0 0 L 1 1 Z l 1 0",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 1 } },
+              geode::Point2D{ { 0, 0 } } },
+            { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 0 } } } } );
+    // Repeated closepath
+    check_lines( "double_closepath.svg", "M 0 0 L 1 0 L 1 1 Z Z",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 1, 0 } },
+            geode::Point2D{ { 1, 1 } }, geode::Point2D{ { 0, 0 } } } } );
+    // Implicit repetitions keep the command, except after a moveto
+    check_lines( "implicit_h.svg", "M 0 0 h 5 10",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 5, 0 } },
+            geode::Point2D{ { 15, 0 } } } } );
+    check_lines( "implicit_v.svg", "M 0 0 V 5 7",
+        { { geode::Point2D{ { 0, 0 } }, geode::Point2D{ { 0, 5 } },
+            geode::Point2D{ { 0, 7 } } } } );
+    check_lines( "implicit_moveto.svg", "m 1 1 2 2",
+        { { geode::Point2D{ { 1, 1 } }, geode::Point2D{ { 3, 3 } } } } );
+
+    test_load_failure( "truncated_path.svg", "M 10" );
+    test_load_failure( "truncated_lineto.svg", "M 0 0 L 1" );
+    test_load_failure( "number_first.svg", "10 10 L 1 1" );
+    test_load_failure( "unsupported_command.svg", "M 0 0 C 1 1 2 2 3 3" );
+}
+
 int main()
 {
     try
@@ -127,6 +214,7 @@ int main()
         test_section( reloaded_section );
 
         test_long_path();
+        test_path_grammar();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
