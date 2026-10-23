@@ -23,15 +23,14 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 
-#include <absl/container/flat_hash_map.h>
 #include <absl/types/span.h>
 
 #include <geode/basic/mapping.hpp>
-#include <geode/basic/uuid.hpp>
 
-#include <geode/geometry/nn_search.hpp>
+#include <geode/mesh/core/point_set.hpp>
 
 #include <geode/io/time_series/common.hpp>
 
@@ -39,45 +38,33 @@ namespace geode
 {
     FORWARD_DECLARATION_DIMENSION_CLASS( SolidMesh );
     ALIAS_3D( SolidMesh );
-    class BRep;
 } // namespace geode
 
 namespace geode::internal
 {
-    // Solid elements to Block elements, per Block id
-    struct SolidToBlocksMappings
+    // Vertices of a .pvd dataset to unique vertices, its polyhedra to cell
+    // barycenters
+    struct PVDDatasetMappings
     {
-        absl::flat_hash_map< uuid, GenericMapping< index_t > > polyhedra;
-        absl::flat_hash_map< uuid, GenericMapping< index_t > > vertices;
+        GenericMapping< index_t > vertices;
+        GenericMapping< index_t > polyhedra;
     };
 
-    class BRepBlocksMatcher
+    // Point sets of a .pvd time series, given to the ExternalTimeSeriesHelpers
+    // once all the time steps are written
+    struct PVDPointSets
     {
-        struct BlockElement
-        {
-            uuid block_id;
-            index_t element;
-        };
-
-    public:
-        explicit BRepBlocksMatcher( const BRep& brep );
-
-        [[nodiscard]] SolidToBlocksMappings mappings(
-            const SolidMesh3D& solid ) const;
-
-    private:
-        [[nodiscard]] std::vector< Point3D > compute_barycenters();
-
-        [[nodiscard]] std::vector< index_t > match_polyhedra(
-            const SolidMesh3D& solid ) const;
-
-        [[nodiscard]] SolidToBlocksMappings build_mappings(
-            const SolidMesh3D& solid,
-            absl::Span< const index_t > matched_ids ) const;
-
-    private:
-        const BRep& brep_;
-        std::vector< BlockElement > polyhedra_;
-        NNSearch3D barycenters_;
+        std::unique_ptr< PointSet3D > unique_vertices;
+        std::unique_ptr< PointSet3D > cell_barycenters;
+        std::vector< PVDDatasetMappings > mappings;
     };
+
+    /*!
+     * Create the .pvd point sets from the datasets of a time step
+     * (e.g. one per GEOS region and per MPI rank): the dataset vertices,
+     * colocated ones merged, and the dataset polyhedron barycenters, with
+     * the mappings of each dataset to them.
+     */
+    [[nodiscard]] PVDPointSets create_pvd_point_sets(
+        absl::Span< const std::unique_ptr< SolidMesh3D > > meshes );
 } // namespace geode::internal

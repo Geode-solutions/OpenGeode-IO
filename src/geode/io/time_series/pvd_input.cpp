@@ -26,6 +26,7 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -39,13 +40,15 @@
 #include <geode/basic/filename.hpp>
 #include <geode/basic/types.hpp>
 
+#include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
 
+#include <geode/model/helpers/external_time_series_helpers.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
-#include <geode/io/time_series/internal/brep_blocks_matcher.hpp>
-#include <geode/io/time_series/internal/brep_time_attributes_transfer.hpp>
+#include <geode/io/time_series/internal/pvd_attributes_transfer.hpp>
+#include <geode/io/time_series/internal/pvd_point_sets.hpp>
 
 namespace
 {
@@ -199,6 +202,43 @@ namespace
         }
         return files;
     }
+
+    geode::ExternalTimeSeriesHelpers read_time_series(
+        std::string_view filename )
+    {
+        geode::internal::PVDAttributesTransfer transfer{
+            GEOS_IGNORED_ATTRIBUTES
+        };
+        std::optional< geode::internal::PVDPointSets > point_sets;
+        for( const auto& dataset : read_pvd_collection( filename ) )
+        {
+            std::vector< std::unique_ptr< geode::SolidMesh3D > > meshes;
+            for( const auto& vtu : dataset_vtu_files( dataset.file ) )
+            {
+                meshes.push_back( geode::load_polyhedral_solid< 3 >( vtu ) );
+            }
+            if( !point_sets )
+            {
+                point_sets = geode::internal::create_pvd_point_sets( meshes );
+            }
+            const auto nb_datasets = point_sets->mappings.size();
+            geode::OpenGeodeIOTimeSeriesException::check_exception(
+                meshes.size() == nb_datasets, nullptr,
+                geode::OpenGeodeException::TYPE::data, "[PVDInput] ",
+                dataset.file, " lists ", meshes.size(),
+                " datasets whereas the first time step lists ", nb_datasets );
+            transfer.write_step( dataset.time, meshes, point_sets.value() );
+        }
+        geode::ExternalTimeSeriesHelpers helpers;
+        if( point_sets )
+        {
+            helpers.set_unique_vertices(
+                std::move( point_sets->unique_vertices ) );
+            helpers.set_cell_barycenters(
+                std::move( point_sets->cell_barycenters ) );
+        }
+        return helpers;
+    }
 } // namespace
 
 namespace geode::internal
@@ -238,30 +278,6 @@ namespace geode::internal
 
     void PVDBRepTimeSeriesInput::read( BRep& brep )
     {
-        const BRepBlocksMatcher matcher{ brep };
-        BRepTimeAttributesTransfer transfer{ brep, GEOS_IGNORED_ATTRIBUTES };
-        std::vector< SolidToBlocksMappings > mappings;
-        for( const auto& dataset : read_pvd_collection( this->filename() ) )
-        {
-            std::vector< std::unique_ptr< SolidMesh3D > > meshes;
-            for( const auto& vtu : dataset_vtu_files( dataset.file ) )
-            {
-                meshes.push_back( load_polyhedral_solid< 3 >( vtu ) );
-            }
-            if( mappings.empty() )
-            {
-                for( const auto& mesh : meshes )
-                {
-                    mappings.push_back( matcher.mappings( *mesh ) );
-                }
-            }
-            OpenGeodeIOTimeSeriesException::check_exception(
-                meshes.size() == mappings.size(), nullptr,
-                OpenGeodeException::TYPE::data, "[PVDInput] ", dataset.file,
-                " lists ", meshes.size(),
-                " datasets whereas the first time step lists ",
-                mappings.size() );
-            transfer.write_step( dataset.time, meshes, mappings );
-        }
+        read_time_series( this->filename() ).apply_to( brep );
     }
 } // namespace geode::internal
