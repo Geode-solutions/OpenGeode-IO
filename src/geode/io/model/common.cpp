@@ -32,7 +32,6 @@
 #include <geode/io/model/detail/vtm_brep_output.hpp>
 #include <geode/io/model/detail/vtm_section_output.hpp>
 #include <geode/io/model/internal/gid_output.hpp>
-#include <geode/io/model/internal/msh_common.hpp>
 #include <geode/io/model/internal/msh_input.hpp>
 #include <geode/io/model/internal/msh_output.hpp>
 #include <geode/io/model/internal/svg_input.hpp>
@@ -85,7 +84,5 @@ namespace geode
 
         register_brep_output();
         register_section_output();
-
-        internal::initialize_gmsh_factory();
     }
 } // namespace geode

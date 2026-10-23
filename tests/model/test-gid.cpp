@@ -23,20 +23,34 @@
 
 #include <geode/tests_config.hpp>
 
+#include <fstream>
+
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
+#include <absl/strings/str_cat.h>
+
 #include <geode/basic/assert.hpp>
 #include <geode/basic/constant_attribute.hpp>
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
+#include <geode/basic/string.hpp>
 
+#include <geode/geometry/point.hpp>
+
+#include <geode/mesh/builder/edged_curve_builder.hpp>
+#include <geode/mesh/builder/surface_mesh_builder.hpp>
 #include <geode/mesh/core/edged_curve.hpp>
+#include <geode/mesh/core/mesh_factory.hpp>
 #include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/core/polyhedral_solid.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 
 #include <geode/model/mixin/core/block.hpp>
 #include <geode/model/mixin/core/corner.hpp>
 #include <geode/model/mixin/core/line.hpp>
 #include <geode/model/mixin/core/surface.hpp>
+#include <geode/model/representation/builder/brep_builder.hpp>
 #include <geode/model/representation/core/brep.hpp>
 #include <geode/model/representation/io/brep_input.hpp>
 #include <geode/model/representation/io/brep_output.hpp>
@@ -171,14 +185,135 @@ namespace
         test_brep( mss_description );
     }
 
+    struct GidContent
+    {
+        absl::flat_hash_map< geode::index_t, geode::Point3D > nodes;
+        std::vector< geode::index_t > element_ids;
+        std::vector< geode::index_t > element_nodes;
+    };
+
+    GidContent read_gid_file( std::string_view filename )
+    {
+        std::ifstream file{ geode::to_string( filename ) };
+        geode::OpenGeodeIOModelException::test(
+            file.good(), "Cannot open ", filename );
+        GidContent content;
+        std::string line;
+        bool in_coordinates{ false };
+        bool in_elements{ false };
+        while( std::getline( file, line ) )
+        {
+            if( line == "Coordinates" || line == "Elements" )
+            {
+                in_coordinates = line == "Coordinates";
+                in_elements = line == "Elements";
+                continue;
+            }
+            if( geode::string_starts_with( line, "End" )
+                || geode::string_starts_with( line, "MESH" ) )
+            {
+                in_coordinates = false;
+                in_elements = false;
+                continue;
+            }
+            const auto tokens = geode::string_split( line );
+            if( in_coordinates )
+            {
+                content.nodes.emplace( geode::string_to_index( tokens[0] ),
+                    geode::Point3D{ { geode::string_to_double( tokens[1] ),
+                        geode::string_to_double( tokens[2] ),
+                        geode::string_to_double( tokens[3] ) } } );
+            }
+            else if( in_elements )
+            {
+                content.element_ids.push_back(
+                    geode::string_to_index( tokens[0] ) );
+                // Last value is the material number
+                for( const auto t : geode::Range{ 1, tokens.size() - 1 } )
+                {
+                    content.element_nodes.push_back(
+                        geode::string_to_index( tokens[t] ) );
+                }
+            }
+        }
+        return content;
+    }
+
+    void check_gid_file( const geode::BRep& brep,
+        std::string_view filename,
+        geode::index_t nb_expected_elements )
+    {
+        const auto content = read_gid_file( filename );
+        for( const auto& [node, point] : content.nodes )
+        {
+            const auto& cmv = brep.component_mesh_vertices( node - 1 ).front();
+            geode::Point3D model_point;
+            if( cmv.component_id.type
+                == geode::Block3D::component_type_static() )
+            {
+                model_point = brep.block( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            else if( cmv.component_id.type
+                     == geode::Surface3D::component_type_static() )
+            {
+                model_point = brep.surface( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            else if( cmv.component_id.type
+                     == geode::Line3D::component_type_static() )
+            {
+                model_point =
+                    brep.line( cmv.component_id.id ).mesh().point( cmv.vertex );
+            }
+            else
+            {
+                model_point = brep.corner( cmv.component_id.id )
+                                  .mesh()
+                                  .point( cmv.vertex );
+            }
+            geode::OpenGeodeIOModelException::test( point == model_point,
+                "GiD node ", node,
+                " coordinates should be exact: ", point.string(), " vs ",
+                model_point.string() );
+        }
+        absl::flat_hash_set< geode::index_t > element_ids{
+            content.element_ids.begin(), content.element_ids.end()
+        };
+        geode::OpenGeodeIOModelException::test(
+            content.element_ids.size() == nb_expected_elements,
+            "Wrong number of elements in GiD file" );
+        geode::OpenGeodeIOModelException::test(
+            element_ids.size() == content.element_ids.size(),
+            "GiD element ids should be unique" );
+        for( const auto node : content.element_nodes )
+        {
+            geode::OpenGeodeIOModelException::test(
+                content.nodes.contains( node ), "GiD element node ", node,
+                " should have coordinates" );
+        }
+    }
+
+    geode::index_t nb_gid_elements( const geode::BRep& brep )
+    {
+        geode::index_t nb_elements{ 0 };
+        for( const auto& block : brep.blocks() )
+        {
+            nb_elements += block.mesh().nb_polyhedra();
+        }
+        for( const auto& surface : brep.surfaces() )
+        {
+            nb_elements += surface.mesh().nb_polygons();
+        }
+        return nb_elements;
+    }
+
     using test_function = void ( * )( const geode::BRep& );
 
-    void run_test( std::string_view short_filename, test_function test )
+    void add_material_attributes( const geode::BRep& brep )
     {
-        // Load file
-        auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
-        test( brep );
         geode::AttributeValues< geode::index_t > default_values;
         default_values.default_value = 1;
         default_values.no_value = geode::NO_ID;
@@ -204,9 +339,91 @@ namespace
                         geode::index_t >(
                         "material_number", default_values, properties );
         }
+    }
+
+    void run_test( std::string_view short_filename, test_function test )
+    {
+        // Load file
+        auto brep = geode::load_brep(
+            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
+        test( brep );
+        add_material_attributes( brep );
         const auto filename_gid =
             absl::StrCat( short_filename, "_output.gid_msh" );
         geode::save_brep( brep, filename_gid );
+        check_gid_file( brep, absl::StrCat( short_filename, "_output.gid.msh" ),
+            nb_gid_elements( brep ) );
+    }
+
+    /*!
+     * Adds a fracture surface outside of the blocks, bounded by a line whose
+     * vertices are registered before the surface ones.
+     */
+    void add_fracture( geode::BRep& brep )
+    {
+        geode::BRepBuilder builder{ brep };
+        const auto first_unique_vertex = builder.create_unique_vertices( 3 );
+        const auto& line = brep.line( builder.add_line() );
+        auto line_builder = builder.line_mesh_builder( line );
+        line_builder->create_point( geode::Point3D{ { 10, 10, 10 } } );
+        line_builder->create_point( geode::Point3D{ { 11, 10, 10 } } );
+        line_builder->create_edge( 0, 1 );
+        for( const auto v : geode::LRange{ 2 } )
+        {
+            builder.set_unique_vertex(
+                { line.component_id(), v }, first_unique_vertex + v );
+        }
+        const auto& surface =
+            brep.surface( builder.add_surface( geode::MeshFactory::default_impl(
+                geode::TriangulatedSurface3D::type_name_static() ) ) );
+        auto surface_builder = builder.surface_mesh_builder( surface );
+        surface_builder->create_point( geode::Point3D{ { 10, 10, 10 } } );
+        surface_builder->create_point( geode::Point3D{ { 11, 10, 10 } } );
+        surface_builder->create_point( geode::Point3D{ { 10, 11, 10 } } );
+        surface_builder->create_polygon( { 0, 1, 2 } );
+        for( const auto v : geode::LRange{ 3 } )
+        {
+            builder.set_unique_vertex(
+                { surface.component_id(), v }, first_unique_vertex + v );
+        }
+        builder.add_line_surface_boundary_relationship( line, surface );
+    }
+
+    void test_wrong_material_type()
+    {
+        const auto brep =
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+        add_material_attributes( brep );
+        geode::AttributeValues< double > default_values;
+        default_values.default_value = 1;
+        default_values.no_value = -1;
+        for( const auto& block : brep.blocks() )
+        {
+            auto& manager = block.mesh().polyhedron_attribute_manager();
+            manager.delete_attribute(
+                manager.attribute_ids_matching_name( "material_number" )
+                    .value()
+                    .at( 0 ) );
+            [[maybe_unused]] auto attribute =
+                manager.create_attribute< geode::ConstantAttribute, double >(
+                    "material_number", default_values,
+                    geode::AttributeProperties{} );
+        }
+        geode::OpenGeodeIOModelException::test(
+            !geode::is_brep_saveable( brep, "wrong_type.gid_msh" ),
+            "A material number which is not an index_t should not be "
+            "saveable" );
+    }
+
+    void test_fracture_outside_blocks()
+    {
+        auto brep =
+            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+        add_fracture( brep );
+        add_material_attributes( brep );
+        geode::save_brep( brep, "fracture_output.gid_msh" );
+        check_gid_file(
+            brep, "fracture_output.gid.msh", nb_gid_elements( brep ) );
     }
 } // namespace
 
@@ -216,6 +433,8 @@ int main()
     {
         geode::OpenGeodeIOModelLibrary::initialize();
         run_test( "mss", &test_brep_mss );
+        test_fracture_outside_blocks();
+        test_wrong_material_type();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

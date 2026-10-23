@@ -42,44 +42,54 @@
 #include <geode/model/mixin/core/surface.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
+#include <geode/io/model/common.hpp>
+#include <geode/io/model/internal/text_output.hpp>
+
 namespace
 {
     constexpr auto FRACSIMA_ATTRIBUTE_NAME = "material_number";
     constexpr geode::index_t NODE_OFFSET = 1;
     constexpr geode::index_t ELEMENT_OFFSET = 1;
 
-    geode::index_t get_material_number_value( const geode::Surface3D& surface )
+    std::shared_ptr< geode::ReadOnlyAttribute< geode::index_t > >
+        material_number_attribute( const geode::AttributeManager& manager )
     {
         const auto attribute_ids =
-            surface.mesh()
-                .polygon_attribute_manager()
-                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-        geode::OpenGeodeIOModelException::check_exception(
-            attribute_ids.has_value(), nullptr,
-            geode::OpenGeodeException::TYPE::data,
-            "The surface does not have a material number attribute" );
-        auto attribute = surface.mesh()
-                             .polygon_attribute_manager()
-                             .find_read_only_attribute< geode::index_t >(
-                                 attribute_ids.value().at( 0 ) );
+            manager.attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
+        if( !attribute_ids )
+        {
+            return nullptr;
+        }
+        return std::dynamic_pointer_cast<
+            geode::ReadOnlyAttribute< geode::index_t > >(
+            manager.find_generic_attribute( attribute_ids.value().at( 0 ) ) );
+    }
+
+    geode::index_t get_material_number_value(
+        const geode::AttributeManager& manager, std::string_view component )
+    {
+        const auto attribute = material_number_attribute( manager );
+        geode::OpenGeodeIOModelException::check_exception( attribute != nullptr,
+            nullptr, geode::OpenGeodeException::TYPE::data, "[GIDOutput] The ",
+            component, " does not have an index_t attribute named ",
+            FRACSIMA_ATTRIBUTE_NAME );
+        if( manager.nb_elements() == 0 )
+        {
+            return geode::NO_ID;
+        }
         return attribute->value( 0 );
+    }
+
+    geode::index_t get_material_number_value( const geode::Surface3D& surface )
+    {
+        return get_material_number_value(
+            surface.mesh().polygon_attribute_manager(), "Surface" );
     }
 
     geode::index_t get_material_number_value( const geode::Block3D& block )
     {
-        const auto attribute_ids =
-            block.mesh()
-                .polyhedron_attribute_manager()
-                .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-        geode::OpenGeodeIOModelException::check_exception(
-            attribute_ids.has_value(), nullptr,
-            geode::OpenGeodeException::TYPE::data,
-            "The surface does not have a material number attribute" );
-        auto attribute = block.mesh()
-                             .polyhedron_attribute_manager()
-                             .find_read_only_attribute< geode::index_t >(
-                                 attribute_ids.value().at( 0 ) );
-        return attribute->value( 0 );
+        return get_material_number_value(
+            block.mesh().polyhedron_attribute_manager(), "Block" );
     }
 
     class GIDOutputImpl
@@ -104,6 +114,16 @@ namespace
         }
 
     private:
+        template < typename Component >
+        std::shared_ptr< geode::ReadOnlyAttribute< geode::index_t > >
+            unique_vertex_attribute( const Component& component ) const
+        {
+            return component.mesh()
+                .vertex_attribute_manager()
+                .template find_read_only_attribute< geode::index_t >(
+                    brep_.unique_vertex_attribute_id() );
+        }
+
         void write_header_block()
         {
             file_ << "MESH";
@@ -125,10 +145,10 @@ namespace
                         == geode::Block3D::component_type_static() )
                     {
                         file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                        file_ << brep_.block( cmv.component_id.id )
-                                     .mesh()
-                                     .point( cmv.vertex )
-                                     .string()
+                        file_ << geode::internal::point_string(
+                            coordinates_, brep_.block( cmv.component_id.id )
+                                              .mesh()
+                                              .point( cmv.vertex ) )
                               << geode::EOL;
                         break;
                     }
@@ -144,16 +164,16 @@ namespace
             for( const auto& block : brep_.blocks() )
             {
                 const auto material_number = get_material_number_value( block );
+                const auto unique_vertices = unique_vertex_attribute( block );
                 for( const auto polyhedron_id :
                     geode::Range{ block.mesh().nb_polyhedra() } )
                 {
-                    file_ << polyhedron_id + ELEMENT_OFFSET;
+                    file_ << nb_tet + polyhedron_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 4 } )
                     {
                         const auto tet_vertex = block.mesh().polyhedron_vertex(
                             { polyhedron_id, vertex_lid } );
-                        const auto uid = brep_.unique_vertex(
-                            { block.component_id(), tet_vertex } );
+                        const auto uid = unique_vertices->value( tet_vertex );
                         file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
@@ -207,11 +227,16 @@ namespace
                 for( const auto& cmv :
                     brep_.component_mesh_vertices( uv_index ) )
                 {
+                    if( cmv.component_id.type
+                        != geode::Surface3D::component_type_static() )
+                    {
+                        continue;
+                    }
                     file_ << uv_index + NODE_OFFSET << geode::SPACE;
-                    file_ << brep_.surface( cmv.component_id.id )
-                                 .mesh()
-                                 .point( cmv.vertex )
-                                 .string()
+                    file_ << geode::internal::point_string(
+                        coordinates_, brep_.surface( cmv.component_id.id )
+                                          .mesh()
+                                          .point( cmv.vertex ) )
                           << geode::EOL;
                     break;
                 }
@@ -222,26 +247,29 @@ namespace
         void write_triangles( const geode::index_t nb_tet )
         {
             file_ << "Elements" << geode::EOL;
+            auto first_triangle = nb_tet;
             for( const auto& surface : brep_.surfaces() )
             {
                 const auto material_number =
                     get_material_number_value( surface );
 
+                const auto unique_vertices = unique_vertex_attribute( surface );
                 for( auto facet_id :
                     geode::Range{ surface.mesh().nb_polygons() } )
                 {
-                    file_ << nb_tet + facet_id + ELEMENT_OFFSET;
+                    file_ << first_triangle + facet_id + ELEMENT_OFFSET;
                     for( const auto vertex_lid : geode::LRange{ 3 } )
                     {
                         const auto triangle_vertex =
                             surface.mesh().polygon_vertex(
                                 { facet_id, vertex_lid } );
-                        const auto uid = brep_.unique_vertex(
-                            { surface.component_id(), triangle_vertex } );
+                        const auto uid =
+                            unique_vertices->value( triangle_vertex );
                         file_ << geode::SPACE << uid + NODE_OFFSET;
                     }
                     file_ << geode::SPACE << material_number << geode::EOL;
                 }
+                first_triangle += surface.mesh().nb_polygons();
             }
             file_ << "End Elements" << geode::EOL;
         }
@@ -249,6 +277,7 @@ namespace
     private:
         std::ofstream file_;
         const geode::BRep& brep_;
+        std::string coordinates_;
     };
 } // namespace
 
@@ -273,11 +302,8 @@ namespace geode::internal
             {
                 return false;
             }
-            const auto attribute_ids =
-                surface.mesh()
-                    .polygon_attribute_manager()
-                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-            if( !attribute_ids )
+            if( !material_number_attribute(
+                    surface.mesh().polygon_attribute_manager() ) )
             {
                 return false;
             }
@@ -289,11 +315,8 @@ namespace geode::internal
             {
                 return false;
             }
-            const auto attribute_ids =
-                block.mesh()
-                    .polyhedron_attribute_manager()
-                    .attribute_ids_matching_name( FRACSIMA_ATTRIBUTE_NAME );
-            if( !attribute_ids )
+            if( !material_number_attribute(
+                    block.mesh().polyhedron_attribute_manager() ) )
             {
                 return false;
             }

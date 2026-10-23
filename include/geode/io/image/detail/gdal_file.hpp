@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <absl/types/span.h>
+
 #include <geode/basic/pimpl.hpp>
 
 #include <geode/io/image/common.hpp>
@@ -39,16 +41,39 @@ namespace geode
 {
     namespace detail
     {
+        /*!
+         * While alive, GDAL warnings are logged and GDAL errors are not
+         * printed: they should be reported with last_error()
+         */
+        class opengeode_io_image_api GDALErrorScope
+        {
+        public:
+            GDALErrorScope();
+            ~GDALErrorScope();
+            GDALErrorScope( const GDALErrorScope& ) = delete;
+            GDALErrorScope& operator=( const GDALErrorScope& ) = delete;
+            GDALErrorScope( GDALErrorScope&& ) = delete;
+            GDALErrorScope& operator=( GDALErrorScope&& ) = delete;
+
+            std::string last_error() const;
+        };
+
         class opengeode_io_image_api GDALFile
         {
         public:
-            GDALFile( std::string_view filename );
+            /*!
+             * @param[in] allowed_drivers Names of the GDAL drivers which can
+             * open the file, all the drivers if empty
+             */
+            explicit GDALFile( std::string_view filename,
+                absl::Span< const char* const > allowed_drivers = {} );
             ~GDALFile();
 
             CoordinateSystem2D read_coordinate_system();
 
             bool is_coordinate_system_loadable();
 
+            // Existing files used with the main file (e.g. world files)
             template < typename AdditionalFiles >
             AdditionalFiles additional_files()
             {
@@ -56,7 +81,7 @@ namespace geode
                 for( auto& file : associated_files() )
                 {
                     files.optional_files.emplace_back(
-                        std::move( file ), true );
+                        std::move( file ), false );
                 }
                 return files;
             }

@@ -23,42 +23,243 @@
 
 #include <geode/io/image/internal/raster_image_input.hpp>
 
+#include <cmath>
+#include <limits>
+#include <optional>
+#include <vector>
+
 #include <gdal_priv.h>
 
-#include <geode/basic/attribute_manager.hpp>
+#include <absl/algorithm/container.h>
+#include <absl/types/span.h>
+
 #include <geode/basic/logger.hpp>
 #include <geode/basic/percentage.hpp>
 
+#include <geode/image/core/detail/color_channel.hpp>
 #include <geode/image/core/raster_image.hpp>
 #include <geode/image/core/rgb_color.hpp>
 
 namespace
 {
-    absl::FixedArray< GByte > read_color_component(
-        const geode::RasterImage2D& raster,
-        GDALDataset& gdal_data,
-        int component )
+    // Image formats only: other GDAL formats (e.g. VRT) can reference any
+    // other file or URL
+    constexpr std::array< const char*, 4 > IMAGE_DRIVERS{ "PNG", "JPEG", "BMP",
+        "GTiff" };
+
+    static_assert( sizeof( geode::RGBColor ) == 3,
+        "[ImageInputImpl] Colors should be stored as 3 bytes" );
+
+    // Image files store their top row first whereas raster images start from
+    // the bottom row: GDAL writes the rows backward from the last one
+    GByte* last_row_start( absl::Span< geode::RGBColor > colors, int width )
     {
-        const auto width = raster.nb_cells_in_direction( 0 );
-        const auto height = raster.nb_cells_in_direction( 1 );
-        absl::FixedArray< GByte > values( raster.nb_cells() );
-        const auto status =
-            gdal_data.GetRasterBand( component )
-                ->RasterIO( GF_Read, 0, 0, width, height, values.data(), width,
-                    height, GDT_Byte, 0, 0 );
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast< GByte* >( colors.data() + colors.size() )
+               - static_cast< std::ptrdiff_t >( 3 ) * width;
+    }
+
+    void check_read( CPLErr status )
+    {
         geode::OpenGeodeIOImageException::check_exception( status == CE_None,
             nullptr, geode::OpenGeodeException::TYPE::data,
-            "[ImageInputImpl] Failed to read color component" );
-        return values;
+            "[ImageInputImpl] Failed to read image pixels: ",
+            CPLGetLastErrorMsg() );
     }
-    std::array< geode::index_t, 3 > get_rgb_indices( GDALDataset& gdal_data )
+
+    void read_grey_band( GDALRasterBand& band,
+        absl::Span< geode::RGBColor > colors,
+        int width,
+        int height )
     {
-        std::array< geode::index_t, 3 > rgb_indices{ 0, 0, 0 };
-        const auto nb_color_components =
-            static_cast< geode::index_t >( gdal_data.GetRasterCount() );
-        for( const auto id : geode::Range( nb_color_components ) )
+        check_read( band.RasterIO( GF_Read, 0, 0, width, height,
+            last_row_start( colors, width ), width, height, GDT_Byte, 3,
+            -static_cast< GSpacing >( 3 ) * width ) );
+        for( auto& color : colors )
         {
-            const auto band_id = id + 1;
+            color.set_green( color.red() );
+            color.set_blue( color.red() );
+        }
+    }
+
+    // Colors of the palette entries when the band is a palette index
+    std::optional< std::vector< geode::RGBColor > > palette_colors(
+        GDALRasterBand& band )
+    {
+        if( band.GetColorInterpretation() != GCI_PaletteIndex )
+        {
+            return std::nullopt;
+        }
+        const auto* table = band.GetColorTable();
+        if( table == nullptr )
+        {
+            return std::nullopt;
+        }
+        const auto interpretation = table->GetPaletteInterpretation();
+        if( interpretation != GPI_RGB && interpretation != GPI_Gray )
+        {
+            geode::Logger::warning( "[ImageInputImpl] Palette is neither RGB "
+                                    "nor grey: palette indices are read as "
+                                    "grey levels" );
+            return std::nullopt;
+        }
+        std::vector< geode::RGBColor > colors(
+            static_cast< size_t >( table->GetColorEntryCount() ) );
+        for( auto entry_id = 0; entry_id < table->GetColorEntryCount();
+            entry_id++ )
+        {
+            const auto& entry = *table->GetColorEntry( entry_id );
+            const auto red = geode::detail::color_channel( entry.c1 );
+            if( interpretation == GPI_Gray )
+            {
+                colors[entry_id] = { red, red, red };
+                continue;
+            }
+            colors[entry_id] = { red, geode::detail::color_channel( entry.c2 ),
+                geode::detail::color_channel( entry.c3 ) };
+        }
+        return colors;
+    }
+
+    void read_palette_band( GDALRasterBand& band,
+        absl::Span< const geode::RGBColor > palette,
+        absl::Span< geode::RGBColor > colors,
+        int width,
+        int height )
+    {
+        std::vector< GUInt16 > indices( colors.size() );
+        constexpr auto INDEX_SIZE =
+            static_cast< GSpacing >( sizeof( GUInt16 ) );
+        check_read( band.RasterIO( GF_Read, 0, 0, width, height,
+            indices.data() + indices.size() - width, width, height, GDT_UInt16,
+            INDEX_SIZE, -INDEX_SIZE * width ) );
+        for( const auto pixel : geode::Indices{ indices } )
+        {
+            const auto index = indices[pixel];
+            // Indices without palette entry are black
+            colors[pixel] =
+                index < palette.size() ? palette[index] : geode::RGBColor{};
+        }
+    }
+
+    void read_rgb_bands( GDALDataset& dataset,
+        std::array< int, 3 > bands,
+        absl::Span< geode::RGBColor > colors,
+        int width,
+        int height )
+    {
+        check_read( dataset.RasterIO( GF_Read, 0, 0, width, height,
+            last_row_start( colors, width ), width, height, GDT_Byte, 3,
+            bands.data(), 3, -static_cast< GSpacing >( 3 ) * width, 1,
+            nullptr ) );
+    }
+
+    bool are_byte_bands( GDALDataset& dataset, absl::Span< const int > bands )
+    {
+        return absl::c_all_of( bands, [&dataset]( int band ) {
+            return dataset.GetRasterBand( band )->GetRasterDataType()
+                   == GDT_Byte;
+        } );
+    }
+
+    struct ValueRange
+    {
+        double min{ std::numeric_limits< double >::max() };
+        double max{ std::numeric_limits< double >::lowest() };
+    };
+
+    // Range of the band values, nodata values excluded
+    ValueRange bands_range(
+        GDALDataset& dataset, absl::Span< const int > bands )
+    {
+        ValueRange range;
+        for( const auto band : bands )
+        {
+            std::array< double, 2 > min_max;
+            if( dataset.GetRasterBand( band )->ComputeRasterMinMax(
+                    false, min_max.data() )
+                == CE_None )
+            {
+                range.min = std::min( range.min, min_max[0] );
+                range.max = std::max( range.max, min_max[1] );
+            }
+        }
+        return range;
+    }
+
+    void set_channel(
+        geode::RGBColor& color, size_t channel, geode::local_index_t value )
+    {
+        if( channel == 0 )
+        {
+            color.set_red( value );
+        }
+        else if( channel == 1 )
+        {
+            color.set_green( value );
+        }
+        else
+        {
+            color.set_blue( value );
+        }
+    }
+
+    // Values which are not 8-bit are linearly rescaled from the range of the
+    // values of all the bands to the color range, nodata values are black
+    void read_rescaled_bands( GDALDataset& dataset,
+        std::array< int, 3 > bands,
+        absl::Span< geode::RGBColor > colors,
+        int width,
+        int height )
+    {
+        const auto range = bands_range( dataset, bands );
+        const auto scale =
+            range.max > range.min
+                ? std::numeric_limits< geode::local_index_t >::max()
+                      / ( range.max - range.min )
+                : 0.;
+        std::vector< double > values( colors.size() );
+        constexpr auto VALUE_SIZE = static_cast< GSpacing >( sizeof( double ) );
+        for( const auto channel : geode::Indices{ bands } )
+        {
+            if( absl::c_find( bands, bands[channel] )
+                != bands.begin() + channel )
+            {
+                // Band already read for a previous channel
+                continue;
+            }
+            auto& band = *dataset.GetRasterBand( bands[channel] );
+            check_read( band.RasterIO( GF_Read, 0, 0, width, height,
+                values.data() + values.size() - width, width, height,
+                GDT_Float64, VALUE_SIZE, -VALUE_SIZE * width ) );
+            int has_nodata{ 0 };
+            const auto nodata = band.GetNoDataValue( &has_nodata );
+            for( const auto pixel : geode::Indices{ values } )
+            {
+                const auto value = values[pixel];
+                const auto is_nodata =
+                    std::isnan( value ) || ( has_nodata && value == nodata );
+                const auto channel_value =
+                    is_nodata ? geode::local_index_t{ 0 }
+                              : geode::detail::color_channel(
+                                    ( value - range.min ) * scale );
+                for( const auto other : geode::Indices{ bands } )
+                {
+                    if( bands[other] == bands[channel] )
+                    {
+                        set_channel( colors[pixel], other, channel_value );
+                    }
+                }
+            }
+        }
+    }
+
+    std::array< int, 3 > get_rgb_indices( GDALDataset& gdal_data )
+    {
+        std::array< int, 3 > rgb_indices{ 0, 0, 0 };
+        const auto nb_color_components = gdal_data.GetRasterCount();
+        for( int band_id = 1; band_id <= nb_color_components; band_id++ )
+        {
             GDALColorInterp colorInterp =
                 gdal_data.GetRasterBand( band_id )->GetColorInterpretation();
             if( colorInterp == GCI_RedBand )
@@ -74,58 +275,14 @@ namespace
                 rgb_indices[2] = band_id;
             }
         }
+        if( absl::c_linear_search( rgb_indices, 0 ) )
+        {
+            geode::Logger::warning( "[ImageInputImpl] Red, green and blue "
+                                    "bands are not identified: the first "
+                                    "three bands are used" );
+            return { 1, 2, 3 };
+        }
         return rgb_indices;
-    }
-
-    template < typename SpecificRange >
-    geode::RasterImage2D read_file( GDALDataset& gdal_data )
-    {
-        const auto width = gdal_data.GetRasterXSize();
-        const auto height = gdal_data.GetRasterYSize();
-        geode::RasterImage2D raster{ { static_cast< geode::index_t >( width ),
-            static_cast< geode::index_t >( height ) } };
-        const auto nb_color_components =
-            static_cast< geode::index_t >( gdal_data.GetRasterCount() );
-        if( nb_color_components <= 2 )
-        {
-            const auto grey_scale =
-                read_color_component( raster, gdal_data, 1 );
-            geode::index_t cell{ 0 };
-            for( const auto image_j :
-                SpecificRange{ raster.nb_cells_in_direction( 1 ) } )
-            {
-                for( const auto image_i :
-                    geode::Range{ raster.nb_cells_in_direction( 0 ) } )
-                {
-                    const auto pixel = image_i + width * image_j;
-                    const auto value = grey_scale[pixel];
-                    raster.set_color( cell++, { value, value, value } );
-                }
-            }
-        }
-        else if( nb_color_components <= 4 )
-        {
-            const auto rgb_indices = get_rgb_indices( gdal_data );
-            const auto red =
-                read_color_component( raster, gdal_data, rgb_indices[0] );
-            const auto green =
-                read_color_component( raster, gdal_data, rgb_indices[1] );
-            const auto blue =
-                read_color_component( raster, gdal_data, rgb_indices[2] );
-            geode::index_t cell{ 0 };
-            for( const auto image_j :
-                SpecificRange{ raster.nb_cells_in_direction( 1 ) } )
-            {
-                for( const auto image_i :
-                    geode::Range{ raster.nb_cells_in_direction( 0 ) } )
-                {
-                    const auto pixel = image_i + width * image_j;
-                    raster.set_color(
-                        cell++, { red[pixel], green[pixel], blue[pixel] } );
-                }
-            }
-        }
-        return raster;
     }
 } // namespace
 
@@ -134,27 +291,67 @@ namespace geode
     namespace internal
     {
         ImageInputImpl::ImageInputImpl( std::string_view filename )
-            : detail::GDALFile{ filename }
+            : detail::GDALFile{ filename, IMAGE_DRIVERS }
         {
         }
 
         RasterImage2D ImageInputImpl::read_file()
         {
-            return ::read_file< Range >( dataset() );
+            const detail::GDALErrorScope errors;
+            auto& gdal_data = dataset();
+            OpenGeodeIOImageException::check_exception(
+                gdal_data.GetRasterCount() > 0, nullptr,
+                OpenGeodeException::TYPE::data,
+                "[ImageInputImpl] No raster band in image file" );
+            const auto width = gdal_data.GetRasterXSize();
+            const auto height = gdal_data.GetRasterYSize();
+            RasterImage2D raster{ { static_cast< index_t >( width ),
+                static_cast< index_t >( height ) } };
+            const auto colors = raster.modifiable_colors();
+            const auto nb_color_components = gdal_data.GetRasterCount();
+            auto& first_band = *gdal_data.GetRasterBand( 1 );
+            if( const auto palette = palette_colors( first_band ) )
+            {
+                read_palette_band(
+                    first_band, palette.value(), colors, width, height );
+            }
+            else
+            {
+                const auto bands = nb_color_components <= 2
+                                       ? std::array< int, 3 >{ 1, 1, 1 }
+                                       : get_rgb_indices( gdal_data );
+                if( !are_byte_bands( gdal_data, bands ) )
+                {
+                    read_rescaled_bands(
+                        gdal_data, bands, colors, width, height );
+                }
+                else if( nb_color_components <= 2 )
+                {
+                    read_grey_band( first_band, colors, width, height );
+                }
+                else
+                {
+                    read_rgb_bands( gdal_data, bands, colors, width, height );
+                }
+            }
+            return raster;
         }
 
-        RasterImage2D ImageInputImpl::read_reversed_y_axis_file()
+        Percentage ImageInputImpl::is_loadable( std::string_view filename )
         {
-            return ::read_file< ReverseRange >( dataset() );
-        }
-
-        Percentage ImageInputImpl::is_loadable()
-        {
-            if( dataset().GetRasterCount() == 0 )
+            try
+            {
+                ImageInputImpl reader{ filename };
+                if( reader.dataset().GetRasterCount() == 0 )
+                {
+                    return Percentage{ 0 };
+                }
+                return Percentage{ 1 };
+            }
+            catch( const OpenGeodeException& )
             {
                 return Percentage{ 0 };
             }
-            return Percentage{ 1 };
         }
     } // namespace internal
 } // namespace geode

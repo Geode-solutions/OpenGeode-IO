@@ -1,0 +1,8 @@
+<VRTDataset rasterXSize="4" rasterYSize="3">
+  <VRTRasterBand dataType="Byte" band="1">
+    <SimpleSource>
+      <SourceFilename relativeToVRT="1">image_rgb.png</SourceFilename>
+      <SourceBand>1</SourceBand>
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>
