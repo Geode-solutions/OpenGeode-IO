@@ -44,7 +44,7 @@
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
 
-#include <geode/model/helpers/external_time_series_helpers.hpp>
+#include <geode/model/representation/core/external_time_series.hpp>
 #include <geode/model/representation/core/brep.hpp>
 
 #include <geode/io/time_series/internal/pvd_attributes_transfer.hpp>
@@ -203,7 +203,7 @@ namespace
         return files;
     }
 
-    geode::ExternalTimeSeriesHelpers read_time_series(
+    geode::ExternalTimeSeries read_time_series(
         std::string_view filename )
     {
         geode::internal::PVDAttributesTransfer transfer{
@@ -229,15 +229,15 @@ namespace
                 " datasets whereas the first time step lists ", nb_datasets );
             transfer.write_step( dataset.time, meshes, point_sets.value() );
         }
-        geode::ExternalTimeSeriesHelpers helpers;
+        geode::ExternalTimeSeries time_series;
         if( point_sets )
         {
-            helpers.set_unique_vertices(
+            time_series.set_unique_vertices(
                 std::move( point_sets->unique_vertices ) );
-            helpers.set_cell_barycenters(
+            time_series.set_cell_barycenters(
                 std::move( point_sets->cell_barycenters ) );
         }
-        return helpers;
+        return time_series;
     }
 } // namespace
 

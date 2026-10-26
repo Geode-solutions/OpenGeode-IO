@@ -50,7 +50,7 @@ namespace geode::internal
         GenericMapping< index_t > polyhedra;
     };
 
-    // Point sets of a .pvd time series, given to the ExternalTimeSeriesHelpers
+    // Point sets of a .pvd time series, given to the ExternalTimeSeries
     // once all the time steps are written
     struct PVDPointSets
     {
