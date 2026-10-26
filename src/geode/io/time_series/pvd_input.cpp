@@ -44,8 +44,8 @@
 #include <geode/mesh/core/polyhedral_solid.hpp>
 #include <geode/mesh/io/polyhedral_solid_input.hpp>
 
-#include <geode/model/representation/core/external_time_series.hpp>
 #include <geode/model/representation/core/brep.hpp>
+#include <geode/model/representation/core/external_time_series.hpp>
 
 #include <geode/io/time_series/internal/pvd_attributes_transfer.hpp>
 #include <geode/io/time_series/internal/pvd_point_sets.hpp>
@@ -203,8 +203,7 @@ namespace
         return files;
     }
 
-    geode::ExternalTimeSeries read_time_series(
-        std::string_view filename )
+    geode::ExternalTimeSeries read_time_series( std::string_view filename )
     {
         geode::internal::PVDAttributesTransfer transfer{
             GEOS_IGNORED_ATTRIBUTES
