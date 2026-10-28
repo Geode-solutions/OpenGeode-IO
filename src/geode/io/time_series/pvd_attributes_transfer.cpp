@@ -21,7 +21,7 @@
  *
  */
 
-#include <geode/io/time_series/internal/brep_time_attributes_transfer.hpp>
+#include <geode/io/time_series/internal/pvd_attributes_transfer.hpp>
 
 #include <vector>
 
@@ -31,10 +31,8 @@
 #include <geode/basic/logger.hpp>
 #include <geode/basic/range.hpp>
 
+#include <geode/mesh/core/point_set.hpp>
 #include <geode/mesh/core/solid_mesh.hpp>
-
-#include <geode/model/mixin/core/block.hpp>
-#include <geode/model/representation/core/brep.hpp>
 
 namespace
 {
@@ -70,8 +68,7 @@ namespace
         }
         if( shared->second.type != type )
         {
-            geode::Logger::warning( "[BRepTimeAttributesTransfer] Attribute ",
-                name,
+            geode::Logger::warning( "[PVDAttributesTransfer] Attribute ", name,
                 " has different types among the datasets of a time step, "
                 "values of type ",
                 type, " are not imported" );
@@ -86,65 +83,54 @@ namespace
 
 namespace geode::internal
 {
-    BRepTimeAttributesTransfer::BRepTimeAttributesTransfer(
-        BRep& brep, absl::Span< const std::string_view > ignored_attributes )
-        : brep_( brep ),
-          ignored_attributes_(
+    PVDAttributesTransfer::PVDAttributesTransfer(
+        absl::Span< const std::string_view > ignored_attributes )
+        : ignored_attributes_(
               ignored_attributes.begin(), ignored_attributes.end() )
     {
     }
 
-    void BRepTimeAttributesTransfer::write_step( double time,
+    void PVDAttributesTransfer::write_step( double time,
         absl::Span< const std::unique_ptr< SolidMesh3D > > meshes,
-        absl::Span< const SolidToBlocksMappings > mappings )
+        const PVDPointSets& point_sets )
     {
+        const auto& mappings = point_sets.mappings;
         OpenGeodeIOTimeSeriesException::check_exception(
             meshes.size() == mappings.size(), nullptr,
             OpenGeodeException::TYPE::internal,
-            "[BRepTimeAttributesTransfer::write_step] Each dataset should "
+            "[PVDAttributesTransfer::write_step] Each dataset should "
             "have its mappings" );
         std::vector< DatasetElements > vertices;
         std::vector< DatasetElements > polyhedra;
         for( const auto dataset : Indices{ meshes } )
         {
             const auto& mesh = *meshes[dataset];
+            const auto& dataset_mappings = mappings[dataset];
             vertices.push_back( { mesh.vertex_attribute_manager(),
-                mappings[dataset].vertices } );
+                point_sets.unique_vertices->vertex_attribute_manager(),
+                dataset_mappings.vertices } );
             polyhedra.push_back( { mesh.polyhedron_attribute_manager(),
-                mappings[dataset].polyhedra } );
+                point_sets.cell_barycenters->vertex_attribute_manager(),
+                dataset_mappings.polyhedra } );
         }
-        write_elements_step( time, vertices,
-            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
-                return block_mesh.vertex_attribute_manager();
-            } );
-        write_elements_step( time, polyhedra,
-            []( const SolidMesh3D& block_mesh ) -> AttributeManager& {
-                return block_mesh.polyhedron_attribute_manager();
-            } );
+        write_elements_step( time, vertices );
+        write_elements_step( time, polyhedra );
     }
 
-    void BRepTimeAttributesTransfer::write_elements_step( double time,
-        absl::Span< const DatasetElements > datasets,
-        absl::FunctionRef< AttributeManager&( const SolidMesh3D& ) >
-            block_manager )
+    void PVDAttributesTransfer::write_elements_step(
+        double time, absl::Span< const DatasetElements > datasets )
     {
         const auto names = unify_attribute_ids( datasets );
-        for( const auto& block : brep_.blocks() )
+        for( const auto& dataset : datasets )
         {
-            auto& manager = block_manager( block.mesh() );
             for( const auto& name : names )
             {
-                delete_existing_step( manager, name, time );
+                delete_existing_step( dataset.target, name, time );
             }
         }
         for( const auto& dataset : datasets )
         {
-            for( const auto& [block_id, mesh2block] : dataset.block_mappings )
-            {
-                write_block_step( time, dataset.manager,
-                    block_manager( brep_.block( block_id ).mesh() ),
-                    mesh2block );
-            }
+            write_dataset_step( time, dataset );
         }
     }
 
@@ -152,7 +138,7 @@ namespace geode::internal
     // so that every dataset fills the same time step attribute of a Block.
     // Returns the names of the transferred attributes.
     absl::flat_hash_set< std::string >
-        BRepTimeAttributesTransfer::unify_attribute_ids(
+        PVDAttributesTransfer::unify_attribute_ids(
             absl::Span< const DatasetElements > datasets )
     {
         absl::flat_hash_map< std::string, SharedAttribute > shared_attributes;
@@ -177,7 +163,7 @@ namespace geode::internal
         return names;
     }
 
-    std::optional< std::string > BRepTimeAttributesTransfer::transferred_name(
+    std::optional< std::string > PVDAttributesTransfer::transferred_name(
         const AttributeManager& manager, const uuid& attribute_id ) const
     {
         const auto attribute = manager.find_generic_attribute( attribute_id );
@@ -190,11 +176,10 @@ namespace geode::internal
         return name;
     }
 
-    void BRepTimeAttributesTransfer::write_block_step( double time,
-        const AttributeManager& manager,
-        AttributeManager& block_manager,
-        const GenericMapping< index_t >& mesh2block )
+    void PVDAttributesTransfer::write_dataset_step(
+        double time, const DatasetElements& dataset ) const
     {
+        const auto& manager = dataset.manager;
         for( const auto& attribute_id : manager.attribute_ids() )
         {
             if( !transferred_name( manager, attribute_id ) )
@@ -204,8 +189,8 @@ namespace geode::internal
             auto properties =
                 manager.find_generic_attribute( attribute_id )->properties();
             properties.time = time;
-            block_manager.import( manager, mesh2block, attribute_id );
-            block_manager.set_attribute_properties( attribute_id, properties );
+            dataset.target.import( manager, dataset.mapping, attribute_id );
+            dataset.target.set_attribute_properties( attribute_id, properties );
         }
     }
 } // namespace geode::internal
