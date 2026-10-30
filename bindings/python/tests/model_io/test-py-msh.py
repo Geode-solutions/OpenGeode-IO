@@ -20,12 +20,8 @@
 # SOFTWARE.
 
 import os
-import sys
-import platform
 
-if sys.version_info >= (3, 8, 0) and platform.system() == "Windows":
-    for path in [x.strip() for x in os.environ["PATH"].split(";") if x]:
-        os.add_dll_directory(path)
+import geode_test_env
 
 import opengeode
 import opengeode_io_py_model as model_io
