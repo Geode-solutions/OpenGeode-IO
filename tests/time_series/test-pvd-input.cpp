@@ -88,8 +88,10 @@ namespace
 
     geode::BRep load_model()
     {
-        return geode::load_brep(
-            simulation_file( "picasso_with_physical_properties.og_brep" ) );
+        const auto file_filename =
+            simulation_file( "picasso_with_physical_properties.og_brep" );
+        return geode::load_one(
+            geode::load_brep( file_filename ), file_filename );
     }
 
     bool is_reservoir( const geode::Block3D& block )
@@ -247,7 +249,8 @@ namespace
         check_brep( brep );
         const std::string saved_brep{ "pvd_input/picasso_results.og_brep" };
         geode::save_brep( brep, saved_brep );
-        check_brep( geode::load_brep( saved_brep ) );
+        check_brep(
+            geode::load_one( geode::load_brep( saved_brep ), saved_brep ) );
         geode::load_brep_time_series( brep, pvd );
         check_brep( brep );
     }

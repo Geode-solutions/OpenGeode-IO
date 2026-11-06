@@ -344,8 +344,10 @@ namespace
     void run_test( std::string_view short_filename, test_function test )
     {
         // Load file
-        auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" ) );
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, short_filename, ".og_brep" );
+        auto brep =
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         test( brep );
         add_material_attributes( brep );
         const auto filename_gid =
@@ -391,8 +393,10 @@ namespace
 
     void test_wrong_material_type()
     {
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, "mss.og_brep" );
         const auto brep =
-            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         add_material_attributes( brep );
         geode::AttributeValues< double > default_values;
         default_values.default_value = 1;
@@ -417,8 +421,10 @@ namespace
 
     void test_fracture_outside_blocks()
     {
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, "mss.og_brep" );
         auto brep =
-            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         add_fracture( brep );
         add_material_attributes( brep );
         geode::save_brep( brep, "fracture_output.gid_msh" );

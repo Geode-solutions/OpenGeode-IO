@@ -52,8 +52,8 @@ namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< PolygonalSurface3D > VTUPolygonalInput::read(
-            const MeshImpl& impl )
+        std::vector< std::unique_ptr< PolygonalSurface3D > >
+            VTUPolygonalInput::read( const MeshImpl& impl )
         {
             VTUPolygonalInputImpl reader{ filename(), impl };
             return reader.read_file();

@@ -90,7 +90,7 @@ void write_svg( std::string_view filename, std::string_view content )
 geode::Section load_svg_path( std::string_view filename, std::string_view path )
 {
     write_svg( filename, absl::StrCat( "<g><path d=\"", path, "\"/></g>" ) );
-    return geode::load_section( filename );
+    return geode::load_one( geode::load_section( filename ), filename );
 }
 
 void test_long_path()
@@ -212,7 +212,8 @@ void test_path_containers()
         "<a><path d=\"M 0 1 L 1 1\"/></a>"
         "<svg><g><path d=\"M 0 2 L 1 2\"/></g></svg>"
         "<defs><path id=\"unused\" d=\"M 0 3 L 1 3\"/></defs>" );
-    const auto section = geode::load_section( "containers.svg" );
+    const auto section = geode::load_one(
+        geode::load_section( "containers.svg" ), "containers.svg" );
     geode::OpenGeodeIOModelException::test( section.nb_lines() == 3,
         "Paths at the root, in links and in nested svg should be read, "
         "paths in defs should not" );
@@ -226,7 +227,8 @@ void test_transforms()
         "<g transform=\"matrix(1 0 0 1 5 5) scale(3, 1)\">"
         "<path d=\"M 0 1 L 1 1\"/></g></g>"
         "<path d=\"M 1 0 L 2 0\" transform=\"rotate(90)\"/>" );
-    const auto lines = line_points( geode::load_section( "transforms.svg" ) );
+    const auto lines = line_points( geode::load_one(
+        geode::load_section( "transforms.svg" ), "transforms.svg" ) );
     std::vector< std::vector< geode::Point2D > > expected{
         { geode::Point2D{ { 10, 20 } }, geode::Point2D{ { 12, 20 } } },
         { geode::Point2D{ { 15, 26 } }, geode::Point2D{ { 18, 26 } } },
@@ -249,7 +251,8 @@ void test_transforms()
         "<path d=\"M 0 0 L 1 0\" transform=\"translate(1, 2, 3)\"/>" );
     try
     {
-        const auto section = geode::load_section( "bad_transform.svg" );
+        const auto section = geode::load_one(
+            geode::load_section( "bad_transform.svg" ), "bad_transform.svg" );
     }
     catch( const geode::OpenGeodeException& /*unused*/ )
     {
@@ -263,7 +266,8 @@ void test_transforms()
 void test_empty_svg()
 {
     write_svg( "empty.svg", "" );
-    const auto empty = geode::load_section( "empty.svg" );
+    const auto empty =
+        geode::load_one( geode::load_section( "empty.svg" ), "empty.svg" );
     geode::OpenGeodeIOModelException::test(
         empty.nb_lines() == 0 && empty.nb_corners() == 0,
         "Empty SVG should give an empty section" );
@@ -279,15 +283,18 @@ int main()
         geode::OpenGeodeIOModelLibrary::initialize();
 
         // Load file
-        auto section = geode::load_section(
-            absl::StrCat( geode::DATA_PATH, "/logo.svg" ) );
+        const auto section_filename =
+            absl::StrCat( geode::DATA_PATH, "/logo.svg" );
+        auto section = geode::load_one(
+            geode::load_section( section_filename ), section_filename );
         test_section( section );
 
         // Save and reload
         const auto filename =
             absl::StrCat( "logo.", section.native_extension() );
         geode::save_section( section, filename );
-        auto reloaded_section = geode::load_section( filename );
+        auto reloaded_section =
+            geode::load_one( geode::load_section( filename ), filename );
         test_section( reloaded_section );
 
         test_long_path();

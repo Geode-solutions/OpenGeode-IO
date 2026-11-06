@@ -35,7 +35,7 @@ namespace geode
 {
     namespace internal
     {
-        std::unique_ptr< PolygonalSurface3D > DXFInput::read(
+        std::vector< std::unique_ptr< PolygonalSurface3D > > DXFInput::read(
             const MeshImpl& /*unused*/ )
         {
             AssimpMeshInput< PolygonalSurface3D > reader{ filename() };

@@ -214,7 +214,8 @@ namespace
             std::vector< std::unique_ptr< geode::SolidMesh3D > > meshes;
             for( const auto& vtu : dataset_vtu_files( dataset.file ) )
             {
-                meshes.push_back( geode::load_polyhedral_solid< 3 >( vtu ) );
+                meshes.push_back( geode::load_one(
+                    geode::load_polyhedral_solid< 3 >( vtu ), vtu ) );
             }
             if( !point_sets )
             {

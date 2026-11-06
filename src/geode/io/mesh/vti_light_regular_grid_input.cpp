@@ -65,13 +65,18 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        LightRegularGrid< dimension >
+        std::vector< LightRegularGrid< dimension > >
             VTILightRegularGridInput< dimension >::read()
         {
             VTILightRegularGridInputImpl< dimension > reader{
                 this->filename()
             };
-            return std::move( *reader.read_file() );
+            std::vector< LightRegularGrid< dimension > > grids;
+            for( auto& grid : reader.read_file() )
+            {
+                grids.emplace_back( std::move( *grid ) );
+            }
+            return grids;
         }
 
         template < index_t dimension >

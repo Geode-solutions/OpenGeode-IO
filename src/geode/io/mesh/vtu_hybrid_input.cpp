@@ -54,7 +54,7 @@ namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< HybridSolid3D > VTUHybridInput::read(
+        std::vector< std::unique_ptr< HybridSolid3D > > VTUHybridInput::read(
             const MeshImpl& impl )
         {
             VTUHybridInputImpl reader{ filename(), impl };

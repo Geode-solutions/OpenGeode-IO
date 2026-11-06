@@ -31,7 +31,10 @@ if __name__ == "__main__":
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
 
-    surface = opengeode.load_polygonal_surface3D(os.path.join(data_dir, "TopHat.obj"))
+    surface_filename = os.path.join(data_dir, "TopHat.obj")
+    surface = opengeode.load_one(
+        opengeode.load_polygonal_surface3D(surface_filename), surface_filename
+    )
     if surface.nb_vertices() != 363:
         raise ValueError(
             "[Test] Number of vertices in the loaded Surface is not correct"

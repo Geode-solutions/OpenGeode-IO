@@ -50,7 +50,7 @@ namespace geode
 
             virtual ~AssimpMeshInput() = default;
 
-            std::unique_ptr< Mesh > read_file();
+            std::vector< std::unique_ptr< Mesh > > read_file();
 
             Percentage is_loadable();
 

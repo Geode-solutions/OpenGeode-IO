@@ -47,7 +47,7 @@ namespace geode::internal
             return EXT;
         }
 
-        [[nodiscard]] std::unique_ptr< PointSet3D > read(
+        [[nodiscard]] std::vector< std::unique_ptr< PointSet3D > > read(
             const MeshImpl& impl ) final;
 
         [[nodiscard]] AdditionalFiles additional_files() const final;

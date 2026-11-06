@@ -84,8 +84,10 @@ void run_test( std::string_view filename,
     absl::Span< const geode::uuid > polygon_attributes )
 {
     // Load file
-    auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, filename ) );
+    const auto surface_filename = absl::StrCat( geode::DATA_PATH, filename );
+    auto surface =
+        geode::load_one( geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
     check( *surface, test_answers, vertex_attributes, polygon_attributes );
 
     // Save file
@@ -96,8 +98,9 @@ void run_test( std::string_view filename,
     geode::save_polygonal_surface( *surface, output_filename_default );
 
     // Reload file
-    auto reload_surface =
-        geode::load_polygonal_surface< 3 >( output_filename_default );
+    auto reload_surface = geode::load_one(
+        geode::load_polygonal_surface< 3 >( output_filename_default ),
+        output_filename_default );
     check(
         *reload_surface, test_answers, vertex_attributes, polygon_attributes );
 
@@ -107,8 +110,9 @@ void run_test( std::string_view filename,
     geode::save_polygonal_surface( *surface, output_filename_vtp );
 
     // Reload file
-    auto reload_surface_vtp =
-        geode::load_polygonal_surface< 3 >( output_filename_vtp );
+    auto reload_surface_vtp = geode::load_one(
+        geode::load_polygonal_surface< 3 >( output_filename_vtp ),
+        output_filename_vtp );
     check( *reload_surface_vtp, test_answers, vertex_attributes,
         polygon_attributes );
 }
@@ -174,21 +178,27 @@ void check_same_surface( const geode::PolygonalSurface3D& reference,
 void run_encoding_test(
     const geode::PolygonalSurface3D& reference, std::string_view filename )
 {
-    const auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, filename ) );
+    const auto surface_filename = absl::StrCat( geode::DATA_PATH, filename );
+    const auto surface =
+        geode::load_one( geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
     check_same_surface( reference, *surface, filename );
 
     const auto output_filename = absl::StrCat( "output_", filename );
     geode::save_polygonal_surface( *surface, output_filename );
     const auto reload_surface =
-        geode::load_polygonal_surface< 3 >( output_filename );
+        geode::load_one( geode::load_polygonal_surface< 3 >( output_filename ),
+            output_filename );
     check_same_surface( reference, *reload_surface, output_filename );
 }
 
 void run_encoding_tests()
 {
-    const auto reference = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    const auto reference_filename =
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" );
+    const auto reference = geode::load_one(
+        geode::load_polygonal_surface< 3 >( reference_filename ),
+        reference_filename );
     for( const auto encoding : { "raw", "raw_compressed", "base64",
              "base64_compressed", "binary", "binary_compressed" } )
     {
@@ -213,8 +223,11 @@ std::shared_ptr< geode::VariableAttribute< T > > create_attribute(
 
 void run_attribute_types_test()
 {
-    auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    const auto surface_filename =
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" );
+    auto surface =
+        geode::load_one( geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
     auto precise = create_attribute< double >(
         surface->vertex_attribute_manager(), "precise", std::nan( "" ) );
     for( const auto v : geode::Range{ surface->nb_vertices() } )
@@ -239,8 +252,9 @@ void run_attribute_types_test()
     }
     geode::save_polygonal_surface( *surface, "attribute_types.vtp" );
 
-    const auto reload =
-        geode::load_polygonal_surface< 3 >( "attribute_types.vtp" );
+    const auto reload = geode::load_one(
+        geode::load_polygonal_surface< 3 >( "attribute_types.vtp" ),
+        "attribute_types.vtp" );
     const auto& vertex_manager = reload->vertex_attribute_manager();
     const auto reload_precise =
         vertex_manager.find_read_only_attribute< double >(
@@ -283,8 +297,11 @@ void run_attribute_types_test()
 
 void test_array_attributes()
 {
-    auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    const auto surface_filename =
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" );
+    auto surface =
+        geode::load_one( geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
     auto& manager = surface->polygon_attribute_manager();
     std::array< double, 6 > no_tensor;
     no_tensor.fill( std::nan( "" ) );
@@ -311,8 +328,9 @@ void test_array_attributes()
     }
     geode::save_polygonal_surface( *surface, "array_attributes.vtp" );
 
-    const auto reload =
-        geode::load_polygonal_surface< 3 >( "array_attributes.vtp" );
+    const auto reload = geode::load_one(
+        geode::load_polygonal_surface< 3 >( "array_attributes.vtp" ),
+        "array_attributes.vtp" );
     const auto& reload_manager = reload->polygon_attribute_manager();
     const auto reload_tensor =
         reload_manager.find_read_only_attribute< std::vector< double > >(
@@ -377,8 +395,9 @@ void test_time_series()
                     "temperature", { value, 0 }, {} );
     }
     geode::save_polygonal_surface( *surface, "time_series.vtp" );
-    const auto reload_surface =
-        geode::load_polygonal_surface< 3 >( "time_series.vtp" );
+    const auto reload_surface = geode::load_one(
+        geode::load_polygonal_surface< 3 >( "time_series.vtp" ),
+        "time_series.vtp" );
     const auto& reload_manager = reload_surface->vertex_attribute_manager();
     const std::array< double, 3 > sorted_times{ 0.5, 1., 2. };
     for( const auto step : geode::Indices{ sorted_times } )
@@ -436,8 +455,9 @@ void test_duplicated_names()
         manager.create_attribute< geode::VariableAttribute, double >(
             "value_0", { 3., 0 }, {} );
     geode::save_polygonal_surface( *surface, "duplicated_names.vtp" );
-    const auto reload =
-        geode::load_polygonal_surface< 3 >( "duplicated_names.vtp" );
+    const auto reload = geode::load_one(
+        geode::load_polygonal_surface< 3 >( "duplicated_names.vtp" ),
+        "duplicated_names.vtp" );
     const auto& reload_manager = reload->polygon_attribute_manager();
     const auto literal = reload_manager.find_read_only_attribute< double >(
         reload_manager.attribute_ids_matching_name( "value_0" )->front() );
@@ -514,8 +534,9 @@ void test_texture_split_vertices()
     }
     geode::save_polygonal_surface( *surface, "texture_split.vtp" );
 
-    const auto reload =
-        geode::load_polygonal_surface< 3 >( "texture_split.vtp" );
+    const auto reload = geode::load_one(
+        geode::load_polygonal_surface< 3 >( "texture_split.vtp" ),
+        "texture_split.vtp" );
     // Vertex 0 is shared with the same UV, vertex 1 has 2 UVs, vertex 2 has
     // 2 UVs: 6 vertices
     geode::OpenGeodeIOMeshException::test( reload->nb_vertices() == 6,
@@ -559,8 +580,11 @@ bool save_throws(
 
 void test_write_errors()
 {
-    const auto surface = geode::load_polygonal_surface< 3 >(
-        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" ) );
+    const auto surface_filename =
+        absl::StrCat( geode::DATA_PATH, "dfn1_ascii.vtp" );
+    const auto surface =
+        geode::load_one( geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
     // A directory cannot be opened as an output file
     std::filesystem::create_directories( "directory.vtp" );
     geode::OpenGeodeIOMeshException::test(
@@ -664,7 +688,8 @@ std::unique_ptr< geode::PolygonalSurface3D > load_file(
     std::string_view filename, std::string_view content )
 {
     write_file( filename, content );
-    return geode::load_polygonal_surface< 3 >( filename );
+    return geode::load_one(
+        geode::load_polygonal_surface< 3 >( filename ), filename );
 }
 
 bool has_attribute(

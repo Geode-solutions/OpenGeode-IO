@@ -47,7 +47,8 @@ namespace
             std::ofstream file{ filename, std::ios::binary };
             file << content;
         }
-        return geode::load_edged_curve< 3 >( filename );
+        return geode::load_one(
+            geode::load_edged_curve< 3 >( filename ), filename );
     }
 
     void check_curve( const geode::EdgedCurve3D& curve,
@@ -299,8 +300,10 @@ namespace
 
     void test_load()
     {
-        auto curve = geode::load_edged_curve< 3 >(
-            absl::StrCat( geode::DATA_PATH, "curve.smesh" ) );
+        const auto curve_filename =
+            absl::StrCat( geode::DATA_PATH, "curve.smesh" );
+        auto curve = geode::load_one(
+            geode::load_edged_curve< 3 >( curve_filename ), curve_filename );
         geode::OpenGeodeIOMeshException::test( curve->nb_vertices() == 1023,
             "Number of vertices in the "
             "loaded EdgedCurve is not correct" );

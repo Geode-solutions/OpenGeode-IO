@@ -45,7 +45,7 @@ namespace geode
                 return EXT;
             }
 
-            Section read() final;
+            std::vector< Section > read() final;
 
             AdditionalFiles additional_files() const final
             {

@@ -20,10 +20,6 @@
 
 add_subdirectory(src)
 
-if(OPENGEODE_IO_WITH_TESTS)
-    add_subdirectory(tests)
-endif()
-
 add_geode_python_wheel(
     NAME "OpenGeode-IO"
     DESCRIPTION 
@@ -36,3 +32,7 @@ add_geode_python_wheel(
     SUPERBUILD
     LICENSE "MIT"
 )
+
+if(OPENGEODE_IO_WITH_TESTS)
+    add_subdirectory(tests)
+endif()

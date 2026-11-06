@@ -70,7 +70,7 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        std::unique_ptr< RegularGrid< dimension > >
+        std::vector< std::unique_ptr< RegularGrid< dimension > > >
             VTIRegularGridInput< dimension >::read( const MeshImpl& impl )
         {
             VTIRegularGridInputImpl< dimension > reader{ this->filename(),

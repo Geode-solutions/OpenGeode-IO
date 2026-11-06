@@ -49,7 +49,7 @@ namespace geode
                 return EXT;
             }
 
-            std::unique_ptr< PolygonalSurface3D > read(
+            std::vector< std::unique_ptr< PolygonalSurface3D > > read(
                 const MeshImpl& impl ) final;
 
             Percentage is_loadable() const final;

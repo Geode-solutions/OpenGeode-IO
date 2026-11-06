@@ -179,10 +179,13 @@ namespace
 
 namespace geode::internal
 {
-    std::unique_ptr< PointSet3D > CSVInput::read( const MeshImpl& impl )
+    std::vector< std::unique_ptr< PointSet3D > > CSVInput::read(
+        const MeshImpl& impl )
     {
         CSVInputImpl reader{ filename() };
-        return reader.point_set( impl );
+        std::vector< std::unique_ptr< PointSet3D > > point_sets;
+        point_sets.emplace_back( reader.point_set( impl ) );
+        return point_sets;
     }
 
     AdditionalFiles CSVInput::additional_files() const

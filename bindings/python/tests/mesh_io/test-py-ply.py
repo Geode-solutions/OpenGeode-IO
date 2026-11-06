@@ -31,8 +31,9 @@ if __name__ == "__main__":
 
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-    surface = opengeode.load_polygonal_surface3D(
-        os.path.join(data_dir, "Armadillo.ply")
+    surface_filename = os.path.join(data_dir, "Armadillo.ply")
+    surface = opengeode.load_one(
+        opengeode.load_polygonal_surface3D(surface_filename), surface_filename
     )
     if surface.nb_vertices() != 172974:
         raise ValueError(

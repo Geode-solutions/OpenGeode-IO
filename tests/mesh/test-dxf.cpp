@@ -38,8 +38,11 @@ int main()
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "3D_faces.dxf" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "3D_faces.dxf" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 49323,
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 97966,
@@ -50,8 +53,11 @@ int main()
             absl::StrCat( "dxf.", surface->native_extension() );
         geode::save_polygonal_surface( *surface, output_file_og );
 
-        auto face_and_line = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "face_and_line.dxf" ) );
+        const auto face_and_line_filename =
+            absl::StrCat( geode::DATA_PATH, "face_and_line.dxf" );
+        auto face_and_line = geode::load_one(
+            geode::load_polygonal_surface< 3 >( face_and_line_filename ),
+            face_and_line_filename );
         geode::OpenGeodeIOMeshException::test(
             face_and_line->nb_polygons() == 1,
             "DXF lines should not be loaded as polygons" );

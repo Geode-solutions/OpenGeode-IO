@@ -32,7 +32,7 @@ namespace geode
 {
     namespace internal
     {
-        std::unique_ptr< TriangulatedSurface3D > STLInput::read(
+        std::vector< std::unique_ptr< TriangulatedSurface3D > > STLInput::read(
             const MeshImpl& /*unused*/ )
         {
             AssimpMeshInput< TriangulatedSurface3D > reader{ filename() };

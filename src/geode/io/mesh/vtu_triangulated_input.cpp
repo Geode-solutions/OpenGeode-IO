@@ -51,8 +51,8 @@ namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< TriangulatedSurface3D > VTUTriangulatedInput::read(
-            const MeshImpl& impl )
+        std::vector< std::unique_ptr< TriangulatedSurface3D > >
+            VTUTriangulatedInput::read( const MeshImpl& impl )
         {
             VTUTriangulatedInputImpl reader{ filename(), impl };
             return reader.read_file();

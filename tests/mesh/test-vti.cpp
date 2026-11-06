@@ -82,7 +82,8 @@ void put_attributes_on_grid( const geode::Grid3D& grid )
 void test_regular_grid( const geode::RegularGrid3D& grid )
 {
     geode::save_regular_grid( grid, "test.vti" );
-    const auto reload_grid = geode::load_regular_grid< 3 >( "test.vti" );
+    const auto reload_grid = geode::load_one(
+        geode::load_regular_grid< 3 >( "test.vti" ), "test.vti" );
     geode::OpenGeodeIOMeshException::test(
         grid.nb_cells() == reload_grid->nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -114,7 +115,8 @@ void test_regular_grid( const geode::RegularGrid3D& grid )
 void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
 {
     geode::save_light_regular_grid( grid, "test3.vti" );
-    const auto reload_grid = geode::load_light_regular_grid< 3 >( "test3.vti" );
+    const auto reload_grid = geode::load_one(
+        geode::load_light_regular_grid< 3 >( "test3.vti" ), "test3.vti" );
     geode::OpenGeodeIOMeshException::test(
         grid.nb_cells() == reload_grid.nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -151,7 +153,8 @@ void test_precision()
     geode::LightRegularGrid3D grid{ origin, { 2, 3, 4 }, lengths };
     geode::save_light_regular_grid( grid, "precision.vti" );
     const auto reload_grid =
-        geode::load_light_regular_grid< 3 >( "precision.vti" );
+        geode::load_one( geode::load_light_regular_grid< 3 >( "precision.vti" ),
+            "precision.vti" );
     for( const auto d : geode::LRange{ 3 } )
     {
         geode::OpenGeodeIOMeshException::test(
@@ -236,8 +239,10 @@ void test_extent()
     write_file(
         "extent.vti", vti_file( "WholeExtent=\"2 5 -1 3 0 2\" "
                                 "Origin=\"1 2 3\" Spacing=\"1 2 3\"" ) );
-    const auto grid = geode::load_regular_grid< 3 >( "extent.vti" );
-    const auto light_grid = geode::load_light_regular_grid< 3 >( "extent.vti" );
+    const auto grid = geode::load_one(
+        geode::load_regular_grid< 3 >( "extent.vti" ), "extent.vti" );
+    const auto light_grid = geode::load_one(
+        geode::load_light_regular_grid< 3 >( "extent.vti" ), "extent.vti" );
     const std::array< geode::index_t, 3 > nb_cells{ 3, 4, 2 };
     const geode::Point3D origin{ { 3, 0, 3 } };
     for( const geode::Grid3D* current :

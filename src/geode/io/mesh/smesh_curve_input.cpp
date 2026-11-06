@@ -62,13 +62,15 @@ namespace geode
 {
     namespace internal
     {
-        std::unique_ptr< EdgedCurve3D > SMESHCurveInput::read(
+        std::vector< std::unique_ptr< EdgedCurve3D > > SMESHCurveInput::read(
             const MeshImpl& impl )
         {
             auto curve = EdgedCurve3D::create( impl );
             SMESHCurveInputImpl reader{ filename(), *curve };
             reader.read_file();
-            return curve;
+            std::vector< std::unique_ptr< EdgedCurve3D > > curves;
+            curves.emplace_back( std::move( curve ) );
+            return curves;
         }
 
         Percentage SMESHCurveInput::is_loadable() const
