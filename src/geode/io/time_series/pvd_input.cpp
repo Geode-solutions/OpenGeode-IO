@@ -212,10 +212,13 @@ namespace
         for( const auto& dataset : read_pvd_collection( filename ) )
         {
             std::vector< std::unique_ptr< geode::SolidMesh3D > > meshes;
+            // Each piece of each .vtu is a dataset
             for( const auto& vtu : dataset_vtu_files( dataset.file ) )
             {
-                meshes.push_back( geode::load_one(
-                    geode::load_polyhedral_solid< 3 >( vtu ), vtu ) );
+                for( auto& mesh : geode::load_polyhedral_solid< 3 >( vtu ) )
+                {
+                    meshes.push_back( std::move( mesh ) );
+                }
             }
             if( !point_sets )
             {

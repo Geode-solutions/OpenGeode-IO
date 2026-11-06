@@ -259,46 +259,52 @@ void test_cell_data_with_skipped_cells()
 
 void test_multiple_pieces()
 {
-    const auto piece_data = []( std::string_view cell_value ) {
-        return absl::StrCat( "<PointData><DataArray type=\"Float64\" "
-                             "Name=\"value\" format=\"ascii\">0 1 2 3 4 "
-                             "5 6 7</DataArray></PointData>\n<CellData>"
-                             "<DataArray type=\"Int32\" Name=\"id\" "
-                             "format=\"ascii\">",
-            cell_value, "</DataArray></CellData>\n" );
-    };
-    write_file( "multiple_pieces.vtu",
-        vtu_file(
-            absl::StrCat( vtu_piece( 1, "0 1 2", "3", "5", piece_data( "10" ) ),
-                vtu_piece( 1, "1 3 2", "3", "5", piece_data( "20" ) ) ) ) );
-    const auto surface = geode::load_one(
-        geode::load_triangulated_surface< 3 >( "multiple_pieces.vtu" ),
-        "multiple_pieces.vtu" );
-    check( *surface, { 16, 2 } );
-    const auto vertices = surface->polygon_vertices( 1 );
+    const auto file = absl::StrCat( geode::DATA_PATH, "two_pieces.vtu" );
+    const auto surfaces = geode::load_triangulated_surface< 3 >( file );
+    geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+        "Each piece should be loaded as a separate mesh: should be 2, get ",
+        surfaces.size() );
+    check( *surfaces[0], { 3, 1 } );
+    check( *surfaces[1], { 4, 2 } );
+    const auto vertices = surfaces[1]->polygon_vertices( 1 );
     geode::OpenGeodeIOMeshException::test(
-        vertices[0] == 9 && vertices[1] == 11 && vertices[2] == 10,
+        vertices[0] == 1 && vertices[1] == 3 && vertices[2] == 2,
         "Second piece cells should reference second piece vertices" );
-    const auto& manager = surface->polygon_attribute_manager();
+    const auto& manager = surfaces[1]->polygon_attribute_manager();
     const auto ids = manager.attribute_ids_matching_name( "id" );
-    geode::OpenGeodeIOMeshException::test( ids && ids->size() == 1,
-        "Data arrays with the same name should share one attribute" );
-    const auto attribute = manager.find_generic_attribute( ids->at( 0 ) );
     geode::OpenGeodeIOMeshException::test(
-        attribute->generic_value( 0 ) == 10.f
-            && attribute->generic_value( 1 ) == 20.f,
-        "Cell data of each piece should be loaded" );
-    const auto& vertex_manager = surface->vertex_attribute_manager();
+        ids && ids->size() == 1, "Second piece should have one id attribute" );
+    geode::OpenGeodeIOMeshException::test(
+        manager.find_generic_attribute( ids->at( 0 ) )->generic_value( 1 )
+            == 21.f,
+        "Cell data of the second piece should be loaded" );
+    const auto& vertex_manager = surfaces[0]->vertex_attribute_manager();
     const auto vertex_ids =
         vertex_manager.attribute_ids_matching_name( "value" );
     geode::OpenGeodeIOMeshException::test(
         vertex_ids && vertex_ids->size() == 1,
-        "Point data arrays with the same name should share one attribute" );
-    const auto vertex_attribute =
-        vertex_manager.find_generic_attribute( vertex_ids->at( 0 ) );
+        "First piece should have one value attribute" );
     geode::OpenGeodeIOMeshException::test(
-        vertex_attribute->generic_value( 11 ) == 3.f,
-        "Point data of each piece should be loaded" );
+        vertex_manager.find_generic_attribute( vertex_ids->at( 0 ) )
+                ->generic_value( 2 )
+            == 2.5f,
+        "Point data of the first piece should be loaded" );
+}
+
+void test_no_piece()
+{
+    write_file( "no_piece.vtu", vtu_file( "" ) );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading file without piece" );
+        geode::load_triangulated_surface< 3 >( "no_piece.vtu" );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading file without piece should fail" );
 }
 
 void test_no_cell()
@@ -511,6 +517,7 @@ int main()
 
         test_wrong_number_of_types();
         test_cell_data_with_skipped_cells();
+        test_no_piece();
         test_multiple_pieces();
         test_no_cell();
         test_cells_with_wrong_number_of_vertices();

@@ -55,7 +55,7 @@ namespace
                     std::move( grid_attributes.origin ),
                     std::move( grid_attributes.cells_number ),
                     std::move( grid_attributes.cells_length ) );
-            this->initialize_mesh( std::move( grid ) );
+            this->add_mesh( std::move( grid ) );
         }
     };
 } // namespace

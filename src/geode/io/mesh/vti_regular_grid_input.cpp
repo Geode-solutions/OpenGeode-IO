@@ -48,8 +48,7 @@ namespace
             : geode::detail::VTIGridInputImpl<
                   geode::RegularGrid< dimension > >{ filename }
         {
-            this->initialize_mesh(
-                geode::RegularGrid< dimension >::create( impl ) );
+            this->add_mesh( geode::RegularGrid< dimension >::create( impl ) );
         }
 
     private:

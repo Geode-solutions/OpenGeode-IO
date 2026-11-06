@@ -199,10 +199,10 @@ namespace geode
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
                     this->read_data( piece.child( "PointData" ),
-                        DataMapping{ this->mesh().nb_grid_vertices(), 0 },
+                        DataMapping{ this->mesh().nb_grid_vertices() },
                         this->mesh().grid_vertex_attribute_manager() );
                     this->read_data( piece.child( "CellData" ),
-                        DataMapping{ this->mesh().nb_cells(), 0 },
+                        DataMapping{ this->mesh().nb_cells() },
                         this->mesh().cell_attribute_manager() );
                 }
             }

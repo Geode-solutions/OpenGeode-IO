@@ -788,6 +788,30 @@ void test_empty_polygon()
         "Cell data should be transferred to the valid polygons" );
 }
 
+void test_multiple_pieces()
+{
+    const auto file = absl::StrCat( geode::DATA_PATH, "two_pieces.vtp" );
+    const auto surfaces = geode::load_polygonal_surface< 3 >( file );
+    geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+        "Each piece should be loaded as a separate mesh: should be 2, get ",
+        surfaces.size() );
+    check( *surfaces[0], { 4, 1 }, {}, {} );
+    check( *surfaces[1], { 5, 2 }, {}, {} );
+    const auto vertices = surfaces[1]->polygon_vertices( 1 );
+    geode::OpenGeodeIOMeshException::test(
+        vertices.size() == 3 && vertices[0] == 1 && vertices[1] == 4
+            && vertices[2] == 2,
+        "Second piece polygons should reference second piece vertices" );
+    const auto& manager = surfaces[1]->vertex_attribute_manager();
+    const auto ids = manager.attribute_ids_matching_name( "value" );
+    geode::OpenGeodeIOMeshException::test( ids && ids->size() == 1,
+        "Second piece should have one value attribute" );
+    geode::OpenGeodeIOMeshException::test(
+        manager.find_generic_attribute( ids->at( 0 ) )->generic_value( 4 )
+            == 8.5f,
+        "Point data of the second piece should be loaded" );
+}
+
 int main()
 {
     try
@@ -800,6 +824,7 @@ int main()
         test_unsupported_array_type();
         test_appended_offset_out_of_range();
         test_empty_polygon();
+        test_multiple_pieces();
 
         std::vector< geode::uuid > first_vertex_attribute_ids;
         std::vector< geode::uuid > first_polygon_attribute_ids;

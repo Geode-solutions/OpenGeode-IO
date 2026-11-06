@@ -56,9 +56,9 @@ namespace geode
         class DataMapping
         {
         public:
-            // Element i of the data array is mesh element offset + i
-            DataMapping( index_t nb_elements, index_t offset )
-                : nb_elements_{ nb_elements }, offset_{ offset }
+            // Element i of the data array is mesh element i
+            explicit DataMapping( index_t nb_elements )
+                : nb_elements_{ nb_elements }
             {
             }
 
@@ -79,14 +79,13 @@ namespace geode
             {
                 if( elements_.empty() )
                 {
-                    return offset_ + data_element;
+                    return data_element;
                 }
                 return elements_[data_element];
             }
 
         private:
             index_t nb_elements_;
-            index_t offset_{ 0 };
             absl::Span< const index_t > elements_;
         };
 
@@ -107,12 +106,10 @@ namespace geode
                 {
                     read_vtk_object( vtk_object );
                 }
-                OpenGeodeIOMeshException::check_exception( mesh_ != nullptr,
+                OpenGeodeIOMeshException::check_exception( !meshes_.empty(),
                     nullptr, OpenGeodeException::TYPE::data,
                     "[VTKInput::read_file] No mesh could be read" );
-                std::vector< std::unique_ptr< Mesh > > meshes;
-                meshes.emplace_back( std::move( mesh_ ) );
-                return meshes;
+                return std::move( meshes_ );
             }
 
             Percentage is_loadable()
@@ -166,21 +163,18 @@ namespace geode
                 read_appended_data();
             }
 
-            // To be called before reading each piece: data arrays are then
-            // gathered with the arrays of the same name in previous pieces
-            void start_piece()
+            // Adds a mesh to the loaded ones, it becomes the current mesh
+            void add_mesh( std::unique_ptr< Mesh >&& mesh )
             {
-                current_piece_++;
+                meshes_.emplace_back( std::move( mesh ) );
             }
 
-            void initialize_mesh( std::unique_ptr< Mesh >&& mesh )
-            {
-                mesh_ = std::move( mesh );
-            }
-
+            // Last added mesh
             Mesh& mesh()
             {
-                return *mesh_;
+                OpenGeodeIOMeshException::check_assertion( !meshes_.empty(),
+                    "[VTKInput::mesh] No mesh has been added yet" );
+                return *meshes_.back();
             }
 
             bool match( std::string_view query, std::string_view ref ) const
@@ -273,7 +267,7 @@ namespace geode
                     properties.assignable = false;
                     properties.interpolable = false;
                     properties.transferable = true;
-                    auto attribute = find_or_create_attribute< T >(
+                    auto attribute = new_attribute< T >(
                         manager, name, default_values, properties );
                     for( const auto i : Indices{ values } )
                     {
@@ -436,36 +430,16 @@ namespace geode
             }
 
         private:
-            // Reuses the attribute of the same name and type created while
-            // reading a previous piece, creates a new one otherwise
             template < typename T >
-            std::shared_ptr< VariableAttribute< T > > find_or_create_attribute(
+            std::shared_ptr< VariableAttribute< T > > new_attribute(
                 AttributeManager& manager,
                 std::string_view name,
                 AttributeValues< T > default_values,
                 AttributeProperties properties )
             {
-                const std::pair< const AttributeManager*, std::string > key{
-                    &manager, to_string( name )
-                };
-                const auto it = created_attributes_.find( key );
-                if( it != created_attributes_.end()
-                    && it->second.second != current_piece_ )
-                {
-                    if( auto attribute =
-                            std::dynamic_pointer_cast< VariableAttribute< T > >(
-                                manager.find_generic_attribute(
-                                    it->second.first ) ) )
-                    {
-                        it->second.second = current_piece_;
-                        return attribute;
-                    }
-                }
                 const auto attribute_id =
                     manager.create_attribute< VariableAttribute, T >( name,
                         std::move( default_values ), std::move( properties ) );
-                created_attributes_.insert_or_assign(
-                    key, std::pair{ attribute_id, current_piece_ } );
                 return manager.find_attribute< VariableAttribute, T >(
                     attribute_id );
             }
@@ -486,7 +460,7 @@ namespace geode
                 properties.assignable = false;
                 properties.interpolable = false;
                 properties.transferable = true;
-                auto attribute = find_or_create_attribute< Container >(
+                auto attribute = new_attribute< Container >(
                     manager, name, default_values, properties );
                 for( const auto i : Range{ values.size() / nb_components } )
                 {
@@ -951,7 +925,7 @@ namespace geode
 
         private:
             std::ifstream file_;
-            std::unique_ptr< Mesh > mesh_;
+            std::vector< std::unique_ptr< Mesh > > meshes_;
             pugi::xml_document document_;
             pugi::xml_node root_;
             const char* type_;
@@ -962,11 +936,6 @@ namespace geode
             std::string file_content_;
             std::string_view raw_appended_data_;
             std::string_view appended_data_;
-            index_t current_piece_{ 0 };
-            absl::flat_hash_map<
-                std::pair< const AttributeManager*, std::string >,
-                std::pair< uuid, index_t > >
-                created_attributes_;
         }; // namespace detail
     } // namespace detail
 } // namespace geode
