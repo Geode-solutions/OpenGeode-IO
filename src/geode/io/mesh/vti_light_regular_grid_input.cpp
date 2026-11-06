@@ -39,6 +39,9 @@ namespace
         : public geode::detail::VTIGridInputImpl<
               geode::LightRegularGrid< dimension > >
     {
+        using Extent = typename geode::detail::VTIGridInputImpl<
+            geode::LightRegularGrid< dimension > >::Extent;
+
     public:
         VTILightRegularGridInputImpl( std::string_view filename )
             : geode::detail::VTIGridInputImpl<
@@ -47,9 +50,11 @@ namespace
         }
 
     private:
-        void build_grid( const pugi::xml_node& vtk_object ) final
+        void build_grid(
+            const pugi::xml_node& vtk_object, const Extent& extent ) final
         {
-            auto grid_attributes = this->read_grid_attributes( vtk_object );
+            auto grid_attributes =
+                this->read_grid_attributes( vtk_object, extent );
             auto grid =
                 std::make_unique< geode::LightRegularGrid< dimension > >(
                     std::move( grid_attributes.origin ),

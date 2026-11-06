@@ -42,25 +42,33 @@ namespace
     class VTIRegularGridInputImpl : public geode::detail::VTIGridInputImpl<
                                         geode::RegularGrid< dimension > >
     {
+        using Extent = typename geode::detail::VTIGridInputImpl<
+            geode::RegularGrid< dimension > >::Extent;
+
     public:
         VTIRegularGridInputImpl(
             std::string_view filename, const geode::MeshImpl& impl )
             : geode::detail::VTIGridInputImpl<
-                  geode::RegularGrid< dimension > >{ filename }
+                  geode::RegularGrid< dimension > >{ filename },
+              impl_{ impl }
         {
-            this->add_mesh( geode::RegularGrid< dimension >::create( impl ) );
         }
 
     private:
-        void build_grid( const pugi::xml_node& vtk_object ) final
+        void build_grid(
+            const pugi::xml_node& vtk_object, const Extent& extent ) final
         {
             const auto grid_attributes =
-                this->read_grid_attributes( vtk_object );
+                this->read_grid_attributes( vtk_object, extent );
+            this->add_mesh( geode::RegularGrid< dimension >::create( impl_ ) );
             auto builder = geode::RegularGrid< dimension >::Builder::create(
                 this->mesh() );
             builder->initialize_grid( grid_attributes.origin,
                 grid_attributes.cells_number, grid_attributes.cell_directions );
         }
+
+    private:
+        geode::MeshImpl impl_;
     };
 } // namespace
 
