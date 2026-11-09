@@ -27,6 +27,7 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -88,8 +89,10 @@ namespace
 
     geode::BRep load_model()
     {
-        return geode::load_brep(
-            simulation_file( "picasso_with_physical_properties.og_brep" ) );
+        const auto file_filename =
+            simulation_file( "picasso_with_physical_properties.og_brep" );
+        return geode::load_one(
+            geode::load_brep( file_filename ), file_filename );
     }
 
     bool is_reservoir( const geode::Block3D& block )
@@ -247,7 +250,8 @@ namespace
         check_brep( brep );
         const std::string saved_brep{ "pvd_input/picasso_results.og_brep" };
         geode::save_brep( brep, saved_brep );
-        check_brep( geode::load_brep( saved_brep ) );
+        check_brep(
+            geode::load_one( geode::load_brep( saved_brep ), saved_brep ) );
         geode::load_brep_time_series( brep, pvd );
         check_brep( brep );
     }
@@ -292,6 +296,52 @@ namespace
                 nb_steps == expected_nb_steps,
                 "[Test] Only the reservoir Blocks should have a time step "
                 "from the Reservoir .vtu" );
+        }
+    }
+
+    std::string read_file( std::string_view filename )
+    {
+        std::ifstream file{ std::string{ filename }, std::ios::binary };
+        return { std::istreambuf_iterator< char >{ file },
+            std::istreambuf_iterator< char >{} };
+    }
+
+    // Each time step is a single .vtu holding one piece per GEOS region
+    void test_multiple_pieces_datasets()
+    {
+        const auto region_file = []( std::string_view region ) {
+            return read_file( simulation_file(
+                absl::StrCat( "picasso_results/000010/picasso_geos/Level0/",
+                    region, "/rank_0.vtu" ) ) );
+        };
+        const auto reservoir = region_file( "Reservoir" );
+        const auto burden = region_file( "Burden" );
+        const auto piece = []( const std::string& content ) {
+            const auto begin = content.find( "<Piece" );
+            const auto end = content.rfind( "</Piece>" ) + 8;
+            return content.substr( begin, end - begin );
+        };
+        const std::string vtu{ "pvd_input/two_regions.vtu" };
+        std::ofstream file{ vtu, std::ios::binary };
+        file << reservoir.substr( 0, reservoir.find( "<Piece" ) )
+             << piece( reservoir ) << "\n"
+             << piece( burden )
+             << reservoir.substr( reservoir.rfind( "</Piece>" ) + 8 );
+        file.close();
+        const std::string pvd{ "pvd_input/two_regions.pvd" };
+        write_collection( pvd, { "two_regions.vtu" } );
+        auto brep = load_model();
+        geode::load_brep_time_series( brep, pvd );
+        for( const auto& block : brep.blocks() )
+        {
+            geode::OpenGeodeIOTimeSeriesException::test(
+                block.mesh()
+                        .polyhedron_attribute_manager()
+                        .time_steps( "pressure" )
+                        .size()
+                    == 1,
+                "[Test] Every Block should have a time step from the .vtu "
+                "holding one piece per region" );
         }
     }
 
@@ -344,6 +394,7 @@ int main()
         test_import();
         test_missing_file();
         test_vtu_datasets();
+        test_multiple_pieces_datasets();
         test_inconsistent_datasets();
         test_unsupported_dataset();
         geode::Logger::info( "TEST SUCCESS" );

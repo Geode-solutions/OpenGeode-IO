@@ -113,8 +113,11 @@ namespace
 
     void test_untextured_then_textured_groups()
     {
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "two_groups_textured.obj" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "two_groups_textured.obj" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,
             "Number of polygons in two_groups_textured is not correct" );
         const std::array< CornerUV, 3 > expected{ {
@@ -137,8 +140,11 @@ namespace
 
     void test_duplicated_polygon_textures()
     {
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "duplicated_textured.obj" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "duplicated_textured.obj" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
             "Number of polygons in duplicated_textured is not correct" );
         const std::array< CornerUV, 3 > expected{ {
@@ -158,8 +164,11 @@ namespace
 
     void test_lines_and_points()
     {
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "lines_points.obj" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "lines_points.obj" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
             "Lines and points should not be loaded as polygons" );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 3,
@@ -184,7 +193,8 @@ namespace
             file << "\nf " << nb_vertices + 1 << " " << nb_vertices + 2 << " "
                  << nb_vertices + 3 << "\n";
         }
-        auto surface = geode::load_polygonal_surface< 3 >( filename );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( filename ), filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
             "Too large polygon should be skipped" );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 3,
@@ -206,8 +216,9 @@ namespace
                        .generic_string()
                 << "\n";
         }
-        auto surface =
-            geode::load_polygonal_surface< 3 >( "./absolute_texture.obj" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( "./absolute_texture.obj" ),
+            "./absolute_texture.obj" );
         const auto& texture =
             surface->texture_manager().find_texture( "absolute" );
         geode::OpenGeodeIOMeshException::test( texture.image().nb_cells() > 0,
@@ -267,8 +278,11 @@ int main()
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "TopHat.obj" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "TopHat.obj" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 363,
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 380,
@@ -281,8 +295,9 @@ int main()
         geode::save_polygonal_surface( *surface, output_file_obj );
 
         // Reload file
-        auto reloaded_surface =
-            geode::load_polygonal_surface< 3 >( output_file_obj );
+        auto reloaded_surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output_file_obj ),
+            output_file_obj );
         geode::OpenGeodeIOMeshException::test(
             reloaded_surface->nb_vertices() == 363,
             "Number of vertices in the "

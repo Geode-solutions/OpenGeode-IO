@@ -51,10 +51,14 @@
 
 void test_jpg_from_gimp_input()
 {
-    auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_image_from_gimp.jpg" ) );
-    auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_from_gimp_image.og_rgd2d" ) );
+    const auto raster_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_image_from_gimp.jpg" );
+    auto raster = geode::load_one(
+        geode::load_raster_image< 2 >( raster_filename ), raster_filename );
+    const auto grid_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_from_gimp_image.og_rgd2d" );
+    auto grid = geode::load_one(
+        geode::load_regular_grid< 2 >( grid_filename ), grid_filename );
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -78,10 +82,14 @@ void test_jpg_from_gimp_input()
 
 void test_jpg_from_paraview_input()
 {
-    auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_image_from_paraview.jpg" ) );
-    auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_from_paraview_image.og_rgd2d" ) );
+    const auto raster_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_image_from_paraview.jpg" );
+    auto raster = geode::load_one(
+        geode::load_raster_image< 2 >( raster_filename ), raster_filename );
+    const auto grid_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_from_paraview_image.og_rgd2d" );
+    auto grid = geode::load_one(
+        geode::load_regular_grid< 2 >( grid_filename ), grid_filename );
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -106,10 +114,14 @@ void test_jpg_from_paraview_input()
 
 void test_png_input()
 {
-    auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_image.png" ) );
-    auto grid = geode::load_regular_grid< 2 >(
-        absl::StrCat( geode::DATA_PATH, "grid_from_image.og_rgd2d" ) );
+    const auto raster_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_image.png" );
+    auto raster = geode::load_one(
+        geode::load_raster_image< 2 >( raster_filename ), raster_filename );
+    const auto grid_filename =
+        absl::StrCat( geode::DATA_PATH, "grid_from_image.og_rgd2d" );
+    auto grid = geode::load_one(
+        geode::load_regular_grid< 2 >( grid_filename ), grid_filename );
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == grid->nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -133,10 +145,14 @@ void test_png_input()
 
 void test_tiff_input()
 {
-    auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, "cea.tiff" ) );
-    auto ref_raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, "cea.og_img2d" ) );
+    const auto raster_filename = absl::StrCat( geode::DATA_PATH, "cea.tiff" );
+    auto raster = geode::load_one(
+        geode::load_raster_image< 2 >( raster_filename ), raster_filename );
+    const auto ref_raster_filename =
+        absl::StrCat( geode::DATA_PATH, "cea.og_img2d" );
+    auto ref_raster =
+        geode::load_one( geode::load_raster_image< 2 >( ref_raster_filename ),
+            ref_raster_filename );
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells() == ref_raster.nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -163,8 +179,9 @@ std::array< geode::index_t, 2 > test_image_pixel( geode::index_t cell )
 
 geode::RasterImage2D load_test_image( std::string_view filename )
 {
-    auto raster = geode::load_raster_image< 2 >(
-        absl::StrCat( geode::DATA_PATH, filename ) );
+    const auto raster_filename = absl::StrCat( geode::DATA_PATH, filename );
+    auto raster = geode::load_one(
+        geode::load_raster_image< 2 >( raster_filename ), raster_filename );
     geode::OpenGeodeIOImageException::test(
         raster.nb_cells_in_direction( 0 ) == TEST_IMAGE_WIDTH
             && raster.nb_cells_in_direction( 1 ) == TEST_IMAGE_HEIGHT,
@@ -284,8 +301,10 @@ void test_non_image_format_input()
     bool thrown{ false };
     try
     {
-        const auto raster = geode::load_raster_image< 2 >(
-            absl::StrCat( geode::DATA_PATH, "image_vrt.png" ) );
+        const auto raster_filename =
+            absl::StrCat( geode::DATA_PATH, "image_vrt.png" );
+        const auto raster = geode::load_one(
+            geode::load_raster_image< 2 >( raster_filename ), raster_filename );
     }
     catch( const geode::OpenGeodeException& )
     {
@@ -304,7 +323,8 @@ void test_unreadable_input()
     std::string message;
     try
     {
-        const auto raster = geode::load_raster_image< 2 >( filename );
+        const auto raster = geode::load_one(
+            geode::load_raster_image< 2 >( filename ), filename );
     }
     catch( const geode::OpenGeodeException& exception )
     {

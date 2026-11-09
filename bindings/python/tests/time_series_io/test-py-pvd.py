@@ -46,9 +46,10 @@ if __name__ == "__main__":
     data_dir = os.path.abspath(
         os.path.join(test_dir, "../../../../tests/data/spe10")
     )
-    brep = opengeode.load_brep(
-        os.path.join(data_dir, "grid_geos_with_physical_properties.og_brep")
+    brep_filename = os.path.join(
+        data_dir, "grid_geos_with_physical_properties.og_brep"
     )
+    brep = opengeode.load_one(opengeode.load_brep(brep_filename), brep_filename)
     pvd = os.path.join(data_dir, "vtkOutput.pvd")
     if opengeode.is_brep_time_series_loadable(pvd).value() != 1:
         raise ValueError("[Test] Collection should be loadable")

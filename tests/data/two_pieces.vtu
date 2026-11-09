@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="1.0" byte_order="LittleEndian">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="3" NumberOfCells="1">
+      <PointData>
+        <DataArray type="Float64" Name="value" format="ascii">0.5 1.5 2.5</DataArray>
+      </PointData>
+      <CellData>
+        <DataArray type="Int32" Name="id" format="ascii">10</DataArray>
+      </CellData>
+      <Points>
+        <DataArray type="Float64" NumberOfComponents="3" format="ascii">
+          0 0 0  1 0 0  0 1 0
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="ascii">0 1 2</DataArray>
+        <DataArray type="Int64" Name="offsets" format="ascii">3</DataArray>
+        <DataArray type="UInt8" Name="types" format="ascii">5</DataArray>
+      </Cells>
+    </Piece>
+    <Piece NumberOfPoints="4" NumberOfCells="2">
+      <PointData>
+        <DataArray type="Float64" Name="value" format="ascii">3.5 4.5 5.5 6.5</DataArray>
+      </PointData>
+      <CellData>
+        <DataArray type="Int32" Name="id" format="ascii">20 21</DataArray>
+      </CellData>
+      <Points>
+        <DataArray type="Float64" NumberOfComponents="3" format="ascii">
+          0 0 1  1 0 1  0 1 1  1 1 1
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="ascii">0 1 2 1 3 2</DataArray>
+        <DataArray type="Int64" Name="offsets" format="ascii">3 6</DataArray>
+        <DataArray type="UInt8" Name="types" format="ascii">5 5</DataArray>
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+</VTKFile>

@@ -156,14 +156,18 @@ int main()
         geode::OpenGeodeIOMeshLibrary::initialize();
         geode::OpenGeodeIOModelLibrary::initialize();
 
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, "mss.og_brep" );
         auto brep =
-            geode::load_brep( absl::StrCat( geode::DATA_PATH, "mss.og_brep" ) );
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         const auto filename = absl::StrCat( "mss.vtm" );
         check_files( geode::save_brep( brep, filename ),
             brep.nb_corners() + brep.nb_lines() + brep.nb_surfaces()
                 + brep.nb_blocks() );
-        auto section = geode::load_section(
-            absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" ) );
+        const auto section_filename =
+            absl::StrCat( geode::DATA_PATH, "mss_cut_section.og_sctn" );
+        auto section = geode::load_one(
+            geode::load_section( section_filename ), section_filename );
         const auto filename2 = absl::StrCat( "mss_cut_section.vtm" );
         check_files( geode::save_section( section, filename2 ),
             section.nb_corners() + section.nb_lines() + section.nb_surfaces() );

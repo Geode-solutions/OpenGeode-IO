@@ -45,7 +45,7 @@ namespace geode
                 return EXT;
             }
 
-            LightRegularGrid< dimension > read() final;
+            std::vector< LightRegularGrid< dimension > > read() final;
 
             Percentage is_loadable() const final;
 

@@ -140,14 +140,24 @@ if __name__ == "__main__":
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
 
-    brep_cube = opengeode.load_brep(os.path.join(data_dir, "cube_v22.msh"))
+    brep_cube_filename = os.path.join(data_dir, "cube_v22.msh")
+    brep_cube = opengeode.load_one(
+        opengeode.load_brep(brep_cube_filename), brep_cube_filename
+    )
     test_brep_cube(brep_cube)
     opengeode.save_brep(brep_cube, "cube_v22.og_brep")
-    reloaded_brep_cube = opengeode.load_brep("cube_v22.og_brep")
+    reloaded_brep_cube = opengeode.load_one(
+        opengeode.load_brep("cube_v22.og_brep"), "cube_v22.og_brep"
+    )
     test_brep_cube(reloaded_brep_cube)
 
-    brep_cone = opengeode.load_brep(os.path.join(data_dir, "cone_v4.msh"))
+    brep_cone_filename = os.path.join(data_dir, "cone_v4.msh")
+    brep_cone = opengeode.load_one(
+        opengeode.load_brep(brep_cone_filename), brep_cone_filename
+    )
     test_brep_cone(brep_cone)
     opengeode.save_brep(brep_cone, "cone_v4.og_brep")
-    reloaded_brep_cone = opengeode.load_brep("cone_v4.og_brep")
+    reloaded_brep_cone = opengeode.load_one(
+        opengeode.load_brep("cone_v4.og_brep"), "cone_v4.og_brep"
+    )
     test_brep_cone(reloaded_brep_cone)

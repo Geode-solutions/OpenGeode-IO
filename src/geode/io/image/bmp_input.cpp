@@ -31,10 +31,12 @@ namespace geode
 {
     namespace internal
     {
-        RasterImage2D BMPInput::read()
+        std::vector< RasterImage2D > BMPInput::read()
         {
             ImageInputImpl reader{ filename() };
-            return reader.read_file();
+            std::vector< RasterImage2D > images;
+            images.emplace_back( reader.read_file() );
+            return images;
         }
 
         auto BMPInput::additional_files() const -> AdditionalFiles

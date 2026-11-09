@@ -39,8 +39,11 @@ namespace
 {
     void test_load()
     {
-        auto surface = geode::load_triangulated_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "triangulated.smesh" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "triangulated.smesh" );
+        auto surface = geode::load_one(
+            geode::load_triangulated_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 111,
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 186,
@@ -81,7 +84,8 @@ namespace
                     "4 0 1 2 3\n"
                     "3 0 2 3\n";
         }
-        const auto surface = geode::load_triangulated_surface< 3 >( filename );
+        const auto surface = geode::load_one(
+            geode::load_triangulated_surface< 3 >( filename ), filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 4,
             "[wrong element size] Wrong number of vertices" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,

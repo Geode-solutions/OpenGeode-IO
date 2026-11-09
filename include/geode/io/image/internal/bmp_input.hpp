@@ -49,7 +49,7 @@ namespace geode
                 return EXT;
             }
 
-            RasterImage2D read() final;
+            std::vector< RasterImage2D > read() final;
 
             AdditionalFiles additional_files() const final;
 

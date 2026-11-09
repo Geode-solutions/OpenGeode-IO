@@ -80,10 +80,8 @@ namespace geode
             VTKMeshInputImpl( std::string_view filename,
                 const MeshImpl& impl,
                 const char* type )
-                : VTKInputImpl< Mesh >{ filename, type }
+                : VTKInputImpl< Mesh >{ filename, type }, impl_{ impl }
             {
-                this->initialize_mesh( Mesh::create( impl ) );
-                mesh_builder_ = MeshBuilder::create( this->mesh() );
             }
 
             MeshBuilder& builder()
@@ -159,7 +157,7 @@ namespace geode
                 {
                     return NO_ID;
                 }
-                return piece_vertex_offset_ + static_cast< index_t >( vertex );
+                return static_cast< index_t >( vertex );
             }
 
         private:
@@ -167,7 +165,8 @@ namespace geode
             {
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
-                    this->start_piece();
+                    this->add_mesh( Mesh::create( impl_ ) );
+                    mesh_builder_ = MeshBuilder::create( this->mesh() );
                     read_vtk_points( piece );
                     read_vtk_cells( piece );
                 }
@@ -186,11 +185,10 @@ namespace geode
             {
                 const auto nb_points =
                     this->read_attribute( piece, "NumberOfPoints" );
-                const auto vertex_offset = build_points( piece, nb_points );
-                piece_vertex_offset_ = vertex_offset;
+                build_points( piece, nb_points );
                 piece_nb_vertices_ = nb_points;
                 this->read_data( piece.child( "PointData" ),
-                    DataMapping{ nb_points, vertex_offset },
+                    DataMapping{ nb_points },
                     this->mesh().vertex_attribute_manager() );
             }
 
@@ -199,17 +197,14 @@ namespace geode
             virtual Percentage is_vtk_cells_loadable(
                 const pugi::xml_node& piece ) const = 0;
 
-            index_t build_points(
-                const pugi::xml_node& piece, index_t nb_points )
+            void build_points( const pugi::xml_node& piece, index_t nb_points )
             {
                 const auto points = read_points( piece, nb_points );
-                const auto offset =
-                    this->builder().create_vertices( nb_points );
+                this->builder().create_vertices( nb_points );
                 for( const auto p : Range{ nb_points } )
                 {
-                    this->builder().set_point( offset + p, points[p] );
+                    this->builder().set_point( p, points[p] );
                 }
-                return offset;
             }
 
             template < typename T >
@@ -261,9 +256,9 @@ namespace geode
             }
 
         private:
+            MeshImpl impl_;
             std::unique_ptr< MeshBuilder > mesh_builder_;
-            index_t piece_vertex_offset_{ 0 };
-            int64_t piece_nb_vertices_{ std::numeric_limits< int64_t >::max() };
+            int64_t piece_nb_vertices_{ 0 };
         }; // namespace detail
     } // namespace detail
 } // namespace geode

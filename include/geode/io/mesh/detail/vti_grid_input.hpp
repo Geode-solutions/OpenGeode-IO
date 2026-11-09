@@ -78,8 +78,30 @@ namespace geode
             static std::optional< Extent > read_whole_extent(
                 const pugi::xml_node& vtk_object )
             {
-                const auto tokens = string_split(
+                return read_extent(
                     vtk_object.attribute( "WholeExtent" ).value() );
+            }
+
+            // Reads the Extent of the piece, or the WholeExtent of the VTK
+            // object if the piece has none
+            static Extent read_piece_extent(
+                const pugi::xml_node& vtk_object, const pugi::xml_node& piece )
+            {
+                const auto piece_extent = piece.attribute( "Extent" );
+                const auto& node = piece_extent ? piece : vtk_object;
+                const auto* name = piece_extent ? "Extent" : "WholeExtent";
+                const auto extent =
+                    read_extent( node.attribute( name ).value() );
+                OpenGeodeIOMeshException::check_exception( extent.has_value(),
+                    nullptr, OpenGeodeException::TYPE::data,
+                    "[VTIInput::read_piece_extent] Missing or malformed ", name,
+                    ": ", node.attribute( name ).value() );
+                return extent.value();
+            }
+
+            static std::optional< Extent > read_extent( std::string_view value )
+            {
+                const auto tokens = string_split( value );
                 if( tokens.size() != 6 )
                 {
                     return std::nullopt;
@@ -104,19 +126,12 @@ namespace geode
             }
 
             static GridAttributes read_grid_attributes(
-                const pugi::xml_node& vtk_object )
+                const pugi::xml_node& vtk_object, const Extent& extent )
             {
                 GridAttributes grid_attributes;
-                const auto extent = read_whole_extent( vtk_object );
-                OpenGeodeIOMeshException::check_exception( extent.has_value(),
-                    nullptr, OpenGeodeException::TYPE::data,
-                    "[VTIInput::read_grid_attributes] Missing or malformed "
-                    "WholeExtent: ",
-                    vtk_object.attribute( "WholeExtent" ).value() );
                 for( const auto d : LRange{ dimension } )
                 {
-                    const auto nb_cells =
-                        extent.value()[d][1] - extent.value()[d][0];
+                    const auto nb_cells = extent[d][1] - extent[d][0];
                     OpenGeodeIOMeshException::check_exception( nb_cells < NO_ID,
                         nullptr, OpenGeodeException::TYPE::data,
                         "[VTIInput::read_grid_attributes] Too many cells in "
@@ -168,7 +183,7 @@ namespace geode
                 {
                     grid_attributes.origin +=
                         grid_attributes.cell_directions[d]
-                        * static_cast< double >( extent.value()[d][0] );
+                        * static_cast< double >( extent[d][0] );
                 }
                 return grid_attributes;
             }
@@ -195,14 +210,15 @@ namespace geode
         private:
             void read_vtk_object( const pugi::xml_node& vtk_object ) final
             {
-                build_grid( vtk_object );
                 for( const auto& piece : vtk_object.children( "Piece" ) )
                 {
+                    build_grid(
+                        vtk_object, read_piece_extent( vtk_object, piece ) );
                     this->read_data( piece.child( "PointData" ),
-                        DataMapping{ this->mesh().nb_grid_vertices(), 0 },
+                        DataMapping{ this->mesh().nb_grid_vertices() },
                         this->mesh().grid_vertex_attribute_manager() );
                     this->read_data( piece.child( "CellData" ),
-                        DataMapping{ this->mesh().nb_cells(), 0 },
+                        DataMapping{ this->mesh().nb_cells() },
                         this->mesh().cell_attribute_manager() );
                 }
             }
@@ -223,7 +239,9 @@ namespace geode
             }
 
         protected:
-            virtual void build_grid( const pugi::xml_node& vtk_object ) = 0;
+            // Adds the grid of a piece, it becomes the current mesh
+            virtual void build_grid(
+                const pugi::xml_node& vtk_object, const Extent& extent ) = 0;
         };
     } // namespace detail
 } // namespace geode

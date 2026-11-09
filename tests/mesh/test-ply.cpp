@@ -66,8 +66,11 @@ int main()
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
-        auto surface = geode::load_polygonal_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "Armadillo.ply" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "Armadillo.ply" );
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 172974,
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 345944,
@@ -83,8 +86,9 @@ int main()
         geode::save_polygonal_surface( *surface, output_file_ply );
 
         // Reload file
-        auto reloaded_surface =
-            geode::load_polygonal_surface< 3 >( output_file_ply );
+        auto reloaded_surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output_file_ply ),
+            output_file_ply );
         geode::OpenGeodeIOMeshException::test(
             reloaded_surface->nb_vertices() == 172974,
             "Number of vertices in the reloaded Surface is not "

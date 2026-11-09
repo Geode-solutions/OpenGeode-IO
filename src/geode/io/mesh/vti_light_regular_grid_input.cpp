@@ -39,6 +39,9 @@ namespace
         : public geode::detail::VTIGridInputImpl<
               geode::LightRegularGrid< dimension > >
     {
+        using Extent = typename geode::detail::VTIGridInputImpl<
+            geode::LightRegularGrid< dimension > >::Extent;
+
     public:
         VTILightRegularGridInputImpl( std::string_view filename )
             : geode::detail::VTIGridInputImpl<
@@ -47,15 +50,17 @@ namespace
         }
 
     private:
-        void build_grid( const pugi::xml_node& vtk_object ) final
+        void build_grid(
+            const pugi::xml_node& vtk_object, const Extent& extent ) final
         {
-            auto grid_attributes = this->read_grid_attributes( vtk_object );
+            auto grid_attributes =
+                this->read_grid_attributes( vtk_object, extent );
             auto grid =
                 std::make_unique< geode::LightRegularGrid< dimension > >(
                     std::move( grid_attributes.origin ),
                     std::move( grid_attributes.cells_number ),
                     std::move( grid_attributes.cells_length ) );
-            this->initialize_mesh( std::move( grid ) );
+            this->add_mesh( std::move( grid ) );
         }
     };
 } // namespace
@@ -65,13 +70,18 @@ namespace geode
     namespace detail
     {
         template < index_t dimension >
-        LightRegularGrid< dimension >
+        std::vector< LightRegularGrid< dimension > >
             VTILightRegularGridInput< dimension >::read()
         {
             VTILightRegularGridInputImpl< dimension > reader{
                 this->filename()
             };
-            return std::move( *reader.read_file() );
+            std::vector< LightRegularGrid< dimension > > grids;
+            for( auto& grid : reader.read_file() )
+            {
+                grids.emplace_back( std::move( *grid ) );
+            }
+            return grids;
         }
 
         template < index_t dimension >

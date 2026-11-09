@@ -82,7 +82,8 @@ void put_attributes_on_grid( const geode::Grid3D& grid )
 void test_regular_grid( const geode::RegularGrid3D& grid )
 {
     geode::save_regular_grid( grid, "test.vti" );
-    const auto reload_grid = geode::load_regular_grid< 3 >( "test.vti" );
+    const auto reload_grid = geode::load_one(
+        geode::load_regular_grid< 3 >( "test.vti" ), "test.vti" );
     geode::OpenGeodeIOMeshException::test(
         grid.nb_cells() == reload_grid->nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -114,7 +115,8 @@ void test_regular_grid( const geode::RegularGrid3D& grid )
 void test_light_regular_grid( const geode::LightRegularGrid3D& grid )
 {
     geode::save_light_regular_grid( grid, "test3.vti" );
-    const auto reload_grid = geode::load_light_regular_grid< 3 >( "test3.vti" );
+    const auto reload_grid = geode::load_one(
+        geode::load_light_regular_grid< 3 >( "test3.vti" ), "test3.vti" );
     geode::OpenGeodeIOMeshException::test(
         grid.nb_cells() == reload_grid.nb_cells(),
         "[TEST] Wrong number of cells." );
@@ -151,7 +153,8 @@ void test_precision()
     geode::LightRegularGrid3D grid{ origin, { 2, 3, 4 }, lengths };
     geode::save_light_regular_grid( grid, "precision.vti" );
     const auto reload_grid =
-        geode::load_light_regular_grid< 3 >( "precision.vti" );
+        geode::load_one( geode::load_light_regular_grid< 3 >( "precision.vti" ),
+            "precision.vti" );
     for( const auto d : geode::LRange{ 3 } )
     {
         geode::OpenGeodeIOMeshException::test(
@@ -236,8 +239,10 @@ void test_extent()
     write_file(
         "extent.vti", vti_file( "WholeExtent=\"2 5 -1 3 0 2\" "
                                 "Origin=\"1 2 3\" Spacing=\"1 2 3\"" ) );
-    const auto grid = geode::load_regular_grid< 3 >( "extent.vti" );
-    const auto light_grid = geode::load_light_regular_grid< 3 >( "extent.vti" );
+    const auto grid = geode::load_one(
+        geode::load_regular_grid< 3 >( "extent.vti" ), "extent.vti" );
+    const auto light_grid = geode::load_one(
+        geode::load_light_regular_grid< 3 >( "extent.vti" ), "extent.vti" );
     const std::array< geode::index_t, 3 > nb_cells{ 3, 4, 2 };
     const geode::Point3D origin{ { 3, 0, 3 } };
     for( const geode::Grid3D* current :
@@ -263,6 +268,35 @@ void test_extent()
         vti_file( "WholeExtent=\"0 1 0 1 0 1\" Origin=\"0 0\"" ) );
 }
 
+void test_no_piece()
+{
+    write_file( "no_piece.vti",
+        "<?xml version=\"1.0\"?>\n<VTKFile type=\"ImageData\" "
+        "version=\"1.0\" byte_order=\"LittleEndian\">\n<ImageData "
+        "WholeExtent=\"0 1 0 1 0 1\">\n</ImageData>\n</VTKFile>\n" );
+    for( const auto light : { false, true } )
+    {
+        try
+        {
+            geode::Logger::info( "[TEST] Loading file without piece" );
+            if( light )
+            {
+                geode::load_light_regular_grid< 3 >( "no_piece.vti" );
+            }
+            else
+            {
+                geode::load_regular_grid< 3 >( "no_piece.vti" );
+            }
+        }
+        catch( const geode::OpenGeodeException& )
+        {
+            continue;
+        }
+        geode::OpenGeodeIOMeshException::test(
+            false, "Loading file without piece should fail" );
+    }
+}
+
 void test_missing_image_data()
 {
     write_file( "missing_image_data.vti",
@@ -279,6 +313,76 @@ void test_missing_image_data()
     }
     geode::OpenGeodeIOMeshException::test(
         false, "Loading file without ImageData should fail" );
+}
+
+double attribute_value( const geode::AttributeManager& manager,
+    std::string_view name,
+    geode::index_t element )
+{
+    const auto ids = manager.attribute_ids_matching_name( name );
+    geode::OpenGeodeIOMeshException::test(
+        ids && ids->size() == 1, "[TEST] Missing attribute ", name );
+    return manager.find_generic_attribute( ids->at( 0 ) )
+        ->generic_value( element );
+}
+
+void check_pieces( absl::Span< const geode::Grid3D* const > grids )
+{
+    geode::OpenGeodeIOMeshException::test( grids.size() == 2,
+        "[TEST] Each piece should be loaded as a separate grid: should be 2, "
+        "get ",
+        grids.size() );
+    const std::array< geode::index_t, 2 > nb_cells{ 1, 2 };
+    const std::array< geode::index_t, 2 > nb_vertices{ 8, 12 };
+    const std::array< geode::Point3D, 2 > origins{
+        geode::Point3D{ { 0, 0, 0 } }, geode::Point3D{ { 1, 0, 0 } }
+    };
+    for( const auto g : geode::LRange{ 2 } )
+    {
+        const auto& grid = *grids[g];
+        geode::OpenGeodeIOMeshException::test( grid.nb_cells() == nb_cells[g],
+            "[TEST] Wrong number of cells in "
+            "grid ",
+            g, ": ", grid.nb_cells() );
+        geode::OpenGeodeIOMeshException::test(
+            grid.nb_grid_vertices() == nb_vertices[g],
+            "[TEST] Wrong number of vertices in grid ", g, ": ",
+            grid.nb_grid_vertices() );
+        geode::OpenGeodeIOMeshException::test(
+            grid.grid_coordinate_system().origin().inexact_equal( origins[g] ),
+            "[TEST] Wrong origin of grid ", g, ": ",
+            grid.grid_coordinate_system().origin().string() );
+    }
+    geode::OpenGeodeIOMeshException::test(
+        attribute_value( grids[0]->grid_vertex_attribute_manager(), "value", 7 )
+            == 7,
+        "[TEST] Point data of the first piece should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        attribute_value( grids[1]->grid_vertex_attribute_manager(), "value", 0 )
+            == 10,
+        "[TEST] Point data of the second piece should be loaded" );
+    geode::OpenGeodeIOMeshException::test(
+        attribute_value( grids[1]->cell_attribute_manager(), "id", 1 ) == 21,
+        "[TEST] Cell data of the second piece should be loaded" );
+}
+
+void test_multiple_pieces()
+{
+    const auto file = absl::StrCat( geode::DATA_PATH, "two_pieces.vti" );
+    const auto grids = geode::load_regular_grid< 3 >( file );
+    std::vector< const geode::Grid3D* > grid_pointers;
+    for( const auto& grid : grids )
+    {
+        grid_pointers.push_back( grid.get() );
+    }
+    check_pieces( grid_pointers );
+    const auto light_grids = geode::load_light_regular_grid< 3 >( file );
+    std::vector< const geode::Grid3D* > light_grid_pointers;
+    for( const auto& grid : light_grids )
+    {
+        light_grid_pointers.push_back( &grid );
+    }
+    check_pieces( light_grid_pointers );
 }
 
 int main()
@@ -301,7 +405,9 @@ int main()
         test_precision();
 
         test_loadability();
+        test_no_piece();
         test_extent();
+        test_multiple_pieces();
         test_missing_image_data();
 
         geode::Logger::info( "TEST SUCCESS" );

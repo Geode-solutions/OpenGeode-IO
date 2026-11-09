@@ -51,8 +51,8 @@ namespace geode
 {
     namespace detail
     {
-        std::unique_ptr< TetrahedralSolid3D > VTUTetrahedralInput::read(
-            const MeshImpl& impl )
+        std::vector< std::unique_ptr< TetrahedralSolid3D > >
+            VTUTetrahedralInput::read( const MeshImpl& impl )
         {
             VTUTetrahedralInputImpl reader{ filename(), impl };
             return reader.read_file();
