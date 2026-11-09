@@ -619,29 +619,29 @@ namespace
             const auto tokens = geode::string_split( line );
             for( const auto dimension : geode::LRange{ NB_DIMENSIONS } )
             {
-                read_partitioned_entities( dimension,
-                    geode::string_to_index( token( tokens, dimension ) ) );
+                const auto nb_entities =
+                    geode::string_to_index( token( tokens, dimension ) );
+                for( const auto unused : geode::Range{ nb_entities } )
+                {
+                    geode_unused( unused );
+                    read_partitioned_entity( dimension );
+                }
             }
             check_keyword( "$EndPartitionedEntities" );
         }
 
-        void read_partitioned_entities(
-            geode::local_index_t dimension, geode::index_t nb_entities )
+        void read_partitioned_entity( geode::local_index_t dimension )
         {
-            for( const auto unused : geode::Range{ nb_entities } )
+            std::string line;
+            read_line( line );
+            const auto tokens = tokenize( line );
+            if( geode::string_to_index( token( tokens, 1 ) ) != dimension )
             {
-                geode_unused( unused );
-                std::string line;
-                read_line( line );
-                const auto tokens = tokenize( line );
-                if( geode::string_to_index( token( tokens, 1 ) ) != dimension )
-                {
-                    continue;
-                }
-                partition_parents_[dimension].emplace(
-                    geode::string_to_index( token( tokens, 0 ) ),
-                    geode::string_to_index( token( tokens, 2 ) ) );
+                return;
             }
+            partition_parents_[dimension].emplace(
+                geode::string_to_index( token( tokens, 0 ) ),
+                geode::string_to_index( token( tokens, 2 ) ) );
         }
 
         [[nodiscard]] std::optional< geode::index_t > model_entity(

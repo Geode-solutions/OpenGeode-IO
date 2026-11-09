@@ -577,7 +577,7 @@ namespace
     {
         const auto reference = geode::load_brep(
             absl::StrCat( geode::DATA_PATH, "cube_v41.msh" ) );
-        for( const auto version : { "v40", "v41" } )
+        for( const auto* version : { "v40", "v41" } )
         {
             const auto brep = geode::load_brep( absl::StrCat(
                 geode::DATA_PATH, "cube_partitioned_", version, ".msh" ) );
