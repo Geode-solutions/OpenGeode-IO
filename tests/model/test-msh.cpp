@@ -553,6 +553,47 @@ namespace
         check_unique_vertices( brep );
     }
 
+    geode::index_t nb_polygons( const geode::BRep& brep )
+    {
+        geode::index_t nb_elements{ 0 };
+        for( const auto& surface : brep.surfaces() )
+        {
+            nb_elements += surface.mesh().nb_polygons();
+        }
+        return nb_elements;
+    }
+
+    geode::index_t nb_polyhedra( const geode::BRep& brep )
+    {
+        geode::index_t nb_elements{ 0 };
+        for( const auto& block : brep.blocks() )
+        {
+            nb_elements += block.mesh().nb_polyhedra();
+        }
+        return nb_elements;
+    }
+
+    void test_partitioned_entities()
+    {
+        const auto reference = geode::load_brep(
+            absl::StrCat( geode::DATA_PATH, "cube_v41.msh" ) );
+        for( const auto version : { "v40", "v41" } )
+        {
+            const auto brep = geode::load_brep( absl::StrCat(
+                geode::DATA_PATH, "cube_partitioned_", version, ".msh" ) );
+            test_brep_cube( brep );
+            geode::OpenGeodeIOModelException::test(
+                brep.nb_unique_vertices() == reference.nb_unique_vertices(),
+                "Partitioned cube should have the cube unique vertices" );
+            geode::OpenGeodeIOModelException::test(
+                nb_polygons( brep ) == nb_polygons( reference ),
+                "Partition interfaces should not be loaded as polygons" );
+            geode::OpenGeodeIOModelException::test(
+                nb_polyhedra( brep ) == nb_polyhedra( reference ),
+                "Partitioned cube should have the cube polyhedra" );
+        }
+    }
+
     void test_degenerate_elements()
     {
         write_file( "degenerate_elements_v2.msh",
@@ -788,6 +829,7 @@ int main()
         test_empty_components();
         test_corner_with_several_nodes();
         test_unknown_bounding_entities();
+        test_partitioned_entities();
         test_degenerate_elements();
         test_save_empty_corner();
         test_save_isolated_unique_vertex();

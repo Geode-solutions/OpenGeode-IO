@@ -246,6 +246,10 @@ namespace
                     has_entities_ = true;
                     read_entity_section();
                 }
+                else if( line == "$PartitionedEntities" && version() == 4 )
+                {
+                    read_partitioned_entity_section();
+                }
                 else if( line == "$Nodes" )
                 {
                     if( version() == 2 )
@@ -596,6 +600,66 @@ namespace
             }
         }
 
+        void read_partitioned_entity_section()
+        {
+            is_partitioned_ = true;
+            std::string line;
+            read_line( line );
+            read_line( line );
+            const auto nb_ghost_values =
+                2 * geode::string_to_index( token( tokenize( line ), 0 ) );
+            geode::index_t nb_read_ghost_values{ 0 };
+            while( nb_read_ghost_values < nb_ghost_values )
+            {
+                read_line( line );
+                nb_read_ghost_values +=
+                    static_cast< geode::index_t >( tokenize( line ).size() );
+            }
+            read_line( line );
+            const auto tokens = geode::string_split( line );
+            for( const auto dimension : geode::LRange{ NB_DIMENSIONS } )
+            {
+                read_partitioned_entities( dimension,
+                    geode::string_to_index( token( tokens, dimension ) ) );
+            }
+            check_keyword( "$EndPartitionedEntities" );
+        }
+
+        void read_partitioned_entities(
+            geode::local_index_t dimension, geode::index_t nb_entities )
+        {
+            for( const auto unused : geode::Range{ nb_entities } )
+            {
+                geode_unused( unused );
+                std::string line;
+                read_line( line );
+                const auto tokens = tokenize( line );
+                if( geode::string_to_index( token( tokens, 1 ) ) != dimension )
+                {
+                    continue;
+                }
+                partition_parents_[dimension].emplace(
+                    geode::string_to_index( token( tokens, 0 ) ),
+                    geode::string_to_index( token( tokens, 2 ) ) );
+            }
+        }
+
+        [[nodiscard]] std::optional< geode::index_t > model_entity(
+            geode::local_index_t dimension, geode::index_t entity_tag ) const
+        {
+            if( !is_partitioned_ )
+            {
+                return entity_tag;
+            }
+            const auto parent =
+                partition_parents_[dimension].find( entity_tag );
+            if( parent == partition_parents_[dimension].end() )
+            {
+                return std::nullopt;
+            }
+            return parent->second;
+        }
+
         geode::Point3D read_node_coordinates( std::string_view x_str,
             std::string_view y_str,
             std::string_view z_str )
@@ -798,10 +862,21 @@ namespace
             const auto mesh_element_type_id =
                 geode::string_to_index( token( tokens, 2 ) );
             const auto element_type = gmsh_element_type( mesh_element_type_id );
-            auto& component =
-                component_elements( element_type.dimension, entity_id );
             const auto nb_elements =
                 geode::string_to_index( token( tokens, 3 ) );
+            const auto entity =
+                model_entity( element_type.dimension, entity_id );
+            if( !entity )
+            {
+                for( const auto unused : geode::Range{ nb_elements } )
+                {
+                    geode_unused( unused );
+                    read_line( line );
+                }
+                return;
+            }
+            auto& component =
+                component_elements( element_type.dimension, entity.value() );
             component.types.reserve( component.types.size() + nb_elements );
             component.nodes.reserve( component.nodes.size()
                                      + nb_elements * element_type.nb_vertices );
@@ -1406,6 +1481,10 @@ namespace
         geode::BRepBuilder builder_;
         double version_{ 2 };
         bool has_entities_{ false };
+        bool is_partitioned_{ false };
+        std::array< absl::flat_hash_map< geode::index_t, geode::index_t >,
+            NB_DIMENSIONS >
+            partition_parents_;
         geode::index_t line_number_{ 0 };
         geode::index_t nb_degenerate_elements_{ 0 };
         std::vector< geode::Point3D > nodes_;
