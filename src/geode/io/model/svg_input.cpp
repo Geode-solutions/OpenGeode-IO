@@ -652,14 +652,16 @@ namespace
 
 namespace geode::internal
 {
-    Section SVGInput::read()
+    std::vector< Section > SVGInput::read()
     {
         Section section;
         SVGInputImpl impl( filename(), section );
         impl.read_file();
         impl.process_paths();
         impl.build_topology();
-        return section;
+        std::vector< Section > sections;
+        sections.emplace_back( std::move( section ) );
+        return sections;
     }
 
     Percentage SVGInput::is_loadable() const

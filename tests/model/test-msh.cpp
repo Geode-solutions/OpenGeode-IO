@@ -377,7 +377,8 @@ namespace
         write_file( filename, content );
         try
         {
-            const auto brep = geode::load_brep( filename );
+            const auto brep =
+                geode::load_one( geode::load_brep( filename ), filename );
         }
         catch( const geode::OpenGeodeException& exception )
         {
@@ -438,7 +439,8 @@ namespace
             absl::StrCat( V2_HEADER,
                 "$Nodes\n3\n10 0 0 0\n5 1 0 0\n1000000 0 1 0\n$EndNodes\n",
                 "$Elements\n1\n1 2 2 0 1 10 5 1000000\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "sparse_nodes_v2.msh" );
+        const auto brep = geode::load_one(
+            geode::load_brep( "sparse_nodes_v2.msh" ), "sparse_nodes_v2.msh" );
         geode::OpenGeodeIOModelException::test( brep.nb_unique_vertices() == 3,
             "Sparse node tags should give 3 unique vertices" );
         const auto& mesh = first_surface_mesh( brep );
@@ -456,7 +458,9 @@ namespace
                 "$EndNodes\n",
                 "$Elements\n2\n5 2 2 0 1 1 2 3\n42 2 2 0 1 2 4 3\n"
                 "$EndElements\n" ) );
-        const auto brep_v2 = geode::load_brep( "sparse_elements_v2.msh" );
+        const auto brep_v2 =
+            geode::load_one( geode::load_brep( "sparse_elements_v2.msh" ),
+                "sparse_elements_v2.msh" );
         geode::OpenGeodeIOModelException::test(
             first_surface_mesh( brep_v2 ).nb_polygons() == 2,
             "Sparse element tags (v2) should give 2 polygons" );
@@ -467,7 +471,9 @@ namespace
                 "0 0 0\n1 0 0\n0 1 0\n1 1 0\n$EndNodes\n",
                 "$Elements\n1 2 7 12\n2 1 2 2\n7 1 2 3\n12 2 4 3\n"
                 "$EndElements\n" ) );
-        const auto brep_v4 = geode::load_brep( "sparse_elements_v4.msh" );
+        const auto brep_v4 =
+            geode::load_one( geode::load_brep( "sparse_elements_v4.msh" ),
+                "sparse_elements_v4.msh" );
         geode::OpenGeodeIOModelException::test(
             first_surface_mesh( brep_v4 ).nb_polygons() == 2,
             "Sparse element tags (v4) should give 2 polygons" );
@@ -480,7 +486,9 @@ namespace
                 "$Nodes\n1 3 1 3\n2 1 1 3\n1\n2\n3\n"
                 "0 0 0 0.1 0.2\n1 0 0 0.3 0.4\n0 1 0 0.5 0.6\n$EndNodes\n",
                 "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2 3\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "parametric_nodes_v4.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "parametric_nodes_v4.msh" ),
+                "parametric_nodes_v4.msh" );
         const auto& mesh = first_surface_mesh( brep );
         geode::OpenGeodeIOModelException::test(
             mesh.point( mesh.polygon_vertex( { 0, 1 } ) )
@@ -490,8 +498,10 @@ namespace
 
     void test_corners_without_point_elements()
     {
-        const auto brep = geode::load_brep( absl::StrCat(
-            geode::DATA_PATH, "cube_no_point_elements_v41.msh" ) );
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, "cube_no_point_elements_v41.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         test_brep_cube( brep );
         for( const auto& corner : brep.corners() )
         {
@@ -516,7 +526,9 @@ namespace
                 "$EndEntities\n",
                 V4_TRIANGLE_NODES,
                 "$Elements\n1 1 1 1\n2 1 2 1\n1 1 2 3\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "empty_components_v4.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "empty_components_v4.msh" ),
+                "empty_components_v4.msh" );
         geode::OpenGeodeIOModelException::test( brep.nb_corners() == 0,
             "Corner without element should be removed" );
         geode::OpenGeodeIOModelException::test(
@@ -531,7 +543,9 @@ namespace
             absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
                 "$Elements\n3\n1 15 2 0 1 1\n2 15 2 0 1 2\n"
                 "3 2 2 0 1 1 2 3\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "corner_several_nodes_v2.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "corner_several_nodes_v2.msh" ),
+                "corner_several_nodes_v2.msh" );
         for( const auto& corner : brep.corners() )
         {
             geode::OpenGeodeIOModelException::test(
@@ -544,8 +558,10 @@ namespace
     {
         // Gmsh writes an invalid bounding curve tag for the curve embedded in
         // the bottom surface
-        const auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, "embedded_v41.msh" ) );
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, "embedded_v41.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         // NOLINTBEGIN(*-magic-numbers)
         BrepDescription description{ brep, 14, 17, 7, 1 };
         // NOLINTEND(*-magic-numbers)
@@ -602,7 +618,9 @@ namespace
                 "$EndNodes\n",
                 "$Elements\n3\n1 2 2 0 1 1 2 3\n2 2 2 0 1 2 4 2\n"
                 "3 1 2 0 2 4 4\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "degenerate_elements_v2.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "degenerate_elements_v2.msh" ),
+                "degenerate_elements_v2.msh" );
         geode::OpenGeodeIOModelException::test(
             first_surface_mesh( brep ).nb_polygons() == 1,
             "Degenerate polygon should be ignored" );
@@ -615,7 +633,9 @@ namespace
         write_file( "save_empty_corner.msh",
             absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
                 "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
-        auto brep = geode::load_brep( "save_empty_corner.msh" );
+        auto brep =
+            geode::load_one( geode::load_brep( "save_empty_corner.msh" ),
+                "save_empty_corner.msh" );
         geode::BRepBuilder builder{ brep };
         [[maybe_unused]] const auto& corner_id = builder.add_corner();
         geode::OpenGeodeIOModelException::test(
@@ -639,7 +659,9 @@ namespace
         write_file( "isolated_unique_vertex.msh",
             absl::StrCat( V2_HEADER, V2_TRIANGLE_NODES,
                 "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
-        auto brep = geode::load_brep( "isolated_unique_vertex.msh" );
+        auto brep =
+            geode::load_one( geode::load_brep( "isolated_unique_vertex.msh" ),
+                "isolated_unique_vertex.msh" );
         geode::BRepBuilder builder{ brep };
         builder.create_unique_vertices( 2 );
         geode::save_brep( brep, "isolated_unique_vertex_output.msh" );
@@ -665,10 +687,13 @@ namespace
                 "2 123456.78901234567 -2.5e+300 0\n"
                 "3 0.1 0.7 3.0000000000000004\n$EndNodes\n",
                 "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n" ) );
-        const auto brep = geode::load_brep( "exact_coordinates.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "exact_coordinates.msh" ),
+                "exact_coordinates.msh" );
         geode::save_brep( brep, "exact_coordinates_output.msh" );
         const auto reloaded =
-            geode::load_brep( "exact_coordinates_output.msh" );
+            geode::load_one( geode::load_brep( "exact_coordinates_output.msh" ),
+                "exact_coordinates_output.msh" );
         const auto& mesh = first_surface_mesh( brep );
         const auto& reloaded_mesh = first_surface_mesh( reloaded );
         for( const auto v : geode::LRange{ 3 } )
@@ -707,7 +732,9 @@ namespace
                 V2_TRIANGLE_NODES,
                 "$Elements\n1\n1 2 2 0 1 1 2 3\n$EndElements\n",
                 "$NodeData\n1\n\"data\"\n$EndNodeData\n" ) );
-        const auto brep = geode::load_brep( "unknown_sections.msh" );
+        const auto brep =
+            geode::load_one( geode::load_brep( "unknown_sections.msh" ),
+                "unknown_sections.msh" );
         geode::OpenGeodeIOModelException::test(
             brep.nb_surfaces() == 1, "Unknown sections should be skipped" );
         geode::OpenGeodeIOModelException::test( brep.nb_unique_vertices() == 3,
@@ -788,20 +815,24 @@ namespace
     void run_test( std::string_view short_filename, test_function test )
     {
         // Load file
-        auto brep = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, short_filename, ".msh" ) );
+        const auto brep_filename =
+            absl::StrCat( geode::DATA_PATH, short_filename, ".msh" );
+        auto brep =
+            geode::load_one( geode::load_brep( brep_filename ), brep_filename );
         test( brep );
 
         // Save and reload
         const auto filename =
             absl::StrCat( short_filename, ".", brep.native_extension() );
         geode::save_brep( brep, filename );
-        auto reloaded_brep = geode::load_brep( filename );
+        auto reloaded_brep =
+            geode::load_one( geode::load_brep( filename ), filename );
         test( reloaded_brep );
 
         const auto filename_msh = absl::StrCat( short_filename, "_output.msh" );
         geode::save_brep( brep, filename_msh );
-        auto reloaded_brep2 = geode::load_brep( filename_msh );
+        auto reloaded_brep2 =
+            geode::load_one( geode::load_brep( filename_msh ), filename_msh );
         test( reloaded_brep2 );
     }
 } // namespace

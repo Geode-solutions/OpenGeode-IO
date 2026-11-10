@@ -44,7 +44,7 @@ namespace geode
                 return EXT;
             }
 
-            std::unique_ptr< RegularGrid< dimension > > read(
+            std::vector< std::unique_ptr< RegularGrid< dimension > > > read(
                 const MeshImpl& impl ) final;
 
             Percentage is_loadable() const final;

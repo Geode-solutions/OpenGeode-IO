@@ -1500,14 +1500,16 @@ namespace geode
 {
     namespace internal
     {
-        BRep MSHInput::read()
+        std::vector< BRep > MSHInput::read()
         {
             BRep brep;
             MSHInputImpl impl( filename(), brep );
             impl.read_file();
             impl.build_geometry();
             impl.build_topology();
-            return brep;
+            std::vector< BRep > breps;
+            breps.emplace_back( std::move( brep ) );
+            return breps;
         }
 
         Percentage MSHInput::is_loadable() const

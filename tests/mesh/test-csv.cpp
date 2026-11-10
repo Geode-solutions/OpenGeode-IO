@@ -64,8 +64,9 @@ namespace
         // Use the reader directly: load_point_set hides the error message
         auto reader =
             geode::PointSetInputFactory< 3 >::create( "csv", filename );
-        return reader->read( geode::MeshFactory::default_impl(
-            geode::PointSet3D::type_name_static() ) );
+        return geode::load_one( reader->read( geode::MeshFactory::default_impl(
+                                    geode::PointSet3D::type_name_static() ) ),
+            filename );
     }
 
     void check_read_error(
@@ -308,7 +309,8 @@ namespace
         geode::OpenGeodeIOMeshException::test(
             !additional_files.has_additional_files(),
             "[TEST: CSV input], No additional file should be missing" );
-        auto point_set = geode::load_point_set< 3 >( filepath );
+        auto point_set =
+            geode::load_one( geode::load_point_set< 3 >( filepath ), filepath );
         geode::OpenGeodeIOMeshException::test(
             point_set->nb_vertices() == 103455,
             "[TEST: CSV input], "

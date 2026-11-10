@@ -52,8 +52,9 @@ namespace
         }
         builder->create_triangle( { 0, 1, 2 } );
         geode::save_triangulated_surface( *surface, "large_coordinates.stl" );
-        const auto reloaded =
-            geode::load_triangulated_surface< 3 >( "large_coordinates.stl" );
+        const auto reloaded = geode::load_one(
+            geode::load_triangulated_surface< 3 >( "large_coordinates.stl" ),
+            "large_coordinates.stl" );
         geode::OpenGeodeIOMeshException::test( reloaded->nb_vertices() == 3,
             "Wrong number of vertices in reloaded large coordinates STL" );
         for( const auto& point : points )
@@ -78,8 +79,11 @@ int main()
     {
         geode::OpenGeodeIOMeshLibrary::initialize();
         // Load file
-        auto surface = geode::load_triangulated_surface< 3 >(
-            absl::StrCat( geode::DATA_PATH, "thumbwheel.stl" ) );
+        const auto surface_filename =
+            absl::StrCat( geode::DATA_PATH, "thumbwheel.stl" );
+        auto surface = geode::load_one(
+            geode::load_triangulated_surface< 3 >( surface_filename ),
+            surface_filename );
         geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 525,
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1027,
@@ -92,8 +96,9 @@ int main()
         geode::save_triangulated_surface( *surface, output_file_stl );
 
         // Reload file
-        auto reloaded_surface =
-            geode::load_triangulated_surface< 3 >( output_file_stl );
+        auto reloaded_surface = geode::load_one(
+            geode::load_triangulated_surface< 3 >( output_file_stl ),
+            output_file_stl );
         geode::OpenGeodeIOMeshException::test(
             reloaded_surface->nb_vertices() == 525,
             "Number of vertices in the "

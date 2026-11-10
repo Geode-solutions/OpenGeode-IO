@@ -49,7 +49,8 @@ namespace geode
                 return EXT;
             }
 
-            std::unique_ptr< HybridSolid3D > read( const MeshImpl& impl ) final;
+            std::vector< std::unique_ptr< HybridSolid3D > > read(
+                const MeshImpl& impl ) final;
 
             Percentage is_loadable() const final;
 

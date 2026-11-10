@@ -84,7 +84,8 @@ void run_solid_test( std::string_view filename,
 {
     // Load file
     const auto file = absl::StrCat( geode::DATA_PATH, filename );
-    auto solid = geode::load_tetrahedral_solid< 3 >( file );
+    auto solid =
+        geode::load_one( geode::load_tetrahedral_solid< 3 >( file ), file );
     check( *solid, test_answers );
 
     // Save file
@@ -95,7 +96,9 @@ void run_solid_test( std::string_view filename,
     geode::save_tetrahedral_solid( *solid, output_filename );
 
     // Reload file
-    auto reload_solid = geode::load_tetrahedral_solid< 3 >( output_filename );
+    auto reload_solid =
+        geode::load_one( geode::load_tetrahedral_solid< 3 >( output_filename ),
+            output_filename );
     check( *reload_solid, test_answers );
 
     // Save file
@@ -104,7 +107,9 @@ void run_solid_test( std::string_view filename,
     geode::save_tetrahedral_solid( *solid, output_filename_vtu );
 
     // Reload file
-    auto reload_vtu = geode::load_hybrid_solid< 3 >( output_filename_vtu );
+    auto reload_vtu =
+        geode::load_one( geode::load_hybrid_solid< 3 >( output_filename_vtu ),
+            output_filename_vtu );
     check( *reload_vtu, test_answers );
 
     geode::OpenGeodeIOMeshException::test(
@@ -119,7 +124,8 @@ void run_polyhedral_test( std::string_view filename,
 {
     // Load file
     const auto file = absl::StrCat( geode::DATA_PATH, filename );
-    auto solid = geode::load_polyhedral_solid< 3 >( file );
+    auto solid =
+        geode::load_one( geode::load_polyhedral_solid< 3 >( file ), file );
     check( *solid, test_answers );
 
     // Save file
@@ -130,7 +136,9 @@ void run_polyhedral_test( std::string_view filename,
     geode::save_polyhedral_solid( *solid, output_filename_vtu );
 
     // Reload file
-    auto reload_vtu = geode::load_polyhedral_solid< 3 >( output_filename_vtu );
+    auto reload_vtu = geode::load_one(
+        geode::load_polyhedral_solid< 3 >( output_filename_vtu ),
+        output_filename_vtu );
     check( *reload_vtu, test_answers );
 }
 
@@ -140,7 +148,8 @@ void run_surface_test( std::string_view filename,
 {
     // Load file
     const auto file = absl::StrCat( geode::DATA_PATH, filename );
-    auto surface = geode::load_triangulated_surface< 3 >( file );
+    auto surface =
+        geode::load_one( geode::load_triangulated_surface< 3 >( file ), file );
     check( *surface, test_answers );
 
     std::string_view filename_without_ext{ filename };
@@ -232,8 +241,9 @@ void test_cell_data_with_skipped_cells()
             "format=\"ascii\">1 2 3</DataArray></PointData>\n"
             "<CellData><DataArray type=\"Int32\" Name=\"id\" "
             "format=\"ascii\">10 20 30</DataArray></CellData>\n" ) ) );
-    const auto surface =
-        geode::load_triangulated_surface< 3 >( "cell_data_skipped_cells.vtu" );
+    const auto surface = geode::load_one(
+        geode::load_triangulated_surface< 3 >( "cell_data_skipped_cells.vtu" ),
+        "cell_data_skipped_cells.vtu" );
     check( *surface, { 8, 2 } );
     const auto& manager = surface->polygon_attribute_manager();
     const auto attribute = manager.find_generic_attribute(
@@ -249,45 +259,52 @@ void test_cell_data_with_skipped_cells()
 
 void test_multiple_pieces()
 {
-    const auto piece_data = []( std::string_view cell_value ) {
-        return absl::StrCat( "<PointData><DataArray type=\"Float64\" "
-                             "Name=\"value\" format=\"ascii\">0 1 2 3 4 "
-                             "5 6 7</DataArray></PointData>\n<CellData>"
-                             "<DataArray type=\"Int32\" Name=\"id\" "
-                             "format=\"ascii\">",
-            cell_value, "</DataArray></CellData>\n" );
-    };
-    write_file( "multiple_pieces.vtu",
-        vtu_file(
-            absl::StrCat( vtu_piece( 1, "0 1 2", "3", "5", piece_data( "10" ) ),
-                vtu_piece( 1, "1 3 2", "3", "5", piece_data( "20" ) ) ) ) );
-    const auto surface =
-        geode::load_triangulated_surface< 3 >( "multiple_pieces.vtu" );
-    check( *surface, { 16, 2 } );
-    const auto vertices = surface->polygon_vertices( 1 );
+    const auto file = absl::StrCat( geode::DATA_PATH, "two_pieces.vtu" );
+    const auto surfaces = geode::load_triangulated_surface< 3 >( file );
+    geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+        "Each piece should be loaded as a separate mesh: should be 2, get ",
+        surfaces.size() );
+    check( *surfaces[0], { 3, 1 } );
+    check( *surfaces[1], { 4, 2 } );
+    const auto vertices = surfaces[1]->polygon_vertices( 1 );
     geode::OpenGeodeIOMeshException::test(
-        vertices[0] == 9 && vertices[1] == 11 && vertices[2] == 10,
+        vertices[0] == 1 && vertices[1] == 3 && vertices[2] == 2,
         "Second piece cells should reference second piece vertices" );
-    const auto& manager = surface->polygon_attribute_manager();
+    const auto& manager = surfaces[1]->polygon_attribute_manager();
     const auto ids = manager.attribute_ids_matching_name( "id" );
-    geode::OpenGeodeIOMeshException::test( ids && ids->size() == 1,
-        "Data arrays with the same name should share one attribute" );
-    const auto attribute = manager.find_generic_attribute( ids->at( 0 ) );
     geode::OpenGeodeIOMeshException::test(
-        attribute->generic_value( 0 ) == 10.f
-            && attribute->generic_value( 1 ) == 20.f,
-        "Cell data of each piece should be loaded" );
-    const auto& vertex_manager = surface->vertex_attribute_manager();
+        ids && ids->size() == 1, "Second piece should have one id attribute" );
+    geode::OpenGeodeIOMeshException::test(
+        manager.find_generic_attribute( ids->at( 0 ) )->generic_value( 1 )
+            == 21.f,
+        "Cell data of the second piece should be loaded" );
+    const auto& vertex_manager = surfaces[0]->vertex_attribute_manager();
     const auto vertex_ids =
         vertex_manager.attribute_ids_matching_name( "value" );
     geode::OpenGeodeIOMeshException::test(
         vertex_ids && vertex_ids->size() == 1,
-        "Point data arrays with the same name should share one attribute" );
-    const auto vertex_attribute =
-        vertex_manager.find_generic_attribute( vertex_ids->at( 0 ) );
+        "First piece should have one value attribute" );
     geode::OpenGeodeIOMeshException::test(
-        vertex_attribute->generic_value( 11 ) == 3.f,
-        "Point data of each piece should be loaded" );
+        vertex_manager.find_generic_attribute( vertex_ids->at( 0 ) )
+                ->generic_value( 2 )
+            == 2.5f,
+        "Point data of the first piece should be loaded" );
+}
+
+void test_no_piece()
+{
+    write_file( "no_piece.vtu", vtu_file( "" ) );
+    try
+    {
+        geode::Logger::info( "[TEST] Loading file without piece" );
+        geode::load_triangulated_surface< 3 >( "no_piece.vtu" );
+    }
+    catch( const geode::OpenGeodeException& )
+    {
+        return;
+    }
+    geode::OpenGeodeIOMeshException::test(
+        false, "Loading file without piece should fail" );
 }
 
 void test_no_cell()
@@ -300,7 +317,8 @@ void test_no_cell()
     geode::OpenGeodeIOMeshException::test(
         geode::is_tetrahedral_solid_loadable< 3 >( "no_cell.vtu" ).value() == 1,
         "VTU file without cell should be loadable as solid" );
-    const auto surface = geode::load_triangulated_surface< 3 >( "no_cell.vtu" );
+    const auto surface = geode::load_one(
+        geode::load_triangulated_surface< 3 >( "no_cell.vtu" ), "no_cell.vtu" );
     check( *surface, { 8, 0 } );
 }
 
@@ -311,8 +329,9 @@ void test_cells_with_wrong_number_of_vertices()
         vtu_file( vtu_piece( 2, "0 1 2 0 1 2 4", "3 7", "10 10",
             "<CellData><DataArray type=\"Int32\" Name=\"id\" "
             "format=\"ascii\">10 20</DataArray></CellData>\n" ) ) );
-    const auto solid =
-        geode::load_tetrahedral_solid< 3 >( "wrong_cell_size.vtu" );
+    const auto solid = geode::load_one(
+        geode::load_tetrahedral_solid< 3 >( "wrong_cell_size.vtu" ),
+        "wrong_cell_size.vtu" );
     check( *solid, { 8, 1 } );
     const auto& manager = solid->polyhedron_attribute_manager();
     const auto attribute = manager.find_generic_attribute(
@@ -376,11 +395,14 @@ void test_hexahedron_and_voxel()
     }
     builder->create_hexahedron( { 0, 1, 2, 3, 4, 5, 6, 7 } );
     const auto expected_volume = reference->polyhedron_volume( 0 );
-    const auto hybrid = geode::load_hybrid_solid< 3 >( "hexahedron_voxel.vtu" );
+    const auto hybrid = geode::load_one(
+        geode::load_hybrid_solid< 3 >( "hexahedron_voxel.vtu" ),
+        "hexahedron_voxel.vtu" );
     check( *hybrid, { 8, 2 } );
     check_unit_cubes( *hybrid, expected_volume );
-    const auto polyhedral =
-        geode::load_polyhedral_solid< 3 >( "hexahedron_voxel.vtu" );
+    const auto polyhedral = geode::load_one(
+        geode::load_polyhedral_solid< 3 >( "hexahedron_voxel.vtu" ),
+        "hexahedron_voxel.vtu" );
     check( *polyhedral, { 8, 2 } );
     check_unit_cubes( *polyhedral, expected_volume );
 }
@@ -407,8 +429,9 @@ void test_vtk_polyhedron()
         "format=\"ascii\">31 55 -1</DataArray>\n" );
     write_file( "vtk_polyhedron.vtu", content );
 
-    const auto polyhedral =
-        geode::load_polyhedral_solid< 3 >( "vtk_polyhedron.vtu" );
+    const auto polyhedral = geode::load_one(
+        geode::load_polyhedral_solid< 3 >( "vtk_polyhedron.vtu" ),
+        "vtk_polyhedron.vtu" );
     check( *polyhedral, { 8, 3 } );
     const std::array< double, 3 > volumes{ 1, 0.5, 1. / 6 };
     const std::array< geode::local_index_t, 3 > nb_facets{ 6, 5, 4 };
@@ -429,7 +452,9 @@ void test_vtk_polyhedron()
             attribute->generic_value( p ) == 10.f * ( p + 1 ),
             "Wrong cell data for polyhedron ", p );
     }
-    const auto hybrid = geode::load_hybrid_solid< 3 >( "vtk_polyhedron.vtu" );
+    const auto hybrid =
+        geode::load_one( geode::load_hybrid_solid< 3 >( "vtk_polyhedron.vtu" ),
+            "vtk_polyhedron.vtu" );
     check( *hybrid, { 8, 1 } );
 }
 
@@ -465,8 +490,9 @@ void test_polyhedral_round_trip()
             "Test polyhedron ", p, " should have a positive volume" );
     }
     geode::save_polyhedral_solid( *solid, "polyhedral_round_trip.vtu" );
-    const auto reload =
-        geode::load_polyhedral_solid< 3 >( "polyhedral_round_trip.vtu" );
+    const auto reload = geode::load_one(
+        geode::load_polyhedral_solid< 3 >( "polyhedral_round_trip.vtu" ),
+        "polyhedral_round_trip.vtu" );
     check( *reload, { 9, 3 } );
     for( const auto p : geode::Range{ solid->nb_polyhedra() } )
     {
@@ -491,6 +517,7 @@ int main()
 
         test_wrong_number_of_types();
         test_cell_data_with_skipped_cells();
+        test_no_piece();
         test_multiple_pieces();
         test_no_cell();
         test_cells_with_wrong_number_of_vertices();

@@ -161,7 +161,8 @@ namespace geode
         }
 
         template < typename Mesh >
-        std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::read_file()
+        std::vector< std::unique_ptr< Mesh > >
+            AssimpMeshInput< Mesh >::read_file()
         {
             Assimp::Importer importer;
             const auto* assimp_scene =
@@ -172,7 +173,9 @@ namespace geode
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
             importer.FreeScene();
-            return merge_meshes();
+            std::vector< std::unique_ptr< Mesh > > meshes;
+            meshes.emplace_back( merge_meshes() );
+            return meshes;
         }
 
         template < typename Mesh >
@@ -281,7 +284,8 @@ namespace geode
                 try
                 {
                     merged_manager.find_or_create_texture( name ).set_image(
-                        load_raster_image< 2 >( image_path ) );
+                        load_one( load_raster_image< 2 >( image_path ),
+                            image_path ) );
                 }
                 catch( const OpenGeodeException& e )
                 {

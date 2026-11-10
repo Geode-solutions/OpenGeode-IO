@@ -43,7 +43,7 @@ namespace geode
                 return EXT;
             }
 
-            BRep read() final;
+            std::vector< BRep > read() final;
 
             AdditionalFiles additional_files() const final
             {
