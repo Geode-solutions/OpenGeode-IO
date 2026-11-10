@@ -591,12 +591,16 @@ namespace
 
     void test_partitioned_entities()
     {
-        const auto reference = geode::load_brep(
-            absl::StrCat( geode::DATA_PATH, "cube_v41.msh" ) );
+        const auto reference_filename =
+            absl::StrCat( geode::DATA_PATH, "cube_v41.msh" );
+        const auto reference = geode::load_one(
+            geode::load_brep( reference_filename ), reference_filename );
         for( const auto* version : { "v40", "v41" } )
         {
-            const auto brep = geode::load_brep( absl::StrCat(
-                geode::DATA_PATH, "cube_partitioned_", version, ".msh" ) );
+            const auto brep_filename = absl::StrCat(
+                geode::DATA_PATH, "cube_partitioned_", version, ".msh" );
+            const auto brep = geode::load_one(
+                geode::load_brep( brep_filename ), brep_filename );
             test_brep_cube( brep );
             geode::OpenGeodeIOModelException::test(
                 brep.nb_unique_vertices() == reference.nb_unique_vertices(),
