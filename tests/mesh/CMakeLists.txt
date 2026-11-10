@@ -113,3 +113,12 @@ add_geode_test(
         ${PROJECT_NAME}::mesh
     ESSENTIAL
 )
+
+add_geode_test(
+    SOURCE "test-pnt.cpp"
+    DEPENDENCIES
+        OpenGeode::basic
+        OpenGeode::geometry
+        OpenGeode::mesh
+        ${PROJECT_NAME}::mesh
+)

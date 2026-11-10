@@ -57,6 +57,7 @@
 #include <geode/io/mesh/internal/obj_triangulated_output.hpp>
 #include <geode/io/mesh/internal/ply_input.hpp>
 #include <geode/io/mesh/internal/ply_output.hpp>
+#include <geode/io/mesh/internal/pnt_input.hpp>
 #include <geode/io/mesh/internal/smesh_curve_input.hpp>
 #include <geode/io/mesh/internal/smesh_triangulated_input.hpp>
 #include <geode/io/mesh/internal/stl_input.hpp>
@@ -191,6 +192,9 @@ namespace
         geode::PointSetInputFactory3D::register_creator<
             geode::internal::CSVInput >(
             geode::internal::CSVInput::extension().data() );
+        geode::PointSetInputFactory3D::register_creator<
+            geode::internal::PNTInput >(
+            geode::internal::PNTInput::extension().data() );
     }
 
     void register_point_set_output()
