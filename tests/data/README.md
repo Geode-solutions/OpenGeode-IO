@@ -29,3 +29,11 @@ Data: dfn1_ascii.vtp - dfn2_mesh_compressed.vtp - dfn3.vtp
 Courtesy of the Fractory (joint laboratory Itasca Consultants SAS / Univ Rennes 1)
 
 Copyright © 2020 Fractory - https://fractorylab.org/
+
+## Mount St. Helens contours
+
+Data: mount_st_helens_contours.pnt
+
+Source: USGS 3D Elevation Program 1/3 arc-second DEM, tile USGS_13_n47w123 (public domain), contoured every 100 m with GDAL
+
+Found: https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n47w123/USGS_13_n47w123.tif
