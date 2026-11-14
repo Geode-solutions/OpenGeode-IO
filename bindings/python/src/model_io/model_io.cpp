@@ -27,8 +27,14 @@
 
 PYBIND11_MODULE( opengeode_io_py_model, module )
 {
-    module.doc() = "OpenGeode-IO Python binding for model";
-    pybind11::class_< geode::OpenGeodeIOModelLibrary >(
-        module, "OpenGeodeIOModelLibrary" )
-        .def( "initialize", &geode::OpenGeodeIOModelLibrary::initialize );
+    module.doc() =
+        "OpenGeode-IO model formats: registers the readers and writers of BRep "
+        "and Section (MSH, SVG, VTM, GID MSH...) in the OpenGeode factories";
+    pybind11::class_< geode::OpenGeodeIOModelLibrary >( module,
+        "OpenGeodeIOModelLibrary",
+        "Initialization of the OpenGeode-IO model library" )
+        .def_static( "initialize", &geode::OpenGeodeIOModelLibrary::initialize,
+            "Register the BRep and Section readers and writers in the "
+            "OpenGeode factories; also initializes OpenGeodeModelLibrary and "
+            "OpenGeodeIOMeshLibrary; calling it again has no effect" );
 }

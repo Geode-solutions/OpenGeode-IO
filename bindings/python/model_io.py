@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""OpenGeode-IO model formats (MSH and SVG readers, MSH, GID MSH and VTM writers): importing this module registers them in the OpenGeode factories for opengeode.BRep and opengeode.Section."""
+
 import opengeode
 
 from opengeode_io_py_model import *

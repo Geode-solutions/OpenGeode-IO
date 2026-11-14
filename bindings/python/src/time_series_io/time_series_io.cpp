@@ -27,8 +27,15 @@
 
 PYBIND11_MODULE( opengeode_io_py_time_series, module )
 {
-    module.doc() = "OpenGeode-IO Python binding for time series";
-    pybind11::class_< geode::OpenGeodeIOTimeSeriesLibrary >(
-        module, "OpenGeodeIOTimeSeriesLibrary" )
-        .def( "initialize", &geode::OpenGeodeIOTimeSeriesLibrary::initialize );
+    module.doc() = "OpenGeode-IO time series formats: registers the PVD reader "
+                   "of BRep time series in the OpenGeode factory";
+    pybind11::class_< geode::OpenGeodeIOTimeSeriesLibrary >( module,
+        "OpenGeodeIOTimeSeriesLibrary",
+        "Initialization of the OpenGeode-IO time series library" )
+        .def_static( "initialize",
+            &geode::OpenGeodeIOTimeSeriesLibrary::initialize,
+            "Register the PVD reader of BRep time series; also initializes "
+            "OpenGeodeModelLibrary and OpenGeodeIOMeshLibrary; calling it "
+            "again "
+            "has no effect" );
 }

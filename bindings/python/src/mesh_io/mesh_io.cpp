@@ -27,8 +27,17 @@
 
 PYBIND11_MODULE( opengeode_io_py_mesh, module )
 {
-    module.doc() = "OpenGeode-IO Python binding for mesh";
-    pybind11::class_< geode::OpenGeodeIOMeshLibrary >(
-        module, "OpenGeodeIOMeshLibrary" )
-        .def( "initialize", &geode::OpenGeodeIOMeshLibrary::initialize );
+    module.doc() =
+        "OpenGeode-IO mesh formats: registers the readers and writers of "
+        "points, curves, surfaces (2D and 3D), solids and grids (OBJ, PLY, "
+        "STL, VTP, VTU, VTI, SMESH, DXF, CSV, PNT, DOT, Triangle...) in the "
+        "OpenGeode factories";
+    pybind11::class_< geode::OpenGeodeIOMeshLibrary >( module,
+        "OpenGeodeIOMeshLibrary",
+        "Initialization of the OpenGeode-IO mesh library" )
+        .def_static( "initialize", &geode::OpenGeodeIOMeshLibrary::initialize,
+            "Register the mesh readers and writers in the OpenGeode factories; "
+            "also initializes OpenGeodeMeshLibrary and "
+            "OpenGeodeIOImageLibrary; "
+            "calling it again has no effect" );
 }

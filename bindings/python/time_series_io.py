@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""OpenGeode-IO time series formats (PVD reader of BRep time series): importing this module registers it in the OpenGeode factory used by opengeode.load_brep_time_series."""
 
 import opengeode
 
