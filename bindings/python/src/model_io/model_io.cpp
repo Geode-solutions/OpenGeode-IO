@@ -23,6 +23,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include <geode/bindings/python/common.hpp>
+
 #include <geode/io/model/common.hpp>
 
 PYBIND11_MODULE( opengeode_io_py_model, module )
@@ -37,4 +39,5 @@ PYBIND11_MODULE( opengeode_io_py_model, module )
             "Register the BRep and Section readers and writers in the "
             "OpenGeode factories; also initializes OpenGeodeModelLibrary and "
             "OpenGeodeIOMeshLibrary; calling it again has no effect" );
+    geode::document_missing_constructors( module );
 }

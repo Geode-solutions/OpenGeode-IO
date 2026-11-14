@@ -87,6 +87,16 @@ def check_docstrings(documentation):
             isinstance(inspect.getattr_static(library, "initialize"), staticmethod),
             f"{name}.initialize should be static",
         )
+        check(
+            "Initialize self" not in (library.__init__.__doc__ or ""),
+            f"{name} should document its missing constructor",
+        )
+        try:
+            library()
+        except TypeError:
+            pass
+        else:
+            raise ValueError(f"[Test] {name} should not be constructible")
         # No instance is needed: initialize is called on the class, twice
         library.initialize()
         library.initialize()

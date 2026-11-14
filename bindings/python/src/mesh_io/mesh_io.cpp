@@ -23,6 +23,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include <geode/bindings/python/common.hpp>
+
 #include <geode/io/mesh/common.hpp>
 
 PYBIND11_MODULE( opengeode_io_py_mesh, module )
@@ -40,4 +42,5 @@ PYBIND11_MODULE( opengeode_io_py_mesh, module )
             "also initializes OpenGeodeMeshLibrary and "
             "OpenGeodeIOImageLibrary; "
             "calling it again has no effect" );
+    geode::document_missing_constructors( module );
 }

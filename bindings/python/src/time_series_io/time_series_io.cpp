@@ -23,6 +23,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include <geode/bindings/python/common.hpp>
+
 #include <geode/io/time_series/common.hpp>
 
 PYBIND11_MODULE( opengeode_io_py_time_series, module )
@@ -38,4 +40,5 @@ PYBIND11_MODULE( opengeode_io_py_time_series, module )
             "OpenGeodeModelLibrary and OpenGeodeIOMeshLibrary; calling it "
             "again "
             "has no effect" );
+    geode::document_missing_constructors( module );
 }
