@@ -40,9 +40,10 @@ add_geode_library(
         "internal/msh_output.hpp"
         "internal/gid_output.hpp"
         "internal/svg_input.hpp"
+    PUBLIC_DEPENDENCIES
+        OpenGeode::basic
     PRIVATE_DEPENDENCIES
         Async++
-        OpenGeode::basic
         OpenGeode::geometry
         OpenGeode::mesh
         OpenGeode::model

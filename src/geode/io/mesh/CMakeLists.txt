@@ -112,10 +112,10 @@ add_geode_library(
         "internal/stl_output.hpp"
         "internal/triangle_output.hpp"
     PUBLIC_DEPENDENCIES
+        OpenGeode::basic
         OpenGeode::image
         ${PROJECT_NAME}::image
     PRIVATE_DEPENDENCIES
-        OpenGeode::basic
         OpenGeode::geometry
         OpenGeode::mesh
         assimp::assimp

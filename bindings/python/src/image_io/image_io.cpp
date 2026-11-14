@@ -23,12 +23,23 @@
 
 #include <pybind11/pybind11.h>
 
+#include <geode/bindings/python/common.hpp>
+
 #include <geode/io/image/common.hpp>
 
 PYBIND11_MODULE( opengeode_io_py_image, module )
 {
-    module.doc() = "OpenGeode-IO Python binding for image";
-    pybind11::class_< geode::OpenGeodeIOImageLibrary >(
-        module, "OpenGeodeIOImageLibrary" )
-        .def( "initialize", &geode::OpenGeodeIOImageLibrary::initialize );
+    module.doc() = "OpenGeode-IO raster image formats: registers the readers "
+                   "(BMP, JPG, PNG, TIFF/TIF) and the VTI writer of raster "
+                   "images in the OpenGeode factories";
+    pybind11::class_< geode::OpenGeodeIOImageLibrary >( module,
+        "OpenGeodeIOImageLibrary",
+        "Initialization of the OpenGeode-IO image library" )
+        .def_static( "initialize", &geode::OpenGeodeIOImageLibrary::initialize,
+            "Register the raster image readers and writers (BMP, JPG, PNG, "
+            "TIFF, VTI...) in the OpenGeode factories and register GDAL "
+            "drivers; also initializes OpenGeodeImageLibrary; calling it again "
+            "has "
+            "no effect" );
+    geode::document_missing_constructors( module );
 }

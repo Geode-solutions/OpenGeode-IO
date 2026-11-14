@@ -32,8 +32,9 @@ add_geode_library(
         "internal/pvd_input.hpp"
         "internal/pvd_attributes_transfer.hpp"
         "internal/pvd_point_sets.hpp"
-    PRIVATE_DEPENDENCIES
+    PUBLIC_DEPENDENCIES
         OpenGeode::basic
+    PRIVATE_DEPENDENCIES
         OpenGeode::geometry
         OpenGeode::mesh
         OpenGeode::model
