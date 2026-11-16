@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""OpenGeode-IO raster image formats (BMP, JPG, PNG, TIFF readers, VTI writer): importing this module registers them in the OpenGeode factories, so that opengeode.load(opengeode.RasterImage2D, ...) reads them."""
+
 import opengeode
 
 from opengeode_io_py_image import *

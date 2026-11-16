@@ -286,7 +286,7 @@ namespace geode::internal
     std::vector< std::string > GIDOutput::write( const BRep& brep ) const
     {
         auto filename_no_extention =
-            geode::filename_without_extension( to_string( filename() ) );
+            geode::filepath_without_extension( to_string( filename() ) );
         auto filename =
             absl::StrCat( filename_no_extention.string(), ".gid.msh" );
         GIDOutputImpl impl( filename, brep );

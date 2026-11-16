@@ -29,6 +29,7 @@ add_geode_python_wheel(
         "mesh_io.py"
         "model_io.py"
         "time_series_io.py"
+    DOCUMENTATION "${CMAKE_CURRENT_SOURCE_DIR}/opengeode_io_doc.txt"
     SUPERBUILD
     LICENSE "MIT"
 )

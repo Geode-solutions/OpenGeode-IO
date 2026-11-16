@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""OpenGeode-IO mesh formats (OBJ, PLY, STL, VTP, VTU, VTI, SMESH, DXF, CSV, PNT...): importing this module registers the readers and writers in the OpenGeode factories, so that opengeode.load, opengeode.save, opengeode.is_loadable and opengeode.input_extensions handle them."""
+
 import opengeode
 
 from opengeode_io_py_mesh import *

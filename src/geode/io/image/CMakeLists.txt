@@ -44,9 +44,9 @@ add_geode_library(
         "internal/raster_image_input.hpp"
         "internal/tiff_input.hpp"
     PUBLIC_DEPENDENCIES
+        OpenGeode::basic
         OpenGeode::image
     PRIVATE_DEPENDENCIES
-        OpenGeode::basic
         OpenGeode::geometry
         pugixml::pugixml
         GDAL::GDAL

@@ -24,3 +24,9 @@ add_geode_python_test(
     DEPENDENCIES
         ${PROJECT_NAME}::py_time_series
 )
+add_geode_python_test(
+    NAME "test-py-time-series-io-errors"
+    SOURCE "test-py-time-series-io-errors.py"
+    DEPENDENCIES
+        ${PROJECT_NAME}::py_time_series
+)

@@ -18,6 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+add_subdirectory(image_io)
 add_subdirectory(mesh_io)
 add_subdirectory(model_io)
 add_subdirectory(time_series_io)
+
+add_geode_python_test(
+    SOURCE "test-py-package-docs.py"
+    ARGUMENTS
+        "${PROJECT_SOURCE_DIR}/bindings/python/opengeode_io_doc.txt"
+        "${PROJECT_BINARY_DIR}/wheel/opengeode_io"
+    DEPENDENCIES
+        ${PROJECT_NAME}::py_image
+        ${PROJECT_NAME}::py_mesh
+        ${PROJECT_NAME}::py_model
+        ${PROJECT_NAME}::py_time_series
+)

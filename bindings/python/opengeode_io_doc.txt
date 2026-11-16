@@ -1,0 +1,50 @@
+OpenGeode-IO: input and output formats for OpenGeode.
+
+Importing the package registers the OpenGeode-IO readers and writers in the
+OpenGeode factories. It exposes no class of its own: use the generic functions
+of the opengeode package (load, save, is_loadable, is_saveable,
+input_extensions, output_extensions) with the new formats.
+
+    >>> import opengeode
+    >>> before = opengeode.input_extensions(opengeode.PolygonalSurface3D)
+    >>> "obj" in before
+    False
+    >>> import opengeode_io
+    >>> "obj" in opengeode.input_extensions(opengeode.PolygonalSurface3D)
+    True
+    >>> "msh" in opengeode.input_extensions(opengeode.BRep)
+    True
+    >>> "svg" in opengeode.input_extensions(opengeode.Section)
+    True
+
+Formats (extensions) by type
+============================
+
+- Meshes, read: PointSet3D (csv, pnt), EdgedCurve3D (smesh),
+  PolygonalSurface3D (dxf, obj, ply, vtp, vtu), TriangulatedSurface3D (smesh,
+  stl, vtu), PolyhedralSolid3D, TetrahedralSolid3D and HybridSolid3D (vtu),
+  regular grids (vti).
+- Meshes, written: PointSet2D/3D and EdgedCurve2D/3D (vtp); PolygonalSurface3D
+  (obj, ply, vtp, dot); TriangulatedSurface3D (obj, stl, vtp, dot);
+  PolygonalSurface2D (vtp, dot); TriangulatedSurface2D (vtp, dot, triangle,
+  which writes the .node, .ele and .neigh files); the solids (vtu); regular
+  grids (vti). The dot files are Graphviz graphs of the edges of the surface.
+- Models: BRep reads msh and writes msh, gid_msh and vtm; Section reads svg and
+  writes vtm.
+- Raster images: RasterImage2D reads bmp, jpg, png, tif and tiff, and writes vti.
+- Time series: a PVD file is loaded onto a BRep with
+  opengeode.load_brep_time_series(brep, "file.pvd").
+
+Use opengeode.input_extensions(cls) and opengeode.output_extensions(cls) for the
+exact list of a type.
+
+Loading and saving
+==================
+
+    brep = opengeode.load(opengeode.BRep, "model.msh")
+    surface = opengeode.load(opengeode.PolygonalSurface3D, "surface.obj")
+    opengeode.save(surface, "surface.ply")
+
+A file that cannot be read raises opengeode.OpenGeodeDataError (an
+OpenGeodeError, which is a RuntimeError). opengeode.is_loadable(cls, filename)
+tells beforehand how likely the file can be loaded (a Percentage).

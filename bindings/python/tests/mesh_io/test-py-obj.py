@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import os
+import tempfile
 
 import geode_test_env
 
@@ -30,18 +31,20 @@ if __name__ == "__main__":
     mesh_io.OpenGeodeIOMeshLibrary.initialize()
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
-
-    surface_filename = os.path.join(data_dir, "TopHat.obj")
-    surface = opengeode.load_one(
-        opengeode.load_polygonal_surface3D(surface_filename), surface_filename
-    )
-    if surface.nb_vertices() != 363:
-        raise ValueError(
-            "[Test] Number of vertices in the loaded Surface is not correct"
+    with tempfile.TemporaryDirectory() as output_dir:
+        surface_filename = os.path.join(data_dir, "TopHat.obj")
+        surface = opengeode.load_one(
+            opengeode.load_polygonal_surface3D(surface_filename), surface_filename
         )
-    if surface.nb_polygons() != 380:
-        raise ValueError(
-            "[Test] Number of polygons in the loaded Surface is not correct"
-        )
+        if surface.nb_vertices() != 363:
+            raise ValueError(
+                "[Test] Number of vertices in the loaded Surface is not correct"
+            )
+        if surface.nb_polygons() != 380:
+            raise ValueError(
+                "[Test] Number of polygons in the loaded Surface is not correct"
+            )
 
-    opengeode.save_polygonal_surface3D(surface, "TopHat_save.obj")
+        opengeode.save_polygonal_surface3D(
+            surface, os.path.join(output_dir, "TopHat_save.obj")
+        )

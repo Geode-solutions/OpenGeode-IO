@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import os
+import tempfile
 
 import geode_test_env
 
@@ -56,15 +57,16 @@ if __name__ == "__main__":
     model_io.OpenGeodeIOModelLibrary.initialize()
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
+    with tempfile.TemporaryDirectory() as output_dir:
+        section_filename = os.path.join(data_dir, "logo.svg")
+        section = opengeode.load_one(
+            opengeode.load_section(section_filename), section_filename
+        )
+        test_section(section)
 
-    section_filename = os.path.join(data_dir, "logo.svg")
-    section = opengeode.load_one(
-        opengeode.load_section(section_filename), section_filename
-    )
-    test_section(section)
-
-    opengeode.save_section(section, "logo.og_sctn")
-    reloaded_section = opengeode.load_one(
-        opengeode.load_section("logo.og_sctn"), "logo.og_sctn"
-    )
-    test_section(reloaded_section)
+        saved_filename = os.path.join(output_dir, "logo.og_sctn")
+        opengeode.save_section(section, saved_filename)
+        reloaded_section = opengeode.load_one(
+            opengeode.load_section(saved_filename), saved_filename
+        )
+        test_section(reloaded_section)

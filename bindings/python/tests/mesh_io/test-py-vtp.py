@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import os
+import tempfile
 
 import geode_test_env
 
@@ -38,7 +39,7 @@ def check(surface, nb_vertices, nb_polygons):
         )
 
 
-def run_test(filename, nb_vertices, nb_polygons):
+def run_test(output_dir, filename, nb_vertices, nb_polygons):
     test_dir = os.path.dirname(__file__)
     data_dir = os.path.abspath(os.path.join(test_dir, "../../../../tests/data"))
     surface_filename = os.path.join(data_dir, filename + ".vtp")
@@ -46,15 +47,16 @@ def run_test(filename, nb_vertices, nb_polygons):
         opengeode.load_polygonal_surface3D(surface_filename), surface_filename
     )
     check(surface, nb_vertices, nb_polygons)
-    opengeode.save_polygonal_surface3D(surface, os.path.join(filename + ".og_psf3d"))
-    reloaded_filename = os.path.join(filename + ".og_psf3d")
+    reloaded_filename = os.path.join(output_dir, filename + ".og_psf3d")
+    opengeode.save_polygonal_surface3D(surface, reloaded_filename)
     reloaded_surface = opengeode.load_one(
         opengeode.load_polygonal_surface3D(reloaded_filename), reloaded_filename
     )
-    check(surface, nb_vertices, nb_polygons)
+    check(reloaded_surface, nb_vertices, nb_polygons)
 
 
 if __name__ == "__main__":
     mesh_io.OpenGeodeIOMeshLibrary.initialize()
-    run_test("dfn1_ascii", 187, 10)
-    run_test("dfn2_mesh_compressed", 33413, 58820)
+    with tempfile.TemporaryDirectory() as output_dir:
+        run_test(output_dir, "dfn1_ascii", 187, 10)
+        run_test(output_dir, "dfn2_mesh_compressed", 33413, 58820)
