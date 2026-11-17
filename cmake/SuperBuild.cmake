@@ -32,6 +32,17 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Additional cmake modules
+# CI test builds (GEODE_CI_DEBUG_FLAGS, see OpenGeode CppTargets.cmake) build
+# the third party projects in Release: their packages are installed with the
+# release packages of the downstream projects, which load the Release third
+# party libraries. These Debug builds already use the release runtime: their
+# flags are replaced by GEODE_CI_DEBUG_FLAGS.
+if(DEFINED ENV{GEODE_CI_DEBUG_FLAGS})
+    set(GEODE_THIRD_PARTY_BUILD_TYPE "Release")
+else()
+    set(GEODE_THIRD_PARTY_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+endif()
+
 include(ExternalProject)
 
 include(${PROJECT_SOURCE_DIR}/cmake/ConfigureAssimp.cmake)
