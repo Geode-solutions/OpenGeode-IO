@@ -35,6 +35,11 @@ Formats (extensions) by type
 - Time series: a PVD file is loaded onto a BRep with
   opengeode.load_brep_time_series(brep, "file.pvd").
 
+A dxf file (ASCII) gives one PolygonalSurface3D per polyface mesh POLYLINE,
+named after its XDATA "Name" or "Nom de Galerie" (else <layer>_<handle>), and
+one per layer for its 3DFACE entities, named after the layer: read it with
+opengeode.load_all. The other entities (lines, points, blocks...) are skipped.
+
 Use opengeode.input_extensions(cls) and opengeode.output_extensions(cls) for the
 exact list of a type.
 

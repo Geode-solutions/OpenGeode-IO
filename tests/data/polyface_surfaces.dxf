@@ -1,0 +1,544 @@
+  0
+SECTION
+  2
+HEADER
+  9
+$ACADVER
+  1
+AC1027
+  0
+ENDSEC
+  0
+SECTION
+  2
+BLOCKS
+  0
+BLOCK
+  8
+0
+  2
+IGNORED
+  0
+3DFACE
+  8
+BLOCK_LAYER
+ 10
+0.0
+ 20
+0.0
+ 30
+1.0
+ 11
+1.0
+ 21
+0.0
+ 31
+1.0
+ 12
+2.0
+ 22
+0.0
+ 32
+1.0
+ 13
+3.0
+ 23
+0.0
+ 33
+1.0
+  0
+ENDBLK
+  8
+0
+  0
+ENDSEC
+  0
+SECTION
+  2
+ENTITIES
+  0
+POLYLINE
+  5
+1A
+  8
+GALERIES
+ 66
+1
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 70
+64
+ 71
+6
+ 72
+6
+1001
+Dimensions de Galerie
+1000
+4.5L X 4.5H
+1001
+Nom de Galerie
+1000
+Ignored
+1001
+_AREA
+1040
+40.8
+1001
+Name
+1000
+Galerie A
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+1
+ 20
+0
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+1
+ 20
+1
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+1
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+2
+ 20
+0
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+2
+ 20
+1
+ 30
+0
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+2
+ 73
+4
+ 74
+1
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+2
+ 72
+-3
+ 73
+4
+ 74
+0
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+2
+ 72
+5
+ 73
+6
+ 74
+3
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+3
+ 72
+3
+ 73
+3
+ 74
+3
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+2
+ 73
+9
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+2
+ 73
+1
+ 74
+3
+  0
+SEQEND
+  8
+GALERIES
+  0
+LINE
+  8
+GALERIES
+ 10
+5.0
+ 20
+5.0
+ 30
+5.0
+ 11
+6.0
+ 21
+6.0
+ 31
+6.0
+  0
+POLYLINE
+  5
+1B
+  8
+GALERIES
+ 66
+1
+ 70
+8
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+5
+ 70
+32
+  0
+VERTEX
+  8
+GALERIES
+ 10
+1
+ 20
+0
+ 30
+5
+ 70
+32
+  0
+SEQEND
+  8
+GALERIES
+  0
+POLYLINE
+  5
+2B
+  8
+GALERIES
+ 66
+1
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 70
+64
+ 71
+4
+ 72
+2
+1001
+Name
+1000
+
+1001
+Nom de Galerie
+1000
+Baie d\U+00E9cantation 1
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+10
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+1
+ 20
+0
+ 30
+10
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+1
+ 20
+1
+ 30
+10
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+1
+ 30
+10
+ 70
+192
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+2
+ 73
+3
+ 74
+1
+  0
+VERTEX
+  8
+GALERIES
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+3
+ 73
+4
+ 74
+1
+  0
+SEQEND
+  8
+GALERIES
+  0
+POLYLINE
+  5
+3C
+  8
+OTHER
+ 66
+1
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 70
+64
+ 71
+3
+ 72
+1
+  0
+VERTEX
+  8
+OTHER
+ 10
+0
+ 20
+0
+ 30
+20
+ 70
+192
+  0
+VERTEX
+  8
+OTHER
+ 10
+1
+ 20
+0
+ 30
+20
+ 70
+192
+  0
+VERTEX
+  8
+OTHER
+ 10
+0
+ 20
+1
+ 30
+20
+ 70
+192
+  0
+VERTEX
+  8
+OTHER
+ 10
+0
+ 20
+0
+ 30
+0
+ 70
+128
+ 71
+1
+ 72
+2
+ 73
+3
+  0
+SEQEND
+  8
+OTHER
+  0
+ENDSEC
+  0
+EOF
