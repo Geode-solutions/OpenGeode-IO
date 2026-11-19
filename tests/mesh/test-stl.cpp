@@ -88,6 +88,9 @@ int main()
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1027,
             "Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test(
+            surface->name() && surface->name().value() == "thumbwheel",
+            "Loaded Surface should be named after the STL solid" );
 
         // Save file
         geode::save_triangulated_surface( *surface,

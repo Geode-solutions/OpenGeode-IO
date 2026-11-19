@@ -32,6 +32,7 @@
 
 #include <absl/algorithm/container.h>
 #include <absl/container/flat_hash_set.h>
+#include <absl/container/inlined_vector.h>
 
 #include <geode/basic/common.hpp>
 #include <geode/basic/filename.hpp>
@@ -51,14 +52,123 @@
 
 namespace
 {
+    // Corners (positions in the face) kept to build the polygon: consecutive
+    // corners on the same vertex or on equal points (Assimp duplicates the
+    // vertices per corner) are merged, including the last and first ones.
+    // Empty if the face is not a supported polygon.
     template < typename Mesh >
-    bool is_face_supported( const aiFace& face )
+    absl::InlinedVector< geode::index_t, 4 > face_corners(
+        const aiMesh& assimp_mesh, const aiFace& face )
     {
+        absl::InlinedVector< geode::index_t, 4 > corners;
+        if( face.mNumIndices >= geode::NO_LID )
+        {
+            return corners;
+        }
+        const auto same_corners = [&assimp_mesh, &face](
+                                      geode::index_t c0, geode::index_t c1 ) {
+            const auto v0 = face.mIndices[c0];
+            const auto v1 = face.mIndices[c1];
+            return v0 == v1
+                   || assimp_mesh.mVertices[v0] == assimp_mesh.mVertices[v1];
+        };
+        for( const auto c : geode::Range{ face.mNumIndices } )
+        {
+            if( corners.empty() || !same_corners( corners.back(), c ) )
+            {
+                corners.push_back( c );
+            }
+        }
+        while( corners.size() > 1
+               && same_corners( corners.back(), corners.front() ) )
+        {
+            corners.pop_back();
+        }
         if constexpr( std::is_same_v< Mesh, geode::TriangulatedSurface3D > )
         {
-            return face.mNumIndices == 3;
+            if( corners.size() != 3 )
+            {
+                corners.clear();
+            }
         }
-        return face.mNumIndices >= 3 && face.mNumIndices < geode::NO_LID;
+        else if( corners.size() < 3 )
+        {
+            corners.clear();
+        }
+        return corners;
+    }
+
+    struct MeshGroup
+    {
+        std::string name;
+        std::vector< geode::index_t > meshes;
+    };
+
+    // Assimp names "defaultobject" the OBJ object without g/o statement
+    std::string group_name( std::string name )
+    {
+        static constexpr std::string_view ASSIMP_DEFAULT_OBJECT_NAME{
+            "defaultobject"
+        };
+        if( name == ASSIMP_DEFAULT_OBJECT_NAME )
+        {
+            return {};
+        }
+        return name;
+    }
+
+    // One group per scene node referencing meshes (e.g. OBJ object, STL
+    // solid), in node order. Meshes referenced by no node are their own group.
+    std::vector< MeshGroup > mesh_groups( const aiScene& assimp_scene )
+    {
+        std::vector< MeshGroup > groups;
+        std::vector< bool > used( assimp_scene.mNumMeshes, false );
+        std::vector< const aiNode* > nodes;
+        if( assimp_scene.mRootNode )
+        {
+            nodes.push_back( assimp_scene.mRootNode );
+        }
+        while( !nodes.empty() )
+        {
+            const auto& node = *nodes.back();
+            nodes.pop_back();
+            MeshGroup group;
+            for( const auto m : geode::Range{ node.mNumMeshes } )
+            {
+                const auto mesh_id = node.mMeshes[m];
+                if( mesh_id < assimp_scene.mNumMeshes && !used[mesh_id] )
+                {
+                    used[mesh_id] = true;
+                    group.meshes.push_back( mesh_id );
+                }
+            }
+            if( !group.meshes.empty() )
+            {
+                group.name = node.mName.C_Str();
+                if( group.name.empty() )
+                {
+                    group.name = assimp_scene.mMeshes[group.meshes.front()]
+                                     ->mName.C_Str();
+                }
+                group.name = group_name( std::move( group.name ) );
+                groups.emplace_back( std::move( group ) );
+            }
+            for( auto c = node.mNumChildren; c > 0; c-- )
+            {
+                nodes.push_back( node.mChildren[c - 1] );
+            }
+        }
+        for( const auto mesh_id : geode::Range{ assimp_scene.mNumMeshes } )
+        {
+            if( !used[mesh_id] )
+            {
+                groups.push_back(
+                    { group_name(
+                          assimp_scene.mMeshes[mesh_id]->mName.C_Str() ),
+                        { mesh_id } } );
+            }
+        }
+        return groups;
     }
 
     template < typename Mesh >
@@ -75,14 +185,15 @@ namespace
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
-            if( !is_face_supported< Mesh >( face ) )
+            const auto corners = face_corners< Mesh >( assimp_mesh, face );
+            if( corners.empty() )
             {
                 nb_skipped_faces++;
                 continue;
             }
-            for( const auto i : geode::Range{ face.mNumIndices } )
+            for( const auto corner : corners )
             {
-                auto& new_vertex = new_vertices[face.mIndices[i]];
+                auto& new_vertex = new_vertices[face.mIndices[corner]];
                 if( new_vertex == geode::NO_ID )
                 {
                     new_vertex = nb_vertices++;
@@ -114,15 +225,16 @@ namespace
         for( const auto p : geode::Range{ assimp_mesh.mNumFaces } )
         {
             const auto& face = assimp_mesh.mFaces[p];
-            if( !is_face_supported< Mesh >( face ) )
+            const auto corners = face_corners< Mesh >( assimp_mesh, face );
+            if( corners.empty() )
             {
                 continue;
             }
             absl::FixedArray< geode::index_t > polygon_vertices(
-                face.mNumIndices );
+                corners.size() );
             for( const auto i : geode::LIndices{ polygon_vertices } )
             {
-                polygon_vertices[i] = new_vertices[face.mIndices[i]];
+                polygon_vertices[i] = new_vertices[face.mIndices[corners[i]]];
             }
             const auto polygon = builder->create_polygon( polygon_vertices );
             if( !texture )
@@ -132,7 +244,7 @@ namespace
             for( const auto i : geode::LIndices{ polygon_vertices } )
             {
                 const auto& coord =
-                    assimp_mesh.mTextureCoords[0][face.mIndices[i]];
+                    assimp_mesh.mTextureCoords[0][face.mIndices[corners[i]]];
                 texture->set_texture_coordinates(
                     { polygon, i }, geode::Point2D{ { coord.x, coord.y } } );
             }
@@ -172,9 +284,16 @@ namespace geode
                 importer.GetErrorString() );
             read_materials( assimp_scene );
             read_meshes( assimp_scene );
+            const auto groups = mesh_groups( *assimp_scene );
             importer.FreeScene();
             std::vector< std::unique_ptr< Mesh > > meshes;
-            meshes.emplace_back( merge_meshes() );
+            for( const auto& group : groups )
+            {
+                if( auto mesh = merge_meshes( group.meshes, group.name ) )
+                {
+                    meshes.emplace_back( std::move( mesh ) );
+                }
+            }
             return meshes;
         }
 
@@ -211,33 +330,49 @@ namespace geode
                 Logger::warning( "[AssimpMeshInput::read_meshes] Skipped ",
                     total_skipped_faces, " unsupported faces (",
                     std::is_same_v< Mesh, TriangulatedSurface3D >
-                        ? "non-triangle faces"
-                        : "lines, points, empty faces or polygons with too "
-                          "many vertices",
+                        ? "non-triangle or degenerate faces"
+                        : "lines, points, empty or degenerate faces or "
+                          "polygons with too many vertices",
                     ") in file ", file_ );
             }
         }
 
         template < typename Mesh >
-        std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::merge_meshes()
+        std::unique_ptr< Mesh > AssimpMeshInput< Mesh >::merge_meshes(
+            absl::Span< const index_t > mesh_ids,
+            std::string_view surface_name )
         {
+            std::vector< index_t > group_surfaces;
             std::vector< std::reference_wrapper< const SurfaceMesh3D > >
                 ref_surfaces;
-            ref_surfaces.reserve( surfaces_.size() );
-            for( const auto& surface : surfaces_ )
+            for( const auto mesh_id : mesh_ids )
             {
-                ref_surfaces.emplace_back( *surface );
+                if( surfaces_[mesh_id]->nb_polygons() == 0 )
+                {
+                    continue;
+                }
+                group_surfaces.push_back( mesh_id );
+                ref_surfaces.emplace_back( *surfaces_[mesh_id] );
+            }
+            if( ref_surfaces.empty() )
+            {
+                return nullptr;
             }
 
             detail::SurfaceMeshMerger3D merger{ ref_surfaces };
 
             std::unique_ptr< Mesh > merged{ dynamic_cast< Mesh* >(
                 merger.merge( GLOBAL_EPSILON ).release() ) };
-            Mesh::Builder::create( *merged )->compute_polygon_adjacencies();
-            auto merged_manager = merged->texture_manager();
-            for( const auto s : Indices{ surfaces_ } )
+            auto builder = Mesh::Builder::create( *merged );
+            builder->compute_polygon_adjacencies();
+            if( !surface_name.empty() )
             {
-                const auto& mesh = surfaces_[s];
+                builder->set_name( surface_name );
+            }
+            auto merged_manager = merged->texture_manager();
+            for( const auto s : Indices{ group_surfaces } )
+            {
+                const auto& mesh = surfaces_[group_surfaces[s]];
                 auto manager = mesh->texture_manager();
                 for( const auto& name : manager.texture_names() )
                 {
