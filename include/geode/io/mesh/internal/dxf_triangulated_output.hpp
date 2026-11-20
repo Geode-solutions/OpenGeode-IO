@@ -39,8 +39,8 @@ namespace geode
     namespace internal
     {
         /*!
-         * Writes an ASCII DXF (R12) with one 3DFACE per triangle, on a layer
-         * named after the surface.
+         * Writes an ASCII DXF with one 3DFACE per triangle: see
+         * write_dxf_surface.
          */
         class DXFTriangulatedOutput final
             : public TriangulatedSurfaceOutput< 3 >

@@ -68,7 +68,7 @@ def test_extensions():
     check_extensions(
         opengeode.PolygonalSurface3D,
         ["obj", "ply", "vtp", "vtu", "dxf"],
-        ["obj", "ply", "vtp"],
+        ["obj", "ply", "vtp", "dxf"],
     )
     check_extensions(
         opengeode.TriangulatedSurface3D,

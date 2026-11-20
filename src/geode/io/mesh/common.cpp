@@ -51,6 +51,7 @@
 
 #include <geode/io/mesh/internal/csv_input.hpp>
 #include <geode/io/mesh/internal/dxf_input.hpp>
+#include <geode/io/mesh/internal/dxf_polygonal_output.hpp>
 #include <geode/io/mesh/internal/dxf_triangulated_output.hpp>
 #include <geode/io/mesh/internal/gexf_output.hpp>
 #include <geode/io/mesh/internal/obj_input.hpp>
@@ -128,6 +129,9 @@ namespace
         geode::PolygonalSurfaceOutputFactory3D::register_creator<
             geode::internal::OBJPolygonalOutput >(
             geode::internal::OBJPolygonalOutput::extension().data() );
+        geode::PolygonalSurfaceOutputFactory3D::register_creator<
+            geode::internal::DXFPolygonalOutput >(
+            geode::internal::DXFPolygonalOutput::extension().data() );
         geode::PolygonalSurfaceOutputFactory2D::register_creator<
             geode::detail::VTPPolygonalOutput< 2 > >(
             geode::detail::VTPPolygonalOutput< 2 >::extension().data() );

@@ -39,6 +39,7 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/mesh/builder/polygonal_surface_builder.hpp>
 #include <geode/mesh/builder/triangulated_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
 #include <geode/mesh/core/triangulated_surface.hpp>
@@ -558,6 +559,83 @@ namespace
         }
         check_adjacency( *reloaded, { 0, 1 }, 1 );
     }
+
+    void test_polygonal_output()
+    {
+        auto surface = geode::PolygonalSurface3D::create();
+        auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+        // 3-byte UTF-8 character: encoded by the writer, decoded by the reader
+        builder->set_name( "Baie \xE2\x82\xAC" );
+        const std::array< geode::Point3D, 5 > points{ {
+            geode::Point3D{ { 0, 0, 0 } },
+            geode::Point3D{ { 1, 0, 0.5 } },
+            geode::Point3D{ { 1, 1, 0.5 } },
+            geode::Point3D{ { 0, 1, 0 } },
+            geode::Point3D{ { 2, 0.5, 1 } },
+        } };
+        for( const auto& point : points )
+        {
+            builder->create_point( point );
+        }
+        builder->create_polygon( { 0, 1, 2, 3 } );
+        builder->create_polygon( { 1, 4, 2 } );
+        const std::string output{ "polygonal_output.dxf" };
+        geode::save_polygonal_surface( *surface, output );
+
+        const auto reloaded = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output ), output );
+        check_surface( *reloaded, "Baie \xE2\x82\xAC", 5, 2 );
+        for( const auto p : geode::Range{ surface->nb_polygons() } )
+        {
+            const auto nb_vertices = surface->nb_polygon_vertices( p );
+            geode::OpenGeodeIOMeshException::test(
+                reloaded->nb_polygon_vertices( p ) == nb_vertices,
+                "Wrong size of reloaded polygon ", p );
+            for( const auto v : geode::LRange{ nb_vertices } )
+            {
+                geode::OpenGeodeIOMeshException::test(
+                    reloaded->point( reloaded->polygon_vertex( { p, v } ) )
+                        == surface->point(
+                            surface->polygon_vertex( { p, v } ) ),
+                    "Wrong position of vertex ", v, " of reloaded polygon ",
+                    p );
+            }
+        }
+        check_adjacency( *reloaded, { 0, 1 }, 1 );
+        check_adjacency( *reloaded, { 1, 2 }, 0 );
+    }
+
+    void test_polygonal_output_too_many_vertices()
+    {
+        auto surface = geode::PolygonalSurface3D::create();
+        auto builder = geode::PolygonalSurfaceBuilder3D::create( *surface );
+        builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+        builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+        builder->create_point( geode::Point3D{ { 2, 1, 0 } } );
+        builder->create_point( geode::Point3D{ { 1, 2, 0 } } );
+        builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+        builder->create_polygon( { 0, 1, 2, 3, 4 } );
+        const std::string output{ "pentagon.dxf" };
+        try
+        {
+            geode::save_polygonal_surface( *surface, output );
+        }
+        catch( const geode::OpenGeodeException& exception )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                exception.type() == geode::OpenGeodeException::TYPE::data
+                    && absl::StrContains(
+                        exception.what(), "a 3DFACE has at most 4" ),
+                "Wrong error saving a pentagon: ", exception.what() );
+            geode::OpenGeodeIOMeshException::test(
+                !std::ifstream{ output }.good(),
+                "No file should be written for a pentagon" );
+            return;
+        }
+        throw geode::OpenGeodeIOMeshException{ nullptr,
+            geode::OpenGeodeException::TYPE::internal,
+            "Saving a pentagon as DXF should raise a data error" };
+    }
 } // namespace
 
 int main()
@@ -580,6 +658,8 @@ int main()
         test_viewport_not_reported();
         test_triangulated_output();
         test_triangulated_output_precision_and_name();
+        test_polygonal_output();
+        test_polygonal_output_too_many_vertices();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
