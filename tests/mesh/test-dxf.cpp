@@ -39,9 +39,13 @@
 
 #include <geode/geometry/point.hpp>
 
+#include <geode/mesh/builder/triangulated_surface_builder.hpp>
 #include <geode/mesh/core/polygonal_surface.hpp>
+#include <geode/mesh/core/triangulated_surface.hpp>
 #include <geode/mesh/io/polygonal_surface_input.hpp>
 #include <geode/mesh/io/polygonal_surface_output.hpp>
+#include <geode/mesh/io/triangulated_surface_input.hpp>
+#include <geode/mesh/io/triangulated_surface_output.hpp>
 
 #include <geode/io/mesh/common.hpp>
 
@@ -476,6 +480,84 @@ namespace
             !WarningRecorder::has_warning( "VIEWPORT" ),
             "Skipped VIEWPORT should not be reported" );
     }
+
+    void check_same_triangles( const geode::TriangulatedSurface3D& expected,
+        const geode::PolygonalSurface3D& reloaded )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            reloaded.nb_polygons() == expected.nb_polygons(),
+            "Wrong number of reloaded triangles: ", reloaded.nb_polygons() );
+        for( const auto p : geode::Range{ expected.nb_polygons() } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                reloaded.nb_polygon_vertices( p ) == 3, "Reloaded polygon ", p,
+                " is not a triangle" );
+            for( const auto v : geode::LRange{ 3 } )
+            {
+                geode::OpenGeodeIOMeshException::test(
+                    reloaded.point( reloaded.polygon_vertex( { p, v } ) )
+                        .inexact_equal( expected.point(
+                            expected.polygon_vertex( { p, v } ) ) ),
+                    "Wrong position of vertex ", v, " of reloaded triangle ",
+                    p );
+            }
+        }
+    }
+
+    void test_triangulated_output()
+    {
+        const auto filename =
+            absl::StrCat( geode::DATA_PATH, "galeries_and_cylinder.og_tsf3d" );
+        const auto surface = geode::load_one(
+            geode::load_triangulated_surface< 3 >( filename ), filename );
+        const std::string output{ "galeries_and_cylinder.dxf" };
+        geode::save_triangulated_surface( *surface, output );
+
+        const auto reloaded = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output ), output );
+        geode::OpenGeodeIOMeshException::test(
+            reloaded->nb_vertices() == surface->nb_vertices(),
+            "Wrong number of reloaded vertices: ", reloaded->nb_vertices(),
+            " instead of ", surface->nb_vertices() );
+        check_same_triangles( *surface, *reloaded );
+    }
+
+    void test_triangulated_output_precision_and_name()
+    {
+        auto surface = geode::TriangulatedSurface3D::create();
+        auto builder = geode::TriangulatedSurfaceBuilder3D::create( *surface );
+        // Forbidden characters in layer names are replaced, others kept
+        builder->set_name( "Galerie \xC3\xA9:1" );
+        builder->create_point(
+            geode::Point3D{ { 650000.123456789, 4100000.987654321, -0.1 } } );
+        builder->create_point(
+            geode::Point3D{ { 650010.321, 4100000.654, 100.987 } } );
+        builder->create_point(
+            geode::Point3D{ { 650000.111, 4100010.222, 101.333 } } );
+        builder->create_point(
+            geode::Point3D{ { 650010.5, 4100010.5, 1e-7 } } );
+        builder->create_triangle( { 0, 1, 2 } );
+        builder->create_triangle( { 2, 1, 3 } );
+        const std::string output{ "triangulated_output.dxf" };
+        geode::save_triangulated_surface( *surface, output );
+
+        const auto reloaded = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output ), output );
+        check_surface( *reloaded, "Galerie \xC3\xA9_1", 4, 2 );
+        check_same_triangles( *surface, *reloaded );
+        for( const auto v : geode::Range{ surface->nb_vertices() } )
+        {
+            bool found{ false };
+            for( const auto r : geode::Range{ reloaded->nb_vertices() } )
+            {
+                found = found || reloaded->point( r ) == surface->point( v );
+            }
+            geode::OpenGeodeIOMeshException::test( found, "Point ",
+                surface->point( v ).string(),
+                " lost precision in DXF round trip" );
+        }
+        check_adjacency( *reloaded, { 0, 1 }, 1 );
+    }
 } // namespace
 
 int main()
@@ -496,6 +578,8 @@ int main()
         test_comment_before_entities();
         test_unicode_layer_names();
         test_viewport_not_reported();
+        test_triangulated_output();
+        test_triangulated_output_precision_and_name();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;

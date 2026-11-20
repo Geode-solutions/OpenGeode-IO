@@ -51,6 +51,7 @@
 
 #include <geode/io/mesh/internal/csv_input.hpp>
 #include <geode/io/mesh/internal/dxf_input.hpp>
+#include <geode/io/mesh/internal/dxf_triangulated_output.hpp>
 #include <geode/io/mesh/internal/gexf_output.hpp>
 #include <geode/io/mesh/internal/obj_input.hpp>
 #include <geode/io/mesh/internal/obj_polygonal_output.hpp>
@@ -149,6 +150,9 @@ namespace
         geode::TriangulatedSurfaceOutputFactory3D::register_creator<
             geode::internal::OBJTriangulatedOutput >(
             geode::internal::OBJTriangulatedOutput::extension().data() );
+        geode::TriangulatedSurfaceOutputFactory3D::register_creator<
+            geode::internal::DXFTriangulatedOutput >(
+            geode::internal::DXFTriangulatedOutput::extension().data() );
         geode::TriangulatedSurfaceOutputFactory2D::register_creator<
             geode::detail::VTPTriangulatedOutput< 2 > >(
             geode::detail::VTPTriangulatedOutput< 2 >::extension().data() );

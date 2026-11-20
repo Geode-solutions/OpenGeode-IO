@@ -71,7 +71,9 @@ def test_extensions():
         ["obj", "ply", "vtp"],
     )
     check_extensions(
-        opengeode.TriangulatedSurface3D, ["stl", "smesh", "vtu"], ["obj", "stl", "vtp"]
+        opengeode.TriangulatedSurface3D,
+        ["stl", "smesh", "vtu"],
+        ["obj", "stl", "vtp", "dxf"],
     )
     check_extensions(opengeode.EdgedCurve3D, ["smesh"], ["vtp"])
     check_extensions(opengeode.PolygonalSurface2D, [], ["vtp", "dot"])
