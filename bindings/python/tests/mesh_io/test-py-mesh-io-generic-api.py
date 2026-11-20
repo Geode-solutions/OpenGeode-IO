@@ -151,6 +151,25 @@ def test_load_all():
         opengeode.TetrahedralSolid3D, os.path.join(DATA, "two_pieces.vtu")
     )
     check([solid.nb_vertices() for solid in solids] == [3, 4], "Wrong pieces of vtu")
+    # One surface per polyface mesh of a DXF file
+    surfaces = opengeode.load_all(
+        opengeode.PolygonalSurface3D, os.path.join(DATA, "polyface_surfaces.dxf")
+    )
+    check(len(surfaces) == 3, "Wrong number of DXF polyface surfaces")
+    check(
+        [surface.name() for surface in surfaces]
+        == ["Galerie A", "Baie décantation 1", "OTHER_3C"],
+        "Wrong names of DXF polyface surfaces",
+    )
+    check(
+        [surface.nb_polygons() for surface in surfaces] == [3, 2, 1],
+        "Wrong polygons of DXF polyface surfaces",
+    )
+    expect_data_error(
+        opengeode.load,
+        opengeode.PolygonalSurface3D,
+        os.path.join(DATA, "polyface_surfaces.dxf"),
+    )
     # load needs exactly one object
     expect_data_error(
         opengeode.load, opengeode.RegularGrid3D, os.path.join(DATA, "two_pieces.vti")

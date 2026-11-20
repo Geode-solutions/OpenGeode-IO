@@ -111,26 +111,46 @@ namespace
         return nb_checked;
     }
 
+    void check_name(
+        const geode::PolygonalSurface3D& surface, std::string_view expected )
+    {
+        geode::OpenGeodeIOMeshException::test(
+            surface.name() && surface.name().value() == expected,
+            "Surface should be named ", expected );
+    }
+
     void test_untextured_then_textured_groups()
     {
         const auto surface_filename =
             absl::StrCat( geode::DATA_PATH, "two_groups_textured.obj" );
-        auto surface = geode::load_one(
-            geode::load_polygonal_surface< 3 >( surface_filename ),
-            surface_filename );
-        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,
-            "Number of polygons in two_groups_textured is not correct" );
+        const auto surfaces =
+            geode::load_polygonal_surface< 3 >( surface_filename );
+        geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+            "two_groups_textured should give one surface per group" );
+        const auto& untextured = *surfaces[0];
+        const auto& textured = *surfaces[1];
+        check_name( untextured, "untextured" );
+        check_name( textured, "textured" );
+        geode::OpenGeodeIOMeshException::test(
+            untextured.nb_polygons() == 1 && untextured.nb_vertices() == 3,
+            "Wrong untextured group in two_groups_textured" );
+        geode::OpenGeodeIOMeshException::test(
+            !untextured.texture_manager().texture_exists( "textured_material" ),
+            "Untextured group should have no texture" );
+        geode::OpenGeodeIOMeshException::test(
+            textured.nb_polygons() == 1 && textured.nb_vertices() == 3,
+            "Wrong textured group in two_groups_textured" );
         const std::array< CornerUV, 3 > expected{ {
             { geode::Point3D{ { 2, 0, 0 } }, geode::Point2D{ { 0.1, 0.2 } } },
             { geode::Point3D{ { 3, 0, 0 } }, geode::Point2D{ { 0.3, 0.4 } } },
             { geode::Point3D{ { 2, 1, 0 } }, geode::Point2D{ { 0.5, 0.6 } } },
         } };
         geode::OpenGeodeIOMeshException::test(
-            check_texture_coordinates( *surface, "textured_material", expected )
+            check_texture_coordinates( textured, "textured_material", expected )
                 == 3,
             "Wrong number of textured corners in two_groups_textured" );
         geode::OpenGeodeIOMeshException::test(
-            surface->texture_manager()
+            textured.texture_manager()
                     .find_texture( "textured_material" )
                     .image()
                     .nb_cells()
@@ -142,24 +162,179 @@ namespace
     {
         const auto surface_filename =
             absl::StrCat( geode::DATA_PATH, "duplicated_textured.obj" );
-        auto surface = geode::load_one(
-            geode::load_polygonal_surface< 3 >( surface_filename ),
-            surface_filename );
-        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
-            "Number of polygons in duplicated_textured is not correct" );
+        const auto surfaces =
+            geode::load_polygonal_surface< 3 >( surface_filename );
+        geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+            "duplicated_textured should give one surface per group" );
         const std::array< CornerUV, 3 > expected{ {
             { geode::Point3D{ { 0, 0, 0 } }, geode::Point2D{ { 0.1, 0.2 } } },
             { geode::Point3D{ { 1, 0, 0 } }, geode::Point2D{ { 0.3, 0.4 } } },
             { geode::Point3D{ { 0, 1, 0 } }, geode::Point2D{ { 0.5, 0.6 } } },
         } };
-        for( const auto& texture_name :
-            { "first_material", "second_material" } )
+        const std::array< std::string_view, 2 > names{ "first", "second" };
+        const std::array< std::string_view, 2 > materials{ "first_material",
+            "second_material" };
+        for( const auto s : geode::LRange{ 2 } )
         {
+            const auto& surface = *surfaces[s];
+            check_name( surface, names[s] );
+            geode::OpenGeodeIOMeshException::test( surface.nb_polygons() == 1,
+                "Number of polygons in duplicated_textured is not correct" );
             geode::OpenGeodeIOMeshException::test(
-                check_texture_coordinates( *surface, texture_name, expected )
+                check_texture_coordinates( surface, materials[s], expected )
                     == 3,
                 "Wrong number of textured corners in duplicated_textured" );
+            geode::OpenGeodeIOMeshException::test(
+                !surface.texture_manager().texture_exists( materials[1 - s] ),
+                "Each group should only have its own texture" );
         }
+    }
+
+    void test_repeated_corners()
+    {
+        const auto filename = "repeated_corners.obj";
+        {
+            std::ofstream file{ filename };
+            file << "v 0 0 0\nv 1 0 0\nv 1 0 0\nv 0 1 0\nv 1 1 0\n"
+                 // Consecutive corners on equal points
+                 << "f 1 2 3 4\n"
+                 // Repeated index, wrapping around
+                 << "f 2 5 4 2\n"
+                 // Degenerate face
+                 << "f 1 2 1\n";
+        }
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( filename ), filename );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 2,
+            "Faces with repeated corners should be loaded as triangles" );
+        geode::OpenGeodeIOMeshException::test( surface->nb_vertices() == 4,
+            "Wrong number of vertices with repeated corners" );
+        for( const auto p : geode::Range{ surface->nb_polygons() } )
+        {
+            geode::OpenGeodeIOMeshException::test(
+                surface->nb_polygon_vertices( p ) == 3,
+                "Repeated corners should be removed" );
+        }
+    }
+
+    // Checks the corners of the polygon located on one of the given points
+    // have the expected texture coordinates. Returns the number of checked
+    // corners.
+    geode::index_t check_polygon_texture_coordinates(
+        const geode::PolygonalSurface3D& surface,
+        geode::index_t polygon,
+        std::string_view texture_name,
+        absl::Span< const CornerUV > expected )
+    {
+        const auto& texture =
+            surface.texture_manager().find_texture( texture_name );
+        geode::index_t nb_checked{ 0 };
+        for( const auto v :
+            geode::LRange{ surface.nb_polygon_vertices( polygon ) } )
+        {
+            const auto& point =
+                surface.point( surface.polygon_vertex( { polygon, v } ) );
+            for( const auto& corner : expected )
+            {
+                if( point != corner.point )
+                {
+                    continue;
+                }
+                geode::OpenGeodeIOMeshException::test(
+                    texture.texture_coordinates( { polygon, v } )
+                        .inexact_equal( corner.uv ),
+                    "Wrong texture coordinates on polygon ", polygon,
+                    " vertex ", v, " of texture ", texture_name );
+                nb_checked++;
+            }
+        }
+        return nb_checked;
+    }
+
+    void test_multi_material_object()
+    {
+        const auto filename = "multi_material.obj";
+        {
+            std::ofstream mtl{ "multi_material.mtl" };
+            mtl << "newmtl first_material\nKd 1 1 1\n"
+                << "newmtl second_material\nKd 1 1 1\n";
+            std::ofstream obj{ filename };
+            obj << "mtllib multi_material.mtl\n"
+                << "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 1 1 0\n"
+                << "v 5 5 5\nv 6 5 5\nv 5 6 5\n"
+                << "vt 0.1 0.2\nvt 0.3 0.4\nvt 0.5 0.6\nvt 0.7 0.8\n"
+                // A single material group first, so that the global mesh
+                // ids differ from the positions in the next group
+                << "g single\nusemtl second_material\nf 5/1 6/2 7/3\n"
+                << "g obj\nusemtl first_material\nf 1/1 2/2 3/3\n"
+                << "usemtl second_material\nf 2/2 4/4 3/3\n";
+        }
+        const auto surfaces = geode::load_polygonal_surface< 3 >( filename );
+        geode::OpenGeodeIOMeshException::test( surfaces.size() == 2,
+            "multi_material should give one surface per group" );
+        check_name( *surfaces[0], "single" );
+        geode::OpenGeodeIOMeshException::test( surfaces[0]->nb_polygons() == 1,
+            "Wrong number of polygons in the single material group" );
+        const auto& surface = *surfaces[1];
+        check_name( surface, "obj" );
+        geode::OpenGeodeIOMeshException::test( surface.nb_polygons() == 2,
+            "Multi material object should have its 2 polygons" );
+        geode::OpenGeodeIOMeshException::test( surface.nb_vertices() == 4,
+            "Multi material object polygons should share their vertices" );
+        const std::array< CornerUV, 3 > first_expected{ {
+            { geode::Point3D{ { 0, 0, 0 } }, geode::Point2D{ { 0.1, 0.2 } } },
+            { geode::Point3D{ { 1, 0, 0 } }, geode::Point2D{ { 0.3, 0.4 } } },
+            { geode::Point3D{ { 0, 1, 0 } }, geode::Point2D{ { 0.5, 0.6 } } },
+        } };
+        const std::array< CornerUV, 3 > second_expected{ {
+            { geode::Point3D{ { 1, 0, 0 } }, geode::Point2D{ { 0.3, 0.4 } } },
+            { geode::Point3D{ { 1, 1, 0 } }, geode::Point2D{ { 0.7, 0.8 } } },
+            { geode::Point3D{ { 0, 1, 0 } }, geode::Point2D{ { 0.5, 0.6 } } },
+        } };
+        geode::index_t nb_first{ 0 };
+        geode::index_t nb_second{ 0 };
+        for( const auto p : geode::Range{ surface.nb_polygons() } )
+        {
+            bool is_first{ false };
+            for( const auto v :
+                geode::LRange{ surface.nb_polygon_vertices( p ) } )
+            {
+                if( surface.point( surface.polygon_vertex( { p, v } ) )
+                    == geode::Point3D{ { 0, 0, 0 } } )
+                {
+                    is_first = true;
+                }
+            }
+            if( is_first )
+            {
+                nb_first += check_polygon_texture_coordinates(
+                    surface, p, "first_material", first_expected );
+            }
+            else
+            {
+                nb_second += check_polygon_texture_coordinates(
+                    surface, p, "second_material", second_expected );
+            }
+        }
+        geode::OpenGeodeIOMeshException::test( nb_first == 3 && nb_second == 3,
+            "Each material polygon should have its 3 textured corners" );
+    }
+
+    void test_no_object_name()
+    {
+        // No g/o statement: Assimp names the object "defaultobject"
+        const auto filename = "no_object_name.obj";
+        {
+            std::ofstream file{ filename };
+            file << "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n";
+        }
+        auto surface = geode::load_one(
+            geode::load_polygonal_surface< 3 >( filename ), filename );
+        geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 1,
+            "Wrong number of polygons without object name" );
+        geode::OpenGeodeIOMeshException::test( !surface->name(),
+            "OBJ without g/o: the Surface should not be named, not \"",
+            surface->name().value_or( "" ), "\"" );
     }
 
     void test_lines_and_points()
@@ -287,6 +462,7 @@ int main()
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 380,
             "Number of polygons in the loaded Surface is not correct" );
+        check_name( *surface, "TopHat3:pCylinder3" );
 
         // Save file
         geode::save_polygonal_surface(
@@ -310,6 +486,9 @@ int main()
         check_adjacencies( *surface );
         test_untextured_then_textured_groups();
         test_duplicated_polygon_textures();
+        test_repeated_corners();
+        test_multi_material_object();
+        test_no_object_name();
         test_lines_and_points();
         test_too_large_polygon();
         test_absolute_texture_path();

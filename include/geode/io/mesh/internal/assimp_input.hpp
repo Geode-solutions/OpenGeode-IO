@@ -27,6 +27,8 @@
 
 #include <assimp/scene.h>
 
+#include <absl/types/span.h>
+
 #include <geode/basic/percentage.hpp>
 
 #include <geode/io/mesh/common.hpp>
@@ -59,7 +61,9 @@ namespace geode
 
             void read_meshes( const aiScene* assimp_scene );
 
-            std::unique_ptr< Mesh > merge_meshes();
+            std::unique_ptr< Mesh > merge_meshes(
+                absl::Span< const index_t > mesh_ids,
+                std::string_view surface_name );
 
         private:
             std::vector< std::unique_ptr< Mesh > > surfaces_;

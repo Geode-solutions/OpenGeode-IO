@@ -75,6 +75,8 @@ int main()
             "Number of vertices in the loaded Surface is not correct" );
         geode::OpenGeodeIOMeshException::test( surface->nb_polygons() == 345944,
             "Number of polygons in the loaded Surface is not correct" );
+        geode::OpenGeodeIOMeshException::test( !surface->name(),
+            "PLY files have no object name: the Surface should not be named" );
 
         check_adjacencies( *surface );
 
