@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <geode/mesh/io/polygonal_surface_output.hpp>

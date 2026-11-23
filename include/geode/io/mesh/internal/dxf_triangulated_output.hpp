@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <geode/mesh/io/triangulated_surface_output.hpp>

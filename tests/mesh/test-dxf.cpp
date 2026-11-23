@@ -676,6 +676,9 @@ namespace
             "x\xC0\xAFy", "x__y", "Overlong UTF-8 sequence is invalid" );
         check_layer_name( "x\xF8\x88\x80\x80\x80y", "x_____y",
             "Bytes above 0xF7 are invalid UTF-8" );
+        check_layer_name( "", "0", "Unnamed surface should use layer 0" );
+        check_layer_name( "a\xF0\x9F\x98\x80z", "a_z",
+            "Code points above U+FFFF cannot be escaped" );
     }
 } // namespace
 
