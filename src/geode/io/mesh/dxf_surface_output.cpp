@@ -39,7 +39,7 @@
 namespace
 {
     constexpr std::string_view DEFAULT_LAYER{ "0" };
-    constexpr std::string_view FORBIDDEN_LAYER_CHARACTERS{ "<>/\\\":;?*|=`" };
+    constexpr std::string_view FORBIDDEN_LAYER_CHARACTERS{ "<>/\\\":;?*|,=`" };
     constexpr unsigned char FIRST_PRINTABLE{ 0x20 };
 
     /*!

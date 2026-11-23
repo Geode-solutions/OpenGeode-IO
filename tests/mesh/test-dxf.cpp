@@ -636,6 +636,40 @@ namespace
             geode::OpenGeodeException::TYPE::internal,
             "Saving a pentagon as DXF should raise a data error" };
     }
+
+    /* Saves a triangle named name and returns the name of the reloaded one */
+    std::string reloaded_layer_name( std::string_view name )
+    {
+        auto surface = geode::TriangulatedSurface3D::create();
+        auto builder = geode::TriangulatedSurfaceBuilder3D::create( *surface );
+        if( !name.empty() )
+        {
+            builder->set_name( name );
+        }
+        builder->create_point( geode::Point3D{ { 0, 0, 0 } } );
+        builder->create_point( geode::Point3D{ { 1, 0, 0 } } );
+        builder->create_point( geode::Point3D{ { 0, 1, 0 } } );
+        builder->create_triangle( { 0, 1, 2 } );
+        const std::string output{ "layer_name.dxf" };
+        geode::save_triangulated_surface( *surface, output );
+        const auto reloaded = geode::load_one(
+            geode::load_polygonal_surface< 3 >( output ), output );
+        return std::string{ reloaded->name().value_or( "" ) };
+    }
+
+    void check_layer_name(
+        std::string_view name, std::string_view expected, std::string_view why )
+    {
+        const auto reloaded = reloaded_layer_name( name );
+        geode::OpenGeodeIOMeshException::test( reloaded == expected, why,
+            ": \"", reloaded, "\" instead of \"", expected, "\"" );
+    }
+
+    void test_output_layer_names()
+    {
+        check_layer_name(
+            "A,B", "A_B", "Comma is forbidden in DXF layer names" );
+    }
 } // namespace
 
 int main()
@@ -660,6 +694,7 @@ int main()
         test_triangulated_output_precision_and_name();
         test_polygonal_output();
         test_polygonal_output_too_many_vertices();
+        test_output_layer_names();
 
         geode::Logger::info( "TEST SUCCESS" );
         return 0;
