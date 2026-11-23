@@ -40,8 +40,9 @@ namespace geode
 
         /*!
          * Encodes the non-ASCII characters of a UTF-8 string as the \U+XXXX
-         * escapes of DXF strings. Invalid UTF-8 sequences and code points
-         * above U+FFFF, which cannot be escaped, are replaced by '_'.
+         * escapes of DXF strings. Each byte of an invalid UTF-8 sequence, and
+         * each code point above U+FFFF, which cannot be escaped, is replaced
+         * by '_'.
          */
         [[nodiscard]] std::string encode_unicode_escapes(
             std::string_view utf8 );

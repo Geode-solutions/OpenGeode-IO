@@ -23,6 +23,8 @@
 
 #include <geode/io/mesh/internal/dxf_common.hpp>
 
+#include <optional>
+
 #include <absl/strings/numbers.h>
 #include <absl/strings/str_format.h>
 
@@ -35,29 +37,78 @@ namespace
     constexpr char REPLACEMENT{ '_' };
     constexpr unsigned int MAX_ESCAPED_CODE_POINT{ 0xFFFF };
     constexpr unsigned int FIRST_MULTI_BYTE{ 0x80 };
-    constexpr unsigned int FIRST_LEADING_BYTE{ 0xC0 };
+    // 0xC0 and 0xC1 can only start overlong sequences
+    constexpr unsigned int FIRST_LEADING_BYTE{ 0xC2 };
     constexpr unsigned int FIRST_3_BYTES_LEADING_BYTE{ 0xE0 };
     constexpr unsigned int FIRST_4_BYTES_LEADING_BYTE{ 0xF0 };
+    // Above 0xF4, sequences encode code points beyond U+10FFFF
+    constexpr unsigned int LAST_LEADING_BYTE{ 0xF4 };
+    constexpr unsigned int CONTINUATION_MASK{ 0xC0 };
+    constexpr unsigned int CONTINUATION_TAG{ 0x80 };
     constexpr unsigned int CONTINUATION_BITS{ 0x3F };
     constexpr unsigned int FIRST_2_BYTES_CODE_POINT{ 0x80 };
     constexpr unsigned int FIRST_3_BYTES_CODE_POINT{ 0x800 };
+    constexpr unsigned int FIRST_4_BYTES_CODE_POINT{ 0x10000 };
+    constexpr unsigned int FIRST_SURROGATE{ 0xD800 };
+    constexpr unsigned int LAST_SURROGATE{ 0xDFFF };
+    constexpr unsigned int LAST_CODE_POINT{ 0x10FFFF };
 
-    size_t utf8_sequence_length( unsigned int leading_byte )
+    struct UTF8Character
     {
+        unsigned int code_point;
+        size_t length;
+    };
+
+    /*!
+     * Decodes the multi-byte UTF-8 sequence starting at position.
+     * Returns nothing if it is invalid: bad leading or continuation byte,
+     * truncated sequence, overlong encoding, surrogate or out of range code
+     * point.
+     */
+    std::optional< UTF8Character > decode_utf8_sequence(
+        std::string_view utf8, size_t position )
+    {
+        const auto leading_byte =
+            static_cast< unsigned char >( utf8[position] );
+        if( leading_byte < FIRST_LEADING_BYTE
+            || leading_byte > LAST_LEADING_BYTE )
+        {
+            return std::nullopt;
+        }
+        size_t length{ 2 };
+        unsigned int min_code_point{ FIRST_2_BYTES_CODE_POINT };
         if( leading_byte >= FIRST_4_BYTES_LEADING_BYTE )
         {
-            return 4;
+            length = 4;
+            min_code_point = FIRST_4_BYTES_CODE_POINT;
         }
-        if( leading_byte >= FIRST_3_BYTES_LEADING_BYTE )
+        else if( leading_byte >= FIRST_3_BYTES_LEADING_BYTE )
         {
-            return 3;
+            length = 3;
+            min_code_point = FIRST_3_BYTES_CODE_POINT;
         }
-        if( leading_byte >= FIRST_LEADING_BYTE )
+        if( position + length > utf8.size() )
         {
-            return 2;
+            return std::nullopt;
         }
-        // Unexpected continuation byte
-        return 1;
+        unsigned int code_point = leading_byte & ( 0x7FU >> length );
+        for( const auto i : geode::Range{ 1, length } )
+        {
+            const auto byte =
+                static_cast< unsigned char >( utf8[position + i] );
+            if( ( byte & CONTINUATION_MASK ) != CONTINUATION_TAG )
+            {
+                return std::nullopt;
+            }
+            code_point = ( code_point << 6U ) | ( byte & CONTINUATION_BITS );
+        }
+        if( code_point < min_code_point || code_point > LAST_CODE_POINT
+            || ( code_point >= FIRST_SURROGATE
+                 && code_point <= LAST_SURROGATE ) )
+        {
+            return std::nullopt;
+        }
+        return UTF8Character{ code_point, length };
     }
 
     void append_utf8( std::string& output, unsigned int code_point )
@@ -104,30 +155,25 @@ namespace geode
                     position++;
                     continue;
                 }
-                const auto length = utf8_sequence_length( byte );
-                if( length == 1 || position + length > utf8.size() )
+                const auto character = decode_utf8_sequence( utf8, position );
+                if( !character )
                 {
+                    // Only the first byte is replaced: the next ones may
+                    // start a valid character
                     result.push_back( REPLACEMENT );
                     position++;
                     continue;
                 }
-                unsigned int code_point = byte & ( 0x7FU >> length );
-                for( const auto i : Range{ 1, length } )
-                {
-                    code_point =
-                        ( code_point << 6U )
-                        | ( static_cast< unsigned char >( utf8[position + i] )
-                            & CONTINUATION_BITS );
-                }
-                if( code_point > MAX_ESCAPED_CODE_POINT )
+                if( character->code_point > MAX_ESCAPED_CODE_POINT )
                 {
                     result.push_back( REPLACEMENT );
                 }
                 else
                 {
-                    absl::StrAppendFormat( &result, "\\U+%04X", code_point );
+                    absl::StrAppendFormat(
+                        &result, "\\U+%04X", character->code_point );
                 }
-                position += length;
+                position += character->length;
             }
             return result;
         }

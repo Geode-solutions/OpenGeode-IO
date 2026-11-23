@@ -669,6 +669,13 @@ namespace
     {
         check_layer_name(
             "A,B", "A_B", "Comma is forbidden in DXF layer names" );
+        check_layer_name( "x\xC3"
+                          "A",
+            "x_A", "Truncated UTF-8 sequence should not swallow next byte" );
+        check_layer_name(
+            "x\xC0\xAFy", "x__y", "Overlong UTF-8 sequence is invalid" );
+        check_layer_name( "x\xF8\x88\x80\x80\x80y", "x_____y",
+            "Bytes above 0xF7 are invalid UTF-8" );
     }
 } // namespace
 
