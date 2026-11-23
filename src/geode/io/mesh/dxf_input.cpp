@@ -50,6 +50,7 @@
 #include <geode/mesh/core/polygonal_surface.hpp>
 
 #include <geode/io/mesh/common.hpp>
+#include <geode/io/mesh/internal/dxf_common.hpp>
 
 namespace
 {
@@ -60,7 +61,6 @@ namespace
     constexpr int FACE_RECORD_FLAG{ 128 };
     constexpr int FIRST_FACE_INDEX_CODE{ 71 };
     constexpr int NB_FACE_INDICES{ 4 };
-    constexpr int NB_3DFACE_CORNERS{ 4 };
     constexpr int XDATA_APPLICATION_CODE{ 1001 };
     constexpr int XDATA_STRING_CODE{ 1000 };
     constexpr int XDATA_REAL_CODE{ 1040 };
@@ -155,61 +155,6 @@ namespace
         {
             skipped.repeated_vertex++;
         }
-    }
-
-    void append_utf8( std::string& output, unsigned int code_point )
-    {
-        if( code_point < 0x80 )
-        {
-            output.push_back( static_cast< char >( code_point ) );
-        }
-        else if( code_point < 0x800 )
-        {
-            output.push_back(
-                static_cast< char >( 0xC0 | ( code_point >> 6 ) ) );
-            output.push_back(
-                static_cast< char >( 0x80 | ( code_point & 0x3F ) ) );
-        }
-        else
-        {
-            output.push_back(
-                static_cast< char >( 0xE0 | ( code_point >> 12 ) ) );
-            output.push_back(
-                static_cast< char >( 0x80 | ( ( code_point >> 6 ) & 0x3F ) ) );
-            output.push_back(
-                static_cast< char >( 0x80 | ( code_point & 0x3F ) ) );
-        }
-    }
-
-    /*!
-     * Decodes the \U+XXXX escapes of DXF strings to UTF-8.
-     */
-    std::string decode_unicode_escapes( std::string_view value )
-    {
-        static constexpr std::string_view ESCAPE{ "\\U+" };
-        static constexpr size_t NB_HEX_DIGITS{ 4 };
-        std::string result;
-        result.reserve( value.size() );
-        size_t position{ 0 };
-        while( position < value.size() )
-        {
-            if( value.substr( position, ESCAPE.size() ) == ESCAPE
-                && position + ESCAPE.size() + NB_HEX_DIGITS <= value.size() )
-            {
-                const auto digits =
-                    value.substr( position + ESCAPE.size(), NB_HEX_DIGITS );
-                unsigned int code_point{ 0 };
-                if( absl::SimpleHexAtoi( digits, &code_point ) )
-                {
-                    append_utf8( result, code_point );
-                    position += ESCAPE.size() + NB_HEX_DIGITS;
-                    continue;
-                }
-            }
-            result.push_back( value[position] );
-            position++;
-        }
-        return result;
     }
 
     class DXFReader
@@ -386,19 +331,23 @@ namespace
         void read_3dface( const Entity& entity )
         {
             std::string layer{ "0" };
-            std::array< geode::Point3D, NB_3DFACE_CORNERS > corners;
-            std::array< std::array< bool, 3 >, NB_3DFACE_CORNERS > given{};
+            std::array< geode::Point3D, geode::internal::NB_3DFACE_CORNERS >
+                corners;
+            std::array< std::array< bool, 3 >,
+                geode::internal::NB_3DFACE_CORNERS >
+                given{};
             for( const auto& group : entity.groups )
             {
                 if( group.code == 8 )
                 {
-                    layer = decode_unicode_escapes( group.value );
+                    layer =
+                        geode::internal::decode_unicode_escapes( group.value );
                 }
                 else if( group.code >= 10 && group.code < 40 )
                 {
                     const auto axis = group.code / 10 - 1;
                     const auto corner = group.code % 10;
-                    if( corner < NB_3DFACE_CORNERS )
+                    if( corner < geode::internal::NB_3DFACE_CORNERS )
                     {
                         corners[static_cast< size_t >( corner )].set_value(
                             static_cast< geode::local_index_t >( axis ),
@@ -414,7 +363,8 @@ namespace
             const auto is_absent = []( const std::array< bool, 3 >& axes ) {
                 return !axes[0] && !axes[1] && !axes[2];
             };
-            constexpr size_t LAST_CORNER{ NB_3DFACE_CORNERS - 1 };
+            constexpr size_t LAST_CORNER{ geode::internal::NB_3DFACE_CORNERS
+                                          - 1 };
             if( is_absent( given[LAST_CORNER] ) )
             {
                 // A triangle: the fourth corner is the third one
@@ -606,10 +556,11 @@ namespace
                 const auto it = xdata.find( application );
                 if( it != xdata.end() && !it->second.empty() )
                 {
-                    return decode_unicode_escapes( it->second );
+                    return geode::internal::decode_unicode_escapes(
+                        it->second );
                 }
             }
-            auto name = decode_unicode_escapes( layer );
+            auto name = geode::internal::decode_unicode_escapes( layer );
             if( handle.empty() )
             {
                 return name;
