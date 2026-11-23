@@ -41,6 +41,7 @@ namespace
     constexpr std::string_view DEFAULT_LAYER{ "0" };
     constexpr std::string_view FORBIDDEN_LAYER_CHARACTERS{ "<>/\\\":;?*|,=`" };
     constexpr unsigned char FIRST_PRINTABLE{ 0x20 };
+    constexpr unsigned char DEL{ 0x7F };
 
     /*!
      * Layer names cannot contain some characters, which are replaced by '_'.
@@ -59,7 +60,8 @@ namespace
         for( auto& character : layer )
         {
             // Only ASCII characters match: UTF-8 sequences are kept
-            if( static_cast< unsigned char >( character ) < FIRST_PRINTABLE
+            const auto byte = static_cast< unsigned char >( character );
+            if( byte < FIRST_PRINTABLE || byte == DEL
                 || FORBIDDEN_LAYER_CHARACTERS.find( character )
                        != std::string_view::npos )
             {

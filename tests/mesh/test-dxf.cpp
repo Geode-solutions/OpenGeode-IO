@@ -679,6 +679,9 @@ namespace
         check_layer_name( "", "0", "Unnamed surface should use layer 0" );
         check_layer_name( "a\xF0\x9F\x98\x80z", "a_z",
             "Code points above U+FFFF cannot be escaped" );
+        check_layer_name( "a\x7F"
+                          "b",
+            "a_b", "DEL control character should be replaced" );
     }
 } // namespace
 
